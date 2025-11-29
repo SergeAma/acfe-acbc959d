@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import acfeIcon from '@/assets/acfe-icon.png';
+import { Navbar } from '@/components/Navbar';
 
 const authSchema = z.object({
   email: z.string().email('Invalid email address').max(255),
@@ -90,7 +91,9 @@ export const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-accent/10 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-accent/10">
+      <Navbar />
+      <div className="flex items-center justify-center p-4 pt-20">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
@@ -191,6 +194,7 @@ export const Auth = () => {
           </Tabs>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };
