@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { RequestMentorRole } from '@/components/RequestMentorRole';
 import { BookOpen, Library, Award, TrendingUp } from 'lucide-react';
 
 interface Enrollment {
@@ -103,6 +104,9 @@ export const StudentDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Mentor Role Request - Only shown to students */}
+      <RequestMentorRole />
 
       {/* My Courses */}
       <div>
