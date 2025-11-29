@@ -31,7 +31,7 @@ export const Landing = () => {
   });
   return <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-muted min-h-screen flex items-center">
+      <section className="relative overflow-hidden bg-muted min-h-screen flex items-end pb-20">
         {/* Logo in top left corner of hero */}
         <div className="absolute top-8 left-8 z-10">
           <img src={acfeLogo} alt="A Cloud for Everyone" className="h-28 w-auto" />
