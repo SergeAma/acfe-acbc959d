@@ -61,17 +61,16 @@ export const Jobs = () => {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative bg-muted py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-muted/50 to-muted" />
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 text-foreground border-b-4 border-foreground inline-block pb-2">
+      <section className="relative bg-muted py-12 overflow-hidden">
+        <div className="container mx-auto px-4">
+          <div className="text-center max-w-3xl mx-auto">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-foreground border-b-2 border-foreground inline-block pb-1">
               Jobs Board
             </h1>
-            <p className="text-2xl md:text-3xl text-foreground/90 mb-6 mt-12 font-light">
+            <p className="text-lg md:text-xl text-foreground/80 mb-3 mt-8">
               Learning new skills is only the first step, now let's put them to work!
             </p>
-            <p className="text-xl text-foreground/80 italic">
+            <p className="text-base text-foreground/70">
               Browse <span className="font-semibold">internal</span> roles at ACFE and <span className="font-semibold underline">external</span> roles with our Partners!
             </p>
           </div>
@@ -79,72 +78,72 @@ export const Jobs = () => {
       </section>
 
       {/* Job Listings */}
-      <section className="py-16 bg-background">
+      <section className="py-12 bg-background">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto">
             {jobs.map((job) => (
-              <Card key={job.id} className="border-none shadow-lg bg-card overflow-hidden">
-                <div className="bg-foreground p-8 flex justify-center">
+              <Card key={job.id} className="border border-border hover:border-primary transition-colors shadow-sm bg-card overflow-hidden">
+                <div className="bg-muted/50 p-4 flex justify-center border-b border-border">
                   <img 
                     src={acfeLogo} 
                     alt="ACFE Logo" 
-                    className="h-32 w-auto brightness-0 invert"
+                    className="h-16 w-auto"
                   />
                 </div>
-                <CardContent className="p-8 space-y-6">
+                <CardContent className="p-6 space-y-4">
                   <div>
-                    <h2 className="text-xl font-bold text-foreground mb-2">
+                    <h2 className="text-lg font-bold text-foreground mb-1">
                       {job.title}
                     </h2>
-                    <p className="text-sm text-muted-foreground mb-4">
+                    <p className="text-xs text-muted-foreground mb-3">
                       {job.organization}
                     </p>
-                    <div className="flex items-center gap-4 text-sm">
+                    <div className="flex items-center gap-3 text-xs">
                       <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4 text-primary" />
-                        <span className="font-semibold text-foreground">{job.location}:</span>
+                        <MapPin className="h-3 w-3 text-primary" />
+                        <span className="font-medium text-foreground">{job.location}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4 text-primary" />
+                        <Clock className="h-3 w-3 text-primary" />
                         <span className="text-foreground">{job.type}</span>
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <h3 className="font-bold text-foreground mb-2">Description:</h3>
-                    <p className="text-foreground/90 leading-relaxed">
+                    <h3 className="text-sm font-semibold text-foreground mb-1">Description:</h3>
+                    <p className="text-sm text-foreground/80 leading-relaxed">
                       {job.description}
                     </p>
                   </div>
 
                   <div>
-                    <h3 className="font-bold text-foreground mb-3">Requirements:</h3>
-                    <ul className="space-y-3">
+                    <h3 className="text-sm font-semibold text-foreground mb-2">Requirements:</h3>
+                    <ul className="space-y-2">
                       {job.requirements.map((req, idx) => (
-                        <li key={idx} className="text-foreground/90">
-                          <span className="font-semibold">{req.label}</span> {req.value}
+                        <li key={idx} className="text-sm text-foreground/80">
+                          <span className="font-medium">{req.label}</span> {req.value}
                         </li>
                       ))}
                     </ul>
                   </div>
 
                   <div>
-                    <h3 className="font-bold text-foreground mb-2">Responsibilities:</h3>
-                    <p className="text-foreground/90 leading-relaxed">
+                    <h3 className="text-sm font-semibold text-foreground mb-1">Responsibilities:</h3>
+                    <p className="text-sm text-foreground/80 leading-relaxed">
                       {job.responsibilities}
                     </p>
                   </div>
 
                   <div>
-                    <h3 className="font-bold text-foreground mb-2">Remuneration:</h3>
-                    <p className="text-foreground/90 leading-relaxed">
+                    <h3 className="text-sm font-semibold text-foreground mb-1">Remuneration:</h3>
+                    <p className="text-sm text-foreground/80 leading-relaxed">
                       {job.remuneration}
                     </p>
                   </div>
 
                   <Button 
-                    className="w-full bg-foreground text-background hover:bg-foreground/90 font-bold text-lg py-6 rounded-full"
+                    className="w-full bg-foreground text-background hover:bg-foreground/90 font-semibold text-sm py-5 rounded-full"
                     asChild
                   >
                     <a href="mailto:info@acloudforeveryone.org?subject=Application for Project Coordinator Role">
