@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Cloud, Users, BookOpen, Globe, Sparkles, Award, FileText, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png';
+import johannesburgLogo from '@/assets/johannesburg-logo.png';
 export const Landing = () => {
   const {
     user
@@ -91,16 +93,20 @@ export const Landing = () => {
         </div>
       </section>
 
-      {/* Stats Section */}
+      {/* Partners Section */}
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto text-center">
-            
-            <div>
-              
-              
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold mb-4">Our Partners</h2>
+            <p className="text-xl text-muted-foreground">Collaborating with leading institutions</p>
+          </div>
+          <div className="flex flex-wrap justify-center items-center gap-12 max-w-5xl mx-auto">
+            <div className="flex items-center justify-center">
+              <img src={eastAfricanUniversityLogo} alt="The East African University" className="h-24 w-auto object-contain" />
             </div>
-            
+            <div className="flex items-center justify-center">
+              <img src={johannesburgLogo} alt="Johannesburg" className="h-24 w-auto object-contain" />
+            </div>
           </div>
         </div>
       </section>
