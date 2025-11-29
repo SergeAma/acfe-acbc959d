@@ -7,7 +7,7 @@ interface Profile {
   id: string;
   email: string;
   full_name: string | null;
-  role: 'mentor' | 'student';
+  role: 'admin' | 'mentor' | 'student';
   bio: string | null;
   avatar_url: string | null;
   country: string | null;
@@ -19,7 +19,7 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, fullName: string, role: 'mentor' | 'student') => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -34,17 +34,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
+    // Fetch profile data
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
 
-    if (error) {
-      console.error('Error fetching profile:', error);
+    if (profileError) {
+      console.error('Error fetching profile:', profileError);
       return null;
     }
-    return data;
+
+    // Fetch role from user_roles table (source of truth)
+    const { data: roleData, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (roleError) {
+      console.error('Error fetching role:', roleError);
+    }
+
+    // Use role from user_roles if available, fallback to profile role
+    const role = roleData?.role || profileData.role;
+
+    return {
+      ...profileData,
+      role: role as 'admin' | 'mentor' | 'student'
+    };
   };
 
   const refreshProfile = async () => {
@@ -105,14 +126,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
-  const signUp = async (email: string, password: string, fullName: string, role: 'mentor' | 'student') => {
+  const signUp = async (email: string, password: string, fullName: string) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           full_name: fullName,
-          role: role,
         },
         emailRedirectTo: `${window.location.origin}/`,
       },
@@ -127,7 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else {
       toast({
         title: "Account created!",
-        description: "Welcome to A Cloud for Everyone",
+        description: "Welcome to A Cloud for Everyone. All users start as students.",
       });
     }
 

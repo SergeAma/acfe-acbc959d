@@ -14,7 +14,6 @@ const authSchema = z.object({
   email: z.string().email('Invalid email address').max(255),
   password: z.string().min(6, 'Password must be at least 6 characters').max(100),
   fullName: z.string().min(2, 'Name must be at least 2 characters').max(100).optional(),
-  role: z.enum(['mentor', 'student']).optional(),
 });
 
 export const Auth = () => {
@@ -30,7 +29,6 @@ export const Auth = () => {
     email: '',
     password: '',
     fullName: '',
-    role: (searchParams.get('role') as 'mentor' | 'student') || 'student',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -80,8 +78,7 @@ export const Auth = () => {
       const { error } = await signUp(
         formData.email,
         formData.password,
-        formData.fullName,
-        formData.role
+        formData.fullName
       );
       if (!error) {
         navigate('/dashboard');
@@ -180,27 +177,10 @@ export const Auth = () => {
                   />
                   {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                 </div>
-                <div className="space-y-3">
-                  <Label>I want to</Label>
-                  <RadioGroup
-                    value={formData.role}
-                    onValueChange={(value) => setFormData({ ...formData, role: value as 'mentor' | 'student' })}
-                  >
-                    <div className="flex items-center space-x-2 border rounded-lg p-3 hover:border-primary cursor-pointer">
-                      <RadioGroupItem value="student" id="student" />
-                      <Label htmlFor="student" className="cursor-pointer flex-1">
-                        <div className="font-semibold">Learn as a Student</div>
-                        <div className="text-sm text-muted-foreground">Access courses and learn from mentors</div>
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2 border rounded-lg p-3 hover:border-primary cursor-pointer">
-                      <RadioGroupItem value="mentor" id="mentor" />
-                      <Label htmlFor="mentor" className="cursor-pointer flex-1">
-                        <div className="font-semibold">Teach as a Mentor</div>
-                        <div className="text-sm text-muted-foreground">Create courses and guide students</div>
-                      </Label>
-                    </div>
-                  </RadioGroup>
+                <div className="rounded-lg bg-muted p-3">
+                  <p className="text-sm text-muted-foreground">
+                    All new users start as students. Want to become a mentor? You can request mentor access from your dashboard after signing up.
+                  </p>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Account'}

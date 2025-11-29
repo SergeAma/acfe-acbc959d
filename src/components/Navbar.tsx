@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Cloud, LogOut, User, BookOpen, Library } from 'lucide-react';
+import { Cloud, LogOut, User, BookOpen, Library, Shield } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +38,14 @@ export const Navbar = () => {
                   <Button variant="ghost" size="sm">
                     <BookOpen className="h-4 w-4 mr-2" />
                     My Courses
+                  </Button>
+                </Link>
+              )}
+              {profile?.role === 'admin' && (
+                <Link to="/admin">
+                  <Button variant="ghost" size="sm">
+                    <Shield className="h-4 w-4 mr-2" />
+                    Admin Panel
                   </Button>
                 </Link>
               )}
