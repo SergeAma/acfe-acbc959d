@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Cloud, LogOut, User, BookOpen, Library, Shield, Instagram, Linkedin } from 'lucide-react';
+import { LogOut, User, BookOpen, Library, Shield, Instagram, Linkedin } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { NavLink } from '@/components/NavLink';
+import acfeLogo from '@/assets/acfe-logo.png';
 
 export const Navbar = () => {
   const { user, profile, signOut } = useAuth();
@@ -19,9 +20,8 @@ export const Navbar = () => {
     <nav className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-6 h-20 flex items-center justify-between">
         {/* Logo - Top Left */}
-        <Link to="/" className="flex items-center gap-2 text-xl font-bold text-foreground hover:text-primary transition-colors">
-          <Cloud className="h-8 w-8 text-primary" />
-          <span>A Cloud for Everyone</span>
+        <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
+          <img src={acfeLogo} alt="A Cloud for Everyone" className="h-12 w-auto" />
         </Link>
 
         {/* Navigation Tabs - Top Right */}
