@@ -18,24 +18,24 @@ export const Navbar = () => {
   return (
     <nav className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-6 h-20 flex items-center justify-between">
+        {/* Logo - Top Left */}
         <Link to="/" className="flex items-center gap-2 text-xl font-bold text-foreground hover:text-primary transition-colors">
           <Cloud className="h-8 w-8 text-primary" />
-          <span className="hidden sm:inline">A Cloud for Everyone</span>
+          <span>A Cloud for Everyone</span>
         </Link>
 
-        <div className="flex items-center gap-6">
+        {/* Navigation Tabs - Top Right */}
+        <div className="flex items-center gap-8">
           <NavLink to="/">Home</NavLink>
           <NavLink to="#partners">Partners</NavLink>
           <NavLink to="#jobs">Jobs</NavLink>
-          <NavLink to="#about">About</NavLink>
           
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <User className="h-4 w-4 mr-2" />
-                  My Account
-                </Button>
+                <button className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                  My account
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-popover z-[100]">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
@@ -69,15 +69,15 @@ export const Navbar = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Link to="/auth">
-              <Button variant="ghost" size="sm">My Account</Button>
+            <Link to="/auth" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              My account
             </Link>
           )}
           
-          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors">
             <Instagram className="h-5 w-5" />
           </a>
-          <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+          <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors">
             <Linkedin className="h-5 w-5" />
           </a>
         </div>
