@@ -41,7 +41,7 @@ export const Partners = () => {
               <h2 className="text-2xl font-bold text-foreground mb-4">JOHUSTLEBURG</h2>
             </div>
             <p className="text-lg text-foreground/90 leading-relaxed text-center">
-              A Cloud for Everyone ACr has partnered with community builders at Honest Travel's ohustleburg 
+              A Cloud for Everyone (ACFE) has partnered with community builders at Honest Travel's ohustleburg 
               Foundation to revolutionize the perception of travel and tourism in Africa. Their joint ambition is to transform 
               their Johannesburg hub into a powerhouse of digital education and entrepreneurship in the heart of 
               Maboneng. Over the next five years, they aim to equip 10,000 students with the skills needed to succeed in the 
