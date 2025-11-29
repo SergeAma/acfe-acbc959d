@@ -5,6 +5,7 @@ import { Cloud, Users, BookOpen, Globe, Sparkles, Award, FileText, TrendingUp, E
 import { useAuth } from '@/contexts/AuthContext';
 import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png';
 import johannesburgLogo from '@/assets/johannesburg-logo.png';
+import acfeLogo from '@/assets/acfe-logo.png';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -31,6 +32,11 @@ export const Landing = () => {
   return <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-muted min-h-screen flex items-center">
+        {/* Logo in top left corner of hero */}
+        <div className="absolute top-8 left-8 z-10">
+          <img src={acfeLogo} alt="A Cloud for Everyone" className="h-16 w-auto" />
+        </div>
+        
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6 text-foreground">
