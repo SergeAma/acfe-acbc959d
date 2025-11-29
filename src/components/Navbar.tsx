@@ -21,7 +21,7 @@ export const Navbar = () => {
       <div className="container mx-auto px-6 h-20 flex items-center justify-between">
         {/* Logo - Top Left */}
         <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
-          <img src={acfeLogo} alt="A Cloud for Everyone" className="h-16 w-auto" />
+          <img src={acfeLogo} alt="A Cloud for Everyone" className="h-24 w-auto" />
         </Link>
 
         {/* Navigation Tabs - Top Right */}
