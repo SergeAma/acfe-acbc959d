@@ -3,12 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Cloud, Users, BookOpen, Globe, Sparkles, Award, FileText, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-
 export const Landing = () => {
-  const { user } = useAuth();
-
-  return (
-    <div className="min-h-screen">
+  const {
+    user
+  } = useAuth();
+  return <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-muted py-20 md:py-32">
         <div className="container mx-auto px-4">
@@ -23,14 +22,11 @@ export const Landing = () => {
               Training delivered by African tech experts.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              {user ? (
-                <Link to="/dashboard">
+              {user ? <Link to="/dashboard">
                   <Button size="lg" className="text-lg px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
                     Go to Dashboard
                   </Button>
-                </Link>
-              ) : (
-                <>
+                </Link> : <>
                   <Link to="/auth?mode=signup&role=student">
                     <Button size="lg" className="text-lg px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
                       START LEARNING
@@ -41,8 +37,7 @@ export const Landing = () => {
                       BECOME A MENTOR
                     </Button>
                   </Link>
-                </>
-              )}
+                </>}
             </div>
           </div>
         </div>
@@ -100,18 +95,12 @@ export const Landing = () => {
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto text-center">
+            
             <div>
-              <div className="text-5xl font-bold text-primary mb-2">500+</div>
-              <div className="text-muted-foreground">Active Students</div>
+              
+              
             </div>
-            <div>
-              <div className="text-5xl font-bold text-secondary mb-2">50+</div>
-              <div className="text-muted-foreground">Expert Mentors</div>
-            </div>
-            <div>
-              <div className="text-5xl font-bold text-accent mb-2">100+</div>
-              <div className="text-muted-foreground">Courses Available</div>
-            </div>
+            
           </div>
         </div>
       </section>
@@ -183,15 +172,12 @@ export const Landing = () => {
               </li>
             </ol>
           </div>
-          {!user && (
-            <Link to="/auth?mode=signup">
+          {!user && <Link to="/auth?mode=signup">
               <Button size="lg" className="text-lg px-10 bg-foreground hover:bg-foreground/90 text-background rounded-full border-2 border-background">
                 START TODAY
               </Button>
-            </Link>
-          )}
+            </Link>}
         </div>
       </section>
-    </div>
-  );
+    </div>;
 };
