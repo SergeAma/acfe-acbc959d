@@ -17,12 +17,12 @@ import { Navbar } from '@/components/Navbar';
 const authSchema = z.object({
   email: z.string().email('Invalid email address').max(255),
   password: z.string().min(6, 'Password must be at least 6 characters').max(100),
-  firstName: z.string().min(2, 'First name must be at least 2 characters').max(100).optional(),
-  lastName: z.string().min(2, 'Last name must be at least 2 characters').max(100).optional(),
-  phone: z.string().min(10, 'Phone number must be at least 10 digits').max(20).optional(),
+  firstName: z.string().min(2, 'First name must be at least 2 characters').max(100),
+  lastName: z.string().min(2, 'Last name must be at least 2 characters').max(100),
+  phone: z.string().min(10, 'Phone number must be at least 10 digits').max(20),
   age: z.string().min(1, 'Please select your age').optional(),
-  university: z.string().min(2, 'Please enter your university or college').max(200).optional(),
-  city: z.string().min(2, 'Please enter your city').max(100).optional(),
+  university: z.string().min(2, 'Please enter your university or college').max(200),
+  city: z.string().min(2, 'Please enter your city').max(100),
   cloudBrands: z.array(z.string()).optional(),
   emailConsent: z.boolean().optional(),
 });
