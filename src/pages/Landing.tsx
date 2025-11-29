@@ -227,7 +227,7 @@ export const Landing = () => {
               </li>
               <li className="flex gap-3">
                 <span className="font-bold">2)</span>
-                <span>Attend guided training</span>
+                <span>Complete on-demand training</span>
               </li>
               <li className="flex gap-3">
                 <span className="font-bold">3)</span>
