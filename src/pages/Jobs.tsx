@@ -61,17 +61,14 @@ export const Jobs = () => {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative bg-muted py-12 overflow-hidden">
+      <section className="relative border-b border-border py-8 bg-gradient-to-b from-muted/30 to-background">
         <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-foreground border-b-2 border-foreground inline-block pb-1">
+          <div className="max-w-2xl mx-auto text-center space-y-3">
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
               Jobs Board
             </h1>
-            <p className="text-lg md:text-xl text-foreground/80 mb-3 mt-8">
-              Learning new skills is only the first step, now let's put them to work!
-            </p>
-            <p className="text-base text-foreground/70">
-              Browse <span className="font-semibold">internal</span> roles at ACFE and <span className="font-semibold underline">external</span> roles with our Partners!
+            <p className="text-base text-muted-foreground">
+              Browse <span className="font-medium text-foreground">internal</span> roles at ACFE and <span className="font-medium text-foreground">external</span> opportunities with our partners
             </p>
           </div>
         </div>
