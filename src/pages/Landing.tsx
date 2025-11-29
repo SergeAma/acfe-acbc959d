@@ -32,9 +32,29 @@ export const Landing = () => {
   return <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-muted min-h-screen flex items-center">
-        {/* Logo in top left corner of hero */}
-        <div className="absolute top-8 left-8 z-10">
+        {/* Logo and Navigation Tabs in top left corner */}
+        <div className="absolute top-8 left-8 z-10 flex flex-col gap-4">
           <img src={acfeLogo} alt="A Cloud for Everyone" className="h-28 w-auto" />
+          <nav className="flex gap-6 text-sm font-medium">
+            <Link to="/" className="text-foreground hover:text-primary transition-colors">
+              1/ Home
+            </Link>
+            <Link to="#partners" className="text-foreground hover:text-primary transition-colors">
+              2/ Partners
+            </Link>
+            <Link to="#jobs" className="text-foreground hover:text-primary transition-colors">
+              3/ Jobs
+            </Link>
+            {user ? (
+              <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors">
+                4/ My account
+              </Link>
+            ) : (
+              <Link to="/auth" className="text-foreground hover:text-primary transition-colors">
+                4/ My account
+              </Link>
+            )}
+          </nav>
         </div>
         
         <div className="container mx-auto px-4">
