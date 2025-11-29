@@ -26,9 +26,15 @@ export const Navbar = () => {
 
         {/* Navigation Tabs - Top Right */}
         <div className="flex items-center gap-8">
-          <NavLink to="/">Home</NavLink>
-          <NavLink to="#partners">Partners</NavLink>
-          <NavLink to="#jobs">Jobs</NavLink>
+          <NavLink to="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+            Home
+          </NavLink>
+          <NavLink to="/partners" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+            Partners
+          </NavLink>
+          <NavLink to="/jobs" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+            Jobs
+          </NavLink>
           
           {user ? (
             <DropdownMenu>
