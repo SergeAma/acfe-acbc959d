@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Cloud, Users, BookOpen, Globe, Sparkles, Award, FileText, TrendingUp, ExternalLink, Rss } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { Navbar } from '@/components/Navbar';
 import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png';
 import johannesburgLogo from '@/assets/johannesburg-logo.png';
 import acfeLogo from '@/assets/acfe-logo.png';
@@ -30,12 +31,9 @@ export const Landing = () => {
     staleTime: 1000 * 60 * 30, // Cache for 30 minutes
   });
   return <div className="min-h-screen">
+      <Navbar />
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-muted min-h-screen flex items-end pb-20">
-        {/* Logo in top left corner of hero */}
-        <div className="absolute top-8 left-8 z-10">
-          <img src={acfeLogo} alt="A Cloud for Everyone" className="h-28 w-auto" />
-        </div>
         
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
