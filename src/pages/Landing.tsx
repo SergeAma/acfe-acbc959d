@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Cloud, Users, BookOpen, Globe, Sparkles, Award } from 'lucide-react';
+import { Cloud, Users, BookOpen, Globe, Sparkles, Award, FileText, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export const Landing = () => {
@@ -10,36 +10,35 @@ export const Landing = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-background via-muted/30 to-accent/10 py-20 md:py-32">
+      <section className="relative overflow-hidden bg-muted py-20 md:py-32">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
-              <Sparkles className="h-4 w-4" />
-              Empowering African Youth Through Digital Skills
-            </div>
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-secondary bg-clip-text text-transparent">
-              A Cloud for Everyone
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-foreground">
+              Join 300+ Graduates and Master a Career-Boosting Digital Skill!
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
-              Connect with mentors and unlock your potential through personalized digital upskilling courses designed for African youth
+            <p className="text-lg md:text-xl text-foreground/80 mb-4 leading-relaxed">
+              Zero experience required | Any background | Learn Anytime
+            </p>
+            <p className="text-base text-foreground/70 mb-8">
+              Training delivered by African tech experts.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {user ? (
                 <Link to="/dashboard">
-                  <Button size="lg" className="text-lg px-8">
+                  <Button size="lg" className="text-lg px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
                     Go to Dashboard
                   </Button>
                 </Link>
               ) : (
                 <>
                   <Link to="/auth?mode=signup&role=student">
-                    <Button size="lg" className="text-lg px-8">
-                      Start Learning
+                    <Button size="lg" className="text-lg px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
+                      START LEARNING
                     </Button>
                   </Link>
                   <Link to="/auth?mode=signup&role=mentor">
-                    <Button size="lg" variant="outline" className="text-lg px-8">
-                      Become a Mentor
+                    <Button size="lg" className="text-lg px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
+                      BECOME A MENTOR
                     </Button>
                   </Link>
                 </>
@@ -117,18 +116,77 @@ export const Landing = () => {
         </div>
       </section>
 
+      {/* Recommended Reading / Thought Leadership Section */}
+      <section className="py-20 bg-muted">
+        <div className="container mx-auto px-4">
+          <h2 className="text-4xl font-bold text-center mb-12 text-foreground">Recommended Reading</h2>
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <Card className="border-none shadow-lg hover:shadow-xl transition-shadow bg-card">
+              <CardContent className="p-6">
+                <div className="h-48 bg-secondary/20 rounded-lg mb-4 flex items-center justify-center">
+                  <FileText className="h-16 w-16 text-secondary" />
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-card-foreground">Digital Skills for Youth Employment in Africa</h3>
+                <p className="text-muted-foreground mb-4">
+                  Fostering Digital Transformation for Social Inclusion, Gender Equality & Development
+                </p>
+                <Button variant="outline" className="w-full">Read More</Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-lg hover:shadow-xl transition-shadow bg-card">
+              <CardContent className="p-6">
+                <div className="h-48 bg-accent/20 rounded-lg mb-4 flex items-center justify-center">
+                  <TrendingUp className="h-16 w-16 text-accent" />
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-card-foreground">Women's Digital Financial Inclusion in Africa</h3>
+                <p className="text-muted-foreground mb-4">
+                  Key findings from a comprehensive study across African nations
+                </p>
+                <Button variant="outline" className="w-full">Read More</Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-lg hover:shadow-xl transition-shadow bg-card">
+              <CardContent className="p-6">
+                <div className="h-48 bg-secondary/20 rounded-lg mb-4 flex items-center justify-center">
+                  <Globe className="h-16 w-16 text-secondary" />
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-card-foreground">Demand for Digital Skills in Sub-Saharan Africa</h3>
+                <p className="text-muted-foreground mb-4">
+                  Five-country study on the evolving digital skills landscape
+                </p>
+                <Button variant="outline" className="w-full">Read More</Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-primary via-secondary to-accent">
+      <section className="py-20 bg-foreground">
         <div className="container mx-auto px-4 text-center">
-          <Award className="h-16 w-16 mx-auto mb-6 text-white" />
-          <h2 className="text-4xl font-bold text-white mb-4">Ready to Transform Your Future?</h2>
-          <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Join thousands of learners who are building their digital skills and creating opportunities for themselves
-          </p>
+          <h2 className="text-3xl font-bold text-background mb-4">Where do I start?</h2>
+          <div className="max-w-xl mx-auto mb-8 text-left bg-background/90 p-8 rounded-lg">
+            <ol className="space-y-4 text-foreground">
+              <li className="flex gap-3">
+                <span className="font-bold">1)</span>
+                <span>Register to start learning</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="font-bold">2)</span>
+                <span>Attend guided training</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="font-bold">3)</span>
+                <span>Receive ongoing mentorship from industry experts</span>
+              </li>
+            </ol>
+          </div>
           {!user && (
             <Link to="/auth?mode=signup">
-              <Button size="lg" variant="secondary" className="text-lg px-8">
-                Get Started Today
+              <Button size="lg" className="text-lg px-10 bg-foreground hover:bg-foreground/90 text-background rounded-full border-2 border-background">
+                START TODAY
               </Button>
             </Link>
           )}
