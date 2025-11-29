@@ -7,8 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Cloud, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
+import acfeIcon from '@/assets/acfe-icon.png';
 
 const authSchema = z.object({
   email: z.string().email('Invalid email address').max(255),
@@ -93,7 +94,7 @@ export const Auth = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <Cloud className="h-12 w-12 text-primary" />
+            <img src={acfeIcon} alt="ACFE Logo" className="h-16 w-auto" />
           </div>
           <CardTitle className="text-2xl">Welcome to A Cloud for Everyone</CardTitle>
           <CardDescription>
