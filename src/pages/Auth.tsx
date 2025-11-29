@@ -319,6 +319,10 @@ export const Auth = () => {
                   </label>
                 </div>
 
+                <p className="text-sm text-muted-foreground text-center">
+                  All accounts start as student accounts. You can request mentor access after signing up.
+                </p>
+
                 <Button type="submit" className="w-full bg-foreground text-background hover:bg-foreground/90 font-semibold" disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'REGISTER'}
                 </Button>
