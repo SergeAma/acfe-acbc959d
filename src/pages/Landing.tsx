@@ -41,7 +41,7 @@ export const Landing = () => {
   return <div className="min-h-screen">
       <Navbar />
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-muted min-h-screen flex items-end pb-20">
+      <section className="relative overflow-hidden bg-muted min-h-screen flex items-end pb-28">
         
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
