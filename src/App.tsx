@@ -12,6 +12,8 @@ import { AdminDashboard } from "./pages/AdminDashboard";
 import { Courses } from "./pages/Courses";
 import { CourseDetail } from "./pages/CourseDetail";
 import { CreateCourse } from "./pages/CreateCourse";
+import { Partners } from "./pages/Partners";
+import { Jobs } from "./pages/Jobs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +27,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Landing />} />
+            <Route path="/partners" element={<Partners />} />
+            <Route path="/jobs" element={<Jobs />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/courses" element={<Courses />} />
             <Route path="/courses/:id" element={<CourseDetail />} />
