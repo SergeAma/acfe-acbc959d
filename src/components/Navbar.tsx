@@ -26,20 +26,20 @@ export const Navbar = () => {
 
         {/* Navigation Tabs - Top Right */}
         <div className="flex items-center gap-8">
-          <NavLink to="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+          <NavLink to="/" className="text-sm font-bold text-foreground hover:text-primary transition-colors">
             Home
           </NavLink>
-          <NavLink to="/partners" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+          <NavLink to="/partners" className="text-sm font-bold text-foreground hover:text-primary transition-colors">
             Partners
           </NavLink>
-          <NavLink to="/jobs" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+          <NavLink to="/jobs" className="text-sm font-bold text-foreground hover:text-primary transition-colors">
             Jobs
           </NavLink>
           
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                <button className="text-sm font-bold text-foreground hover:text-primary transition-colors">
                   My account
                 </button>
               </DropdownMenuTrigger>
@@ -75,7 +75,7 @@ export const Navbar = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Link to="/auth" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+            <Link to="/auth" className="text-sm font-bold text-foreground hover:text-primary transition-colors">
               My account
             </Link>
           )}
