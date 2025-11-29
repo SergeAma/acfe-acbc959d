@@ -17,18 +17,26 @@ interface NewsArticle {
   description: string;
   source: string;
 }
-
 export const Landing = () => {
-  const { user } = useAuth();
-  
-  const { data: newsData, isLoading: newsLoading } = useQuery({
+  const {
+    user
+  } = useAuth();
+  const {
+    data: newsData,
+    isLoading: newsLoading
+  } = useQuery({
     queryKey: ['tech-news'],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('fetch-tech-news');
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('fetch-tech-news');
       if (error) throw error;
-      return data as { articles: NewsArticle[] };
+      return data as {
+        articles: NewsArticle[];
+      };
     },
-    staleTime: 1000 * 60 * 30, // Cache for 30 minutes
+    staleTime: 1000 * 60 * 30 // Cache for 30 minutes
   });
   return <div className="min-h-screen">
       <Navbar />
@@ -117,7 +125,7 @@ export const Landing = () => {
       </section>
 
       {/* Partners Section */}
-      <section className="py-20 bg-muted/30">
+      <section className="py-20 bg-muted/30 rounded-md">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Our Partners</h2>
@@ -148,24 +156,18 @@ export const Landing = () => {
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-            {newsLoading ? (
-              // Loading skeletons
-              Array.from({ length: 6 }).map((_, i) => (
-                <Card key={i} className="border-none shadow-lg bg-card">
+            {newsLoading ?
+          // Loading skeletons
+          Array.from({
+            length: 6
+          }).map((_, i) => <Card key={i} className="border-none shadow-lg bg-card">
                   <CardContent className="p-6 space-y-4">
                     <Skeleton className="h-6 w-3/4" />
                     <Skeleton className="h-4 w-full" />
                     <Skeleton className="h-4 w-full" />
                     <Skeleton className="h-4 w-1/2" />
                   </CardContent>
-                </Card>
-              ))
-            ) : newsData?.articles && newsData.articles.length > 0 ? (
-              newsData.articles.map((article, index) => (
-                <Card 
-                  key={index} 
-                  className="border-none shadow-lg hover:shadow-xl transition-all duration-300 bg-card group hover:scale-105"
-                >
+                </Card>) : newsData?.articles && newsData.articles.length > 0 ? newsData.articles.map((article, index) => <Card key={index} className="border-none shadow-lg hover:shadow-xl transition-all duration-300 bg-card group hover:scale-105">
                   <CardContent className="p-6 space-y-4">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="text-lg font-bold text-card-foreground line-clamp-2 group-hover:text-primary transition-colors">
@@ -184,31 +186,22 @@ export const Landing = () => {
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {new Date(article.pubDate).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        })}
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
                       </span>
                     </div>
                     
-                    <a 
-                      href={article.link} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="block"
-                    >
+                    <a href={article.link} target="_blank" rel="noopener noreferrer" className="block">
                       <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                         Read Article
                       </Button>
                     </a>
                   </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="col-span-full text-center py-12">
+                </Card>) : <div className="col-span-full text-center py-12">
                 <p className="text-muted-foreground">No news articles available at the moment. Check back soon!</p>
-              </div>
-            )}
+              </div>}
           </div>
         </div>
       </section>
