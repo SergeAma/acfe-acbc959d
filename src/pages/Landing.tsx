@@ -1,14 +1,33 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Cloud, Users, BookOpen, Globe, Sparkles, Award, FileText, TrendingUp } from 'lucide-react';
+import { Cloud, Users, BookOpen, Globe, Sparkles, Award, FileText, TrendingUp, ExternalLink, Rss } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png';
 import johannesburgLogo from '@/assets/johannesburg-logo.png';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Skeleton } from '@/components/ui/skeleton';
+interface NewsArticle {
+  title: string;
+  link: string;
+  pubDate: string;
+  description: string;
+  source: string;
+}
+
 export const Landing = () => {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
+  
+  const { data: newsData, isLoading: newsLoading } = useQuery({
+    queryKey: ['tech-news'],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('fetch-tech-news');
+      if (error) throw error;
+      return data as { articles: NewsArticle[] };
+    },
+    staleTime: 1000 * 60 * 30, // Cache for 30 minutes
+  });
   return <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-muted py-20 md:py-32">
@@ -111,49 +130,81 @@ export const Landing = () => {
         </div>
       </section>
 
-      {/* Recommended Reading / Thought Leadership Section */}
+      {/* Latest Tech News Section */}
       <section className="py-20 bg-muted">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-12 text-foreground">Recommended Reading</h2>
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <Card className="border-none shadow-lg hover:shadow-xl transition-shadow bg-card">
-              <CardContent className="p-6">
-                <div className="h-48 bg-secondary/20 rounded-lg mb-4 flex items-center justify-center">
-                  <FileText className="h-16 w-16 text-secondary" />
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-card-foreground">Digital Skills for Youth Employment in Africa</h3>
-                <p className="text-muted-foreground mb-4">
-                  Fostering Digital Transformation for Social Inclusion, Gender Equality & Development
-                </p>
-                <Button variant="outline" className="w-full">Read More</Button>
-              </CardContent>
-            </Card>
-
-            <Card className="border-none shadow-lg hover:shadow-xl transition-shadow bg-card">
-              <CardContent className="p-6">
-                <div className="h-48 bg-accent/20 rounded-lg mb-4 flex items-center justify-center">
-                  <TrendingUp className="h-16 w-16 text-accent" />
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-card-foreground">Women's Digital Financial Inclusion in Africa</h3>
-                <p className="text-muted-foreground mb-4">
-                  Key findings from a comprehensive study across African nations
-                </p>
-                <Button variant="outline" className="w-full">Read More</Button>
-              </CardContent>
-            </Card>
-
-            <Card className="border-none shadow-lg hover:shadow-xl transition-shadow bg-card">
-              <CardContent className="p-6">
-                <div className="h-48 bg-secondary/20 rounded-lg mb-4 flex items-center justify-center">
-                  <Globe className="h-16 w-16 text-secondary" />
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-card-foreground">Demand for Digital Skills in Sub-Saharan Africa</h3>
-                <p className="text-muted-foreground mb-4">
-                  Five-country study on the evolving digital skills landscape
-                </p>
-                <Button variant="outline" className="w-full">Read More</Button>
-              </CardContent>
-            </Card>
+          <div className="text-center mb-12">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Rss className="h-8 w-8 text-primary animate-pulse" />
+              <h2 className="text-4xl font-bold text-foreground">Latest Tech News</h2>
+            </div>
+            <p className="text-xl text-muted-foreground">
+              Stay updated with the latest African tech, education, and startup funding news
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+            {newsLoading ? (
+              // Loading skeletons
+              Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i} className="border-none shadow-lg bg-card">
+                  <CardContent className="p-6 space-y-4">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </CardContent>
+                </Card>
+              ))
+            ) : newsData?.articles && newsData.articles.length > 0 ? (
+              newsData.articles.map((article, index) => (
+                <Card 
+                  key={index} 
+                  className="border-none shadow-lg hover:shadow-xl transition-all duration-300 bg-card group hover:scale-105"
+                >
+                  <CardContent className="p-6 space-y-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-lg font-bold text-card-foreground line-clamp-2 group-hover:text-primary transition-colors">
+                        {article.title}
+                      </h3>
+                      <ExternalLink className="h-5 w-5 text-muted-foreground flex-shrink-0 group-hover:text-primary transition-colors" />
+                    </div>
+                    
+                    <p className="text-sm text-muted-foreground line-clamp-3">
+                      {article.description}
+                    </p>
+                    
+                    <div className="flex items-center justify-between pt-2 border-t border-border">
+                      <span className="text-xs font-medium text-primary">
+                        {article.source}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(article.pubDate).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                    
+                    <a 
+                      href={article.link} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                        Read Article
+                      </Button>
+                    </a>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground">No news articles available at the moment. Check back soon!</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
