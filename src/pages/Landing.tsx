@@ -30,7 +30,7 @@ export const Landing = () => {
   });
   return <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-muted py-20 md:py-32">
+      <section className="relative overflow-hidden bg-muted min-h-screen flex items-center">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6 text-foreground">

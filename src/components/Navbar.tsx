@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Cloud, LogOut, User, BookOpen, Library, Shield } from 'lucide-react';
+import { Cloud, LogOut, User, BookOpen, Library, Shield, Instagram, Linkedin } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,80 +10,76 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { NavLink } from '@/components/NavLink';
 
 export const Navbar = () => {
   const { user, profile, signOut } = useAuth();
 
   return (
-    <nav className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+    <nav className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
+      <div className="container mx-auto px-6 h-20 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 text-xl font-bold text-foreground hover:text-primary transition-colors">
-          <Cloud className="h-6 w-6 text-primary" />
-          A Cloud for Everyone
+          <Cloud className="h-8 w-8 text-primary" />
+          <span className="hidden sm:inline">A Cloud for Everyone</span>
         </Link>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
+          <NavLink to="/">Home</NavLink>
+          <NavLink to="#partners">Partners</NavLink>
+          <NavLink to="#jobs">Jobs</NavLink>
+          <NavLink to="#about">About</NavLink>
+          
           {user ? (
-            <>
-              {profile?.role === 'student' && (
-                <Link to="/courses">
-                  <Button variant="ghost" size="sm">
-                    <Library className="h-4 w-4 mr-2" />
-                    Browse Courses
-                  </Button>
-                </Link>
-              )}
-              {profile?.role === 'mentor' && (
-                <Link to="/mentor/courses">
-                  <Button variant="ghost" size="sm">
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    My Courses
-                  </Button>
-                </Link>
-              )}
-              {profile?.role === 'admin' && (
-                <Link to="/admin">
-                  <Button variant="ghost" size="sm">
-                    <Shield className="h-4 w-4 mr-2" />
-                    Admin Panel
-                  </Button>
-                </Link>
-              )}
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <User className="h-4 w-4 mr-2" />
-                    {profile?.full_name || 'Account'}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <User className="h-4 w-4 mr-2" />
+                  My Account
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-popover z-[100]">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard">Dashboard</Link>
+                </DropdownMenuItem>
+                {profile?.role === 'student' && (
                   <DropdownMenuItem asChild>
-                    <Link to="/dashboard">Dashboard</Link>
+                    <Link to="/courses">Browse Courses</Link>
                   </DropdownMenuItem>
+                )}
+                {profile?.role === 'mentor' && (
                   <DropdownMenuItem asChild>
-                    <Link to="/profile">Profile Settings</Link>
+                    <Link to="/mentor/courses">My Courses</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut()}>
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sign Out
+                )}
+                {profile?.role === 'admin' && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin">Admin Panel</Link>
                   </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </>
+                )}
+                <DropdownMenuItem asChild>
+                  <Link to="/profile">Profile Settings</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => signOut()}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
-            <>
-              <Link to="/auth">
-                <Button variant="ghost" size="sm">Sign In</Button>
-              </Link>
-              <Link to="/auth?mode=signup">
-                <Button size="sm">Get Started</Button>
-              </Link>
-            </>
+            <Link to="/auth">
+              <Button variant="ghost" size="sm">My Account</Button>
+            </Link>
           )}
+          
+          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+            <Instagram className="h-5 w-5" />
+          </a>
+          <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+            <Linkedin className="h-5 w-5" />
+          </a>
         </div>
       </div>
     </nav>
