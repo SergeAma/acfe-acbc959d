@@ -92,7 +92,7 @@ export const Landing = () => {
                 </div>
                 <h3 className="text-xl font-bold mb-3">Comprehensive Courses</h3>
                 <p className="text-muted-foreground">
-                  Access structured learning paths covering essential digital skills from web development to data science and more
+                  Outcome-focused training designed to get you job-ready, not just traditional learning—practical skills that lead to real career opportunities
                 </p>
               </CardContent>
             </Card>
