@@ -81,7 +81,7 @@ export const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4">Why Choose Us</h2>
-            <p className="text-xl text-muted-foreground">Building bridges between knowledge and opportunity</p>
+            
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -129,7 +129,7 @@ export const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Our Partners</h2>
-            <p className="text-xl text-muted-foreground">Collaborating with leading institutions</p>
+            
           </div>
           <div className="flex flex-wrap justify-center items-center gap-12 max-w-5xl mx-auto">
             <div className="flex items-center justify-center">
