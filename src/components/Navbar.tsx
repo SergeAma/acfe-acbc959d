@@ -80,7 +80,7 @@ export const Navbar = () => {
             </Link>
           )}
           
-          <a href="https://www.instagram.com/acloudforeveryone/" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors">
+          <a href="https://www.instagram.com/acloudforeveryone" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors">
             <Instagram className="h-5 w-5" />
           </a>
           <a href="https://www.linkedin.com/company/a-cloud-for-everyone" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors">
