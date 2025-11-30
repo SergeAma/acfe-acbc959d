@@ -275,7 +275,7 @@ export const Auth = () => {
                 <div className="space-y-3">
                   <Label>Which of these Cloud brands do you know?</Label>
                   <div className="space-y-2">
-                    {['Google Cloud', 'Microsoft Azure', 'Amazon Web Services'].map((brand) => (
+                    {['Google Cloud', 'Microsoft Azure', 'Amazon Web Services', 'Oracle Cloud', 'IBM Cloud'].map((brand) => (
                       <div key={brand} className="flex items-center space-x-2">
                         <Checkbox
                           id={`brand-${brand}`}
