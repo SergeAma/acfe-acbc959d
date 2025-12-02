@@ -19,6 +19,11 @@ export const ProfileSettings = () => {
     bio: '',
     country: '',
     avatar_url: '',
+    linkedin_url: '',
+    twitter_url: '',
+    instagram_url: '',
+    github_url: '',
+    website_url: '',
   });
 
   useEffect(() => {
@@ -28,6 +33,11 @@ export const ProfileSettings = () => {
         bio: profile.bio || '',
         country: profile.country || '',
         avatar_url: profile.avatar_url || '',
+        linkedin_url: profile.linkedin_url || '',
+        twitter_url: profile.twitter_url || '',
+        instagram_url: profile.instagram_url || '',
+        github_url: profile.github_url || '',
+        website_url: profile.website_url || '',
       });
     }
   }, [profile]);
@@ -44,6 +54,11 @@ export const ProfileSettings = () => {
           bio: formData.bio,
           country: formData.country,
           avatar_url: formData.avatar_url,
+          linkedin_url: formData.linkedin_url,
+          twitter_url: formData.twitter_url,
+          instagram_url: formData.instagram_url,
+          github_url: formData.github_url,
+          website_url: formData.website_url,
         })
         .eq('id', profile?.id);
 
@@ -139,6 +154,65 @@ export const ProfileSettings = () => {
                   onChange={handleChange}
                   placeholder="https://example.com/avatar.jpg"
                 />
+              </div>
+
+              <div className="space-y-4 pt-4 border-t">
+                <h3 className="font-semibold text-lg">Social Media Handles</h3>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="linkedin_url">LinkedIn Profile URL</Label>
+                  <Input
+                    id="linkedin_url"
+                    name="linkedin_url"
+                    value={formData.linkedin_url}
+                    onChange={handleChange}
+                    placeholder="https://linkedin.com/in/yourprofile"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="twitter_url">Twitter/X Profile URL</Label>
+                  <Input
+                    id="twitter_url"
+                    name="twitter_url"
+                    value={formData.twitter_url}
+                    onChange={handleChange}
+                    placeholder="https://twitter.com/yourhandle"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="instagram_url">Instagram Profile URL</Label>
+                  <Input
+                    id="instagram_url"
+                    name="instagram_url"
+                    value={formData.instagram_url}
+                    onChange={handleChange}
+                    placeholder="https://instagram.com/yourhandle"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="github_url">GitHub Profile URL</Label>
+                  <Input
+                    id="github_url"
+                    name="github_url"
+                    value={formData.github_url}
+                    onChange={handleChange}
+                    placeholder="https://github.com/yourusername"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="website_url">Personal Website</Label>
+                  <Input
+                    id="website_url"
+                    name="website_url"
+                    value={formData.website_url}
+                    onChange={handleChange}
+                    placeholder="https://yourwebsite.com"
+                  />
+                </div>
               </div>
 
               <div className="flex justify-between items-center pt-4">

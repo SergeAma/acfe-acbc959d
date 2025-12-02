@@ -300,9 +300,14 @@ export type Database = {
           created_at: string | null
           email: string
           full_name: string | null
+          github_url: string | null
           id: string
+          instagram_url: string | null
+          linkedin_url: string | null
           role: Database["public"]["Enums"]["user_role"]
+          twitter_url: string | null
           updated_at: string | null
+          website_url: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -311,9 +316,14 @@ export type Database = {
           created_at?: string | null
           email: string
           full_name?: string | null
+          github_url?: string | null
           id: string
+          instagram_url?: string | null
+          linkedin_url?: string | null
           role: Database["public"]["Enums"]["user_role"]
+          twitter_url?: string | null
           updated_at?: string | null
+          website_url?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -322,9 +332,14 @@ export type Database = {
           created_at?: string | null
           email?: string
           full_name?: string | null
+          github_url?: string | null
           id?: string
+          instagram_url?: string | null
+          linkedin_url?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          twitter_url?: string | null
           updated_at?: string | null
+          website_url?: string | null
         }
         Relationships: []
       }
