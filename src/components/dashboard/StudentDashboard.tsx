@@ -159,7 +159,7 @@ export const StudentDashboard = () => {
                     </div>
                     <Progress value={enrollment.progress} className="h-2" />
                   </div>
-                  <Link to={`/courses/${enrollment.course.id}`}>
+                  <Link to={`/courses/${enrollment.course.id}/learn`}>
                     <Button className="w-full mt-4">
                       {enrollment.progress === 0 ? 'Start Learning' : 'Continue Learning'}
                     </Button>

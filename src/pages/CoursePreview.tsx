@@ -301,10 +301,16 @@ export const CoursePreview = () => {
           {/* Enrollment Button */}
           {user ? (
             isEnrolled ? (
-              <Button size="lg" disabled className="w-full md:w-auto">
-                <CheckCircle2 className="h-5 w-5 mr-2" />
-                Already Enrolled
-              </Button>
+              <div className="flex gap-3">
+                <Button 
+                  size="lg" 
+                  onClick={() => navigate(`/courses/${id}/learn`)}
+                  className="flex-1"
+                >
+                  <ChevronRight className="h-5 w-5 mr-2" />
+                  Continue Learning
+                </Button>
+              </div>
             ) : (
               <Button size="lg" onClick={handleEnroll} disabled={enrolling} className="w-full md:w-auto">
                 {enrolling ? (
