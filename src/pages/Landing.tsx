@@ -149,7 +149,7 @@ export const Landing = () => {
           <div className="text-center mb-12">
             <div className="flex items-center justify-center gap-3 mb-4">
               <Rss className="h-8 w-8 text-primary animate-pulse" />
-              <h2 className="text-4xl font-bold text-foreground">Latest Tech News</h2>
+              <h2 className="text-4xl font-bold text-foreground">Africa Tech News</h2>
             </div>
             <p className="text-xl text-muted-foreground">
               Stay updated with the latest African tech, education, and startup funding news
