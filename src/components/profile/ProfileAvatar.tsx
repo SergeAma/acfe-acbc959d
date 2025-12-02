@@ -18,23 +18,23 @@ const sizeClasses = {
 
 const ringClasses: Record<ProfileFrame, string> = {
   none: '',
-  hiring: 'ring-4 ring-purple-500',
-  open_to_work: 'ring-4 ring-green-500',
-  looking_for_cofounder: 'ring-4 ring-orange-500',
+  hiring: 'ring-2 ring-purple-500',
+  open_to_work: 'ring-2 ring-green-500',
+  looking_for_cofounder: 'ring-2 ring-orange-500',
 };
 
 const badgeText: Record<ProfileFrame, string> = {
   none: '',
   hiring: '#HIRING',
-  open_to_work: '#OPENTOWORK',
+  open_to_work: '#OPEN',
   looking_for_cofounder: '#COFOUNDER',
 };
 
 const badgeColors: Record<ProfileFrame, string> = {
   none: '',
-  hiring: 'bg-purple-500',
-  open_to_work: 'bg-green-500',
-  looking_for_cofounder: 'bg-orange-500',
+  hiring: 'bg-purple-500/80',
+  open_to_work: 'bg-green-500/80',
+  looking_for_cofounder: 'bg-orange-500/80',
 };
 
 export const ProfileAvatar = ({
@@ -54,7 +54,7 @@ export const ProfileAvatar = ({
       </Avatar>
       {frame !== 'none' && (
         <div
-          className={`absolute -bottom-1 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded text-[8px] font-bold text-white whitespace-nowrap ${badgeColors[frame]}`}
+          className={`absolute -bottom-0.5 left-1/2 -translate-x-1/2 px-1 py-px rounded text-[6px] font-semibold text-white whitespace-nowrap ${badgeColors[frame]}`}
         >
           {badgeText[frame]}
         </div>
