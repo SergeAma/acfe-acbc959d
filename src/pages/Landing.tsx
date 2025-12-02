@@ -207,31 +207,61 @@ export const Landing = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-foreground">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold text-background mb-4">Where do I start?</h2>
-          <div className="max-w-xl mx-auto mb-8 text-left bg-background/90 p-8 rounded-lg">
-            <ol className="space-y-4 text-foreground">
-              <li className="flex gap-3">
-                <span className="font-bold">1)</span>
-                <span>Register to start learning</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="font-bold">2)</span>
-                <span>Complete on-demand training</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="font-bold">3)</span>
-                <span>Receive ongoing mentorship from industry experts</span>
-              </li>
-            </ol>
-          </div>
-          {!user && <Link to="/auth?mode=signup">
-              <Button size="lg" className="text-lg px-10 bg-foreground hover:bg-foreground/90 text-background rounded-full border-2 border-background">
-                START TODAY
+      {/* Innovators Incubator Section */}
+      <section className="py-20 bg-gradient-to-br from-primary/10 via-background to-secondary/10">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-6">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <span className="text-sm font-semibold text-primary">Innovation Hub</span>
+            </div>
+            
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+              Got a Big Idea?<br />
+              <span className="text-primary">We'll Help You Build It.</span>
+            </h2>
+            
+            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+              We're building Africa's next generation of tech leaders. If you're a young innovator with a vision 
+              that could transform communities, we want to hear from you. Get access to mentorship, resources, 
+              and the support you need to bring your idea to life.
+            </p>
+            
+            <div className="grid md:grid-cols-3 gap-6 mb-10">
+              <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <TrendingUp className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-bold text-foreground mb-2">Mentorship</h3>
+                <p className="text-sm text-muted-foreground">1-on-1 guidance from industry experts who've been there</p>
+              </div>
+              
+              <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+                <div className="h-12 w-12 rounded-full bg-secondary/10 flex items-center justify-center mx-auto mb-4">
+                  <Award className="h-6 w-6 text-secondary" />
+                </div>
+                <h3 className="font-bold text-foreground mb-2">Resources</h3>
+                <p className="text-sm text-muted-foreground">Access to tools, training, and community support</p>
+              </div>
+              
+              <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+                <div className="h-12 w-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4">
+                  <FileText className="h-6 w-6 text-accent" />
+                </div>
+                <h3 className="font-bold text-foreground mb-2">Funding Guidance</h3>
+                <p className="text-sm text-muted-foreground">Learn how to pitch and connect with potential investors</p>
+              </div>
+            </div>
+            
+            <Link to="/submit-idea">
+              <Button size="lg" className="text-lg px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-lg hover:shadow-xl transition-all">
+                Submit Your Idea
               </Button>
-            </Link>}
+            </Link>
+            <p className="text-sm text-muted-foreground mt-4">
+              Join hundreds of young African innovators already in our program
+            </p>
+          </div>
         </div>
       </section>
 
