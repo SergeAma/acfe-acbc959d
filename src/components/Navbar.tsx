@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, BookOpen, Library, Shield, Instagram, Linkedin } from "lucide-react";
+import { LogOut, BookOpen, Library, Shield, Instagram, Linkedin } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { NavLink } from "@/components/NavLink";
+import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import acfeLogo from "@/assets/acfe-logo.png";
 
 export const Navbar = () => {
@@ -39,8 +40,14 @@ export const Navbar = () => {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="text-sm font-bold text-foreground hover:text-primary transition-colors">
-                  My account
+                <button className="flex items-center gap-2 text-sm font-bold text-foreground hover:text-primary transition-colors">
+                  <ProfileAvatar
+                    src={profile?.avatar_url || undefined}
+                    name={profile?.full_name || undefined}
+                    frame={profile?.profile_frame || 'none'}
+                    size="sm"
+                  />
+                  <span className="hidden sm:inline">My account</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-popover z-[100]">

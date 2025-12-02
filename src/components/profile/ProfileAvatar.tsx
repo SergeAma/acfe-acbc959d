@@ -1,7 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from 'lucide-react';
-
-type ProfileFrame = 'none' | 'hiring' | 'open_to_work' | 'looking_for_cofounder';
+import { ProfileFrame } from '@/contexts/AuthContext';
 
 interface ProfileAvatarProps {
   src?: string;

@@ -6,8 +6,7 @@ import { Slider } from '@/components/ui/slider';
 import { Crop, RotateCcw, RotateCw, Pencil, ImageIcon, Frame } from 'lucide-react';
 import ReactCrop, { type Crop as CropType, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-
-type ProfileFrame = 'none' | 'hiring' | 'open_to_work' | 'looking_for_cofounder';
+import { ProfileFrame } from '@/contexts/AuthContext';
 
 interface ProfilePhotoEditorProps {
   open: boolean;

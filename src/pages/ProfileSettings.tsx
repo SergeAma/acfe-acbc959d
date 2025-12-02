@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, ProfileFrame } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { Button } from '@/components/ui/button';
@@ -12,8 +12,6 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Upload, Pencil, Trash2 } from 'lucide-react';
 import { ProfilePhotoEditor } from '@/components/profile/ProfilePhotoEditor';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
-
-type ProfileFrame = 'none' | 'hiring' | 'open_to_work' | 'looking_for_cofounder';
 
 export const ProfileSettings = () => {
   const { profile, refreshProfile } = useAuth();
@@ -46,7 +44,7 @@ export const ProfileSettings = () => {
         bio: profile.bio || '',
         country: profile.country || '',
         avatar_url: profile.avatar_url || '',
-        profile_frame: ((profile as any).profile_frame as ProfileFrame) || 'none',
+        profile_frame: profile.profile_frame || 'none',
         linkedin_url: profile.linkedin_url || '',
         twitter_url: profile.twitter_url || '',
         instagram_url: profile.instagram_url || '',
@@ -184,7 +182,20 @@ export const ProfileSettings = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleRemovePhoto = () => {
+  const handleRemovePhoto = async () => {
+    // Try to delete from storage if it's a Supabase storage URL
+    if (formData.avatar_url && formData.avatar_url.includes('/avatars/')) {
+      try {
+        const urlParts = formData.avatar_url.split('/avatars/');
+        if (urlParts[1]) {
+          const filePath = decodeURIComponent(urlParts[1]);
+          await supabase.storage.from('avatars').remove([filePath]);
+        }
+      } catch (error) {
+        console.error('Error deleting avatar from storage:', error);
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
       avatar_url: '',
