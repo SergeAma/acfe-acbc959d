@@ -3,6 +3,8 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
+export type ProfileFrame = 'none' | 'hiring' | 'open_to_work' | 'looking_for_cofounder';
+
 interface Profile {
   id: string;
   email: string;
@@ -10,6 +12,7 @@ interface Profile {
   role: 'admin' | 'mentor' | 'student';
   bio: string | null;
   avatar_url: string | null;
+  profile_frame: ProfileFrame;
   country: string | null;
   linkedin_url: string | null;
   twitter_url: string | null;
@@ -76,7 +79,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       return {
         ...profileData,
-        role: role as 'admin' | 'mentor' | 'student'
+        role: role as 'admin' | 'mentor' | 'student',
+        profile_frame: (profileData.profile_frame as ProfileFrame) || 'none'
       };
     } catch (error) {
       console.error('Exception in fetchProfile:', error);

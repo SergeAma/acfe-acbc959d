@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, ProfileFrame } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, User, Clock, BarChart, Loader2, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Clock, BarChart, Loader2, CheckCircle } from 'lucide-react';
+import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 
 interface Course {
   id: string;
@@ -18,6 +19,8 @@ interface Course {
   mentor: {
     full_name: string;
     bio: string;
+    avatar_url: string;
+    profile_frame: ProfileFrame;
   };
 }
 
@@ -39,7 +42,9 @@ export const CourseDetail = () => {
           *,
           mentor:profiles!courses_mentor_id_fkey (
             full_name,
-            bio
+            bio,
+            avatar_url,
+            profile_frame
           )
         `)
         .eq('id', id)
@@ -215,9 +220,12 @@ export const CourseDetail = () => {
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="h-6 w-6 text-primary" />
-                  </div>
+                  <ProfileAvatar
+                    src={course.mentor?.avatar_url}
+                    name={course.mentor?.full_name}
+                    frame={course.mentor?.profile_frame || 'none'}
+                    size="md"
+                  />
                   <div>
                     <h3 className="font-semibold">Your Mentor</h3>
                     <p className="text-sm text-muted-foreground">{course.mentor?.full_name}</p>
