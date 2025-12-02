@@ -99,17 +99,19 @@ export const Landing = () => {
               </Card>
             </Link>
 
-            <Card className="border-2 hover:border-secondary transition-colors">
-              <CardContent className="pt-6">
-                <div className="h-12 w-12 rounded-lg bg-secondary/10 flex items-center justify-center mb-4">
-                  <BookOpen className="h-6 w-6 text-secondary" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Explore Courses</h3>
-                <p className="text-muted-foreground">
-                  Outcome-focused training designed to get you job-ready, not just traditional learning—practical skills that lead to real career opportunities
-                </p>
-              </CardContent>
-            </Card>
+            <Link to="/courses">
+              <Card className="border-2 hover:border-secondary transition-colors cursor-pointer group">
+                <CardContent className="pt-6">
+                  <div className="h-12 w-12 rounded-lg bg-secondary/10 flex items-center justify-center mb-4 group-hover:bg-secondary/20 transition-colors">
+                    <BookOpen className="h-6 w-6 text-secondary" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-3 group-hover:text-secondary transition-colors">Explore Courses</h3>
+                  <p className="text-muted-foreground">
+                    Outcome-focused training designed to get you job-ready, not just traditional learning—practical skills that lead to real career opportunities
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
 
             <Card className="border-2 hover:border-accent transition-colors">
               <CardContent className="pt-6">
