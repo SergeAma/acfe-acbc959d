@@ -11,7 +11,6 @@ import acfeLogo from '@/assets/acfe-logo.png';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
-
 interface NewsArticle {
   title: string;
   link: string;
@@ -19,22 +18,28 @@ interface NewsArticle {
   description: string;
   source: string;
 }
-
 export const Landing = () => {
-  const { user } = useAuth();
-  
-  const { data: newsData, isLoading: newsLoading } = useQuery({
+  const {
+    user
+  } = useAuth();
+  const {
+    data: newsData,
+    isLoading: newsLoading
+  } = useQuery({
     queryKey: ['tech-news'],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('fetch-tech-news');
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('fetch-tech-news');
       if (error) throw error;
-      return data as { articles: NewsArticle[] };
+      return data as {
+        articles: NewsArticle[];
+      };
     },
     staleTime: 1000 * 60 * 30 // Cache for 30 minutes
   });
-
-  return (
-    <div className="min-h-screen">
+  return <div className="min-h-screen">
       <Navbar />
       
       {/* Hero Section */}
@@ -51,14 +56,11 @@ export const Landing = () => {
               Training delivered by African tech experts.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              {user ? (
-                <Link to="/dashboard">
+              {user ? <Link to="/dashboard">
                   <Button size="lg" className="text-lg px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
                     Go to Dashboard
                   </Button>
-                </Link>
-              ) : (
-                <>
+                </Link> : <>
                   <Link to="/auth?mode=signup&role=student">
                     <Button size="lg" className="text-lg px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
                       START LEARNING
@@ -69,8 +71,7 @@ export const Landing = () => {
                       BECOME A MENTOR
                     </Button>
                   </Link>
-                </>
-              )}
+                </>}
             </div>
           </div>
         </div>
@@ -187,7 +188,7 @@ export const Landing = () => {
           <div className="text-center mb-12">
             <div className="flex items-center justify-center gap-3 mb-4">
               <Rss className="h-8 w-8 text-primary animate-pulse" />
-              <h2 className="text-4xl font-bold text-foreground">Africa Tech News</h2>
+              <h2 className="text-4xl font-bold text-foreground">Tech Buzz</h2>
             </div>
             <p className="text-xl text-muted-foreground">
               Stay updated with the latest African tech, education, and startup funding news
@@ -195,20 +196,16 @@ export const Landing = () => {
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-            {newsLoading ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <Card key={i} className="border-none shadow-lg bg-card">
+            {newsLoading ? Array.from({
+            length: 6
+          }).map((_, i) => <Card key={i} className="border-none shadow-lg bg-card">
                   <CardContent className="p-6 space-y-4">
                     <Skeleton className="h-6 w-3/4" />
                     <Skeleton className="h-4 w-full" />
                     <Skeleton className="h-4 w-full" />
                     <Skeleton className="h-4 w-1/2" />
                   </CardContent>
-                </Card>
-              ))
-            ) : newsData?.articles && newsData.articles.length > 0 ? (
-              newsData.articles.map((article, index) => (
-                <Card key={index} className="border-none shadow-lg hover:shadow-xl transition-all duration-300 bg-card group hover:scale-105">
+                </Card>) : newsData?.articles && newsData.articles.length > 0 ? newsData.articles.map((article, index) => <Card key={index} className="border-none shadow-lg hover:shadow-xl transition-all duration-300 bg-card group hover:scale-105">
                   <CardContent className="p-6 space-y-4">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="text-lg font-bold text-card-foreground line-clamp-2 group-hover:text-primary transition-colors">
@@ -227,10 +224,10 @@ export const Landing = () => {
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {new Date(article.pubDate).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        })}
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
                       </span>
                     </div>
                     
@@ -240,13 +237,9 @@ export const Landing = () => {
                       </Button>
                     </a>
                   </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="col-span-full text-center py-12">
+                </Card>) : <div className="col-span-full text-center py-12">
                 <p className="text-muted-foreground">No news articles available at the moment. Check back soon!</p>
-              </div>
-            )}
+              </div>}
           </div>
         </div>
       </section>
@@ -269,6 +262,5 @@ export const Landing = () => {
       </section>
 
       <Footer />
-    </div>
-  );
+    </div>;
 };
