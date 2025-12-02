@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/Navbar';
+import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -80,7 +81,8 @@ export const Courses = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto px-4 py-8">
+      <PageBreadcrumb items={[{ label: "Courses" }]} />
+      <div className="container mx-auto px-4 py-4">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Explore Courses</h1>
           <p className="text-muted-foreground text-lg">Find the perfect course to advance your skills</p>

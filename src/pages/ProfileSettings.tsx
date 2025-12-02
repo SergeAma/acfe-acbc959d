@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
+import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -141,7 +142,8 @@ export const ProfileSettings = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <PageBreadcrumb items={[{ label: "Profile Settings" }]} />
+      <div className="container mx-auto px-4 py-4 max-w-2xl">
         <Card>
           <CardHeader>
             <CardTitle>Profile Settings</CardTitle>

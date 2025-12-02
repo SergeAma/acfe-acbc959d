@@ -1,5 +1,6 @@
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png';
 import johannesburgLogo from '@/assets/johannesburg-logo.png';
 
@@ -7,8 +8,9 @@ export const Partners = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+      <PageBreadcrumb items={[{ label: "Partners" }]} />
       
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-12">
         <h1 className="text-4xl md:text-5xl font-bold text-center mb-16 text-foreground">
           Our Partners
         </h1>
