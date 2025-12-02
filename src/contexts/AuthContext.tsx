@@ -124,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state changed:', event);
         
         if (!mounted) return;
@@ -132,9 +132,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         setUser(session?.user ?? null);
         
+        // Defer Supabase calls to prevent deadlock
         if (session?.user) {
-          const profileData = await fetchProfile(session.user.id);
-          if (mounted) setProfile(profileData);
+          setTimeout(() => {
+            if (mounted) {
+              fetchProfile(session.user.id).then(profileData => {
+                if (mounted) setProfile(profileData);
+              });
+            }
+          }, 0);
         } else {
           setProfile(null);
         }
