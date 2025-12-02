@@ -84,43 +84,43 @@ export const Landing = () => {
             <h2 className="text-4xl font-bold mb-4">Why Choose Us</h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <Link to="/mentors">
-              <Card className="border-2 hover:border-primary transition-colors cursor-pointer group">
-                <CardContent className="pt-6">
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
+            <Link to="/mentors" className="h-full">
+              <Card className="border-2 hover:border-primary transition-colors cursor-pointer group h-full">
+                <CardContent className="pt-6 h-full flex flex-col">
                   <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                     <Users className="h-6 w-6 text-primary" />
                   </div>
                   <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors">Our Mentors</h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground flex-1">
                     Learn from experienced professionals who are passionate about sharing their knowledge and empowering the next generation
                   </p>
                 </CardContent>
               </Card>
             </Link>
 
-            <Link to="/courses">
-              <Card className="border-2 hover:border-secondary transition-colors cursor-pointer group">
-                <CardContent className="pt-6">
+            <Link to="/courses" className="h-full">
+              <Card className="border-2 hover:border-secondary transition-colors cursor-pointer group h-full">
+                <CardContent className="pt-6 h-full flex flex-col">
                   <div className="h-12 w-12 rounded-lg bg-secondary/10 flex items-center justify-center mb-4 group-hover:bg-secondary/20 transition-colors">
                     <BookOpen className="h-6 w-6 text-secondary" />
                   </div>
                   <h3 className="text-xl font-bold mb-3 group-hover:text-secondary transition-colors">Explore Courses</h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground flex-1">
                     Outcome-focused training designed to get you job-ready, not just traditional learning—practical skills that lead to real career opportunities
                   </p>
                 </CardContent>
               </Card>
             </Link>
 
-            <Link to="/jobs">
-              <Card className="border-2 hover:border-accent transition-colors cursor-pointer group">
-                <CardContent className="pt-6">
+            <Link to="/jobs" className="h-full">
+              <Card className="border-2 hover:border-accent transition-colors cursor-pointer group h-full">
+                <CardContent className="pt-6 h-full flex flex-col">
                   <div className="h-12 w-12 rounded-lg bg-accent/10 flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors">
                     <Globe className="h-6 w-6 text-accent" />
                   </div>
                   <h3 className="text-xl font-bold mb-3 group-hover:text-accent transition-colors">Join Our Community</h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground flex-1">
                     Join a supportive community of learners and mentors dedicated to advancing digital skills across Africa
                   </p>
                 </CardContent>
