@@ -125,7 +125,7 @@ export const Landing = () => {
       </section>
 
       {/* Innovators Incubator Section */}
-      <section className="py-20 bg-gradient-to-br from-primary/10 via-background to-secondary/10">
+      <section className="py-20 bg-muted">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-6">
@@ -183,7 +183,7 @@ export const Landing = () => {
       </section>
 
       {/* Latest Tech News Section */}
-      <section className="py-20 bg-muted">
+      <section className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <div className="flex items-center justify-center gap-3 mb-4">
@@ -245,7 +245,7 @@ export const Landing = () => {
       </section>
 
       {/* Partners Section */}
-      <section className="py-12 bg-muted/30 rounded-md">
+      <section className="py-12 bg-muted">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Our Partners</h2>
