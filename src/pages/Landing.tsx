@@ -90,7 +90,7 @@ export const Landing = () => {
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <Users className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Expert Mentors</h3>
+                <h3 className="text-xl font-bold mb-3">Our Mentors</h3>
                 <p className="text-muted-foreground">
                   Learn from experienced professionals who are passionate about sharing their knowledge and empowering the next generation
                 </p>
@@ -102,7 +102,7 @@ export const Landing = () => {
                 <div className="h-12 w-12 rounded-lg bg-secondary/10 flex items-center justify-center mb-4">
                   <BookOpen className="h-6 w-6 text-secondary" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Comprehensive Courses</h3>
+                <h3 className="text-xl font-bold mb-3">Explore Courses</h3>
                 <p className="text-muted-foreground">
                   Outcome-focused training designed to get you job-ready, not just traditional learning—practical skills that lead to real career opportunities
                 </p>
@@ -114,7 +114,7 @@ export const Landing = () => {
                 <div className="h-12 w-12 rounded-lg bg-accent/10 flex items-center justify-center mb-4">
                   <Globe className="h-6 w-6 text-accent" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Community Focused</h3>
+                <h3 className="text-xl font-bold mb-3">Join Our Community</h3>
                 <p className="text-muted-foreground">
                   Join a supportive community of learners and mentors dedicated to advancing digital skills across Africa
                 </p>
