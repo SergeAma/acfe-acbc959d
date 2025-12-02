@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
@@ -6,14 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload, User } from 'lucide-react';
 
 export const ProfileSettings = () => {
   const { profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     full_name: '',
     bio: '',
@@ -88,6 +91,53 @@ export const ProfileSettings = () => {
     }));
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploading(true);
+
+      if (!event.target.files || event.target.files.length === 0) {
+        return;
+      }
+
+      const file = event.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${profile?.id}/${Math.random()}.${fileExt}`;
+
+      // Upload file to storage
+      const { error: uploadError, data } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update form data with new avatar URL
+      setFormData(prev => ({
+        ...prev,
+        avatar_url: publicUrl,
+      }));
+
+      toast({
+        title: 'Upload successful',
+        description: 'Profile picture uploaded. Click Save Changes to update your profile.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Upload failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -99,6 +149,49 @@ export const ProfileSettings = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-4">
+                <Label>Profile Picture</Label>
+                <div className="flex items-center gap-6">
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage src={formData.avatar_url} alt={formData.full_name} />
+                    <AvatarFallback className="text-2xl">
+                      <User className="h-12 w-12" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 space-y-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="w-full"
+                    >
+                      {uploading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload Picture
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      JPG, PNG or WEBP. Max 5MB.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -146,14 +239,17 @@ export const ProfileSettings = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="avatar_url">Avatar URL</Label>
+                <Label htmlFor="avatar_url">Avatar URL (Optional)</Label>
                 <Input
                   id="avatar_url"
                   name="avatar_url"
                   value={formData.avatar_url}
                   onChange={handleChange}
-                  placeholder="https://example.com/avatar.jpg"
+                  placeholder="Or paste an image URL"
                 />
+                <p className="text-xs text-muted-foreground">
+                  You can also paste a direct image URL here
+                </p>
               </div>
 
               <div className="space-y-4 pt-4 border-t">
