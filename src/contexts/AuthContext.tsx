@@ -11,6 +11,11 @@ interface Profile {
   bio: string | null;
   avatar_url: string | null;
   country: string | null;
+  linkedin_url: string | null;
+  twitter_url: string | null;
+  instagram_url: string | null;
+  github_url: string | null;
+  website_url: string | null;
 }
 
 interface AuthContextType {
@@ -19,7 +24,7 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string, linkedinUrl?: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -174,8 +179,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
+  const signUp = async (email: string, password: string, fullName: string, linkedinUrl?: string) => {
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -197,6 +202,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "Account created!",
         description: "Welcome to A Cloud for Everyone. All users start as students.",
       });
+      
+      // Update profile with LinkedIn URL if provided
+      if (linkedinUrl && data.user) {
+        await supabase
+          .from('profiles')
+          .update({ linkedin_url: linkedinUrl })
+          .eq('id', data.user.id);
+      }
     }
 
     return { error };

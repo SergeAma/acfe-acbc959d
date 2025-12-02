@@ -23,6 +23,7 @@ const authSchema = z.object({
   age: z.string().min(1, 'Please select your age').optional(),
   university: z.string().min(2, 'Please enter your university or college').max(200),
   city: z.string().min(2, 'Please enter your city').max(100),
+  linkedinUrl: z.string().url('Invalid LinkedIn URL').optional().or(z.literal('')),
   cloudBrands: z.array(z.string()).optional(),
   emailConsent: z.boolean().optional(),
 });
@@ -45,6 +46,7 @@ export const Auth = () => {
     age: '',
     university: '',
     city: '',
+    linkedinUrl: '',
     cloudBrands: [] as string[],
     emailConsent: false,
   });
@@ -97,7 +99,8 @@ export const Auth = () => {
       const { error } = await signUp(
         formData.email,
         formData.password,
-        fullName
+        fullName,
+        formData.linkedinUrl
       );
       if (!error) {
         navigate('/dashboard');
@@ -257,6 +260,18 @@ export const Auth = () => {
                     required
                   />
                   {errors.city && <p className="text-sm text-destructive">{errors.city}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-linkedin">LinkedIn Profile URL (Optional)</Label>
+                  <Input
+                    id="signup-linkedin"
+                    type="url"
+                    placeholder="https://linkedin.com/in/yourprofile"
+                    value={formData.linkedinUrl}
+                    onChange={(e) => setFormData({ ...formData, linkedinUrl: e.target.value })}
+                  />
+                  {errors.linkedinUrl && <p className="text-sm text-destructive">{errors.linkedinUrl}</p>}
                 </div>
 
                 <div className="space-y-2">
