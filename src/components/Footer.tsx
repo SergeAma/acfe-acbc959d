@@ -11,7 +11,7 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo & Description */}
           <div className="md:col-span-2">
-            <Link to="/" className="inline-block mb-4">
+            <Link to="/home" className="inline-block mb-4">
               <img src={acfeLogo} alt="A Cloud for Everyone" className="h-16 w-auto" />
             </Link>
             <p className="text-muted-foreground text-sm max-w-md">
@@ -24,7 +24,7 @@ export const Footer = () => {
             <h4 className="font-semibold text-foreground mb-4">Quick Links</h4>
             <ul className="space-y-2">
               <li>
-                <Link to="/" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/home" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Home
                 </Link>
               </li>

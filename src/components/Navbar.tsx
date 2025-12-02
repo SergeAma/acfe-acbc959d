@@ -20,13 +20,13 @@ export const Navbar = () => {
     <nav className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-6 h-20 flex items-center justify-between">
         {/* Logo - Top Left */}
-        <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
+        <Link to="/home" className="flex items-center hover:opacity-80 transition-opacity">
           <img src={acfeLogo} alt="A Cloud for Everyone" className="h-24 w-auto" />
         </Link>
 
         {/* Navigation Tabs - Top Right */}
         <div className="flex items-center gap-8">
-          <NavLink to="/" className="text-sm font-bold text-foreground hover:text-primary transition-colors">
+          <NavLink to="/home" className="text-sm font-bold text-foreground hover:text-primary transition-colors">
             Home
           </NavLink>
           <NavLink to="/partners" className="text-sm font-bold text-foreground hover:text-primary transition-colors">
