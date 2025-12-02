@@ -80,12 +80,13 @@ export const Navbar = () => {
             </Link>
           )}
 
-          <a
-            href="https://www.instagram.com/acloudforeveryone/"
+          <button
+            onClick={() => window.open('https://www.instagram.com/acloudforeveryone/', '_blank', 'noopener,noreferrer')}
             className="text-foreground hover:text-primary transition-colors"
+            aria-label="Instagram"
           >
             <Instagram className="h-5 w-5" />
-          </a>
+          </button>
           <a
             href="https://www.linkedin.com/company/a-cloud-for-everyone"
             target="_blank"
