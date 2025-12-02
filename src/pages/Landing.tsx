@@ -11,6 +11,7 @@ import acfeLogo from '@/assets/acfe-logo.png';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
+
 interface NewsArticle {
   title: string;
   link: string;
@@ -18,32 +19,26 @@ interface NewsArticle {
   description: string;
   source: string;
 }
+
 export const Landing = () => {
-  const {
-    user
-  } = useAuth();
-  const {
-    data: newsData,
-    isLoading: newsLoading
-  } = useQuery({
+  const { user } = useAuth();
+  
+  const { data: newsData, isLoading: newsLoading } = useQuery({
     queryKey: ['tech-news'],
     queryFn: async () => {
-      const {
-        data,
-        error
-      } = await supabase.functions.invoke('fetch-tech-news');
+      const { data, error } = await supabase.functions.invoke('fetch-tech-news');
       if (error) throw error;
-      return data as {
-        articles: NewsArticle[];
-      };
+      return data as { articles: NewsArticle[] };
     },
     staleTime: 1000 * 60 * 30 // Cache for 30 minutes
   });
-  return <div className="min-h-screen">
+
+  return (
+    <div className="min-h-screen">
       <Navbar />
+      
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-muted min-h-screen flex items-end pb-28">
-        
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6 text-foreground">
@@ -56,11 +51,14 @@ export const Landing = () => {
               Training delivered by African tech experts.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              {user ? <Link to="/dashboard">
+              {user ? (
+                <Link to="/dashboard">
                   <Button size="lg" className="text-lg px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
                     Go to Dashboard
                   </Button>
-                </Link> : <>
+                </Link>
+              ) : (
+                <>
                   <Link to="/auth?mode=signup&role=student">
                     <Button size="lg" className="text-lg px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
                       START LEARNING
@@ -71,7 +69,8 @@ export const Landing = () => {
                       BECOME A MENTOR
                     </Button>
                   </Link>
-                </>}
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -82,7 +81,6 @@ export const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4">Why Choose Us</h2>
-            
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -121,88 +119,6 @@ export const Landing = () => {
                 </p>
               </CardContent>
             </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Partners Section */}
-      <section className="py-12 bg-muted/30 rounded-md">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Our Partners</h2>
-            
-          </div>
-          <div className="flex flex-wrap justify-center items-center gap-12 max-w-5xl mx-auto">
-            <div className="flex items-center justify-center">
-              <img src={eastAfricanUniversityLogo} alt="The East African University" className="h-24 w-auto object-contain" />
-            </div>
-            <div className="flex items-center justify-center">
-              <img src={johannesburgLogo} alt="Johannesburg" className="h-24 w-auto object-contain" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Latest Tech News Section */}
-      <section className="py-20 bg-muted">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <Rss className="h-8 w-8 text-primary animate-pulse" />
-              <h2 className="text-4xl font-bold text-foreground">Africa Tech News</h2>
-            </div>
-            <p className="text-xl text-muted-foreground">
-              Stay updated with the latest African tech, education, and startup funding news
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-            {newsLoading ?
-          // Loading skeletons
-          Array.from({
-            length: 6
-          }).map((_, i) => <Card key={i} className="border-none shadow-lg bg-card">
-                  <CardContent className="p-6 space-y-4">
-                    <Skeleton className="h-6 w-3/4" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-1/2" />
-                  </CardContent>
-                </Card>) : newsData?.articles && newsData.articles.length > 0 ? newsData.articles.map((article, index) => <Card key={index} className="border-none shadow-lg hover:shadow-xl transition-all duration-300 bg-card group hover:scale-105">
-                  <CardContent className="p-6 space-y-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-lg font-bold text-card-foreground line-clamp-2 group-hover:text-primary transition-colors">
-                        {article.title}
-                      </h3>
-                      <ExternalLink className="h-5 w-5 text-muted-foreground flex-shrink-0 group-hover:text-primary transition-colors" />
-                    </div>
-                    
-                    <p className="text-sm text-muted-foreground line-clamp-3">
-                      {article.description}
-                    </p>
-                    
-                    <div className="flex items-center justify-between pt-2 border-t border-border">
-                      <span className="text-xs font-medium text-primary">
-                        {article.source}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(article.pubDate).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}
-                      </span>
-                    </div>
-                    
-                    <a href={article.link} target="_blank" rel="noopener noreferrer" className="block">
-                      <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                        Read Article
-                      </Button>
-                    </a>
-                  </CardContent>
-                </Card>) : <div className="col-span-full text-center py-12">
-                <p className="text-muted-foreground">No news articles available at the moment. Check back soon!</p>
-              </div>}
           </div>
         </div>
       </section>
@@ -265,6 +181,94 @@ export const Landing = () => {
         </div>
       </section>
 
+      {/* Latest Tech News Section */}
+      <section className="py-20 bg-muted">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Rss className="h-8 w-8 text-primary animate-pulse" />
+              <h2 className="text-4xl font-bold text-foreground">Africa Tech News</h2>
+            </div>
+            <p className="text-xl text-muted-foreground">
+              Stay updated with the latest African tech, education, and startup funding news
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+            {newsLoading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i} className="border-none shadow-lg bg-card">
+                  <CardContent className="p-6 space-y-4">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </CardContent>
+                </Card>
+              ))
+            ) : newsData?.articles && newsData.articles.length > 0 ? (
+              newsData.articles.map((article, index) => (
+                <Card key={index} className="border-none shadow-lg hover:shadow-xl transition-all duration-300 bg-card group hover:scale-105">
+                  <CardContent className="p-6 space-y-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-lg font-bold text-card-foreground line-clamp-2 group-hover:text-primary transition-colors">
+                        {article.title}
+                      </h3>
+                      <ExternalLink className="h-5 w-5 text-muted-foreground flex-shrink-0 group-hover:text-primary transition-colors" />
+                    </div>
+                    
+                    <p className="text-sm text-muted-foreground line-clamp-3">
+                      {article.description}
+                    </p>
+                    
+                    <div className="flex items-center justify-between pt-2 border-t border-border">
+                      <span className="text-xs font-medium text-primary">
+                        {article.source}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(article.pubDate).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                    
+                    <a href={article.link} target="_blank" rel="noopener noreferrer" className="block">
+                      <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                        Read Article
+                      </Button>
+                    </a>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground">No news articles available at the moment. Check back soon!</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Partners Section */}
+      <section className="py-12 bg-muted/30 rounded-md">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold mb-4">Our Partners</h2>
+          </div>
+          <div className="flex flex-wrap justify-center items-center gap-12 max-w-5xl mx-auto">
+            <div className="flex items-center justify-center">
+              <img src={eastAfricanUniversityLogo} alt="The East African University" className="h-24 w-auto object-contain" />
+            </div>
+            <div className="flex items-center justify-center">
+              <img src={johannesburgLogo} alt="Johannesburg" className="h-24 w-auto object-contain" />
+            </div>
+          </div>
+        </div>
+      </section>
+
       <Footer />
-    </div>;
+    </div>
+  );
 };
