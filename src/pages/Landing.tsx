@@ -113,17 +113,19 @@ export const Landing = () => {
               </Card>
             </Link>
 
-            <Card className="border-2 hover:border-accent transition-colors">
-              <CardContent className="pt-6">
-                <div className="h-12 w-12 rounded-lg bg-accent/10 flex items-center justify-center mb-4">
-                  <Globe className="h-6 w-6 text-accent" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Join Our Community</h3>
-                <p className="text-muted-foreground">
-                  Join a supportive community of learners and mentors dedicated to advancing digital skills across Africa
-                </p>
-              </CardContent>
-            </Card>
+            <Link to="/jobs">
+              <Card className="border-2 hover:border-accent transition-colors cursor-pointer group">
+                <CardContent className="pt-6">
+                  <div className="h-12 w-12 rounded-lg bg-accent/10 flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors">
+                    <Globe className="h-6 w-6 text-accent" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-3 group-hover:text-accent transition-colors">Join Our Community</h3>
+                  <p className="text-muted-foreground">
+                    Join a supportive community of learners and mentors dedicated to advancing digital skills across Africa
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
         </div>
       </section>
