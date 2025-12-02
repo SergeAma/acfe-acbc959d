@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Cloud, Users, BookOpen, Globe, Sparkles, Award, FileText, TrendingUp, ExternalLink, Rss } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
+import { Footer } from '@/components/Footer';
 import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png';
 import johannesburgLogo from '@/assets/johannesburg-logo.png';
 import acfeLogo from '@/assets/acfe-logo.png';
@@ -233,5 +234,7 @@ export const Landing = () => {
             </Link>}
         </div>
       </section>
+
+      <Footer />
     </div>;
 };

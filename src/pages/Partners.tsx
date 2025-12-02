@@ -1,4 +1,5 @@
 import { Navbar } from '@/components/Navbar';
+import { Footer } from '@/components/Footer';
 import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png';
 import johannesburgLogo from '@/assets/johannesburg-logo.png';
 
@@ -50,6 +51,8 @@ export const Partners = () => {
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 };
