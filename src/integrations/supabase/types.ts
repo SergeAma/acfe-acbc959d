@@ -562,6 +562,48 @@ export type Database = {
           },
         ]
       }
+      idea_submissions: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          idea_description: string | null
+          idea_title: string
+          phone: string | null
+          status: string
+          updated_at: string
+          video_filename: string | null
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          idea_description?: string | null
+          idea_title: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          video_filename?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          idea_description?: string | null
+          idea_title?: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          video_filename?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       lesson_progress: {
         Row: {
           completed: boolean
