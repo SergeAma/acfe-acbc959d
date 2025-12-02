@@ -159,8 +159,8 @@ export const Courses = () => {
                     <span className="text-muted-foreground">By {course.mentor?.full_name}</span>
                     <span className="text-muted-foreground">{course.duration_weeks} weeks</span>
                   </div>
-                  <Link to={`/courses/${course.id}`}>
-                    <Button className="w-full">View Details</Button>
+                  <Link to={`/courses/${course.id}/preview`}>
+                    <Button className="w-full">View Course</Button>
                   </Link>
                 </CardContent>
               </Card>
