@@ -1,4 +1,5 @@
 import { Navbar } from '@/components/Navbar';
+import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import acfeLogo from '@/assets/acfe-logo.png';
@@ -153,6 +154,8 @@ export const Jobs = () => {
           </div>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 };
