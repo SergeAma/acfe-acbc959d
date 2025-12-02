@@ -90,7 +90,7 @@ export const CreateCourse = () => {
         title: "Success!",
         description: publish ? "Course created and published" : "Course saved as draft",
       });
-      navigate(`/mentor/courses/${data.id}/edit`);
+      navigate(`/admin/courses/${data.id}/build`);
     }
 
     setLoading(false);

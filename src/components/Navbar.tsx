@@ -54,9 +54,9 @@ export const Navbar = () => {
                     <Link to="/courses">Browse Courses</Link>
                   </DropdownMenuItem>
                 )}
-                {profile?.role === 'mentor' && (
+                {(profile?.role === 'mentor' || profile?.role === 'admin') && (
                   <DropdownMenuItem asChild>
-                    <Link to="/mentor/courses">My Courses</Link>
+                    <Link to="/admin/courses">Manage Courses</Link>
                   </DropdownMenuItem>
                 )}
                 {profile?.role === 'admin' && (
