@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, CheckCircle, XCircle, Clock } from 'lucide-react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 
 interface MentorRequest {
   id: string;
@@ -24,6 +24,7 @@ interface MentorRequest {
 export const AdminDashboard = () => {
   const { profile, loading: authLoading } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [requests, setRequests] = useState<MentorRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -149,6 +150,47 @@ export const AdminDashboard = () => {
           <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
           <p className="text-muted-foreground">Manage mentor role requests</p>
         </div>
+
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/courses')}>
+                Manage Courses
+              </Button>
+              <Button variant="outline" className="w-full justify-start">
+                View All Users
+              </Button>
+              <Button variant="outline" className="w-full justify-start">
+                System Settings
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Mentor Requests</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{requests.filter(r => r.status === 'pending').length}</div>
+              <p className="text-sm text-muted-foreground">Pending approval</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Platform Stats</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{requests.length}</div>
+              <p className="text-sm text-muted-foreground">Total mentor requests</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <h2 className="text-2xl font-semibold mb-4">Mentor Role Requests</h2>
 
         {loading ? (
           <div className="flex items-center justify-center py-12">

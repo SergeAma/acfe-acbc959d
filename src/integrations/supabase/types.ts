@@ -14,6 +14,97 @@ export type Database = {
   }
   public: {
     Tables: {
+      course_content: {
+        Row: {
+          content_type: string
+          created_at: string | null
+          duration_minutes: number | null
+          file_name: string | null
+          file_url: string | null
+          id: string
+          section_id: string
+          sort_order: number
+          text_content: string | null
+          title: string
+          updated_at: string | null
+          video_url: string | null
+        }
+        Insert: {
+          content_type: string
+          created_at?: string | null
+          duration_minutes?: number | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          section_id: string
+          sort_order?: number
+          text_content?: string | null
+          title: string
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          content_type?: string
+          created_at?: string | null
+          duration_minutes?: number | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          section_id?: string
+          sort_order?: number
+          text_content?: string | null
+          title?: string
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_content_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "course_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_sections: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          sort_order: number
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          sort_order?: number
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_sections_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           category: string | null
