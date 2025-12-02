@@ -160,10 +160,10 @@ export const AdminDashboard = () => {
               <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/courses')}>
                 Manage Courses
               </Button>
-              <Button variant="outline" className="w-full justify-start">
+              <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/users')}>
                 View All Users
               </Button>
-              <Button variant="outline" className="w-full justify-start">
+              <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/settings')}>
                 System Settings
               </Button>
             </CardContent>
