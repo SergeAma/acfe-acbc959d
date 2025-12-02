@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
@@ -7,66 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import acfeLogo from '@/assets/acfe-logo.png';
-import { MapPin, Clock, Lightbulb, Calendar, Gift, Users, MessageSquare } from 'lucide-react';
-
-// Sample community posts data
-const communityPosts = [
-  {
-    id: 1,
-    type: 'tip',
-    author: 'Sarah M.',
-    role: 'Mentor',
-    content: 'Pro tip: When preparing for cloud certifications, focus on hands-on labs rather than just theory. AWS and Google Cloud both offer free tier accounts for practice!',
-    date: '2 hours ago',
-    likes: 24
-  },
-  {
-    id: 2,
-    type: 'event',
-    author: 'ACFE Team',
-    role: 'Admin',
-    content: '🎉 Join us this Saturday for a virtual networking session! Connect with mentors and fellow learners across Africa. Register via the link in our newsletter.',
-    date: '1 day ago',
-    likes: 56
-  },
-  {
-    id: 3,
-    type: 'offer',
-    author: 'TechHub Kenya',
-    role: 'Partner',
-    content: '💼 Exclusive offer for ACFE learners: 20% discount on co-working space memberships in Nairobi. Use code ACFE2024 when signing up!',
-    date: '2 days ago',
-    likes: 42
-  },
-  {
-    id: 4,
-    type: 'network',
-    author: 'James O.',
-    role: 'Student',
-    content: 'Looking to connect with other learners working on Azure fundamentals. Anyone interested in forming a study group? Let\'s support each other! 🤝',
-    date: '3 days ago',
-    likes: 18
-  },
-  {
-    id: 5,
-    type: 'tip',
-    author: 'Dr. Amina K.',
-    role: 'Mentor',
-    content: 'Reminder: The best time to update your LinkedIn profile is RIGHT AFTER completing a course or certification. Your learning is fresh, and the momentum helps!',
-    date: '4 days ago',
-    likes: 67
-  },
-  {
-    id: 6,
-    type: 'event',
-    author: 'ACFE Team',
-    role: 'Admin',
-    content: '📚 New course alert! "Introduction to Data Analytics with Python" launches next week. Early bird registration now open for existing learners.',
-    date: '5 days ago',
-    likes: 89
-  }
-];
+import { MapPin, Clock, Lightbulb, Calendar, Gift, Users, MessageSquare, Send, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import { formatDistanceToNow } from 'date-fns';
 
 const postTypeIcons = {
   tip: Lightbulb,
@@ -82,64 +31,115 @@ const postTypeBadgeColors = {
   network: 'bg-orange-500/10 text-orange-600 border-orange-500/20'
 };
 
+const postTypeLabels = {
+  tip: 'Tips & Tricks',
+  event: 'Events',
+  offer: 'Offers',
+  network: 'Networking'
+};
+
+const jobs = [
+  {
+    id: 1,
+    title: "PROJECT COORDINATOR ROLE",
+    organization: "acloudforeveryone.org",
+    location: "Central Africa",
+    type: "Part-time",
+    description: "We are seeking a highly organized Project Coordinator to join our team at acloudforeveryone.org. The role involves coordinating local learner community activities, ensuring smooth execution of projects, and supporting our mission to provide cloud education for all.",
+    requirements: [
+      { label: "Location:", value: "Based in Central Africa" },
+      { label: "Language:", value: "Primarily French, Arabic and English (Portuguese and Spanish also strongly desired); good command of the most spoken vernaculars (e.g., Fula, Hausa, Wolof, Lingala, Swahili, Kikongo)" },
+      { label: "Skills:", value: "Strong organizational skills, proficiency in Excel and PowerPoint" }
+    ],
+    responsibilities: "Coordinating local learner community activities, project management, reporting, and collaboration with the team.",
+    remuneration: "Please note we are a charity and as such we rely on voluntaries. However all costs of running your region on a part-time basis will be covered monthly. Your experience will be considered as well."
+  },
+  {
+    id: 2,
+    title: "PROJECT COORDINATOR ROLE",
+    organization: "acloudforeveryone.org",
+    location: "Western Africa",
+    type: "Part-time",
+    description: "We are seeking a highly organized Project Coordinator to join our team at acloudforeveryone.org. The role involves coordinating local learner community activities, ensuring smooth execution of projects, and supporting our mission to provide cloud education for all.",
+    requirements: [
+      { label: "Location:", value: "Based in Western Africa" },
+      { label: "Language:", value: "Good command of French, English & Arabic, good command of the most spoken vernaculars (e.g., Yoruba, Hausa, Igbo, Wolof)" },
+      { label: "Skills:", value: "Strong organizational skills, proficiency in Excel and PowerPoint" }
+    ],
+    responsibilities: "Coordinating local learner community activities, project management, reporting, and collaboration with the team.",
+    remuneration: "Please note we are a charity and as such we rely on voluntaries. However all costs of running your region on a part-time basis will be covered monthly. Your experience will be considered as well."
+  }
+];
+
 export const Jobs = () => {
   const [activeTab, setActiveTab] = useState('community');
   const [postFilter, setPostFilter] = useState<string | null>(null);
+  const [newPostContent, setNewPostContent] = useState('');
+  const [newPostType, setNewPostType] = useState<string>('tip');
+  const { user, profile } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Fetch community posts
+  const { data: posts = [], isLoading: postsLoading } = useQuery({
+    queryKey: ['community-posts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('community_posts')
+        .select('id, user_id, type, content, created_at')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Fetch user profiles for posts
+      const userIds = [...new Set(data.map(post => post.user_id))];
+      if (userIds.length === 0) return [];
+
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, role')
+        .in('id', userIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+      return data.map(post => ({
+        ...post,
+        author: profileMap.get(post.user_id)?.full_name || 'Anonymous',
+        role: profileMap.get(post.user_id)?.role || 'student'
+      }));
+    }
+  });
+
+  // Create post mutation
+  const createPostMutation = useMutation({
+    mutationFn: async ({ content, type }: { content: string; type: string }) => {
+      const { error } = await supabase
+        .from('community_posts')
+        .insert({ user_id: user!.id, content, type });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['community-posts'] });
+      setNewPostContent('');
+      toast.success('Post created successfully!');
+    },
+    onError: (error) => {
+      console.error('Error creating post:', error);
+      toast.error('Failed to create post. Please try again.');
+    }
+  });
+
+  const handleCreatePost = () => {
+    if (!newPostContent.trim()) {
+      toast.error('Please enter some content for your post.');
+      return;
+    }
+    createPostMutation.mutate({ content: newPostContent.trim(), type: newPostType });
+  };
 
   const filteredPosts = postFilter 
-    ? communityPosts.filter(post => post.type === postFilter)
-    : communityPosts;
-
-  const jobs = [
-    {
-      id: 1,
-      title: "PROJECT COORDINATOR ROLE",
-      organization: "acloudforeveryone.org",
-      location: "Central Africa",
-      type: "Part-time",
-      description: "We are seeking a highly organized Project Coordinator to join our team at acloudforeveryone.org. The role involves coordinating local learner community activities, ensuring smooth execution of projects, and supporting our mission to provide cloud education for all.",
-      requirements: [
-        {
-          label: "Location:",
-          value: "Based in Central Africa"
-        },
-        {
-          label: "Language:",
-          value: "Primarily French, Arabic and English (Portuguese and Spanish also strongly desired); good command of the most spoken vernaculars (e.g., Fula, Hausa, Wolof, Lingala, Swahili, Kikongo)"
-        },
-        {
-          label: "Skills:",
-          value: "Strong organizational skills, proficiency in Excel and PowerPoint"
-        }
-      ],
-      responsibilities: "Coordinating local learner community activities, project management, reporting, and collaboration with the team.",
-      remuneration: "Please note we are a charity and as such we rely on voluntaries. However all costs of running your region on a part-time basis will be covered monthly. Your experience will be considered as well."
-    },
-    {
-      id: 2,
-      title: "PROJECT COORDINATOR ROLE",
-      organization: "acloudforeveryone.org",
-      location: "Western Africa",
-      type: "Part-time",
-      description: "We are seeking a highly organized Project Coordinator to join our team at acloudforeveryone.org. The role involves coordinating local learner community activities, ensuring smooth execution of projects, and supporting our mission to provide cloud education for all.",
-      requirements: [
-        {
-          label: "Location:",
-          value: "Based in Western Africa"
-        },
-        {
-          label: "Language:",
-          value: "Good command of French, English & Arabic, good command of the most spoken vernaculars (e.g., Yoruba, Hausa, Igbo, Wolof)"
-        },
-        {
-          label: "Skills:",
-          value: "Strong organizational skills, proficiency in Excel and PowerPoint"
-        }
-      ],
-      responsibilities: "Coordinating local learner community activities, project management, reporting, and collaboration with the team.",
-      remuneration: "Please note we are a charity and as such we rely on voluntaries. However all costs of running your region on a part-time basis will be covered monthly. Your experience will be considered as well."
-    }
-  ];
+    ? posts.filter(post => post.type === postFilter)
+    : posts;
 
   return (
     <div className="min-h-screen bg-background">
@@ -177,6 +177,68 @@ export const Jobs = () => {
 
             {/* Community Tab */}
             <TabsContent value="community" className="space-y-6">
+              {/* Create Post Form - Only for logged in users */}
+              {user ? (
+                <Card className="border border-border mb-6">
+                  <CardContent className="p-5">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                          <span className="text-sm font-semibold text-foreground">
+                            {profile?.full_name?.split(' ').map(n => n[0]).join('') || user.email?.[0]?.toUpperCase() || 'U'}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground text-sm">{profile?.full_name || 'User'}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{profile?.role || 'Student'}</p>
+                        </div>
+                      </div>
+                      <Textarea
+                        placeholder="Share a tip, event, offer, or connect with the community..."
+                        value={newPostContent}
+                        onChange={(e) => setNewPostContent(e.target.value)}
+                        className="min-h-[100px] resize-none"
+                      />
+                      <div className="flex items-center justify-between gap-4">
+                        <Select value={newPostType} onValueChange={setNewPostType}>
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Post type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="tip">💡 Tips & Tricks</SelectItem>
+                            <SelectItem value="event">📅 Events</SelectItem>
+                            <SelectItem value="offer">🎁 Offers</SelectItem>
+                            <SelectItem value="network">👥 Networking</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button 
+                          onClick={handleCreatePost} 
+                          disabled={createPostMutation.isPending || !newPostContent.trim()}
+                          className="rounded-full"
+                        >
+                          {createPostMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          ) : (
+                            <Send className="h-4 w-4 mr-2" />
+                          )}
+                          Post
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="text-center py-4 mb-4">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Sign in to share with the community
+                  </p>
+                  <Button variant="outline" className="rounded-full" asChild>
+                    <Link to="/auth">Sign in to Post</Link>
+                  </Button>
+                </div>
+              )}
+
+              {/* Filter Badges */}
               <div className="flex flex-wrap gap-2 justify-center mb-6">
                 <Badge 
                   variant="outline" 
@@ -215,49 +277,50 @@ export const Jobs = () => {
                 </Badge>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                {filteredPosts.map((post) => {
-                  const Icon = postTypeIcons[post.type as keyof typeof postTypeIcons];
-                  return (
-                    <Card key={post.id} className="border border-border hover:border-primary/50 transition-colors">
-                      <CardContent className="p-5">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                              <span className="text-sm font-semibold text-foreground">
-                                {post.author.split(' ').map(n => n[0]).join('')}
-                              </span>
+              {/* Posts Grid */}
+              {postsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : filteredPosts.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">No posts yet. Be the first to share!</p>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-4">
+                  {filteredPosts.map((post) => {
+                    const Icon = postTypeIcons[post.type as keyof typeof postTypeIcons];
+                    return (
+                      <Card key={post.id} className="border border-border hover:border-primary/50 transition-colors">
+                        <CardContent className="p-5">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                                <span className="text-sm font-semibold text-foreground">
+                                  {post.author.split(' ').map((n: string) => n[0]).join('')}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="font-medium text-foreground text-sm">{post.author}</p>
+                                <p className="text-xs text-muted-foreground capitalize">
+                                  {post.role} • {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-medium text-foreground text-sm">{post.author}</p>
-                              <p className="text-xs text-muted-foreground">{post.role} • {post.date}</p>
-                            </div>
+                            <Badge variant="outline" className={postTypeBadgeColors[post.type as keyof typeof postTypeBadgeColors]}>
+                              <Icon className="h-3 w-3 mr-1" />
+                              {postTypeLabels[post.type as keyof typeof postTypeLabels]}
+                            </Badge>
                           </div>
-                          <Badge variant="outline" className={postTypeBadgeColors[post.type as keyof typeof postTypeBadgeColors]}>
-                            <Icon className="h-3 w-3 mr-1" />
-                            {post.type.charAt(0).toUpperCase() + post.type.slice(1)}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-foreground/90 leading-relaxed mb-3">
-                          {post.content}
-                        </p>
-                        <div className="flex items-center text-xs text-muted-foreground">
-                          <span>❤️ {post.likes} likes</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-
-              <div className="text-center pt-6">
-                <p className="text-sm text-muted-foreground mb-4">
-                  Want to share with the community? Sign in to post tips, events, or connect with others.
-                </p>
-                <Button variant="outline" className="rounded-full" asChild>
-                  <Link to="/auth">Sign in to Post</Link>
-                </Button>
-              </div>
+                          <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                            {post.content}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
             </TabsContent>
 
             {/* Jobs Tab */}
@@ -272,20 +335,12 @@ export const Jobs = () => {
                 {jobs.map((job) => (
                   <Card key={job.id} className="border border-border hover:border-primary transition-colors shadow-sm bg-card overflow-hidden">
                     <div className="bg-muted/50 p-4 flex justify-center border-b border-border">
-                      <img 
-                        src={acfeLogo} 
-                        alt="ACFE Logo" 
-                        className="h-16 w-auto"
-                      />
+                      <img src={acfeLogo} alt="ACFE Logo" className="h-16 w-auto" />
                     </div>
                     <CardContent className="p-6 space-y-4">
                       <div>
-                        <h2 className="text-lg font-bold text-foreground mb-1">
-                          {job.title}
-                        </h2>
-                        <p className="text-xs text-muted-foreground mb-3">
-                          {job.organization}
-                        </p>
+                        <h2 className="text-lg font-bold text-foreground mb-1">{job.title}</h2>
+                        <p className="text-xs text-muted-foreground mb-3">{job.organization}</p>
                         <div className="flex items-center gap-3 text-xs">
                           <div className="flex items-center gap-1">
                             <MapPin className="h-3 w-3 text-primary" />
@@ -297,14 +352,10 @@ export const Jobs = () => {
                           </div>
                         </div>
                       </div>
-
                       <div>
                         <h3 className="text-sm font-semibold text-foreground mb-1">Description:</h3>
-                        <p className="text-sm text-foreground/80 leading-relaxed">
-                          {job.description}
-                        </p>
+                        <p className="text-sm text-foreground/80 leading-relaxed">{job.description}</p>
                       </div>
-
                       <div>
                         <h3 className="text-sm font-semibold text-foreground mb-2">Requirements:</h3>
                         <ul className="space-y-2">
@@ -315,21 +366,14 @@ export const Jobs = () => {
                           ))}
                         </ul>
                       </div>
-
                       <div>
                         <h3 className="text-sm font-semibold text-foreground mb-1">Responsibilities:</h3>
-                        <p className="text-sm text-foreground/80 leading-relaxed">
-                          {job.responsibilities}
-                        </p>
+                        <p className="text-sm text-foreground/80 leading-relaxed">{job.responsibilities}</p>
                       </div>
-
                       <div>
                         <h3 className="text-sm font-semibold text-foreground mb-1">Remuneration:</h3>
-                        <p className="text-sm text-foreground/80 leading-relaxed">
-                          {job.remuneration}
-                        </p>
+                        <p className="text-sm text-foreground/80 leading-relaxed">{job.remuneration}</p>
                       </div>
-
                       <Button 
                         className="w-full bg-foreground text-background hover:bg-foreground/90 font-semibold text-sm py-5 rounded-full"
                         asChild
