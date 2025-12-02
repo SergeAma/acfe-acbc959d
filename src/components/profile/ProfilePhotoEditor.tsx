@@ -141,20 +141,32 @@ export const ProfilePhotoEditor = ({
   };
 
   const handleSave = async () => {
-    console.log('Save clicked', { imgRef: imgRef.current, completedCrop });
-    
-    if (!imgRef.current || !completedCrop) {
-      console.log('Missing imgRef or completedCrop');
-      toast({
-        title: 'Cannot save',
-        description: 'Please adjust the crop area first',
-        variant: 'destructive',
-      });
-      return;
-    }
+    console.log('Save clicked', { imgRef: imgRef.current, completedCrop, activeTab });
     
     setSaving(true);
     try {
+      // If only changing frame (on frames tab) and image is from URL, just fetch it
+      if (activeTab === 'frames' && imgSrc.startsWith('http')) {
+        console.log('Frame-only change, fetching image as blob...');
+        const response = await fetch(imgSrc);
+        const blob = await response.blob();
+        console.log('Fetched blob size:', blob.size);
+        onSave(blob, selectedFrame);
+        return;
+      }
+      
+      // For crop tab or data URL images, use canvas cropping
+      if (!imgRef.current || !completedCrop) {
+        console.log('Missing imgRef or completedCrop');
+        toast({
+          title: 'Cannot save',
+          description: 'Please adjust the crop area first',
+          variant: 'destructive',
+        });
+        setSaving(false);
+        return;
+      }
+      
       console.log('Starting crop process...');
       const croppedBlob = await getCroppedImg(imgRef.current, completedCrop);
       console.log('Crop successful, blob size:', croppedBlob.size);
@@ -166,7 +178,6 @@ export const ProfilePhotoEditor = ({
         description: error.message || 'Please try uploading a new image',
         variant: 'destructive',
       });
-    } finally {
       setSaving(false);
     }
   };
