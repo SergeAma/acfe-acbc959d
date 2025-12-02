@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
@@ -226,8 +227,8 @@ export const Jobs = () => {
                 <p className="text-sm text-muted-foreground mb-4">
                   Want to share with the community? Sign in to post tips, events, or connect with others.
                 </p>
-                <Button variant="outline" className="rounded-full">
-                  Sign in to Post
+                <Button variant="outline" className="rounded-full" asChild>
+                  <Link to="/auth">Sign in to Post</Link>
                 </Button>
               </div>
             </TabsContent>
