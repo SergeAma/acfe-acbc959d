@@ -12,6 +12,7 @@ import { AdminDashboard } from "./pages/AdminDashboard";
 import { Courses } from "./pages/Courses";
 import { CourseDetail } from "./pages/CourseDetail";
 import { CoursePreview } from "./pages/CoursePreview";
+import { CourseLearn } from "./pages/CourseLearn";
 import { CreateCourse } from "./pages/CreateCourse";
 import { AdminCourses } from "./pages/AdminCourses";
 import { AdminCourseBuilder } from "./pages/AdminCourseBuilder";
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/courses" element={<Courses />} />
             <Route path="/courses/:id" element={<CourseDetail />} />
             <Route path="/courses/:id/preview" element={<CoursePreview />} />
+            <Route path="/courses/:id/learn" element={<ProtectedRoute><CourseLearn /></ProtectedRoute>} />
             <Route
               path="/dashboard"
               element={
