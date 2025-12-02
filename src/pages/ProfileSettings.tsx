@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
@@ -8,9 +8,28 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Upload, User } from 'lucide-react';
+import { Loader2, Upload, User, Crop } from 'lucide-react';
+import ReactCrop, { type Crop as CropType, centerCrop, makeAspectCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
+
+function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: number) {
+  return centerCrop(
+    makeAspectCrop(
+      {
+        unit: '%',
+        width: 90,
+      },
+      aspect,
+      mediaWidth,
+      mediaHeight
+    ),
+    mediaWidth,
+    mediaHeight
+  );
+}
 
 export const ProfileSettings = () => {
   const { profile, refreshProfile } = useAuth();
@@ -18,6 +37,15 @@ export const ProfileSettings = () => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  
+  // Crop state
+  const [showCropDialog, setShowCropDialog] = useState(false);
+  const [imgSrc, setImgSrc] = useState('');
+  const [crop, setCrop] = useState<CropType>();
+  const [completedCrop, setCompletedCrop] = useState<CropType>();
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
   const [formData, setFormData] = useState({
     full_name: '',
     bio: '',
@@ -92,22 +120,103 @@ export const ProfileSettings = () => {
     }));
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      setUploading(true);
-
-      if (!event.target.files || event.target.files.length === 0) {
+  const onSelectFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0];
+      
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: 'File too large',
+          description: 'Please select an image smaller than 5MB.',
+          variant: 'destructive',
+        });
         return;
       }
+      
+      setSelectedFile(file);
+      setCrop(undefined);
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        setImgSrc(reader.result?.toString() || '');
+        setShowCropDialog(true);
+      });
+      reader.readAsDataURL(file);
+    }
+  };
 
-      const file = event.target.files[0];
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${profile?.id}/${Math.random()}.${fileExt}`;
+  const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { width, height } = e.currentTarget;
+    setCrop(centerAspectCrop(width, height, 1));
+  }, []);
 
-      // Upload file to storage
-      const { error: uploadError, data } = await supabase.storage
+  const getCroppedImg = async (image: HTMLImageElement, crop: CropType): Promise<Blob> => {
+    const canvas = document.createElement('canvas');
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    
+    const pixelCrop = {
+      x: (crop.x / 100) * image.width * scaleX,
+      y: (crop.y / 100) * image.height * scaleY,
+      width: (crop.width / 100) * image.width * scaleX,
+      height: (crop.height / 100) * image.height * scaleY,
+    };
+    
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      throw new Error('No 2d context');
+    }
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      pixelCrop.width,
+      pixelCrop.height
+    );
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error('Canvas is empty'));
+            return;
+          }
+          resolve(blob);
+        },
+        'image/jpeg',
+        0.9
+      );
+    });
+  };
+
+  const handleCropComplete = async () => {
+    if (!imgRef.current || !completedCrop || !selectedFile) {
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setShowCropDialog(false);
+
+      const croppedBlob = await getCroppedImg(imgRef.current, completedCrop);
+      const fileExt = 'jpg';
+      const filePath = `${profile?.id}/${Date.now()}.${fileExt}`;
+
+      // Upload cropped file to storage
+      const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, croppedBlob, { 
+          upsert: true,
+          contentType: 'image/jpeg'
+        });
 
       if (uploadError) {
         throw uploadError;
@@ -136,6 +245,17 @@ export const ProfileSettings = () => {
       });
     } finally {
       setUploading(false);
+      setImgSrc('');
+      setSelectedFile(null);
+    }
+  };
+
+  const handleCancelCrop = () => {
+    setShowCropDialog(false);
+    setImgSrc('');
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -164,8 +284,8 @@ export const ProfileSettings = () => {
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*"
-                      onChange={handleFileUpload}
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={onSelectFile}
                       className="hidden"
                     />
                     <Button
@@ -188,7 +308,7 @@ export const ProfileSettings = () => {
                       )}
                     </Button>
                     <p className="text-xs text-muted-foreground">
-                      JPG, PNG or WEBP. Max 5MB.
+                      JPG, PNG, WEBP or GIF. Max 5MB. You can crop after selecting.
                     </p>
                   </div>
                 </div>
@@ -326,6 +446,45 @@ export const ProfileSettings = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Image Crop Dialog */}
+      <Dialog open={showCropDialog} onOpenChange={setShowCropDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Crop className="h-5 w-5" />
+              Crop Your Profile Picture
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center py-4">
+            {imgSrc && (
+              <ReactCrop
+                crop={crop}
+                onChange={(_, percentCrop) => setCrop(percentCrop)}
+                onComplete={(_, percentCrop) => setCompletedCrop(percentCrop)}
+                aspect={1}
+                circularCrop
+              >
+                <img
+                  ref={imgRef}
+                  alt="Crop preview"
+                  src={imgSrc}
+                  onLoad={onImageLoad}
+                  style={{ maxHeight: '400px' }}
+                />
+              </ReactCrop>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelCrop}>
+              Cancel
+            </Button>
+            <Button onClick={handleCropComplete} disabled={!completedCrop}>
+              Apply Crop
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
