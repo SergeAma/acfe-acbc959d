@@ -81,9 +81,7 @@ export const Navbar = () => {
           )}
 
           <a
-            href="https://www.instagram.com/acloudforeveryone"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="https://www.instagram.com/acloudforeveryone/"
             className="text-foreground hover:text-primary transition-colors"
           >
             <Instagram className="h-5 w-5" />
