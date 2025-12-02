@@ -50,7 +50,9 @@ export const ProfilePhotoEditor = ({
 
   const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const { width, height } = e.currentTarget;
-    setCrop(centerAspectCrop(width, height, 1));
+    const initialCrop = centerAspectCrop(width, height, 1);
+    setCrop(initialCrop);
+    setCompletedCrop(initialCrop); // Initialize completedCrop so save works immediately
   }, []);
 
   const getCroppedImg = async (image: HTMLImageElement, crop: CropType): Promise<Blob> => {
