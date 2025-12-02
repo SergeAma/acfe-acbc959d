@@ -115,6 +115,22 @@ export function SubmitIdea() {
 
       if (insertError) throw insertError;
 
+      setUploadProgress(95);
+
+      // Send confirmation email
+      try {
+        await supabase.functions.invoke('send-idea-confirmation', {
+          body: {
+            name: formData.fullName,
+            email: formData.email,
+            ideaTitle: formData.ideaTitle,
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send confirmation email:', emailError);
+        // Don't fail the whole submission if email fails
+      }
+
       setUploadProgress(100);
       setIsSubmitted(true);
     } catch (error: any) {
