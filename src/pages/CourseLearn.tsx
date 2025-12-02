@@ -37,7 +37,9 @@ interface ContentItem {
   file_name: string | null;
   duration_minutes: number | null;
   sort_order: number;
+  drip_delay_days: number | null;
   completed?: boolean;
+  available?: boolean;
 }
 
 interface Section {
@@ -52,6 +54,7 @@ interface Course {
   id: string;
   title: string;
   description: string;
+  drip_enabled: boolean;
 }
 
 export const CourseLearn = () => {
@@ -63,6 +66,7 @@ export const CourseLearn = () => {
   const [course, setCourse] = useState<Course | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
   const [enrollmentId, setEnrollmentId] = useState<string | null>(null);
+  const [enrolledAt, setEnrolledAt] = useState<string | null>(null);
   const [currentContent, setCurrentContent] = useState<ContentItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [overallProgress, setOverallProgress] = useState(0);
@@ -78,7 +82,7 @@ export const CourseLearn = () => {
       // Check enrollment
       const { data: enrollmentData, error: enrollmentError } = await supabase
         .from('enrollments')
-        .select('id')
+        .select('id, enrolled_at')
         .eq('course_id', id)
         .eq('student_id', user?.id)
         .maybeSingle();
@@ -96,11 +100,12 @@ export const CourseLearn = () => {
       }
 
       setEnrollmentId(enrollmentData.id);
+      setEnrolledAt(enrollmentData.enrolled_at);
 
       // Fetch course details
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
-        .select('id, title, description')
+        .select('id, title, description, drip_enabled')
         .eq('id', id)
         .single();
 
@@ -124,6 +129,7 @@ export const CourseLearn = () => {
             file_url,
             file_name,
             duration_minutes,
+            drip_delay_days,
             sort_order
           )
         `)
@@ -140,15 +146,25 @@ export const CourseLearn = () => {
 
       const progressMap = new Map(progressData?.map(p => [p.content_id, p.completed]) || []);
 
-      // Sort content and mark completion
+      // Calculate drip availability
+      const daysSinceEnrollment = enrollmentData.enrolled_at 
+        ? Math.floor((Date.now() - new Date(enrollmentData.enrolled_at).getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
+
+      // Sort content and mark completion/availability
       const sortedSections = sectionsData.map(section => ({
         ...section,
         content: (section.content as any[])
           .sort((a, b) => a.sort_order - b.sort_order)
-          .map(item => ({
-            ...item,
-            completed: progressMap.get(item.id) || false
-          }))
+          .map(item => {
+            const dripDelay = item.drip_delay_days || 0;
+            const isAvailable = !courseData.drip_enabled || daysSinceEnrollment >= dripDelay;
+            return {
+              ...item,
+              completed: progressMap.get(item.id) || false,
+              available: isAvailable
+            };
+          })
       }));
 
       setSections(sortedSections as Section[]);
@@ -159,9 +175,10 @@ export const CourseLearn = () => {
       const progress = allContent.length > 0 ? Math.round((completedCount / allContent.length) * 100) : 0;
       setOverallProgress(progress);
 
-      // Set first incomplete lesson or first lesson
-      const firstIncomplete = allContent.find(c => !c.completed);
-      setCurrentContent(firstIncomplete || allContent[0] || null);
+      // Set first incomplete available lesson or first available lesson
+      const firstIncomplete = allContent.find(c => !c.completed && c.available);
+      const firstAvailable = allContent.find(c => c.available);
+      setCurrentContent(firstIncomplete || firstAvailable || allContent[0] || null);
 
     } catch (error: any) {
       toast({
@@ -226,13 +243,19 @@ export const CourseLearn = () => {
   const navigateToContent = (contentId: string) => {
     const allContent = sections.flatMap(s => s.content);
     const content = allContent.find(c => c.id === contentId);
-    if (content) {
+    if (content && content.available) {
       setCurrentContent(content);
+    } else if (content && !content.available) {
+      toast({
+        title: 'Content locked',
+        description: 'This content will be available in a few days',
+        variant: 'destructive',
+      });
     }
   };
 
   const navigateNext = () => {
-    const allContent = sections.flatMap(s => s.content);
+    const allContent = sections.flatMap(s => s.content).filter(c => c.available);
     const currentIndex = allContent.findIndex(c => c.id === currentContent?.id);
     if (currentIndex < allContent.length - 1) {
       setCurrentContent(allContent[currentIndex + 1]);
@@ -240,7 +263,7 @@ export const CourseLearn = () => {
   };
 
   const navigatePrevious = () => {
-    const allContent = sections.flatMap(s => s.content);
+    const allContent = sections.flatMap(s => s.content).filter(c => c.available);
     const currentIndex = allContent.findIndex(c => c.id === currentContent?.id);
     if (currentIndex > 0) {
       setCurrentContent(allContent[currentIndex - 1]);
@@ -257,6 +280,26 @@ export const CourseLearn = () => {
       return (
         <div className="text-center py-12 text-muted-foreground">
           No content available
+        </div>
+      );
+    }
+
+    if (!currentContent.available) {
+      const dripDelay = currentContent.drip_delay_days || 0;
+      const daysSinceEnrollment = enrolledAt 
+        ? Math.floor((Date.now() - new Date(enrolledAt).getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
+      const daysRemaining = dripDelay - daysSinceEnrollment;
+
+      return (
+        <div className="text-center py-12">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+            <Circle className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-xl font-semibold mb-2">Content Locked</h3>
+          <p className="text-muted-foreground">
+            This lesson will be available in {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'}
+          </p>
         </div>
       );
     }
@@ -410,10 +453,13 @@ export const CourseLearn = () => {
                             <button
                               key={item.id}
                               onClick={() => navigateToContent(item.id)}
+                              disabled={!item.available}
                               className={`w-full flex items-center gap-2 p-2 rounded-md text-left transition-colors ${
                                 currentContent?.id === item.id
                                   ? 'bg-primary/10 text-primary'
-                                  : 'hover:bg-muted'
+                                  : item.available
+                                  ? 'hover:bg-muted'
+                                  : 'opacity-50 cursor-not-allowed'
                               }`}
                             >
                               {getContentIcon(item.content_type, item.completed || false)}

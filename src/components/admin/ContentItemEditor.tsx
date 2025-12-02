@@ -18,6 +18,7 @@ interface ContentItem {
   file_url: string | null;
   file_name: string | null;
   duration_minutes: number | null;
+  drip_delay_days: number | null;
 }
 
 interface ContentItemEditorProps {
@@ -35,6 +36,7 @@ export const ContentItemEditor = ({ item, onDelete, onUpdate }: ContentItemEdito
     title: item.title,
     text_content: item.text_content || '',
     duration_minutes: item.duration_minutes || 0,
+    drip_delay_days: item.drip_delay_days || 0,
   });
 
   const getIcon = () => {
@@ -56,6 +58,7 @@ export const ContentItemEditor = ({ item, onDelete, onUpdate }: ContentItemEdito
         title: formData.title,
         text_content: item.content_type === 'text' ? formData.text_content : null,
         duration_minutes: formData.duration_minutes || null,
+        drip_delay_days: formData.drip_delay_days || 0,
       })
       .eq('id', item.id);
 
@@ -294,6 +297,22 @@ export const ContentItemEditor = ({ item, onDelete, onUpdate }: ContentItemEdito
                   onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 0 })}
                   min="0"
                 />
+              </div>
+            )}
+
+            {editing && (
+              <div className="space-y-2">
+                <Label>Drip Delay (days after enrollment)</Label>
+                <Input
+                  type="number"
+                  value={formData.drip_delay_days}
+                  onChange={(e) => setFormData({ ...formData, drip_delay_days: parseInt(e.target.value) || 0 })}
+                  min="0"
+                  placeholder="0 = available immediately"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Number of days after enrollment before this content becomes available
+                </p>
               </div>
             )}
           </div>

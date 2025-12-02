@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { ArrowLeft, Loader2 } from 'lucide-react';
@@ -34,6 +35,7 @@ export const CreateCourse = () => {
     category: '',
     level: 'beginner' as 'beginner' | 'intermediate' | 'advanced',
     duration_weeks: 4,
+    drip_enabled: false,
   });
 
   const validateForm = () => {
@@ -179,6 +181,22 @@ export const CreateCourse = () => {
                   required
                 />
                 {errors.duration_weeks && <p className="text-sm text-destructive">{errors.duration_weeks}</p>}
+              </div>
+
+              <div className="flex items-center space-x-2 border rounded-lg p-4">
+                <Checkbox
+                  id="drip_enabled"
+                  checked={formData.drip_enabled}
+                  onCheckedChange={(checked) => setFormData({ ...formData, drip_enabled: checked as boolean })}
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="drip_enabled" className="cursor-pointer">
+                    Enable Drip Content Release
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Release course content progressively based on enrollment date. You can set individual delays for each lesson.
+                  </p>
+                </div>
               </div>
 
               <div className="flex gap-4">
