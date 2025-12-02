@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { LogOut, User, BookOpen, Library, Shield, Instagram, Linkedin } from 'lucide-react';
+import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { LogOut, User, BookOpen, Library, Shield, Instagram, Linkedin } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,9 +9,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { NavLink } from '@/components/NavLink';
-import acfeLogo from '@/assets/acfe-logo.png';
+} from "@/components/ui/dropdown-menu";
+import { NavLink } from "@/components/NavLink";
+import acfeLogo from "@/assets/acfe-logo.png";
 
 export const Navbar = () => {
   const { user, profile, signOut } = useAuth();
@@ -35,7 +35,7 @@ export const Navbar = () => {
           <NavLink to="/jobs" className="text-sm font-bold text-foreground hover:text-primary transition-colors">
             Jobs
           </NavLink>
-          
+
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -49,17 +49,17 @@ export const Navbar = () => {
                 <DropdownMenuItem asChild>
                   <Link to="/dashboard">Dashboard</Link>
                 </DropdownMenuItem>
-                {profile?.role === 'student' && (
+                {profile?.role === "student" && (
                   <DropdownMenuItem asChild>
                     <Link to="/courses">Browse Courses</Link>
                   </DropdownMenuItem>
                 )}
-                {(profile?.role === 'mentor' || profile?.role === 'admin') && (
+                {(profile?.role === "mentor" || profile?.role === "admin") && (
                   <DropdownMenuItem asChild>
                     <Link to="/admin/courses">Manage Courses</Link>
                   </DropdownMenuItem>
                 )}
-                {profile?.role === 'admin' && (
+                {profile?.role === "admin" && (
                   <DropdownMenuItem asChild>
                     <Link to="/admin">Admin Panel</Link>
                   </DropdownMenuItem>
@@ -79,11 +79,21 @@ export const Navbar = () => {
               My account
             </Link>
           )}
-          
-          <a href="https://www.instagram.com/acloudforeveryone/" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors">
+
+          <a
+            href="https://www.instagram.com/acloudforeveryone"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground hover:text-primary transition-colors"
+          >
             <Instagram className="h-5 w-5" />
           </a>
-          <a href="https://www.linkedin.com/company/a-cloud-for-everyone" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors">
+          <a
+            href="https://www.linkedin.com/company/a-cloud-for-everyone"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground hover:text-primary transition-colors"
+          >
             <Linkedin className="h-5 w-5" />
           </a>
         </div>
