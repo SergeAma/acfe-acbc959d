@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -179,6 +180,7 @@ export function SubmitIdea() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
+      <PageBreadcrumb items={[{ label: "Submit Idea" }]} />
       
       <main className="flex-grow">
         {/* Hero Section */}

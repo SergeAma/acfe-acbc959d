@@ -1,5 +1,6 @@
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import acfeLogo from '@/assets/acfe-logo.png';
@@ -60,6 +61,7 @@ export const Jobs = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+      <PageBreadcrumb items={[{ label: "Jobs" }]} />
       
       {/* Hero Section */}
       <section className="relative border-b border-border py-8 bg-gradient-to-b from-muted/30 to-background">
