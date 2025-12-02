@@ -12,6 +12,8 @@ import { AdminDashboard } from "./pages/AdminDashboard";
 import { Courses } from "./pages/Courses";
 import { CourseDetail } from "./pages/CourseDetail";
 import { CreateCourse } from "./pages/CreateCourse";
+import { AdminCourses } from "./pages/AdminCourses";
+import { AdminCourseBuilder } from "./pages/AdminCourseBuilder";
 import { Partners } from "./pages/Partners";
 import { Jobs } from "./pages/Jobs";
 import NotFound from "./pages/NotFound";
@@ -40,22 +42,10 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/mentor/courses/new"
-              element={
-                <ProtectedRoute requiredRole="mentor">
-                  <CreateCourse />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/courses" element={<ProtectedRoute requiredRole="admin"><AdminCourses /></ProtectedRoute>} />
+            <Route path="/admin/courses/:courseId/build" element={<ProtectedRoute requiredRole="admin"><AdminCourseBuilder /></ProtectedRoute>} />
+            <Route path="/mentor/courses/new" element={<ProtectedRoute requiredRole="mentor"><CreateCourse /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
