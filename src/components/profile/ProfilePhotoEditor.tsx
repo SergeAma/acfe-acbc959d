@@ -1,12 +1,13 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
-import { Crop, RotateCcw, RotateCw, Pencil, ImageIcon, Frame } from 'lucide-react';
+import { Crop, RotateCcw, RotateCw, Pencil, Frame, Loader2 } from 'lucide-react';
 import ReactCrop, { type Crop as CropType, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { ProfileFrame } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProfilePhotoEditorProps {
   open: boolean;
@@ -40,6 +41,7 @@ export const ProfilePhotoEditor = ({
   onSave,
   onCancel,
 }: ProfilePhotoEditorProps) => {
+  const { toast } = useToast();
   const imgRef = useRef<HTMLImageElement>(null);
   const [activeTab, setActiveTab] = useState<'crop' | 'frames'>('crop');
   const [crop, setCrop] = useState<CropType>();
@@ -47,13 +49,42 @@ export const ProfilePhotoEditor = ({
   const [zoom, setZoom] = useState([1]);
   const [rotation, setRotation] = useState([0]);
   const [selectedFrame, setSelectedFrame] = useState<ProfileFrame>(currentFrame);
+  const [saving, setSaving] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  // Reset state when dialog opens with new image
+  useEffect(() => {
+    if (open) {
+      console.log('Dialog opened, resetting state');
+      setCrop(undefined);
+      setCompletedCrop(undefined);
+      setZoom([1]);
+      setRotation([0]);
+      setSelectedFrame(currentFrame);
+      setSaving(false);
+      setImageError(false);
+    }
+  }, [open, currentFrame]);
 
   const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    console.log('Image loaded successfully');
     const { width, height } = e.currentTarget;
     const initialCrop = centerAspectCrop(width, height, 1);
     setCrop(initialCrop);
-    setCompletedCrop(initialCrop); // Initialize completedCrop so save works immediately
+    setCompletedCrop(initialCrop);
+    setImageError(false);
+    console.log('Initial crop set:', initialCrop);
   }, []);
+
+  const onImageError = useCallback(() => {
+    console.error('Image failed to load');
+    setImageError(true);
+    toast({
+      title: 'Image failed to load',
+      description: 'Please try uploading a new image instead of editing',
+      variant: 'destructive',
+    });
+  }, [toast]);
 
   const getCroppedImg = async (image: HTMLImageElement, crop: CropType): Promise<Blob> => {
     const canvas = document.createElement('canvas');
@@ -110,9 +141,34 @@ export const ProfilePhotoEditor = ({
   };
 
   const handleSave = async () => {
-    if (!imgRef.current || !completedCrop) return;
-    const croppedBlob = await getCroppedImg(imgRef.current, completedCrop);
-    onSave(croppedBlob, selectedFrame);
+    console.log('Save clicked', { imgRef: imgRef.current, completedCrop });
+    
+    if (!imgRef.current || !completedCrop) {
+      console.log('Missing imgRef or completedCrop');
+      toast({
+        title: 'Cannot save',
+        description: 'Please adjust the crop area first',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      console.log('Starting crop process...');
+      const croppedBlob = await getCroppedImg(imgRef.current, completedCrop);
+      console.log('Crop successful, blob size:', croppedBlob.size);
+      onSave(croppedBlob, selectedFrame);
+    } catch (error: any) {
+      console.error('Error cropping image:', error);
+      toast({
+        title: 'Failed to process image',
+        description: error.message || 'Please try uploading a new image',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const resetAdjustments = () => {
@@ -158,7 +214,9 @@ export const ProfilePhotoEditor = ({
                         ref={imgRef}
                         alt="Crop preview"
                         src={imgSrc}
+                        crossOrigin="anonymous"
                         onLoad={onImageLoad}
+                        onError={onImageError}
                         style={{ maxHeight: '300px' }}
                       />
                     </ReactCrop>
@@ -274,10 +332,11 @@ export const ProfilePhotoEditor = ({
         </Tabs>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!completedCrop}>
+          <Button type="button" onClick={handleSave} disabled={!completedCrop || saving || imageError}>
+            {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
             Save Photo
           </Button>
         </DialogFooter>
