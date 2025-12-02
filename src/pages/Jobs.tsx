@@ -84,6 +84,11 @@ const postTypeBadgeColors = {
 
 export const Jobs = () => {
   const [activeTab, setActiveTab] = useState('community');
+  const [postFilter, setPostFilter] = useState<string | null>(null);
+
+  const filteredPosts = postFilter 
+    ? communityPosts.filter(post => post.type === postFilter)
+    : communityPosts;
 
   const jobs = [
     {
@@ -173,23 +178,45 @@ export const Jobs = () => {
             {/* Community Tab */}
             <TabsContent value="community" className="space-y-6">
               <div className="flex flex-wrap gap-2 justify-center mb-6">
-                <Badge variant="outline" className="cursor-pointer hover:bg-muted">All Posts</Badge>
-                <Badge variant="outline" className={`cursor-pointer hover:bg-muted ${postTypeBadgeColors.tip}`}>
+                <Badge 
+                  variant="outline" 
+                  className={`cursor-pointer hover:bg-muted ${!postFilter ? 'bg-muted ring-2 ring-primary/50' : ''}`}
+                  onClick={() => setPostFilter(null)}
+                >
+                  All Posts
+                </Badge>
+                <Badge 
+                  variant="outline" 
+                  className={`cursor-pointer hover:bg-muted ${postTypeBadgeColors.tip} ${postFilter === 'tip' ? 'ring-2 ring-primary/50' : ''}`}
+                  onClick={() => setPostFilter('tip')}
+                >
                   <Lightbulb className="h-3 w-3 mr-1" /> Tips & Tricks
                 </Badge>
-                <Badge variant="outline" className={`cursor-pointer hover:bg-muted ${postTypeBadgeColors.event}`}>
+                <Badge 
+                  variant="outline" 
+                  className={`cursor-pointer hover:bg-muted ${postTypeBadgeColors.event} ${postFilter === 'event' ? 'ring-2 ring-primary/50' : ''}`}
+                  onClick={() => setPostFilter('event')}
+                >
                   <Calendar className="h-3 w-3 mr-1" /> Events
                 </Badge>
-                <Badge variant="outline" className={`cursor-pointer hover:bg-muted ${postTypeBadgeColors.offer}`}>
+                <Badge 
+                  variant="outline" 
+                  className={`cursor-pointer hover:bg-muted ${postTypeBadgeColors.offer} ${postFilter === 'offer' ? 'ring-2 ring-primary/50' : ''}`}
+                  onClick={() => setPostFilter('offer')}
+                >
                   <Gift className="h-3 w-3 mr-1" /> Offers
                 </Badge>
-                <Badge variant="outline" className={`cursor-pointer hover:bg-muted ${postTypeBadgeColors.network}`}>
+                <Badge 
+                  variant="outline" 
+                  className={`cursor-pointer hover:bg-muted ${postTypeBadgeColors.network} ${postFilter === 'network' ? 'ring-2 ring-primary/50' : ''}`}
+                  onClick={() => setPostFilter('network')}
+                >
                   <Users className="h-3 w-3 mr-1" /> Networking
                 </Badge>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
-                {communityPosts.map((post) => {
+                {filteredPosts.map((post) => {
                   const Icon = postTypeIcons[post.type as keyof typeof postTypeIcons];
                   return (
                     <Card key={post.id} className="border border-border hover:border-primary/50 transition-colors">
