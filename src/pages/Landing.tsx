@@ -85,17 +85,19 @@ export const Landing = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <Card className="border-2 hover:border-primary transition-colors">
-              <CardContent className="pt-6">
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                  <Users className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Our Mentors</h3>
-                <p className="text-muted-foreground">
-                  Learn from experienced professionals who are passionate about sharing their knowledge and empowering the next generation
-                </p>
-              </CardContent>
-            </Card>
+            <Link to="/mentors">
+              <Card className="border-2 hover:border-primary transition-colors cursor-pointer group">
+                <CardContent className="pt-6">
+                  <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                    <Users className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors">Our Mentors</h3>
+                  <p className="text-muted-foreground">
+                    Learn from experienced professionals who are passionate about sharing their knowledge and empowering the next generation
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
 
             <Card className="border-2 hover:border-secondary transition-colors">
               <CardContent className="pt-6">

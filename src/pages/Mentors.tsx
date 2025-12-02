@@ -1,0 +1,204 @@
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Navbar } from '@/components/Navbar';
+import { Footer } from '@/components/Footer';
+import { PageBreadcrumb } from '@/components/PageBreadcrumb';
+import { Card, CardContent } from '@/components/ui/card';
+import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+interface MentorProfile {
+  id: string;
+  full_name: string | null;
+  bio: string | null;
+  avatar_url: string | null;
+  profile_frame: string | null;
+  linkedin_url: string | null;
+  twitter_url: string | null;
+  instagram_url: string | null;
+  github_url: string | null;
+  website_url: string | null;
+}
+
+interface Course {
+  id: string;
+  title: string;
+  category: string | null;
+  thumbnail_url: string | null;
+}
+
+interface MentorWithCourses extends MentorProfile {
+  courses: Course[];
+}
+
+export const Mentors = () => {
+  const { data: mentors, isLoading } = useQuery({
+    queryKey: ['mentors-with-courses'],
+    queryFn: async () => {
+      // First get all mentors from the public view
+      const { data: mentorProfiles, error: profilesError } = await supabase
+        .from('profiles_public')
+        .select('id, full_name, role')
+        .eq('role', 'mentor');
+
+      if (profilesError) throw profilesError;
+
+      // Get full profile data for each mentor (bio, social links, avatar)
+      const mentorIds = mentorProfiles?.map(m => m.id) || [];
+      
+      // Fetch courses for all mentors
+      const { data: courses, error: coursesError } = await supabase
+        .from('courses')
+        .select('id, title, category, thumbnail_url, mentor_id')
+        .eq('is_published', true)
+        .in('mentor_id', mentorIds);
+
+      if (coursesError) throw coursesError;
+
+      // We need to get avatar_url and other public info
+      // Since profiles table is restricted, we'll use what we can from courses
+      // and profiles_public
+      const mentorsWithCourses: MentorWithCourses[] = (mentorProfiles || []).map(mentor => ({
+        id: mentor.id!,
+        full_name: mentor.full_name,
+        bio: null, // Not available in public view
+        avatar_url: null,
+        profile_frame: null,
+        linkedin_url: null,
+        twitter_url: null,
+        instagram_url: null,
+        github_url: null,
+        website_url: null,
+        courses: (courses || []).filter(c => c.mentor_id === mentor.id).map(c => ({
+          id: c.id,
+          title: c.title,
+          category: c.category,
+          thumbnail_url: c.thumbnail_url
+        }))
+      }));
+
+      return mentorsWithCourses;
+    }
+  });
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <PageBreadcrumb items={[{ label: "Mentors" }]} />
+      
+      <main className="container mx-auto px-4 py-12">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-foreground mb-4">Our Mentors</h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Learn from experienced professionals who are passionate about sharing their knowledge and empowering the next generation of African tech talent.
+          </p>
+        </div>
+
+        {isLoading ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i} className="overflow-hidden">
+                <CardContent className="p-6">
+                  <div className="flex flex-col items-center text-center">
+                    <Skeleton className="h-24 w-24 rounded-full mb-4" />
+                    <Skeleton className="h-6 w-32 mb-2" />
+                    <Skeleton className="h-4 w-48 mb-4" />
+                    <Skeleton className="h-20 w-full" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : mentors && mentors.length > 0 ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {mentors.map((mentor) => (
+              <Card key={mentor.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex flex-col items-center text-center">
+                    <ProfileAvatar
+                      src={mentor.avatar_url || undefined}
+                      name={mentor.full_name || undefined}
+                      frame={(mentor.profile_frame as 'none' | 'hiring' | 'open_to_work' | 'looking_for_cofounder') || 'none'}
+                      size="lg"
+                      className="mb-4"
+                    />
+                    
+                    <h3 className="text-xl font-bold text-foreground mb-2">
+                      {mentor.full_name || 'Anonymous Mentor'}
+                    </h3>
+                    
+                    {mentor.bio && (
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                        {mentor.bio}
+                      </p>
+                    )}
+
+                    {/* Social Links */}
+                    <div className="flex gap-3 mb-4">
+                      {mentor.linkedin_url && (
+                        <a href={mentor.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                          <Linkedin className="h-5 w-5" />
+                        </a>
+                      )}
+                      {mentor.twitter_url && (
+                        <a href={mentor.twitter_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                          <Twitter className="h-5 w-5" />
+                        </a>
+                      )}
+                      {mentor.instagram_url && (
+                        <a href={mentor.instagram_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                          <Instagram className="h-5 w-5" />
+                        </a>
+                      )}
+                      {mentor.github_url && (
+                        <a href={mentor.github_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                          <Github className="h-5 w-5" />
+                        </a>
+                      )}
+                      {mentor.website_url && (
+                        <a href={mentor.website_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                          <Globe className="h-5 w-5" />
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Published Courses */}
+                    {mentor.courses.length > 0 && (
+                      <div className="w-full border-t border-border pt-4">
+                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-3">
+                          <BookOpen className="h-4 w-4" />
+                          <span>{mentor.courses.length} Course{mentor.courses.length > 1 ? 's' : ''}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2 justify-center">
+                          {mentor.courses.slice(0, 3).map((course) => (
+                            <Link key={course.id} to={`/courses/${course.id}`}>
+                              <Badge variant="secondary" className="cursor-pointer hover:bg-secondary/80">
+                                {course.title}
+                              </Badge>
+                            </Link>
+                          ))}
+                          {mentor.courses.length > 3 && (
+                            <Badge variant="outline">+{mentor.courses.length - 3} more</Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No mentors available yet. Check back soon!</p>
+          </div>
+        )}
+      </main>
+
+      <Footer />
+    </div>
+  );
+};
