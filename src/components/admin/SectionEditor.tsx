@@ -42,6 +42,7 @@ interface ContentItem {
   file_name: string | null;
   sort_order: number;
   duration_minutes: number | null;
+  drip_delay_days: number | null;
 }
 
 interface SectionEditorProps {

@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           content_type: string
           created_at: string | null
+          drip_delay_days: number | null
           duration_minutes: number | null
           file_name: string | null
           file_url: string | null
@@ -32,6 +33,7 @@ export type Database = {
         Insert: {
           content_type: string
           created_at?: string | null
+          drip_delay_days?: number | null
           duration_minutes?: number | null
           file_name?: string | null
           file_url?: string | null
@@ -46,6 +48,7 @@ export type Database = {
         Update: {
           content_type?: string
           created_at?: string | null
+          drip_delay_days?: number | null
           duration_minutes?: number | null
           file_name?: string | null
           file_url?: string | null
@@ -110,6 +113,7 @@ export type Database = {
           category: string | null
           created_at: string | null
           description: string | null
+          drip_enabled: boolean | null
           duration_weeks: number | null
           id: string
           is_published: boolean | null
@@ -123,6 +127,7 @@ export type Database = {
           category?: string | null
           created_at?: string | null
           description?: string | null
+          drip_enabled?: boolean | null
           duration_weeks?: number | null
           id?: string
           is_published?: boolean | null
@@ -136,6 +141,7 @@ export type Database = {
           category?: string | null
           created_at?: string | null
           description?: string | null
+          drip_enabled?: boolean | null
           duration_weeks?: number | null
           id?: string
           is_published?: boolean | null
