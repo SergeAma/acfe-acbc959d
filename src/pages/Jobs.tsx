@@ -143,7 +143,7 @@ export const Jobs = () => {
                     className="w-full bg-foreground text-background hover:bg-foreground/90 font-semibold text-sm py-5 rounded-full"
                     asChild
                   >
-                    <a href="mailto:info@acloudforeveryone.org?subject=Application for Project Coordinator Role">
+                    <a href="mailto:contact@acloudforeveryone.org?subject=Application for Project Coordinator Role">
                       APPLY HERE
                     </a>
                   </Button>
