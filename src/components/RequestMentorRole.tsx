@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -17,11 +17,11 @@ export const RequestMentorRole = () => {
   const [requestStatus, setRequestStatus] = useState<'pending' | 'approved' | 'rejected' | null>(null);
 
   // Check if user already has a request
-  useState(() => {
+  useEffect(() => {
     if (user) {
       checkExistingRequest();
     }
-  });
+  }, [user]);
 
   const checkExistingRequest = async () => {
     const { data, error } = await supabase
