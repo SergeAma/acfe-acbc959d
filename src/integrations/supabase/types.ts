@@ -694,6 +694,7 @@ export type Database = {
           id: string
           instagram_url: string | null
           linkedin_url: string | null
+          profile_frame: string | null
           role: Database["public"]["Enums"]["user_role"]
           twitter_url: string | null
           updated_at: string | null
@@ -710,6 +711,7 @@ export type Database = {
           id: string
           instagram_url?: string | null
           linkedin_url?: string | null
+          profile_frame?: string | null
           role: Database["public"]["Enums"]["user_role"]
           twitter_url?: string | null
           updated_at?: string | null
@@ -726,6 +728,7 @@ export type Database = {
           id?: string
           instagram_url?: string | null
           linkedin_url?: string | null
+          profile_frame?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           twitter_url?: string | null
           updated_at?: string | null

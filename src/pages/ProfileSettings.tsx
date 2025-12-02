@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
@@ -7,29 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Upload, User, Crop } from 'lucide-react';
-import ReactCrop, { type Crop as CropType, centerCrop, makeAspectCrop } from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
+import { Loader2, Upload, Pencil, Trash2 } from 'lucide-react';
+import { ProfilePhotoEditor } from '@/components/profile/ProfilePhotoEditor';
+import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 
-function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: number) {
-  return centerCrop(
-    makeAspectCrop(
-      {
-        unit: '%',
-        width: 90,
-      },
-      aspect,
-      mediaWidth,
-      mediaHeight
-    ),
-    mediaWidth,
-    mediaHeight
-  );
-}
+type ProfileFrame = 'none' | 'hiring' | 'open_to_work' | 'looking_for_cofounder';
 
 export const ProfileSettings = () => {
   const { profile, refreshProfile } = useAuth();
@@ -37,13 +21,9 @@ export const ProfileSettings = () => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const imgRef = useRef<HTMLImageElement>(null);
   
-  // Crop state
-  const [showCropDialog, setShowCropDialog] = useState(false);
+  const [showPhotoEditor, setShowPhotoEditor] = useState(false);
   const [imgSrc, setImgSrc] = useState('');
-  const [crop, setCrop] = useState<CropType>();
-  const [completedCrop, setCompletedCrop] = useState<CropType>();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
   const [formData, setFormData] = useState({
@@ -51,6 +31,7 @@ export const ProfileSettings = () => {
     bio: '',
     country: '',
     avatar_url: '',
+    profile_frame: 'none' as ProfileFrame,
     linkedin_url: '',
     twitter_url: '',
     instagram_url: '',
@@ -65,6 +46,7 @@ export const ProfileSettings = () => {
         bio: profile.bio || '',
         country: profile.country || '',
         avatar_url: profile.avatar_url || '',
+        profile_frame: ((profile as any).profile_frame as ProfileFrame) || 'none',
         linkedin_url: profile.linkedin_url || '',
         twitter_url: profile.twitter_url || '',
         instagram_url: profile.instagram_url || '',
@@ -86,6 +68,7 @@ export const ProfileSettings = () => {
           bio: formData.bio,
           country: formData.country,
           avatar_url: formData.avatar_url,
+          profile_frame: formData.profile_frame,
           linkedin_url: formData.linkedin_url,
           twitter_url: formData.twitter_url,
           instagram_url: formData.instagram_url,
@@ -124,7 +107,6 @@ export const ProfileSettings = () => {
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
       
-      // Validate file size (5MB max)
       if (file.size > 5 * 1024 * 1024) {
         toast({
           title: 'File too large',
@@ -135,82 +117,29 @@ export const ProfileSettings = () => {
       }
       
       setSelectedFile(file);
-      setCrop(undefined);
       const reader = new FileReader();
       reader.addEventListener('load', () => {
         setImgSrc(reader.result?.toString() || '');
-        setShowCropDialog(true);
+        setShowPhotoEditor(true);
       });
       reader.readAsDataURL(file);
     }
   };
 
-  const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
-    const { width, height } = e.currentTarget;
-    setCrop(centerAspectCrop(width, height, 1));
-  }, []);
-
-  const getCroppedImg = async (image: HTMLImageElement, crop: CropType): Promise<Blob> => {
-    const canvas = document.createElement('canvas');
-    const scaleX = image.naturalWidth / image.width;
-    const scaleY = image.naturalHeight / image.height;
-    
-    const pixelCrop = {
-      x: (crop.x / 100) * image.width * scaleX,
-      y: (crop.y / 100) * image.height * scaleY,
-      width: (crop.width / 100) * image.width * scaleX,
-      height: (crop.height / 100) * image.height * scaleY,
-    };
-    
-    canvas.width = pixelCrop.width;
-    canvas.height = pixelCrop.height;
-    const ctx = canvas.getContext('2d');
-
-    if (!ctx) {
-      throw new Error('No 2d context');
+  const handleEditExistingPhoto = () => {
+    if (formData.avatar_url) {
+      setImgSrc(formData.avatar_url);
+      setShowPhotoEditor(true);
     }
-
-    ctx.drawImage(
-      image,
-      pixelCrop.x,
-      pixelCrop.y,
-      pixelCrop.width,
-      pixelCrop.height,
-      0,
-      0,
-      pixelCrop.width,
-      pixelCrop.height
-    );
-
-    return new Promise((resolve, reject) => {
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            reject(new Error('Canvas is empty'));
-            return;
-          }
-          resolve(blob);
-        },
-        'image/jpeg',
-        0.9
-      );
-    });
   };
 
-  const handleCropComplete = async () => {
-    if (!imgRef.current || !completedCrop || !selectedFile) {
-      return;
-    }
-
+  const handlePhotoSave = async (croppedBlob: Blob, frame: ProfileFrame) => {
     try {
       setUploading(true);
-      setShowCropDialog(false);
+      setShowPhotoEditor(false);
 
-      const croppedBlob = await getCroppedImg(imgRef.current, completedCrop);
-      const fileExt = 'jpg';
-      const filePath = `${profile?.id}/${Date.now()}.${fileExt}`;
+      const filePath = `${profile?.id}/${Date.now()}.jpg`;
 
-      // Upload cropped file to storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, croppedBlob, { 
@@ -218,24 +147,21 @@ export const ProfileSettings = () => {
           contentType: 'image/jpeg'
         });
 
-      if (uploadError) {
-        throw uploadError;
-      }
+      if (uploadError) throw uploadError;
 
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
-      // Update form data with new avatar URL
       setFormData(prev => ({
         ...prev,
         avatar_url: publicUrl,
+        profile_frame: frame,
       }));
 
       toast({
-        title: 'Upload successful',
-        description: 'Profile picture uploaded. Click Save Changes to update your profile.',
+        title: 'Photo updated',
+        description: 'Click Save Changes to save your profile.',
       });
     } catch (error: any) {
       toast({
@@ -247,16 +173,23 @@ export const ProfileSettings = () => {
       setUploading(false);
       setImgSrc('');
       setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const handleCancelCrop = () => {
-    setShowCropDialog(false);
+  const handleCancelEditor = () => {
+    setShowPhotoEditor(false);
     setImgSrc('');
     setSelectedFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleRemovePhoto = () => {
+    setFormData(prev => ({
+      ...prev,
+      avatar_url: '',
+      profile_frame: 'none',
+    }));
   };
 
   return (
@@ -274,12 +207,12 @@ export const ProfileSettings = () => {
               <div className="space-y-4">
                 <Label>Profile Picture</Label>
                 <div className="flex items-center gap-6">
-                  <Avatar className="h-24 w-24">
-                    <AvatarImage src={formData.avatar_url} alt={formData.full_name} />
-                    <AvatarFallback className="text-2xl">
-                      <User className="h-12 w-12" />
-                    </AvatarFallback>
-                  </Avatar>
+                  <ProfileAvatar
+                    src={formData.avatar_url}
+                    name={formData.full_name}
+                    frame={formData.profile_frame}
+                    size="lg"
+                  />
                   <div className="flex-1 space-y-2">
                     <input
                       ref={fileInputRef}
@@ -288,27 +221,46 @@ export const ProfileSettings = () => {
                       onChange={onSelectFile}
                       className="hidden"
                     />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                      className="w-full"
-                    >
-                      {uploading ? (
-                        <>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                        size="sm"
+                      >
+                        {uploading ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
+                        ) : (
                           <Upload className="mr-2 h-4 w-4" />
-                          Upload Picture
+                        )}
+                        Upload
+                      </Button>
+                      {formData.avatar_url && (
+                        <>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleEditExistingPhoto}
+                            size="sm"
+                          >
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleRemovePhoto}
+                            size="sm"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Remove
+                          </Button>
                         </>
                       )}
-                    </Button>
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      JPG, PNG, WEBP or GIF. Max 5MB. You can crop after selecting.
+                      Upload, crop, and add frames like #Hiring or #OpenToWork
                     </p>
                   </div>
                 </div>
@@ -447,44 +399,16 @@ export const ProfileSettings = () => {
         </Card>
       </div>
 
-      {/* Image Crop Dialog */}
-      <Dialog open={showCropDialog} onOpenChange={setShowCropDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Crop className="h-5 w-5" />
-              Crop Your Profile Picture
-            </DialogTitle>
-          </DialogHeader>
-          <div className="flex justify-center py-4">
-            {imgSrc && (
-              <ReactCrop
-                crop={crop}
-                onChange={(_, percentCrop) => setCrop(percentCrop)}
-                onComplete={(_, percentCrop) => setCompletedCrop(percentCrop)}
-                aspect={1}
-                circularCrop
-              >
-                <img
-                  ref={imgRef}
-                  alt="Crop preview"
-                  src={imgSrc}
-                  onLoad={onImageLoad}
-                  style={{ maxHeight: '400px' }}
-                />
-              </ReactCrop>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCancelCrop}>
-              Cancel
-            </Button>
-            <Button onClick={handleCropComplete} disabled={!completedCrop}>
-              Apply Crop
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {imgSrc && (
+        <ProfilePhotoEditor
+          open={showPhotoEditor}
+          onOpenChange={setShowPhotoEditor}
+          imgSrc={imgSrc}
+          currentFrame={formData.profile_frame}
+          onSave={handlePhotoSave}
+          onCancel={handleCancelEditor}
+        />
+      )}
     </div>
   );
 };
