@@ -6,7 +6,7 @@ interface ProfileAvatarProps {
   src?: string;
   name?: string;
   frame?: ProfileFrame;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
 }
 
@@ -14,6 +14,7 @@ const sizeClasses = {
   sm: 'h-10 w-10',
   md: 'h-16 w-16',
   lg: 'h-24 w-24',
+  xl: 'h-40 w-40',
 };
 
 const ringClasses: Record<ProfileFrame, string> = {
@@ -48,8 +49,8 @@ export const ProfileAvatar = ({
     <div className={`relative inline-block ${className}`}>
       <Avatar className={`${sizeClasses[size]} ${ringClasses[frame]}`}>
         <AvatarImage src={src} alt={name} />
-        <AvatarFallback className={size === 'lg' ? 'text-2xl' : ''}>
-          <User className={size === 'lg' ? 'h-12 w-12' : size === 'md' ? 'h-8 w-8' : 'h-4 w-4'} />
+        <AvatarFallback className={size === 'xl' ? 'text-4xl' : size === 'lg' ? 'text-2xl' : ''}>
+          <User className={size === 'xl' ? 'h-20 w-20' : size === 'lg' ? 'h-12 w-12' : size === 'md' ? 'h-8 w-8' : 'h-4 w-4'} />
         </AvatarFallback>
       </Avatar>
       {frame !== 'none' && (

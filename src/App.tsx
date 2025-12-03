@@ -24,6 +24,7 @@ import { Jobs } from "./pages/Jobs";
 import { ProfileSettings } from "./pages/ProfileSettings";
 import { SubmitIdea } from "./pages/SubmitIdea";
 import { Mentors } from "./pages/Mentors";
+import { MentorProfile } from "./pages/MentorProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/home" element={<Landing />} />
             <Route path="/mentors" element={<Mentors />} />
+            <Route path="/mentors/:id" element={<MentorProfile />} />
             <Route path="/partners" element={<Partners />} />
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/submit-idea" element={<SubmitIdea />} />
