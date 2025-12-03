@@ -72,7 +72,7 @@ export function SubmitIdea() {
     setUploadProgress(0);
 
     try {
-      let videoUrl = null;
+      let videoPath = null;
       let videoFilename = null;
 
       // Upload video if provided
@@ -82,7 +82,7 @@ export function SubmitIdea() {
         
         setUploadProgress(10);
         
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from("idea-videos")
           .upload(fileName, videoFile, {
             cacheControl: "3600",
@@ -93,11 +93,8 @@ export function SubmitIdea() {
 
         setUploadProgress(70);
 
-        const { data: urlData } = supabase.storage
-          .from("idea-videos")
-          .getPublicUrl(fileName);
-
-        videoUrl = urlData.publicUrl;
+        // Store just the file path (bucket is now private, admins use signed URLs)
+        videoPath = fileName;
         videoFilename = videoFile.name;
       }
 
@@ -110,7 +107,7 @@ export function SubmitIdea() {
         phone: formData.phone || null,
         idea_title: formData.ideaTitle,
         idea_description: formData.ideaDescription || null,
-        video_url: videoUrl,
+        video_url: videoPath,
         video_filename: videoFilename,
       });
 

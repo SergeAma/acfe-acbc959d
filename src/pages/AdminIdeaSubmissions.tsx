@@ -33,7 +33,7 @@ export const AdminIdeaSubmissions = () => {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
-
+  const [videoUrls, setVideoUrls] = useState<Record<string, string>>({});
   useEffect(() => {
     if (profile?.role === 'admin') {
       fetchSubmissions();
@@ -244,7 +244,28 @@ export const AdminIdeaSubmissions = () => {
                     {submission.video_url && (
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={async () => {
+                              // Generate signed URL if not already cached
+                              if (!videoUrls[submission.id]) {
+                                const { data, error } = await supabase.storage
+                                  .from('idea-videos')
+                                  .createSignedUrl(submission.video_url!, 3600); // 1 hour expiry
+                                
+                                if (data?.signedUrl) {
+                                  setVideoUrls(prev => ({ ...prev, [submission.id]: data.signedUrl }));
+                                } else if (error) {
+                                  toast({
+                                    title: "Error loading video",
+                                    description: error.message,
+                                    variant: "destructive",
+                                  });
+                                }
+                              }
+                            }}
+                          >
                             <Video className="h-4 w-4 mr-2" />
                             Watch Pitch Video
                           </Button>
@@ -253,13 +274,19 @@ export const AdminIdeaSubmissions = () => {
                           <DialogHeader>
                             <DialogTitle>{submission.idea_title} - Pitch Video</DialogTitle>
                           </DialogHeader>
-                          <video 
-                            controls 
-                            className="w-full rounded-lg"
-                            src={submission.video_url}
-                          >
-                            Your browser does not support video playback.
-                          </video>
+                          {videoUrls[submission.id] ? (
+                            <video 
+                              controls 
+                              className="w-full rounded-lg"
+                              src={videoUrls[submission.id]}
+                            >
+                              Your browser does not support video playback.
+                            </video>
+                          ) : (
+                            <div className="flex items-center justify-center py-12">
+                              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            </div>
+                          )}
                         </DialogContent>
                       </Dialog>
                     )}
