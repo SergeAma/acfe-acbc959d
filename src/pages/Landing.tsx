@@ -157,13 +157,13 @@ export const Landing = () => {
                 <p className="text-sm text-muted-foreground">1-on-1 guidance from industry experts who've been there</p>
               </Link>
               
-              <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+              <Link to="/submit-idea" className="bg-card p-6 rounded-xl border border-border shadow-sm hover:border-secondary transition-colors">
                 <div className="h-12 w-12 rounded-full bg-secondary/10 flex items-center justify-center mx-auto mb-4">
                   <Award className="h-6 w-6 text-secondary" />
                 </div>
                 <h3 className="font-bold text-foreground mb-2">Resources</h3>
                 <p className="text-sm text-muted-foreground">Access to tools, training, and community support</p>
-              </div>
+              </Link>
               
               <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
                 <div className="h-12 w-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4">
