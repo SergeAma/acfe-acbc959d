@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -67,11 +70,42 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // SECURITY: Validate submission exists in database before sending email
+    // This prevents abuse by ensuring only legitimate submissions trigger emails
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+    
+    const { data: submission, error: dbError } = await supabase
+      .from('idea_submissions')
+      .select('id, email, idea_title, full_name')
+      .eq('email', email.trim().toLowerCase())
+      .eq('idea_title', ideaTitle.trim())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    
+    if (dbError) {
+      console.error("Database error validating submission:", dbError);
+      return new Response(
+        JSON.stringify({ error: "Failed to validate submission" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    
+    if (!submission) {
+      console.warn("Email confirmation request for non-existent submission:", { email, ideaTitle });
+      // Return success to not leak information about existing submissions
+      // but don't actually send the email
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     // Sanitize user inputs for HTML
     const safeName = escapeHtml(name.trim());
     const safeIdeaTitle = escapeHtml(ideaTitle.trim());
     
-    console.log(`Sending confirmation email to ${email} for idea submission`);
+    console.log(`Sending confirmation email to ${email} for verified idea submission: ${submission.id}`);
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
