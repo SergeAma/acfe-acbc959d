@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/Navbar';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, BookOpen } from 'lucide-react';
+import { Search, BookOpen, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface Course {
   id: string;
@@ -17,18 +18,23 @@ interface Course {
   level: string;
   duration_weeks: number;
   thumbnail_url: string;
+  mentor_id: string;
   mentor: {
     full_name: string;
   };
 }
 
 export const Courses = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const mentorFilter = searchParams.get('mentor');
+  
   const [courses, setCourses] = useState<Course[]>([]);
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [levelFilter, setLevelFilter] = useState('all');
+  const [mentorName, setMentorName] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -46,15 +52,28 @@ export const Courses = () => {
       if (!error && data) {
         setCourses(data as any);
         setFilteredCourses(data as any);
+        
+        // If filtering by mentor, get mentor name
+        if (mentorFilter && data.length > 0) {
+          const mentorCourse = data.find((c: any) => c.mentor_id === mentorFilter);
+          if (mentorCourse) {
+            setMentorName((mentorCourse as any).mentor?.full_name || 'Mentor');
+          }
+        }
       }
       setLoading(false);
     };
 
     fetchCourses();
-  }, []);
+  }, [mentorFilter]);
 
   useEffect(() => {
     let filtered = courses;
+
+    // Filter by mentor if specified in URL
+    if (mentorFilter) {
+      filtered = filtered.filter((course) => course.mentor_id === mentorFilter);
+    }
 
     if (searchTerm) {
       filtered = filtered.filter(
@@ -73,10 +92,16 @@ export const Courses = () => {
     }
 
     setFilteredCourses(filtered);
-  }, [searchTerm, categoryFilter, levelFilter, courses]);
+  }, [searchTerm, categoryFilter, levelFilter, courses, mentorFilter]);
 
-  const categories = Array.from(new Set(courses.map((c) => c.category)));
-  const levels = Array.from(new Set(courses.map((c) => c.level)));
+  const clearMentorFilter = () => {
+    searchParams.delete('mentor');
+    setSearchParams(searchParams);
+    setMentorName(null);
+  };
+
+  const categories = Array.from(new Set(courses.map((c) => c.category).filter(Boolean)));
+  const levels = Array.from(new Set(courses.map((c) => c.level).filter(Boolean)));
 
   return (
     <div className="min-h-screen bg-background">
@@ -87,6 +112,22 @@ export const Courses = () => {
           <h1 className="text-4xl font-bold mb-2">Explore Courses</h1>
           <p className="text-muted-foreground text-lg">Find the perfect course to advance your skills</p>
         </div>
+
+        {/* Mentor Filter Banner */}
+        {mentorFilter && mentorName && (
+          <div className="mb-6 p-4 bg-primary/10 rounded-lg flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Showing courses by:</span>
+              <Badge variant="secondary" className="text-base">
+                {mentorName}
+              </Badge>
+            </div>
+            <Button variant="ghost" size="sm" onClick={clearMentorFilter}>
+              <X className="h-4 w-4 mr-1" />
+              Clear filter
+            </Button>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="grid md:grid-cols-3 gap-4 mb-8">
@@ -135,7 +176,14 @@ export const Courses = () => {
             <CardContent className="py-12 text-center">
               <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-xl font-semibold mb-2">No courses found</h3>
-              <p className="text-muted-foreground">Try adjusting your filters</p>
+              <p className="text-muted-foreground">
+                {mentorFilter ? 'This mentor has no published courses yet.' : 'Try adjusting your filters'}
+              </p>
+              {mentorFilter && (
+                <Button variant="outline" className="mt-4" onClick={clearMentorFilter}>
+                  View all courses
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
