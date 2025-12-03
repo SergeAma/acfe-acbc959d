@@ -256,9 +256,9 @@ export const Landing = () => {
             <a href="https://teau.ac.ke" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover:opacity-80 transition-opacity">
               <img src={eastAfricanUniversityLogo} alt="The East African University" className="h-24 w-auto object-contain" />
             </a>
-            <div className="flex items-center justify-center">
+            <a href="https://www.facebook.com/Thehonestgroupfundation/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover:opacity-80 transition-opacity">
               <img src={johannesburgLogo} alt="Johannesburg" className="h-24 w-auto object-contain" />
-            </div>
+            </a>
           </div>
         </div>
       </section>
