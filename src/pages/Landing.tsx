@@ -46,9 +46,7 @@ export const Landing = () => {
       <section className="relative overflow-hidden bg-muted min-h-screen flex items-end pb-28">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-foreground">
-              Join 300+ Graduates and Master a Career-Boosting Digital Skill!
-            </h1>
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-foreground">Join 300+ Learners and Master a Career-Boosting Digital Skill!</h1>
             <p className="text-lg md:text-xl text-foreground/80 mb-4 leading-relaxed">
               Zero experience required | Any background | Learn Anytime
             </p>
