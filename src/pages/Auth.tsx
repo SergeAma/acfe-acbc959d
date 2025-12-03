@@ -36,6 +36,9 @@ export const Auth = () => {
   const [mode, setMode] = useState<'signin' | 'signup'>(
     searchParams.get('mode') === 'signup' ? 'signup' : 'signin'
   );
+  
+  // Get redirect URL from query params, default to dashboard
+  const redirectUrl = searchParams.get('redirect') || '/dashboard';
 
   const [formData, setFormData] = useState({
     email: '',
@@ -55,9 +58,9 @@ export const Auth = () => {
 
   useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      navigate(redirectUrl);
     }
-  }, [user, navigate]);
+  }, [user, navigate, redirectUrl]);
 
   const validateForm = () => {
     try {
@@ -92,7 +95,7 @@ export const Auth = () => {
     if (mode === 'signin') {
       const { error } = await signIn(formData.email, formData.password);
       if (!error) {
-        navigate('/dashboard');
+        navigate(redirectUrl);
       }
     } else {
       const fullName = `${formData.firstName} ${formData.lastName}`.trim();
@@ -103,7 +106,7 @@ export const Auth = () => {
         formData.linkedinUrl
       );
       if (!error) {
-        navigate('/dashboard');
+        navigate(redirectUrl);
       }
     }
 

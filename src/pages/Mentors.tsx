@@ -8,7 +8,8 @@ import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface MentorProfile {
   id: string;
@@ -35,19 +36,20 @@ interface MentorWithCourses extends MentorProfile {
 }
 
 export const Mentors = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   const { data: mentors, isLoading } = useQuery({
     queryKey: ['mentors-with-courses'],
     queryFn: async () => {
-      // First get all mentors from the public view
+      // Get mentor profiles from the public view (now includes avatar, bio, etc.)
       const { data: mentorProfiles, error: profilesError } = await supabase
         .from('profiles_public')
-        .select('id, full_name, role')
-        .eq('role', 'mentor');
+        .select('*');
 
       if (profilesError) throw profilesError;
 
-      // Get full profile data for each mentor (bio, social links, avatar)
-      const mentorIds = mentorProfiles?.map(m => m.id) || [];
+      const mentorIds = mentorProfiles?.map(m => m.id).filter(Boolean) || [];
       
       // Fetch courses for all mentors
       const { data: courses, error: coursesError } = await supabase
@@ -58,20 +60,18 @@ export const Mentors = () => {
 
       if (coursesError) throw coursesError;
 
-      // We need to get avatar_url and other public info
-      // Since profiles table is restricted, we'll use what we can from courses
-      // and profiles_public
+      // Combine mentor profiles with their courses
       const mentorsWithCourses: MentorWithCourses[] = (mentorProfiles || []).map(mentor => ({
         id: mentor.id!,
         full_name: mentor.full_name,
-        bio: null, // Not available in public view
-        avatar_url: null,
-        profile_frame: null,
-        linkedin_url: null,
-        twitter_url: null,
-        instagram_url: null,
-        github_url: null,
-        website_url: null,
+        bio: mentor.bio,
+        avatar_url: mentor.avatar_url,
+        profile_frame: mentor.profile_frame,
+        linkedin_url: mentor.linkedin_url,
+        twitter_url: mentor.twitter_url,
+        instagram_url: mentor.instagram_url,
+        github_url: mentor.github_url,
+        website_url: mentor.website_url,
         courses: (courses || []).filter(c => c.mentor_id === mentor.id).map(c => ({
           id: c.id,
           title: c.title,
@@ -83,6 +83,16 @@ export const Mentors = () => {
       return mentorsWithCourses;
     }
   });
+
+  const handleMentorClick = (mentorId: string) => {
+    if (user) {
+      // Logged in - go to courses filtered by this mentor
+      navigate(`/courses?mentor=${mentorId}`);
+    } else {
+      // Not logged in - redirect to auth with return URL
+      navigate(`/auth?redirect=/courses?mentor=${mentorId}`);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -115,7 +125,11 @@ export const Mentors = () => {
         ) : mentors && mentors.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {mentors.map((mentor) => (
-              <Card key={mentor.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <Card 
+                key={mentor.id} 
+                className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => handleMentorClick(mentor.id)}
+              >
                 <CardContent className="p-6">
                   <div className="flex flex-col items-center text-center">
                     <ProfileAvatar
@@ -137,7 +151,7 @@ export const Mentors = () => {
                     )}
 
                     {/* Social Links */}
-                    <div className="flex gap-3 mb-4">
+                    <div className="flex gap-3 mb-4" onClick={(e) => e.stopPropagation()}>
                       {mentor.linkedin_url && (
                         <a href={mentor.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
                           <Linkedin className="h-5 w-5" />
@@ -167,7 +181,7 @@ export const Mentors = () => {
 
                     {/* Published Courses */}
                     {mentor.courses.length > 0 && (
-                      <div className="w-full border-t border-border pt-4">
+                      <div className="w-full border-t border-border pt-4" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-3">
                           <BookOpen className="h-4 w-4" />
                           <span>{mentor.courses.length} Course{mentor.courses.length > 1 ? 's' : ''}</span>
