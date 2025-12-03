@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Cloud, Users, BookOpen, Globe, Sparkles, Award, FileText, TrendingUp, ExternalLink, Rss } from 'lucide-react';
+import { Cloud, Users, BookOpen, Globe, Award, FileText, TrendingUp, ExternalLink, Rss, Lightbulb } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -135,7 +135,7 @@ export const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-6">
-              <Sparkles className="h-5 w-5 text-primary" />
+              <Lightbulb className="h-5 w-5 text-primary" />
               <span className="text-sm font-semibold text-primary">Innovation Hub</span>
             </div>
             
