@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, BookOpen, X } from 'lucide-react';
+import { Search, BookOpen, X, GraduationCap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface Course {
@@ -25,6 +26,7 @@ interface Course {
 }
 
 export const Courses = () => {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const mentorFilter = searchParams.get('mentor');
   
@@ -107,7 +109,36 @@ export const Courses = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <PageBreadcrumb items={[{ label: "Courses" }]} />
-      <div className="container mx-auto px-4 py-4">
+      
+      {/* Main Content Section */}
+      <div className="container mx-auto px-4 py-4 relative">
+        {/* Auth Gate Overlay for non-authenticated users */}
+        {!user && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+            <Card className="max-w-md mx-4 border border-border shadow-lg">
+              <CardContent className="p-8 text-center space-y-4">
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <GraduationCap className="h-8 w-8 text-primary" />
+                </div>
+                <h2 className="text-xl font-bold text-foreground">Access Our Courses</h2>
+                <p className="text-muted-foreground text-sm">
+                  Sign up to explore our course catalog and start your learning journey with expert mentors.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                  <Button asChild className="rounded-full">
+                    <Link to="/auth">Sign Up</Link>
+                  </Button>
+                  <Button variant="outline" asChild className="rounded-full">
+                    <Link to="/auth">Sign In</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Blurred content for non-authenticated users */}
+        <div className={!user ? 'blur-sm pointer-events-none select-none' : ''}>
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Explore Courses</h1>
           <p className="text-muted-foreground text-lg">Find the perfect course to advance your skills</p>
@@ -217,6 +248,7 @@ export const Courses = () => {
             ))}
           </div>
         )}
+        </div>
       </div>
     </div>
   );
