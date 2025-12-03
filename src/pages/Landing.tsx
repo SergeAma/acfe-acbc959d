@@ -179,9 +179,7 @@ export const Landing = () => {
                 Submit Your Idea
               </Button>
             </Link>
-            <p className="text-sm text-muted-foreground mt-4">
-              Join hundreds of young African innovators already in our program
-            </p>
+            <p className="text-sm text-muted-foreground mt-4">Join foward-thinking young African innovators already in our program</p>
           </div>
         </div>
       </section>
