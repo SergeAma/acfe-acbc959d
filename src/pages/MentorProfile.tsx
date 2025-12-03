@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe, ArrowLeft, Clock, BarChart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -174,63 +175,90 @@ export const MentorProfile = () => {
                 </h1>
                 
                 {/* Social Links - Next to name */}
-                <div className="flex gap-2">
-                  {mentor.linkedin_url && (
-                    <a 
-                      href={mentor.linkedin_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="p-1.5 rounded-lg bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                      aria-label="LinkedIn"
-                    >
-                      <Linkedin className="h-5 w-5" />
-                    </a>
-                  )}
-                  {mentor.twitter_url && (
-                    <a 
-                      href={mentor.twitter_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="p-1.5 rounded-lg bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                      aria-label="Twitter"
-                    >
-                      <Twitter className="h-5 w-5" />
-                    </a>
-                  )}
-                  {mentor.instagram_url && (
-                    <a 
-                      href={mentor.instagram_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="p-1.5 rounded-lg bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                      aria-label="Instagram"
-                    >
-                      <Instagram className="h-5 w-5" />
-                    </a>
-                  )}
-                  {mentor.github_url && (
-                    <a 
-                      href={mentor.github_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="p-1.5 rounded-lg bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                      aria-label="GitHub"
-                    >
-                      <Github className="h-5 w-5" />
-                    </a>
-                  )}
-                  {mentor.website_url && (
-                    <a 
-                      href={mentor.website_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="p-1.5 rounded-lg bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                      aria-label="Website"
-                    >
-                      <Globe className="h-5 w-5" />
-                    </a>
-                  )}
-                </div>
+                <TooltipProvider>
+                  <div className="flex gap-2">
+                    {mentor.linkedin_url && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <a 
+                            href={mentor.linkedin_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-lg bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                            aria-label="LinkedIn"
+                          >
+                            <Linkedin className="h-5 w-5" />
+                          </a>
+                        </TooltipTrigger>
+                        <TooltipContent>LinkedIn</TooltipContent>
+                      </Tooltip>
+                    )}
+                    {mentor.twitter_url && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <a 
+                            href={mentor.twitter_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-lg bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                            aria-label="Twitter"
+                          >
+                            <Twitter className="h-5 w-5" />
+                          </a>
+                        </TooltipTrigger>
+                        <TooltipContent>Twitter</TooltipContent>
+                      </Tooltip>
+                    )}
+                    {mentor.instagram_url && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <a 
+                            href={mentor.instagram_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-lg bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                            aria-label="Instagram"
+                          >
+                            <Instagram className="h-5 w-5" />
+                          </a>
+                        </TooltipTrigger>
+                        <TooltipContent>Instagram</TooltipContent>
+                      </Tooltip>
+                    )}
+                    {mentor.github_url && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <a 
+                            href={mentor.github_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-lg bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                            aria-label="GitHub"
+                          >
+                            <Github className="h-5 w-5" />
+                          </a>
+                        </TooltipTrigger>
+                        <TooltipContent>GitHub</TooltipContent>
+                      </Tooltip>
+                    )}
+                    {mentor.website_url && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <a 
+                            href={mentor.website_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-lg bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                            aria-label="Website"
+                          >
+                            <Globe className="h-5 w-5" />
+                          </a>
+                        </TooltipTrigger>
+                        <TooltipContent>Website</TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
+                </TooltipProvider>
               </div>
               
               <Badge variant="secondary" className="mb-4">
