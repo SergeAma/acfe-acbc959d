@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,18 +7,10 @@ import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe, UserPlus, LogIn } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 
 interface MentorProfile {
   id: string;
@@ -32,39 +23,17 @@ interface MentorProfile {
   instagram_url: string | null;
   github_url: string | null;
   website_url: string | null;
-}
-
-interface Course {
-  id: string;
-  title: string;
-  category: string | null;
-  thumbnail_url: string | null;
-}
-
-interface MentorWithCourses extends MentorProfile {
-  courses: Course[];
+  courseCount: number;
 }
 
 export const Mentors = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [showAuthDialog, setShowAuthDialog] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState<{ id: string; title: string } | null>(null);
-
-  const handleCourseClick = (e: React.MouseEvent, course: { id: string; title: string }) => {
-    e.stopPropagation();
-    if (user) {
-      navigate(`/courses/${course.id}`);
-    } else {
-      setSelectedCourse(course);
-      setShowAuthDialog(true);
-    }
-  };
 
   const { data: mentors, isLoading } = useQuery({
-    queryKey: ['mentors-with-courses'],
+    queryKey: ['mentors-list'],
     queryFn: async () => {
-      // Get mentor profiles from the public view (now includes avatar, bio, etc.)
+      // Get mentor profiles from the public view
       const { data: mentorProfiles, error: profilesError } = await supabase
         .from('profiles_public')
         .select('*');
@@ -73,17 +42,25 @@ export const Mentors = () => {
 
       const mentorIds = mentorProfiles?.map(m => m.id).filter(Boolean) || [];
       
-      // Fetch courses for all mentors
+      // Fetch course counts for all mentors
       const { data: courses, error: coursesError } = await supabase
         .from('courses')
-        .select('id, title, category, thumbnail_url, mentor_id')
+        .select('mentor_id')
         .eq('is_published', true)
         .in('mentor_id', mentorIds);
 
       if (coursesError) throw coursesError;
 
-      // Combine mentor profiles with their courses
-      const mentorsWithCourses: MentorWithCourses[] = (mentorProfiles || []).map(mentor => ({
+      // Count courses per mentor
+      const courseCounts: Record<string, number> = {};
+      courses?.forEach(c => {
+        if (c.mentor_id) {
+          courseCounts[c.mentor_id] = (courseCounts[c.mentor_id] || 0) + 1;
+        }
+      });
+
+      // Combine mentor profiles with course counts
+      const mentorsWithCounts: MentorProfile[] = (mentorProfiles || []).map(mentor => ({
         id: mentor.id!,
         full_name: mentor.full_name,
         bio: mentor.bio,
@@ -94,20 +71,14 @@ export const Mentors = () => {
         instagram_url: mentor.instagram_url,
         github_url: mentor.github_url,
         website_url: mentor.website_url,
-        courses: (courses || []).filter(c => c.mentor_id === mentor.id).map(c => ({
-          id: c.id,
-          title: c.title,
-          category: c.category,
-          thumbnail_url: c.thumbnail_url
-        }))
+        courseCount: courseCounts[mentor.id!] || 0
       }));
 
-      return mentorsWithCourses;
+      return mentorsWithCounts;
     }
   });
 
   const handleMentorClick = (mentorId: string) => {
-    // Navigate to mentor profile page
     navigate(`/mentors/${mentorId}`);
   };
 
@@ -117,6 +88,36 @@ export const Mentors = () => {
       <PageBreadcrumb items={[{ label: "Mentors" }]} />
       
       <main className="container mx-auto px-4 py-12">
+        {/* Auth prompt banner for unauthenticated users */}
+        {!user && (
+          <div className="mb-8 p-6 rounded-xl bg-primary/5 border border-primary/20">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground mb-1">
+                  Ready to start learning?
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Create a free account to enroll in courses and connect with mentors.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <Link to="/auth?mode=login">
+                  <Button variant="outline" size="sm">
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Log in
+                  </Button>
+                </Link>
+                <Link to="/auth?mode=signup&role=student">
+                  <Button size="sm">
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Sign up free
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-foreground mb-4">Our Mentors</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -133,7 +134,7 @@ export const Mentors = () => {
                     <Skeleton className="h-24 w-24 rounded-full mb-4" />
                     <Skeleton className="h-6 w-32 mb-2" />
                     <Skeleton className="h-4 w-48 mb-4" />
-                    <Skeleton className="h-20 w-full" />
+                    <Skeleton className="h-16 w-full" />
                   </div>
                 </CardContent>
               </Card>
@@ -144,7 +145,7 @@ export const Mentors = () => {
             {mentors.map((mentor) => (
               <Card 
                 key={mentor.id} 
-                className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
                 onClick={() => handleMentorClick(mentor.id)}
               >
                 <CardContent className="p-6">
@@ -157,9 +158,16 @@ export const Mentors = () => {
                       className="mb-4"
                     />
                     
-                    <h3 className="text-xl font-bold text-foreground mb-2">
+                    <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
                       {mentor.full_name || 'Anonymous Mentor'}
                     </h3>
+                    
+                    {mentor.courseCount > 0 && (
+                      <Badge variant="secondary" className="mb-3">
+                        <BookOpen className="h-3 w-3 mr-1" />
+                        {mentor.courseCount} Course{mentor.courseCount !== 1 ? 's' : ''}
+                      </Badge>
+                    )}
                     
                     {mentor.bio && (
                       <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
@@ -196,30 +204,9 @@ export const Mentors = () => {
                       )}
                     </div>
 
-                    {/* Published Courses */}
-                    {mentor.courses.length > 0 && (
-                      <div className="w-full border-t border-border pt-4" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-3">
-                          <BookOpen className="h-4 w-4" />
-                          <span>{mentor.courses.length} Course{mentor.courses.length > 1 ? 's' : ''}</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2 justify-center">
-                          {mentor.courses.slice(0, 3).map((course) => (
-                            <Badge 
-                              key={course.id} 
-                              variant="secondary" 
-                              className="cursor-pointer hover:bg-secondary/80"
-                              onClick={(e) => handleCourseClick(e, course)}
-                            >
-                              {course.title}
-                            </Badge>
-                          ))}
-                          {mentor.courses.length > 3 && (
-                            <Badge variant="outline">+{mentor.courses.length - 3} more</Badge>
-                          )}
-                        </div>
-                      </div>
-                    )}
+                    <Button variant="outline" size="sm" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                      View Profile & Courses
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -233,29 +220,6 @@ export const Mentors = () => {
       </main>
 
       <Footer />
-
-      {/* Sign up prompt dialog for unauthenticated users */}
-      <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Sign up to enroll</DialogTitle>
-            <DialogDescription>
-              Create a free account to enroll in "{selectedCourse?.title}" and start learning today.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="ghost" onClick={() => setShowAuthDialog(false)}>
-              Maybe later
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/auth?mode=login')}>
-              Log in
-            </Button>
-            <Button onClick={() => navigate('/auth?mode=signup&role=student')}>
-              Sign up for free
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
