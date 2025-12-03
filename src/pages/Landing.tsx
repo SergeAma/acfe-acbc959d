@@ -253,9 +253,9 @@ export const Landing = () => {
             <h2 className="text-4xl font-bold mb-4">Our Partners</h2>
           </div>
           <div className="flex flex-wrap justify-center items-center gap-12 max-w-5xl mx-auto">
-            <div className="flex items-center justify-center">
+            <a href="https://teau.ac.ke" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover:opacity-80 transition-opacity">
               <img src={eastAfricanUniversityLogo} alt="The East African University" className="h-24 w-auto object-contain" />
-            </div>
+            </a>
             <div className="flex items-center justify-center">
               <img src={johannesburgLogo} alt="Johannesburg" className="h-24 w-auto object-contain" />
             </div>
