@@ -815,19 +815,43 @@ export type Database = {
     Views: {
       profiles_public: {
         Row: {
+          avatar_url: string | null
+          bio: string | null
           full_name: string | null
+          github_url: string | null
           id: string | null
+          instagram_url: string | null
+          linkedin_url: string | null
+          profile_frame: string | null
           role: Database["public"]["Enums"]["user_role"] | null
+          twitter_url: string | null
+          website_url: string | null
         }
         Insert: {
+          avatar_url?: never
+          bio?: never
           full_name?: string | null
+          github_url?: never
           id?: string | null
+          instagram_url?: never
+          linkedin_url?: never
+          profile_frame?: never
           role?: Database["public"]["Enums"]["user_role"] | null
+          twitter_url?: never
+          website_url?: never
         }
         Update: {
+          avatar_url?: never
+          bio?: never
           full_name?: string | null
+          github_url?: never
           id?: string | null
+          instagram_url?: never
+          linkedin_url?: never
+          profile_frame?: never
           role?: Database["public"]["Enums"]["user_role"] | null
+          twitter_url?: never
+          website_url?: never
         }
         Relationships: []
       }
