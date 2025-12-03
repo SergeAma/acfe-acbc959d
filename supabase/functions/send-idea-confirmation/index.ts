@@ -14,6 +14,19 @@ interface IdeaConfirmationRequest {
   ideaTitle: string;
 }
 
+// HTML escape function to prevent injection
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Email validation regex
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -22,7 +35,43 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { name, email, ideaTitle }: IdeaConfirmationRequest = await req.json();
     
-    console.log(`Sending confirmation email to ${email} for idea: ${ideaTitle}`);
+    // Input validation
+    if (!name || !email || !ideaTitle) {
+      console.error("Missing required fields:", { name: !!name, email: !!email, ideaTitle: !!ideaTitle });
+      return new Response(
+        JSON.stringify({ error: "Missing required fields: name, email, and ideaTitle are required" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Length validation
+    if (name.length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Name exceeds maximum length of 100 characters" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (ideaTitle.length > 200) {
+      return new Response(
+        JSON.stringify({ error: "Idea title exceeds maximum length of 200 characters" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Email format validation
+    if (!emailRegex.test(email)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email format" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Sanitize user inputs for HTML
+    const safeName = escapeHtml(name.trim());
+    const safeIdeaTitle = escapeHtml(ideaTitle.trim());
+    
+    console.log(`Sending confirmation email to ${email} for idea submission`);
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -57,12 +106,12 @@ const handler = async (req: Request): Promise<Response> => {
               </div>
               
               <div class="content">
-                <h1>Thank You, ${name}!</h1>
+                <h1>Thank You, ${safeName}!</h1>
                 
                 <p>We're excited to let you know that we've received your idea submission:</p>
                 
                 <div class="highlight">
-                  <p><strong>Your Idea:</strong> <span class="idea-title">${ideaTitle}</span></p>
+                  <p><strong>Your Idea:</strong> <span class="idea-title">${safeIdeaTitle}</span></p>
                 </div>
                 
                 <p>Our team is reviewing your submission and we'll be in touch within <strong>7 days</strong> with next steps.</p>
@@ -89,20 +138,20 @@ const handler = async (req: Request): Promise<Response> => {
     if (!res.ok) {
       const errorData = await res.text();
       console.error("Resend API error:", errorData);
-      throw new Error(`Failed to send email: ${errorData}`);
+      throw new Error("Failed to send email");
     }
 
     const data = await res.json();
-    console.log("Email sent successfully:", data);
+    console.log("Email sent successfully:", data.id);
 
-    return new Response(JSON.stringify(data), {
+    return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
-    console.error("Error sending confirmation email:", error);
+    console.error("Error sending confirmation email:", error.message);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Failed to send confirmation email" }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
