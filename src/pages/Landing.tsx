@@ -149,13 +149,13 @@ export const Landing = () => {
             </p>
             
             <div className="grid md:grid-cols-3 gap-6 mb-10">
-              <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+              <Link to="/submit-idea" className="bg-card p-6 rounded-xl border border-border shadow-sm hover:border-primary transition-colors">
                 <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                   <TrendingUp className="h-6 w-6 text-primary" />
                 </div>
                 <h3 className="font-bold text-foreground mb-2">Mentorship</h3>
                 <p className="text-sm text-muted-foreground">1-on-1 guidance from industry experts who've been there</p>
-              </div>
+              </Link>
               
               <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
                 <div className="h-12 w-12 rounded-full bg-secondary/10 flex items-center justify-center mx-auto mb-4">
