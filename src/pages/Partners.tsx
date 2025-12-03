@@ -19,11 +19,13 @@ export const Partners = () => {
           {/* East African University Partnership */}
           <div className="bg-card rounded-lg p-8 shadow-lg">
             <div className="flex flex-col items-center mb-6">
-              <img 
-                src={eastAfricanUniversityLogo} 
-                alt="The East African University" 
-                className="h-32 w-auto mb-6"
-              />
+              <a href="https://teau.ac.ke" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity">
+                <img 
+                  src={eastAfricanUniversityLogo} 
+                  alt="The East African University" 
+                  className="h-32 w-auto mb-6"
+                />
+              </a>
             </div>
             <p className="text-lg text-foreground/90 leading-relaxed text-center">
               We're proud to announce our new partnership with The East African University (TEAU) in Kenya. 
@@ -36,11 +38,13 @@ export const Partners = () => {
           {/* Johustleburg Partnership */}
           <div className="bg-card rounded-lg p-8 shadow-lg">
             <div className="flex flex-col items-center mb-6">
-              <img 
-                src={johannesburgLogo} 
-                alt="Johustleburg Foundation" 
-                className="h-32 w-auto mb-6"
-              />
+              <a href="https://www.facebook.com/Thehonestgroupfundation/" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity">
+                <img 
+                  src={johannesburgLogo} 
+                  alt="Johustleburg Foundation" 
+                  className="h-32 w-auto mb-6"
+                />
+              </a>
               <h2 className="text-2xl font-bold text-foreground mb-4">JOHUSTLEBURG</h2>
             </div>
             <p className="text-lg text-foreground/90 leading-relaxed text-center">
