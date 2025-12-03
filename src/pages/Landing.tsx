@@ -43,14 +43,27 @@ export const Landing = () => {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-muted min-h-screen flex items-end pb-28">
-        <div className="container mx-auto px-4">
+      <section className="relative overflow-hidden min-h-screen flex items-end pb-28">
+        {/* Video Background */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="/videos/hero-background.mp4" type="video/mp4" />
+        </video>
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-black/50" />
+        
+        <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-foreground">Join 300+ Learners and Master a Career-Boosting Digital Skill!</h1>
-            <p className="text-lg md:text-xl text-foreground/80 mb-4 leading-relaxed">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-white">Join 300+ Learners and Master a Career-Boosting Digital Skill!</h1>
+            <p className="text-lg md:text-xl text-white/90 mb-4 leading-relaxed">
               Zero experience required | Any background | Learn Anytime
             </p>
-            <p className="text-base text-foreground/70 mb-8">
+            <p className="text-base text-white/80 mb-8">
               Training delivered by African tech experts.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
