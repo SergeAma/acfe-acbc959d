@@ -244,8 +244,11 @@ export const Mentors = () => {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => setShowAuthDialog(false)}>
+            <Button variant="ghost" onClick={() => setShowAuthDialog(false)}>
               Maybe later
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/auth?mode=login')}>
+              Log in
             </Button>
             <Button onClick={() => navigate('/auth?mode=signup&role=student')}>
               Sign up for free
