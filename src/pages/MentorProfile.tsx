@@ -168,9 +168,70 @@ export const MentorProfile = () => {
             />
             
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-foreground mb-2">
-                {mentor.full_name || 'Anonymous Mentor'}
-              </h1>
+              <div className="flex items-center gap-4 mb-2 flex-wrap">
+                <h1 className="text-3xl font-bold text-foreground">
+                  {mentor.full_name || 'Anonymous Mentor'}
+                </h1>
+                
+                {/* Social Links - Next to name */}
+                <div className="flex gap-2">
+                  {mentor.linkedin_url && (
+                    <a 
+                      href={mentor.linkedin_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="p-1.5 rounded-lg bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                      aria-label="LinkedIn"
+                    >
+                      <Linkedin className="h-5 w-5" />
+                    </a>
+                  )}
+                  {mentor.twitter_url && (
+                    <a 
+                      href={mentor.twitter_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="p-1.5 rounded-lg bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                      aria-label="Twitter"
+                    >
+                      <Twitter className="h-5 w-5" />
+                    </a>
+                  )}
+                  {mentor.instagram_url && (
+                    <a 
+                      href={mentor.instagram_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="p-1.5 rounded-lg bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                      aria-label="Instagram"
+                    >
+                      <Instagram className="h-5 w-5" />
+                    </a>
+                  )}
+                  {mentor.github_url && (
+                    <a 
+                      href={mentor.github_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="p-1.5 rounded-lg bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                      aria-label="GitHub"
+                    >
+                      <Github className="h-5 w-5" />
+                    </a>
+                  )}
+                  {mentor.website_url && (
+                    <a 
+                      href={mentor.website_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="p-1.5 rounded-lg bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                      aria-label="Website"
+                    >
+                      <Globe className="h-5 w-5" />
+                    </a>
+                  )}
+                </div>
+              </div>
               
               <Badge variant="secondary" className="mb-4">
                 <BookOpen className="h-3 w-3 mr-1" />
@@ -182,60 +243,6 @@ export const MentorProfile = () => {
                   {mentor.bio}
                 </p>
               )}
-
-              {/* Social Links */}
-              <div className="flex gap-3">
-                {mentor.linkedin_url && (
-                  <a 
-                    href={mentor.linkedin_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Linkedin className="h-5 w-5" />
-                  </a>
-                )}
-                {mentor.twitter_url && (
-                  <a 
-                    href={mentor.twitter_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Twitter className="h-5 w-5" />
-                  </a>
-                )}
-                {mentor.instagram_url && (
-                  <a 
-                    href={mentor.instagram_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Instagram className="h-5 w-5" />
-                  </a>
-                )}
-                {mentor.github_url && (
-                  <a 
-                    href={mentor.github_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Github className="h-5 w-5" />
-                  </a>
-                )}
-                {mentor.website_url && (
-                  <a 
-                    href={mentor.website_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Globe className="h-5 w-5" />
-                  </a>
-                )}
-              </div>
             </div>
           </div>
 
