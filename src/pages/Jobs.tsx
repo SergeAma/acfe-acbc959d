@@ -160,8 +160,35 @@ export const Jobs = () => {
         </div>
       </section>
 
-      {/* Tabs Section */}
-      <section className="py-8 bg-background">
+      {/* Main Content Section */}
+      <section className="py-8 bg-background relative">
+        {/* Auth Gate Overlay for non-authenticated users */}
+        {!user && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+            <Card className="max-w-md mx-4 border border-border shadow-lg">
+              <CardContent className="p-8 text-center space-y-4">
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <Users className="h-8 w-8 text-primary" />
+                </div>
+                <h2 className="text-xl font-bold text-foreground">Join Our Community</h2>
+                <p className="text-muted-foreground text-sm">
+                  Sign up to access community posts, job opportunities, and connect with learners and mentors.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                  <Button asChild className="rounded-full">
+                    <Link to="/auth">Sign Up</Link>
+                  </Button>
+                  <Button variant="outline" asChild className="rounded-full">
+                    <Link to="/auth">Sign In</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Blurred content for non-authenticated users */}
+        <div className={!user ? 'blur-sm pointer-events-none select-none' : ''}>
         <div className="container mx-auto px-4">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">
             <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
@@ -282,9 +309,13 @@ export const Jobs = () => {
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
-              ) : filteredPosts.length === 0 ? (
+              ) : filteredPosts.length === 0 && user ? (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">No posts yet. Be the first to share!</p>
+                </div>
+              ) : filteredPosts.length === 0 && !user ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">Sign up to see community posts.</p>
                 </div>
               ) : (
                 <div className="grid md:grid-cols-2 gap-4">
@@ -388,6 +419,7 @@ export const Jobs = () => {
               </div>
             </TabsContent>
           </Tabs>
+        </div>
         </div>
       </section>
 
