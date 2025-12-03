@@ -1,17 +1,16 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Users, BookOpen, Globe, ExternalLink, Rss, Lightbulb } from 'lucide-react';
+import { Cloud, Users, BookOpen, Globe, Award, FileText, TrendingUp, ExternalLink, Rss, Lightbulb } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png';
 import johannesburgLogo from '@/assets/johannesburg-logo.png';
+import acfeLogo from '@/assets/acfe-logo.png';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { IdeaSubmissionForm } from '@/components/IdeaSubmissionForm';
 interface NewsArticle {
   title: string;
   link: string;
@@ -76,71 +75,114 @@ export const Landing = () => {
         </div>
       </section>
 
-      {/* Tabbed Content Section */}
+      {/* Features Section */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4">Why Choose Us</h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
+            <Link to="/mentors" className="h-full">
+              <Card className="border-2 hover:border-primary transition-colors cursor-pointer group h-full">
+                <CardContent className="pt-6 h-full flex flex-col">
+                  <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                    <Users className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors">Our Mentors</h3>
+                  <p className="text-muted-foreground flex-1">
+                    Learn from experienced professionals who are passionate about sharing their knowledge and empowering the next generation
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link to="/courses" className="h-full">
+              <Card className="border-2 hover:border-secondary transition-colors cursor-pointer group h-full">
+                <CardContent className="pt-6 h-full flex flex-col">
+                  <div className="h-12 w-12 rounded-lg bg-secondary/10 flex items-center justify-center mb-4 group-hover:bg-secondary/20 transition-colors">
+                    <BookOpen className="h-6 w-6 text-secondary" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-3 group-hover:text-secondary transition-colors">Explore Courses</h3>
+                  <p className="text-muted-foreground flex-1">
+                    Outcome-focused training designed to get you job-ready, not just traditional learning—practical skills that lead to real career opportunities
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link to="/jobs" className="h-full">
+              <Card className="border-2 hover:border-accent transition-colors cursor-pointer group h-full">
+                <CardContent className="pt-6 h-full flex flex-col">
+                  <div className="h-12 w-12 rounded-lg bg-accent/10 flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors">
+                    <Globe className="h-6 w-6 text-accent" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-3 group-hover:text-accent transition-colors">Join Our Community</h3>
+                  <p className="text-muted-foreground flex-1">
+                    Join a supportive community of learners and mentors dedicated to advancing digital skills across Africa
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Innovators Incubator Section */}
       <section className="py-20 bg-muted">
         <div className="container mx-auto px-4">
-          <Tabs defaultValue="why-us" className="max-w-6xl mx-auto">
-            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-12">
-              <TabsTrigger value="why-us">Why Choose Us</TabsTrigger>
-              <TabsTrigger value="submit-idea" className="gap-2">
-                <Lightbulb className="h-4 w-4" />
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-6">
+              <Lightbulb className="h-5 w-5 text-primary" />
+              <span className="text-sm font-semibold text-primary">Innovation Hub</span>
+            </div>
+            
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+              Got a Big Idea?<br />
+              <span className="text-primary">We'll Help You Build It.</span>
+            </h2>
+            
+            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+              We're building Africa's next generation of tech leaders. If you're a young innovator with a vision 
+              that could transform communities, we want to hear from you. Get access to mentorship, resources, 
+              and the support you need to bring your idea to life.
+            </p>
+            
+            <div className="grid md:grid-cols-3 gap-6 mb-10">
+              <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <TrendingUp className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-bold text-foreground mb-2">Mentorship</h3>
+                <p className="text-sm text-muted-foreground">1-on-1 guidance from industry experts who've been there</p>
+              </div>
+              
+              <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+                <div className="h-12 w-12 rounded-full bg-secondary/10 flex items-center justify-center mx-auto mb-4">
+                  <Award className="h-6 w-6 text-secondary" />
+                </div>
+                <h3 className="font-bold text-foreground mb-2">Resources</h3>
+                <p className="text-sm text-muted-foreground">Access to tools, training, and community support</p>
+              </div>
+              
+              <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+                <div className="h-12 w-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4">
+                  <FileText className="h-6 w-6 text-accent" />
+                </div>
+                <h3 className="font-bold text-foreground mb-2">Funding Guidance</h3>
+                <p className="text-sm text-muted-foreground">Learn how to pitch and connect with potential investors</p>
+              </div>
+            </div>
+            
+            <Link to="/submit-idea">
+              <Button size="lg" className="text-lg px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-lg hover:shadow-xl transition-all">
                 Submit Your Idea
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="why-us">
-              <div className="text-center mb-12">
-                <h2 className="text-4xl font-bold mb-4">Why Choose Us</h2>
-              </div>
-              <div className="grid md:grid-cols-3 gap-8 items-stretch">
-                <Link to="/mentors" className="h-full">
-                  <Card className="border-2 hover:border-primary transition-colors cursor-pointer group h-full">
-                    <CardContent className="pt-6 h-full flex flex-col">
-                      <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                        <Users className="h-6 w-6 text-primary" />
-                      </div>
-                      <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors">Our Mentors</h3>
-                      <p className="text-muted-foreground flex-1">
-                        Learn from experienced professionals who are passionate about sharing their knowledge and empowering the next generation
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
-
-                <Link to="/courses" className="h-full">
-                  <Card className="border-2 hover:border-secondary transition-colors cursor-pointer group h-full">
-                    <CardContent className="pt-6 h-full flex flex-col">
-                      <div className="h-12 w-12 rounded-lg bg-secondary/10 flex items-center justify-center mb-4 group-hover:bg-secondary/20 transition-colors">
-                        <BookOpen className="h-6 w-6 text-secondary" />
-                      </div>
-                      <h3 className="text-xl font-bold mb-3 group-hover:text-secondary transition-colors">Explore Courses</h3>
-                      <p className="text-muted-foreground flex-1">
-                        Outcome-focused training designed to get you job-ready, not just traditional learning—practical skills that lead to real career opportunities
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
-
-                <Link to="/jobs" className="h-full">
-                  <Card className="border-2 hover:border-accent transition-colors cursor-pointer group h-full">
-                    <CardContent className="pt-6 h-full flex flex-col">
-                      <div className="h-12 w-12 rounded-lg bg-accent/10 flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors">
-                        <Globe className="h-6 w-6 text-accent" />
-                      </div>
-                      <h3 className="text-xl font-bold mb-3 group-hover:text-accent transition-colors">Join Our Community</h3>
-                      <p className="text-muted-foreground flex-1">
-                        Join a supportive community of learners and mentors dedicated to advancing digital skills across Africa
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="submit-idea">
-              <IdeaSubmissionForm compact />
-            </TabsContent>
-          </Tabs>
+              </Button>
+            </Link>
+            <p className="text-sm text-muted-foreground mt-4">
+              Join hundreds of young African innovators already in our program
+            </p>
+          </div>
         </div>
       </section>
 
