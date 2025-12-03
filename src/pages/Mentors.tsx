@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
@@ -7,8 +9,17 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface MentorProfile {
   id: string;
@@ -36,6 +47,19 @@ interface MentorWithCourses extends MentorProfile {
 
 export const Mentors = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<{ id: string; title: string } | null>(null);
+
+  const handleCourseClick = (e: React.MouseEvent, course: { id: string; title: string }) => {
+    e.stopPropagation();
+    if (user) {
+      navigate(`/courses/${course.id}`);
+    } else {
+      setSelectedCourse(course);
+      setShowAuthDialog(true);
+    }
+  };
 
   const { data: mentors, isLoading } = useQuery({
     queryKey: ['mentors-with-courses'],
@@ -181,11 +205,14 @@ export const Mentors = () => {
                         </div>
                         <div className="flex flex-wrap gap-2 justify-center">
                           {mentor.courses.slice(0, 3).map((course) => (
-                            <Link key={course.id} to={`/courses/${course.id}`}>
-                              <Badge variant="secondary" className="cursor-pointer hover:bg-secondary/80">
-                                {course.title}
-                              </Badge>
-                            </Link>
+                            <Badge 
+                              key={course.id} 
+                              variant="secondary" 
+                              className="cursor-pointer hover:bg-secondary/80"
+                              onClick={(e) => handleCourseClick(e, course)}
+                            >
+                              {course.title}
+                            </Badge>
                           ))}
                           {mentor.courses.length > 3 && (
                             <Badge variant="outline">+{mentor.courses.length - 3} more</Badge>
@@ -206,6 +233,26 @@ export const Mentors = () => {
       </main>
 
       <Footer />
+
+      {/* Sign up prompt dialog for unauthenticated users */}
+      <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Sign up to enroll</DialogTitle>
+            <DialogDescription>
+              Create a free account to enroll in "{selectedCourse?.title}" and start learning today.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setShowAuthDialog(false)}>
+              Maybe later
+            </Button>
+            <Button onClick={() => navigate('/auth?mode=signup&role=student')}>
+              Sign up for free
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
