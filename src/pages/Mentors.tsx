@@ -9,7 +9,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface MentorProfile {
   id: string;
@@ -36,7 +35,6 @@ interface MentorWithCourses extends MentorProfile {
 }
 
 export const Mentors = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   const { data: mentors, isLoading } = useQuery({
@@ -85,13 +83,8 @@ export const Mentors = () => {
   });
 
   const handleMentorClick = (mentorId: string) => {
-    if (user) {
-      // Logged in - go to courses filtered by this mentor
-      navigate(`/courses?mentor=${mentorId}`);
-    } else {
-      // Not logged in - redirect to auth with return URL
-      navigate(`/auth?redirect=/courses?mentor=${mentorId}`);
-    }
+    // Navigate to mentor profile page
+    navigate(`/mentors/${mentorId}`);
   };
 
   return (
