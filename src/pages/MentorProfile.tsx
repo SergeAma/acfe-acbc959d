@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,14 +10,7 @@ import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe, ArrowLeft, Clock, BarChart, LogIn, UserPlus } from 'lucide-react';
+import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe, ArrowLeft, Clock, BarChart, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface MentorProfile {
@@ -48,17 +40,6 @@ export const MentorProfile = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [showAuthDialog, setShowAuthDialog] = useState(false);
-
-  // Show auth dialog for unauthenticated users after a brief delay
-  useEffect(() => {
-    if (!user) {
-      const timer = setTimeout(() => {
-        setShowAuthDialog(true);
-      }, 1500); // Show after 1.5 seconds to let them see the page first
-      return () => clearTimeout(timer);
-    }
-  }, [user]);
 
   const { data: mentor, isLoading: mentorLoading } = useQuery({
     queryKey: ['mentor-profile', id],
@@ -167,7 +148,33 @@ export const MentorProfile = () => {
         ]} 
       />
       
-      <main className="container mx-auto px-4 py-12">
+      <main className="container mx-auto px-4 py-12 relative">
+        {/* Auth Gate Overlay for non-authenticated users */}
+        {!user && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+            <Card className="max-w-md mx-4 border border-border shadow-lg">
+              <CardContent className="p-8 text-center space-y-4">
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <User className="h-8 w-8 text-primary" />
+                </div>
+                <h2 className="text-xl font-bold text-foreground">View Mentor Profile</h2>
+                <p className="text-muted-foreground text-sm">
+                  Sign up to view full mentor profiles, explore their courses, and start your learning journey.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                  <Button asChild className="rounded-full">
+                    <Link to="/auth">Sign Up</Link>
+                  </Button>
+                  <Button variant="outline" asChild className="rounded-full">
+                    <Link to="/auth">Sign In</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        <div className={!user ? 'blur-sm pointer-events-none select-none' : ''}>
         <div className="max-w-4xl mx-auto">
           {/* Back Link */}
           <Link 
@@ -359,46 +366,10 @@ export const MentorProfile = () => {
             )}
           </div>
         </div>
+        </div>
       </main>
 
       <Footer />
-
-      {/* Auth dialog for unauthenticated users */}
-      <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-center text-2xl">Join A Cloud for Everyone</DialogTitle>
-            <DialogDescription className="text-center">
-              Create a free account to enroll in courses and connect with mentors like {mentor?.full_name?.split(' ')[0] || 'our experts'}.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-3 mt-4">
-            <Button 
-              size="lg" 
-              className="w-full"
-              onClick={() => navigate('/auth?mode=signup&role=student')}
-            >
-              <UserPlus className="h-4 w-4 mr-2" />
-              Sign up for free
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="w-full"
-              onClick={() => navigate('/auth?mode=login')}
-            >
-              <LogIn className="h-4 w-4 mr-2" />
-              I already have an account
-            </Button>
-            <button 
-              className="text-sm text-muted-foreground hover:text-foreground mt-2"
-              onClick={() => setShowAuthDialog(false)}
-            >
-              Continue browsing
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
