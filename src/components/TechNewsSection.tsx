@@ -6,7 +6,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
 interface NewsArticle {
   title: string;
   link: string;
@@ -15,14 +14,11 @@ interface NewsArticle {
   source: string;
   category?: string;
 }
-
 const NEWS_CATEGORIES = ['ALL NEWS', 'DIGITAL SKILLS', 'INNOVATION', 'PARTNERSHIPS'] as const;
-
 export const TechNewsSection = () => {
   const [activeCategory, setActiveCategory] = useState<string>('ALL NEWS');
   const [email, setEmail] = useState('');
   const [isSubscribing, setIsSubscribing] = useState(false);
-
   const {
     data: newsData,
     isLoading: newsLoading,
@@ -30,19 +26,25 @@ export const TechNewsSection = () => {
   } = useQuery({
     queryKey: ['tech-news'],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('fetch-tech-news');
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('fetch-tech-news');
       if (error) throw error;
-      return data as { articles: NewsArticle[] };
+      return data as {
+        articles: NewsArticle[];
+      };
     },
     staleTime: 1000 * 60 * 30
   });
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Recent';
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
   };
-
   const getTimeSinceUpdate = () => {
     if (!dataUpdatedAt) return 'Just now';
     const diff = Date.now() - dataUpdatedAt;
@@ -52,21 +54,20 @@ export const TechNewsSection = () => {
     const hours = Math.floor(minutes / 60);
     return `${hours}h ago`;
   };
-
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
       toast.error('Please enter your email address');
       return;
     }
-    
     setIsSubscribing(true);
     try {
-      const { error } = await supabase.from('contacts').insert({
+      const {
+        error
+      } = await supabase.from('contacts').insert({
         email: email.trim(),
         source: 'newsletter_signup'
       });
-      
       if (error) {
         if (error.code === '23505') {
           toast.success("You're already subscribed!");
@@ -84,20 +85,16 @@ export const TechNewsSection = () => {
       setIsSubscribing(false);
     }
   };
-
   const allArticles = newsData?.articles || [];
-  
+
   // Filter articles based on active category
   const filteredArticles = useMemo(() => {
     if (activeCategory === 'ALL NEWS') return allArticles;
     return allArticles.filter(article => article.category === activeCategory);
   }, [allArticles, activeCategory]);
-
   const featuredArticle = filteredArticles[0];
   const listArticles = filteredArticles.slice(1);
-
-  return (
-    <section className="py-20 bg-background">
+  return <section className="py-20 bg-background">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
@@ -106,7 +103,7 @@ export const TechNewsSection = () => {
           </span>
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">
-              Africa Digital Skills News<br className="hidden md:block" /> & Innovation
+              Africa Digital News<br className="hidden md:block" /> & Innovation
             </h2>
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <RefreshCw className="h-4 w-4" />
@@ -117,24 +114,13 @@ export const TechNewsSection = () => {
 
         {/* Category Tabs */}
         <div className="flex flex-wrap gap-2 mb-8">
-          {NEWS_CATEGORIES.map((category) => (
-            <button
-              key={category}
-              onClick={() => setActiveCategory(category)}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                activeCategory === category
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
-              }`}
-            >
+          {NEWS_CATEGORIES.map(category => <button key={category} onClick={() => setActiveCategory(category)} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeCategory === category ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
               {category}
-            </button>
-          ))}
+            </button>)}
         </div>
 
         {/* News Grid */}
-        {newsLoading ? (
-          <div className="grid lg:grid-cols-2 gap-6 mb-8">
+        {newsLoading ? <div className="grid lg:grid-cols-2 gap-6 mb-8">
             <div className="bg-card rounded-lg p-6 space-y-4 border border-border">
               <Skeleton className="h-6 w-24" />
               <Skeleton className="h-8 w-full" />
@@ -143,22 +129,19 @@ export const TechNewsSection = () => {
               <Skeleton className="h-10 w-32" />
             </div>
             <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="bg-card rounded-lg p-4 flex gap-4 border border-border">
+              {Array.from({
+            length: 5
+          }).map((_, i) => <div key={i} className="bg-card rounded-lg p-4 flex gap-4 border border-border">
                   <Skeleton className="h-10 w-10 rounded-full flex-shrink-0" />
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-4 w-24" />
                     <Skeleton className="h-5 w-full" />
                   </div>
-                </div>
-              ))}
+                </div>)}
             </div>
-          </div>
-        ) : filteredArticles.length > 0 ? (
-          <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          </div> : filteredArticles.length > 0 ? <div className="grid lg:grid-cols-2 gap-6 mb-8">
             {/* Featured Article */}
-            {featuredArticle && (
-              <div className="bg-card rounded-lg p-6 flex flex-col h-full border border-border">
+            {featuredArticle && <div className="bg-card rounded-lg p-6 flex flex-col h-full border border-border">
                 <div className="flex items-center gap-3 mb-4">
                   <span className="bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-md">
                     {featuredArticle.category || 'DIGITAL SKILLS'}
@@ -180,29 +163,16 @@ export const TechNewsSection = () => {
                   <span className="text-sm font-medium text-muted-foreground">
                     {featuredArticle.source}
                   </span>
-                  <a 
-                    href={featuredArticle.link} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-primary hover:text-primary/80 font-medium text-sm flex items-center gap-2 transition-colors"
-                  >
+                  <a href={featuredArticle.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 font-medium text-sm flex items-center gap-2 transition-colors">
                     Read More
                     <ExternalLink className="h-4 w-4" />
                   </a>
                 </div>
-              </div>
-            )}
+              </div>}
 
             {/* Article List */}
             <div className="space-y-3">
-              {listArticles.map((article, index) => (
-                <a
-                  key={index}
-                  href={article.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-card rounded-lg p-4 flex gap-4 items-start hover:bg-muted/50 transition-colors group border border-border block"
-                >
+              {listArticles.map((article, index) => <a key={index} href={article.link} target="_blank" rel="noopener noreferrer" className="bg-card rounded-lg p-4 flex gap-4 items-start hover:bg-muted/50 transition-colors group border border-border block">
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <Globe className="h-5 w-5 text-primary" />
                   </div>
@@ -220,26 +190,18 @@ export const TechNewsSection = () => {
                       {article.title}
                     </h4>
                   </div>
-                </a>
-              ))}
+                </a>)}
             </div>
-          </div>
-        ) : (
-          <div className="text-center py-12 bg-card rounded-lg mb-8 border border-border">
+          </div> : <div className="text-center py-12 bg-card rounded-lg mb-8 border border-border">
             <p className="text-muted-foreground">
-              {activeCategory === 'ALL NEWS' 
-                ? 'No news articles available at the moment. Check back soon!'
-                : `No articles found for "${activeCategory}". Try selecting a different category.`}
+              {activeCategory === 'ALL NEWS' ? 'No news articles available at the moment. Check back soon!' : `No articles found for "${activeCategory}". Try selecting a different category.`}
             </p>
-          </div>
-        )}
+          </div>}
 
         {/* Article Count */}
-        {filteredArticles.length > 0 && (
-          <p className="text-center text-muted-foreground text-sm mb-12">
+        {filteredArticles.length > 0 && <p className="text-center text-muted-foreground text-sm mb-12">
             Showing {filteredArticles.length} of {allArticles.length} articles
-          </p>
-        )}
+          </p>}
 
         {/* Newsletter Signup */}
         <div className="bg-card rounded-xl p-8 border border-border">
@@ -259,19 +221,8 @@ export const TechNewsSection = () => {
           
           <form onSubmit={handleSubscribe} className="mt-6">
             <div className="flex flex-col sm:flex-row gap-3">
-              <Input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 bg-background"
-                required
-              />
-              <Button 
-                type="submit" 
-                disabled={isSubscribing}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground whitespace-nowrap"
-              >
+              <Input type="email" placeholder="Enter your email" value={email} onChange={e => setEmail(e.target.value)} className="flex-1 bg-background" required />
+              <Button type="submit" disabled={isSubscribing} className="bg-primary hover:bg-primary/90 text-primary-foreground whitespace-nowrap">
                 {isSubscribing ? 'Subscribing...' : 'Subscribe'}
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
@@ -282,6 +233,5 @@ export const TechNewsSection = () => {
           </form>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
