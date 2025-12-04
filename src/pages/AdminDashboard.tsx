@@ -143,10 +143,35 @@ export const AdminDashboard = () => {
     setProcessingId(null);
   };
 
+  const sendMentorRejectionEmail = async (userId: string, email: string, fullName: string) => {
+    try {
+      const firstName = fullName?.split(' ')[0] || 'Applicant';
+      
+      const { data, error } = await supabase.functions.invoke('send-mentor-rejection-email', {
+        body: {
+          user_id: userId,
+          email: email,
+          first_name: firstName
+        }
+      });
+
+      if (error) {
+        console.error('Error sending mentor rejection email:', error);
+      } else {
+        console.log('Mentor rejection email sent successfully:', data);
+      }
+    } catch (err) {
+      console.error('Failed to send mentor rejection email:', err);
+    }
+  };
+
   const handleReject = async (requestId: string) => {
     if (!profile?.id) return;
     
     setProcessingId(requestId);
+    
+    // Find the request to get user details for email
+    const request = requests.find(r => r.id === requestId);
     
     const { error } = await supabase.rpc('reject_mentor_request', {
       _request_id: requestId,
@@ -164,6 +189,16 @@ export const AdminDashboard = () => {
         title: "Request rejected",
         description: "The mentor request has been rejected.",
       });
+      
+      // Send rejection email
+      if (request?.profiles?.email) {
+        await sendMentorRejectionEmail(
+          request.user_id,
+          request.profiles.email,
+          request.profiles.full_name || ''
+        );
+      }
+      
       fetchRequests();
     }
     
