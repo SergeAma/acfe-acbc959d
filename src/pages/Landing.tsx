@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,28 +21,62 @@ const heroVideos = [
 export const Landing = () => {
   const { user } = useAuth();
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [nextVideoIndex, setNextVideoIndex] = useState(1);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const currentVideoRef = useRef<HTMLVideoElement>(null);
+  const nextVideoRef = useRef<HTMLVideoElement>(null);
 
   const handleVideoEnded = useCallback(() => {
-    setCurrentVideoIndex((prev) => (prev + 1) % heroVideos.length);
-  }, []);
+    setIsTransitioning(true);
+    
+    // Start playing the next video
+    nextVideoRef.current?.play();
+    
+    // After transition, swap the videos
+    setTimeout(() => {
+      setCurrentVideoIndex(nextVideoIndex);
+      setNextVideoIndex((nextVideoIndex + 1) % heroVideos.length);
+      setIsTransitioning(false);
+    }, 1000); // Match the CSS transition duration
+  }, [nextVideoIndex]);
+
+  // Preload the next video
+  useEffect(() => {
+    if (nextVideoRef.current) {
+      nextVideoRef.current.load();
+    }
+  }, [nextVideoIndex]);
 
   return <div className="min-h-screen">
       <Navbar />
       
       {/* Hero Section */}
       <section className="relative overflow-hidden min-h-screen flex items-end pb-28">
-        {/* Video Background */}
+        {/* Video Background - Current */}
         <video
-          ref={videoRef}
-          key={currentVideoIndex}
+          ref={currentVideoRef}
+          key={`current-${currentVideoIndex}`}
           autoPlay
           muted
           playsInline
           onEnded={handleVideoEnded}
-          className="absolute inset-0 w-full h-full object-cover"
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+            isTransitioning ? 'opacity-0' : 'opacity-100'
+          }`}
         >
           <source src={heroVideos[currentVideoIndex]} type="video/mp4" />
+        </video>
+        {/* Video Background - Next (preloaded) */}
+        <video
+          ref={nextVideoRef}
+          key={`next-${nextVideoIndex}`}
+          muted
+          playsInline
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+            isTransitioning ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <source src={heroVideos[nextVideoIndex]} type="video/mp4" />
         </video>
         {/* Dark Overlay */}
         <div className="absolute inset-0 bg-black/50" />
