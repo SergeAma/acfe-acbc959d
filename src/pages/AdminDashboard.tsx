@@ -157,6 +157,9 @@ export const AdminDashboard = () => {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
+              <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/newsletter')}>
+                Newsletter Management
+              </Button>
               <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/courses')}>
                 Manage Courses
               </Button>
