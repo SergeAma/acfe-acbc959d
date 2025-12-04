@@ -763,6 +763,45 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_newsletters: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          html_content: string
+          id: string
+          recipient_count: number | null
+          scheduled_at: string
+          sent_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          html_content: string
+          id?: string
+          recipient_count?: number | null
+          scheduled_at: string
+          sent_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          html_content?: string
+          id?: string
+          recipient_count?: number | null
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tags: {
         Row: {
           color: string | null

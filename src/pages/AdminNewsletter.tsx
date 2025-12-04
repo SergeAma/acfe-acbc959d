@@ -6,10 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { Label } from '@/components/ui/label';
-import { Loader2, Send, Sparkles, Save, Eye, BarChart, Mail, Users, Check } from 'lucide-react';
+import { Loader2, Send, Sparkles, Save, Eye, BarChart, Mail, Users, Check, Clock, FileText, Trash2, Calendar } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RichTextEditor } from '@/components/RichTextEditor';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
 
 interface Contact {
   id: string;
@@ -27,6 +31,21 @@ interface NewsArticle {
   category: string;
 }
 
+interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  html_content: string;
+}
+
+interface ScheduledNewsletter {
+  id: string;
+  subject: string;
+  scheduled_at: string;
+  status: string;
+  recipient_count: number;
+}
+
 const DRAFT_STORAGE_KEY = 'newsletter_draft';
 
 export const AdminNewsletter = () => {
@@ -34,15 +53,29 @@ export const AdminNewsletter = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [scheduledNewsletters, setScheduledNewsletters] = useState<ScheduledNewsletter[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [loadingNews, setLoadingNews] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [scheduling, setScheduling] = useState(false);
   
   const [newsletterData, setNewsletterData] = useState({
     subject: 'Weekly Africa Tech News Digest',
     content: '<h2>This Week\'s Highlights</h2><p>Your newsletter content here...</p>'
   });
+
+  // Template dialog
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+
+  // Schedule dialog
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleTime, setScheduleTime] = useState('');
 
   // Stats for tabs
   const [inquiryCount, setInquiryCount] = useState(0);
@@ -55,7 +88,6 @@ export const AdminNewsletter = () => {
       try {
         const draft = JSON.parse(savedDraft);
         setNewsletterData(draft);
-        toast({ title: "Draft loaded", description: "Your previous draft has been restored." });
       } catch (e) {
         // Invalid draft, ignore
       }
@@ -71,9 +103,11 @@ export const AdminNewsletter = () => {
   const fetchData = async () => {
     setLoading(true);
     
-    const [contactsRes, ideasRes] = await Promise.all([
+    const [contactsRes, ideasRes, templatesRes, scheduledRes] = await Promise.all([
       supabase.from('contacts').select('*'),
-      supabase.from('idea_submissions').select('id', { count: 'exact' })
+      supabase.from('idea_submissions').select('id', { count: 'exact' }),
+      supabase.from('email_templates').select('*').order('name'),
+      supabase.from('scheduled_newsletters').select('*').order('scheduled_at', { ascending: false }).limit(10)
     ]);
 
     if (contactsRes.data) {
@@ -82,6 +116,12 @@ export const AdminNewsletter = () => {
     }
     if (ideasRes.count !== null) {
       setInquiryCount(ideasRes.count);
+    }
+    if (templatesRes.data) {
+      setTemplates(templatesRes.data);
+    }
+    if (scheduledRes.data) {
+      setScheduledNewsletters(scheduledRes.data);
     }
     
     setLoading(false);
@@ -94,6 +134,55 @@ export const AdminNewsletter = () => {
     setTimeout(() => setDraftSaved(false), 2000);
   };
 
+  const handleSaveAsTemplate = async () => {
+    if (!newTemplateName.trim()) {
+      toast({ title: "Please enter a template name", variant: "destructive" });
+      return;
+    }
+
+    setSavingTemplate(true);
+    try {
+      const { error } = await supabase.from('email_templates').insert({
+        name: newTemplateName,
+        subject: newsletterData.subject,
+        html_content: generatePreviewHtml(),
+      });
+
+      if (error) throw error;
+
+      toast({ title: "Template saved", description: `Template "${newTemplateName}" has been saved.` });
+      setNewTemplateName('');
+      setIsTemplateDialogOpen(false);
+      fetchData();
+    } catch (error: any) {
+      toast({ title: "Error saving template", description: error.message, variant: "destructive" });
+    }
+    setSavingTemplate(false);
+  };
+
+  const handleLoadTemplate = (templateId: string) => {
+    const template = templates.find(t => t.id === templateId);
+    if (template) {
+      setNewsletterData({
+        subject: template.subject,
+        content: template.html_content,
+      });
+      setSelectedTemplateId(templateId);
+      toast({ title: "Template loaded", description: `"${template.name}" has been loaded.` });
+    }
+  };
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    try {
+      const { error } = await supabase.from('email_templates').delete().eq('id', templateId);
+      if (error) throw error;
+      toast({ title: "Template deleted" });
+      fetchData();
+    } catch (error: any) {
+      toast({ title: "Error deleting template", description: error.message, variant: "destructive" });
+    }
+  };
+
   const fetchNewsArticles = async () => {
     setLoadingNews(true);
     try {
@@ -102,7 +191,6 @@ export const AdminNewsletter = () => {
       
       const articles: NewsArticle[] = data.articles || [];
       if (articles.length > 0) {
-        // Generate content from articles
         const articlesHtml = articles.slice(0, 5).map(article => `
 <div style="margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #e5e5e5;">
   <span style="display: inline-block; background: #10b981; color: white; font-size: 10px; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; margin-bottom: 8px;">${article.category}</span>
@@ -159,6 +247,62 @@ export const AdminNewsletter = () => {
 </html>`;
   };
 
+  const handleScheduleNewsletter = async () => {
+    if (!scheduleDate || !scheduleTime) {
+      toast({ title: "Please select date and time", variant: "destructive" });
+      return;
+    }
+
+    if (!newsletterData.subject || !newsletterData.content) {
+      toast({ title: "Please enter subject and content", variant: "destructive" });
+      return;
+    }
+
+    setScheduling(true);
+    try {
+      const scheduledAt = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
+      
+      const { error } = await supabase.from('scheduled_newsletters').insert({
+        subject: newsletterData.subject,
+        html_content: generatePreviewHtml(),
+        scheduled_at: scheduledAt,
+        recipient_count: contacts.length,
+        created_by: profile?.id,
+      });
+
+      if (error) throw error;
+
+      toast({ 
+        title: "Newsletter scheduled!", 
+        description: `Will be sent on ${format(new Date(scheduledAt), 'PPp')}` 
+      });
+      
+      setIsScheduleDialogOpen(false);
+      setScheduleDate('');
+      setScheduleTime('');
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+      fetchData();
+    } catch (error: any) {
+      toast({ title: "Error scheduling newsletter", description: error.message, variant: "destructive" });
+    }
+    setScheduling(false);
+  };
+
+  const handleCancelScheduled = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('scheduled_newsletters')
+        .update({ status: 'cancelled' })
+        .eq('id', id);
+
+      if (error) throw error;
+      toast({ title: "Scheduled newsletter cancelled" });
+      fetchData();
+    } catch (error: any) {
+      toast({ title: "Error cancelling", description: error.message, variant: "destructive" });
+    }
+  };
+
   const handleSendNewsletter = async () => {
     if (!newsletterData.subject || !newsletterData.content) {
       toast({ title: "Please enter subject and content", variant: "destructive" });
@@ -191,9 +335,7 @@ export const AdminNewsletter = () => {
         description: `Successfully sent to ${contacts.length} recipients.` 
       });
       
-      // Clear draft after successful send
       localStorage.removeItem(DRAFT_STORAGE_KEY);
-      
       fetchData();
     } catch (error: any) {
       toast({ 
@@ -251,7 +393,7 @@ export const AdminNewsletter = () => {
         </Tabs>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 mb-6">
+        <div className="flex flex-wrap gap-3 mb-6">
           <Button 
             variant="outline" 
             onClick={fetchNewsArticles}
@@ -277,7 +419,154 @@ export const AdminNewsletter = () => {
             )}
             {draftSaved ? 'Saved!' : 'Save Draft'}
           </Button>
+
+          {/* Template Management */}
+          <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <FileText className="h-4 w-4" />
+                Templates
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Newsletter Templates</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                {/* Save as new template */}
+                <div className="space-y-2">
+                  <Label>Save current content as template</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newTemplateName}
+                      onChange={(e) => setNewTemplateName(e.target.value)}
+                      placeholder="Template name..."
+                    />
+                    <Button onClick={handleSaveAsTemplate} disabled={savingTemplate}>
+                      {savingTemplate ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Load existing template */}
+                <div className="space-y-2">
+                  <Label>Load from template</Label>
+                  <Select value={selectedTemplateId} onValueChange={handleLoadTemplate}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a template..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates.map(template => (
+                        <SelectItem key={template.id} value={template.id}>
+                          {template.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Template list */}
+                {templates.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Existing templates</Label>
+                    <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
+                      {templates.map(template => (
+                        <div key={template.id} className="flex items-center justify-between p-3">
+                          <div>
+                            <p className="font-medium text-sm">{template.name}</p>
+                            <p className="text-xs text-muted-foreground">{template.subject}</p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteTemplate(template.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Schedule Dialog */}
+          <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Clock className="h-4 w-4" />
+                Schedule
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Schedule Newsletter</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label>Date</Label>
+                  <Input
+                    type="date"
+                    value={scheduleDate}
+                    onChange={(e) => setScheduleDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Time</Label>
+                  <Input
+                    type="time"
+                    value={scheduleTime}
+                    onChange={(e) => setScheduleTime(e.target.value)}
+                  />
+                </div>
+                <div className="bg-muted/30 p-3 rounded-lg text-sm">
+                  Will be sent to <strong>{contacts.length}</strong> subscribers
+                </div>
+                <Button onClick={handleScheduleNewsletter} disabled={scheduling} className="w-full gap-2">
+                  {scheduling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calendar className="h-4 w-4" />}
+                  Schedule Newsletter
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
+
+        {/* Scheduled Newsletters */}
+        {scheduledNewsletters.filter(n => n.status === 'scheduled').length > 0 && (
+          <div className="mb-6 bg-muted/30 p-4 rounded-lg">
+            <h3 className="font-semibold mb-3 flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Scheduled Newsletters
+            </h3>
+            <div className="space-y-2">
+              {scheduledNewsletters.filter(n => n.status === 'scheduled').map(newsletter => (
+                <div key={newsletter.id} className="flex items-center justify-between bg-background p-3 rounded-lg">
+                  <div>
+                    <p className="font-medium text-sm">{newsletter.subject}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Scheduled for {format(new Date(newsletter.scheduled_at), 'PPp')}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">
+                      {newsletter.recipient_count} recipients
+                    </Badge>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleCancelScheduled(newsletter.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Main Content - Two Column Layout */}
         <div className="grid lg:grid-cols-2 gap-8">
@@ -319,7 +608,7 @@ export const AdminNewsletter = () => {
               ) : (
                 <Send className="h-4 w-4" />
               )}
-              Send Newsletter
+              Send Now
             </Button>
           </div>
 
