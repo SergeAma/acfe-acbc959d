@@ -4,12 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { Label } from '@/components/ui/label';
-import { Loader2, Send, Sparkles, Save, Eye, BarChart, Mail, Users } from 'lucide-react';
+import { Loader2, Send, Sparkles, Save, Eye, BarChart, Mail, Users, Check } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RichTextEditor } from '@/components/RichTextEditor';
 
 interface Contact {
   id: string;
@@ -27,6 +27,8 @@ interface NewsArticle {
   category: string;
 }
 
+const DRAFT_STORAGE_KEY = 'newsletter_draft';
+
 export const AdminNewsletter = () => {
   const { profile, loading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -35,15 +37,30 @@ export const AdminNewsletter = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [loadingNews, setLoadingNews] = useState(false);
+  const [draftSaved, setDraftSaved] = useState(false);
   
   const [newsletterData, setNewsletterData] = useState({
     subject: 'Weekly Africa Tech News Digest',
-    content: `<h2>This Week's Highlights</h2><p>Your newsletter content here...</p>`
+    content: '<h2>This Week\'s Highlights</h2><p>Your newsletter content here...</p>'
   });
 
   // Stats for tabs
   const [inquiryCount, setInquiryCount] = useState(0);
   const [subscriberCount, setSubscriberCount] = useState(0);
+
+  // Load draft on mount
+  useEffect(() => {
+    const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (savedDraft) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        setNewsletterData(draft);
+        toast({ title: "Draft loaded", description: "Your previous draft has been restored." });
+      } catch (e) {
+        // Invalid draft, ignore
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (profile?.role === 'admin') {
@@ -68,6 +85,13 @@ export const AdminNewsletter = () => {
     }
     
     setLoading(false);
+  };
+
+  const handleSaveDraft = () => {
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(newsletterData));
+    setDraftSaved(true);
+    toast({ title: "Draft saved", description: "Your newsletter draft has been saved locally." });
+    setTimeout(() => setDraftSaved(false), 2000);
   };
 
   const fetchNewsArticles = async () => {
@@ -167,6 +191,9 @@ export const AdminNewsletter = () => {
         description: `Successfully sent to ${contacts.length} recipients.` 
       });
       
+      // Clear draft after successful send
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+      
       fetchData();
     } catch (error: any) {
       toast({ 
@@ -238,9 +265,17 @@ export const AdminNewsletter = () => {
             )}
             Auto-fill from RSS
           </Button>
-          <Button variant="outline" className="gap-2">
-            <Save className="h-4 w-4" />
-            Save Draft
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={handleSaveDraft}
+          >
+            {draftSaved ? (
+              <Check className="h-4 w-4 text-green-500" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            {draftSaved ? 'Saved!' : 'Save Draft'}
           </Button>
         </div>
 
@@ -264,14 +299,12 @@ export const AdminNewsletter = () => {
               />
             </div>
 
-            {/* Content */}
+            {/* Content - Rich Text Editor */}
             <div className="space-y-2">
-              <Label className="font-semibold">Content (HTML supported)</Label>
-              <Textarea
-                value={newsletterData.content}
-                onChange={(e) => setNewsletterData(prev => ({ ...prev, content: e.target.value }))}
-                placeholder="<h2>This Week's Highlights</h2><p>Your newsletter content here...</p>"
-                className="min-h-[400px] font-mono text-sm bg-muted/30 resize-y"
+              <Label className="font-semibold">Content</Label>
+              <RichTextEditor
+                content={newsletterData.content}
+                onChange={(html) => setNewsletterData(prev => ({ ...prev, content: html }))}
               />
             </div>
 
