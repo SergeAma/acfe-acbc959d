@@ -7,6 +7,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png';
 import johannesburgLogo from '@/assets/johannesburg-logo.png';
+import spectrogramLogo from '@/assets/spectrogram-logo.png';
 import acfeLogo from '@/assets/acfe-logo.png';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -266,6 +267,9 @@ export const Landing = () => {
             <h2 className="text-4xl font-bold mb-4">Our Partners</h2>
           </div>
           <div className="flex flex-wrap justify-center items-center gap-12 max-w-5xl mx-auto">
+            <a href="https://spectrogramconsulting.com/home" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
+              <img src={spectrogramLogo} alt="Spectrogram Consulting" className="h-16 w-auto object-contain" />
+            </a>
             <a href="https://teau.ac.ke" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover:opacity-80 transition-opacity">
               <img src={eastAfricanUniversityLogo} alt="The East African University" className="h-24 w-auto object-contain" />
             </a>
