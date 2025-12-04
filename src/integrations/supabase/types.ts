@@ -380,6 +380,39 @@ export type Database = {
           },
         ]
       }
+      curated_news: {
+        Row: {
+          article_title: string
+          article_url: string
+          created_at: string
+          id: string
+          is_hidden: boolean
+          is_pinned: boolean
+          pinned_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          article_title: string
+          article_url: string
+          created_at?: string
+          id?: string
+          is_hidden?: boolean
+          is_pinned?: boolean
+          pinned_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          article_title?: string
+          article_url?: string
+          created_at?: string
+          id?: string
+          is_hidden?: boolean
+          is_pinned?: boolean
+          pinned_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_logs: {
         Row: {
           clicked_at: string | null

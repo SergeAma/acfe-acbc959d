@@ -19,6 +19,13 @@ export const TechNewsSection = () => {
   const [activeCategory, setActiveCategory] = useState<string>('ALL NEWS');
   const [email, setEmail] = useState('');
   const [isSubscribing, setIsSubscribing] = useState(false);
+  interface CuratedNews {
+    article_url: string;
+    is_pinned: boolean;
+    is_hidden: boolean;
+    pinned_at: string | null;
+  }
+
   const {
     data: newsData,
     isLoading: newsLoading,
@@ -36,6 +43,18 @@ export const TechNewsSection = () => {
       };
     },
     staleTime: 1000 * 60 * 30
+  });
+
+  const { data: curatedData } = useQuery({
+    queryKey: ['curated-news'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('curated_news')
+        .select('article_url, is_pinned, is_hidden, pinned_at');
+      if (error) throw error;
+      return data as CuratedNews[];
+    },
+    staleTime: 1000 * 60 * 5
   });
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -87,11 +106,30 @@ export const TechNewsSection = () => {
   };
   const allArticles = newsData?.articles || [];
 
-  // Filter articles based on active category
+  // Helper to get curated status
+  const getCuratedStatus = (articleUrl: string) => {
+    return curatedData?.find(c => c.article_url === articleUrl);
+  };
+
+  // Filter articles based on active category and curated settings (hide hidden articles)
   const filteredArticles = useMemo(() => {
-    if (activeCategory === 'ALL NEWS') return allArticles;
-    return allArticles.filter(article => article.category === activeCategory);
-  }, [allArticles, activeCategory]);
+    let filtered = allArticles.filter(article => !getCuratedStatus(article.link)?.is_hidden);
+    
+    if (activeCategory !== 'ALL NEWS') {
+      filtered = filtered.filter(article => article.category === activeCategory);
+    }
+    
+    // Sort: pinned articles first, then by date
+    return filtered.sort((a, b) => {
+      const aStatus = getCuratedStatus(a.link);
+      const bStatus = getCuratedStatus(b.link);
+      
+      if (aStatus?.is_pinned && !bStatus?.is_pinned) return -1;
+      if (!aStatus?.is_pinned && bStatus?.is_pinned) return 1;
+      
+      return new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime();
+    });
+  }, [allArticles, activeCategory, curatedData]);
   const featuredArticle = filteredArticles[0];
   const listArticles = filteredArticles.slice(1);
   return <section className="py-20 bg-background">
