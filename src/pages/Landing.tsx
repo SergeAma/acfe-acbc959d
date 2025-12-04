@@ -1,3 +1,4 @@
+import { useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,10 +11,22 @@ import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png
 import johannesburgLogo from '@/assets/johannesburg-logo.png';
 import spectrogramLogo from '@/assets/spectrogram-logo.png';
 
+const heroVideos = [
+  '/videos/hero-background.mp4',
+  '/videos/cape-town.mp4',
+  '/videos/lagos.mp4',
+  '/videos/johannesburg.mp4',
+];
+
 export const Landing = () => {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handleVideoEnded = useCallback(() => {
+    setCurrentVideoIndex((prev) => (prev + 1) % heroVideos.length);
+  }, []);
+
   return <div className="min-h-screen">
       <Navbar />
       
@@ -21,13 +34,15 @@ export const Landing = () => {
       <section className="relative overflow-hidden min-h-screen flex items-end pb-28">
         {/* Video Background */}
         <video
+          ref={videoRef}
+          key={currentVideoIndex}
           autoPlay
-          loop
           muted
           playsInline
+          onEnded={handleVideoEnded}
           className="absolute inset-0 w-full h-full object-cover"
         >
-          <source src="/videos/hero-background.mp4" type="video/mp4" />
+          <source src={heroVideos[currentVideoIndex]} type="video/mp4" />
         </video>
         {/* Dark Overlay */}
         <div className="absolute inset-0 bg-black/50" />
