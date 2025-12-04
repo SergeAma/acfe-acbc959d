@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Instagram, Linkedin, Mail } from "lucide-react";
 import acfeLogo from "@/assets/acfe-logo.png";
+import spectrogramLogo from "@/assets/spectrogram-logo.png";
 
 export const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -18,10 +19,18 @@ export const Footer = () => {
               Empowering African youth with job-ready digital skills through mentorship and practical training.
             </p>
             <div className="mt-4 pt-4 border-t border-border/50">
-              <p className="text-muted-foreground text-xs">
-                ACFE is an initiative by <span className="font-semibold">Spectrogram Consulting</span>
+              <p className="text-muted-foreground text-xs mb-2">
+                ACFE is an initiative by
               </p>
-              <p className="text-muted-foreground text-xs mt-1">
+              <a 
+                href="https://spectrogramconsulting.com/home" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-block hover:opacity-80 transition-opacity"
+              >
+                <img src={spectrogramLogo} alt="Spectrogram Consulting" className="h-10 w-auto" />
+              </a>
+              <p className="text-muted-foreground text-xs mt-2">
                 The Brew Eagle House, 163 City Rd, London EC1V 1NR
               </p>
               <p className="text-muted-foreground text-xs mt-1">
