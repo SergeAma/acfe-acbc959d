@@ -270,10 +270,10 @@ export const Landing = () => {
             <a href="https://spectrogramconsulting.com/home" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
               <img src={spectrogramLogo} alt="Spectrogram Consulting" className="h-16 w-auto object-contain" />
             </a>
-            <a href="https://teau.ac.ke" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover:opacity-80 transition-opacity">
+            <a href="https://teau.ac.ke" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
               <img src={eastAfricanUniversityLogo} alt="The East African University" className="h-24 w-auto object-contain" />
             </a>
-            <a href="https://www.facebook.com/Thehonestgroupfundation/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover:opacity-80 transition-opacity">
+            <a href="https://www.facebook.com/Thehonestgroupfundation/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
               <img src={johannesburgLogo} alt="Johannesburg" className="h-24 w-auto object-contain" />
             </a>
           </div>
