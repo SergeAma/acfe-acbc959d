@@ -76,10 +76,40 @@ export const AdminDashboard = () => {
     setLoading(false);
   };
 
+  const sendMentorApprovalEmail = async (userId: string, email: string, fullName: string) => {
+    try {
+      const firstName = fullName?.split(' ')[0] || 'Mentor';
+      
+      const { data, error } = await supabase.functions.invoke('send-mentor-approval-email', {
+        body: {
+          user_id: userId,
+          email: email,
+          first_name: firstName
+        }
+      });
+
+      if (error) {
+        console.error('Error sending mentor approval email:', error);
+        toast({
+          title: "Note",
+          description: "Mentor approved but email notification failed to send.",
+          variant: "default",
+        });
+      } else {
+        console.log('Mentor approval email sent successfully:', data);
+      }
+    } catch (err) {
+      console.error('Failed to send mentor approval email:', err);
+    }
+  };
+
   const handleApprove = async (requestId: string) => {
     if (!profile?.id) return;
     
     setProcessingId(requestId);
+    
+    // Find the request to get user details for email
+    const request = requests.find(r => r.id === requestId);
     
     const { error } = await supabase.rpc('approve_mentor_request', {
       _request_id: requestId,
@@ -97,6 +127,16 @@ export const AdminDashboard = () => {
         title: "Request approved!",
         description: "User has been granted mentor role.",
       });
+      
+      // Send approval email
+      if (request?.profiles?.email) {
+        await sendMentorApprovalEmail(
+          request.user_id,
+          request.profiles.email,
+          request.profiles.full_name || ''
+        );
+      }
+      
       fetchRequests();
     }
     
@@ -159,6 +199,9 @@ export const AdminDashboard = () => {
             <CardContent className="space-y-2">
               <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/newsletter')}>
                 Newsletter Management
+              </Button>
+              <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/email-templates')}>
+                Email Templates
               </Button>
               <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/courses')}>
                 Manage Courses

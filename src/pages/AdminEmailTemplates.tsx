@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Loader2, Plus, Trash2, Edit, Mail, Eye } from 'lucide-react';
+import { Loader2, Plus, Trash2, Edit, Mail, Eye, Send } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
 interface EmailTemplate {
@@ -29,8 +29,12 @@ export const AdminEmailTemplates = () => {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
+  const [testTemplate, setTestTemplate] = useState<EmailTemplate | null>(null);
+  const [testEmail, setTestEmail] = useState('');
+  const [sendingTest, setSendingTest] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     subject: '',
@@ -128,6 +132,63 @@ export const AdminEmailTemplates = () => {
     setIsPreviewOpen(true);
   };
 
+  const openTestDialog = (template: EmailTemplate) => {
+    setTestTemplate(template);
+    setTestEmail(profile?.email || '');
+    setIsTestDialogOpen(true);
+  };
+
+  const handleSendTest = async () => {
+    if (!testTemplate || !testEmail) {
+      toast({ title: "Please enter an email address", variant: "destructive" });
+      return;
+    }
+
+    setSendingTest(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('send-test-email', {
+        body: {
+          to_email: testEmail,
+          subject: testTemplate.subject,
+          html_content: testTemplate.html_content,
+          test_data: {
+            first_name: 'Test',
+            last_name: 'User',
+            email: testEmail
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      toast({ title: "Test email sent!", description: `Check ${testEmail} for the test email.` });
+      setIsTestDialogOpen(false);
+    } catch (error: any) {
+      toast({ title: "Failed to send test email", description: error.message, variant: "destructive" });
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
+  // Generate preview with sample data
+  const getPreviewContent = (template: EmailTemplate) => {
+    let content = template.html_content;
+    const currentYear = new Date().getFullYear();
+    
+    // Replace variables with sample data
+    content = content.replace(/\{\{first_name\}\}/gi, 'John');
+    content = content.replace(/\{\{last_name\}\}/gi, 'Doe');
+    content = content.replace(/\{\{name\}\}/gi, 'John Doe');
+    content = content.replace(/\{\{email\}\}/gi, 'john.doe@example.com');
+    content = content.replace(/\{\{year\}\}/gi, currentYear.toString());
+    content = content.replace(/\{\{unsubscribe_url\}\}/gi, '#');
+    // Replace outdated years
+    content = content.replace(/2024/g, currentYear.toString());
+    
+    return content;
+  };
+
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -200,13 +261,16 @@ export const AdminEmailTemplates = () => {
                       </p>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => openPreview(template)}>
+                      <Button variant="ghost" size="sm" onClick={() => openPreview(template)} title="Preview">
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => openEditDialog(template)}>
+                      <Button variant="ghost" size="sm" onClick={() => openTestDialog(template)} title="Send Test">
+                        <Send className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => openEditDialog(template)} title="Edit">
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(template.id)}>
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(template.id)} title="Delete">
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
@@ -273,16 +337,66 @@ export const AdminEmailTemplates = () => {
 
         {/* Preview Dialog */}
         <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-          <DialogContent className="max-w-3xl max-h-[90vh]">
+          <DialogContent className="max-w-4xl max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>Preview: {previewTemplate?.name}</DialogTitle>
             </DialogHeader>
-            <div className="mt-4">
-              <p className="text-sm text-muted-foreground mb-2">Subject: {previewTemplate?.subject}</p>
-              <div 
-                className="border rounded-lg p-4 bg-white overflow-auto max-h-[60vh]"
-                dangerouslySetInnerHTML={{ __html: previewTemplate?.html_content || '' }}
-              />
+            <div className="mt-4 space-y-4">
+              <div className="flex items-center justify-between bg-muted/50 p-3 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium">Subject:</p>
+                  <p className="text-muted-foreground">{previewTemplate?.subject.replace(/\{\{first_name\}\}/gi, 'John')}</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => previewTemplate && openTestDialog(previewTemplate)}>
+                  <Send className="h-4 w-4 mr-2" />
+                  Send Test
+                </Button>
+              </div>
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-muted px-4 py-2 text-sm font-medium border-b">Email Preview (with sample data)</div>
+                <div 
+                  className="p-4 bg-white overflow-auto max-h-[60vh]"
+                  dangerouslySetInnerHTML={{ __html: previewTemplate ? getPreviewContent(previewTemplate) : '' }}
+                />
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Send Test Dialog */}
+        <Dialog open={isTestDialogOpen} onOpenChange={setIsTestDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Send Test Email</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div>
+                <Label>Template</Label>
+                <p className="text-muted-foreground">{testTemplate?.name}</p>
+              </div>
+              <div>
+                <Label>Send to Email Address</Label>
+                <Input
+                  type="email"
+                  value={testEmail}
+                  onChange={(e) => setTestEmail(e.target.value)}
+                  placeholder="your@email.com"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Test email will have "[TEST]" prefix in the subject
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleSendTest} disabled={sendingTest || !testEmail} className="flex-1">
+                  {sendingTest ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Send className="h-4 w-4 mr-2" />
+                  )}
+                  Send Test Email
+                </Button>
+                <Button variant="outline" onClick={() => setIsTestDialogOpen(false)}>Cancel</Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
