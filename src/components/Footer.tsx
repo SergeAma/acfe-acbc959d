@@ -17,6 +17,17 @@ export const Footer = () => {
             <p className="text-muted-foreground text-sm max-w-md">
               Empowering African youth with job-ready digital skills through mentorship and practical training.
             </p>
+            <div className="mt-4 pt-4 border-t border-border/50">
+              <p className="text-muted-foreground text-xs">
+                ACFE is an initiative by <span className="font-semibold">Spectrogram Consulting</span>
+              </p>
+              <p className="text-muted-foreground text-xs mt-1">
+                The Brew Eagle House, 163 City Rd, London EC1V 1NR
+              </p>
+              <p className="text-muted-foreground text-xs mt-1">
+                Spectrogram Consulting® trading name under Spectrogram UK LTD, Company number 09577536.
+              </p>
+            </div>
           </div>
 
           {/* Quick Links */}
