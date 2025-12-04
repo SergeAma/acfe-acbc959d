@@ -1,6 +1,7 @@
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
+import spectrogramLogo from '@/assets/spectrogram-logo.png';
 import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png';
 import johannesburgLogo from '@/assets/johannesburg-logo.png';
 
@@ -16,6 +17,31 @@ export const Partners = () => {
         </h1>
 
         <div className="max-w-5xl mx-auto space-y-20">
+          {/* Spectrogram Consulting - Featured Partner */}
+          <div className="bg-card rounded-lg p-8 shadow-lg border-2 border-primary/20">
+            <div className="flex flex-col items-center mb-6">
+              <span className="text-xs uppercase tracking-wider text-primary font-semibold mb-4">Featured Partner</span>
+              <a 
+                href="https://spectrogramconsulting.com/home" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]"
+              >
+                <img 
+                  src={spectrogramLogo} 
+                  alt="Spectrogram Consulting" 
+                  className="h-20 w-auto mb-6"
+                />
+              </a>
+            </div>
+            <p className="text-lg text-foreground/90 leading-relaxed text-center">
+              Spectrogram Consulting is the founding partner behind A Cloud for Everyone. Their mission is to provide 
+              discreet, expert counsel that enables leaders to navigate complexity and achieve sustainable, scalable 
+              growth in an ever-changing business landscape. Through this partnership, Spectrogram Consulting supports 
+              ACFE's vision of empowering African youth with job-ready digital skills.
+            </p>
+          </div>
+
           {/* East African University Partnership */}
           <div className="bg-card rounded-lg p-8 shadow-lg">
             <div className="flex flex-col items-center mb-6">
