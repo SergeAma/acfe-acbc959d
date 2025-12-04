@@ -9,22 +9,76 @@ interface NewsArticle {
   pubDate: string;
   description: string;
   source: string;
+  category: string;
 }
 
 // RSS feeds focused on African digital skills, education, and tech innovation
 const RSS_FEEDS = [
-  { url: 'https://techcrunch.com/tag/africa/feed/', source: 'TechCrunch Africa' },
-  { url: 'https://disrupt-africa.com/feed/', source: 'Disrupt Africa' },
-  { url: 'https://www.itnewsafrica.com/feed/', source: 'IT News Africa' },
-  { url: 'https://techcabal.com/feed/', source: 'TechCabal' },
-  { url: 'https://ventureburn.com/feed/', source: 'Ventureburn' },
-  { url: 'https://techpoint.africa/feed/', source: 'TechPoint Africa' },
-  { url: 'https://it-online.co.za/feed/', source: 'IT-Online Africa' },
-  { url: 'https://www.economist.com/middle-east-and-africa/rss.xml', source: 'The Economist' },
-  { url: 'https://www.jeuneafrique.com/feed/', source: 'Jeune Afrique' },
+  { url: 'https://techcrunch.com/tag/africa/feed/', source: 'TechCrunch Africa', category: 'INNOVATION' },
+  { url: 'https://disrupt-africa.com/feed/', source: 'Disrupt Africa', category: 'INNOVATION' },
+  { url: 'https://www.itnewsafrica.com/feed/', source: 'IT News Africa', category: 'DIGITAL SKILLS' },
+  { url: 'https://techcabal.com/feed/', source: 'TechCabal', category: 'INNOVATION' },
+  { url: 'https://ventureburn.com/feed/', source: 'Ventureburn', category: 'INNOVATION' },
+  { url: 'https://techpoint.africa/feed/', source: 'TechPoint Africa', category: 'DIGITAL SKILLS' },
+  { url: 'https://it-online.co.za/feed/', source: 'IT-Online Africa', category: 'DIGITAL SKILLS' },
+  { url: 'https://www.economist.com/middle-east-and-africa/rss.xml', source: 'The Economist', category: 'PARTNERSHIPS' },
+  { url: 'https://www.jeuneafrique.com/feed/', source: 'Jeune Afrique', category: 'PARTNERSHIPS' },
 ];
 
-async function parseRSSFeed(feedUrl: string, source: string): Promise<NewsArticle[]> {
+// Decode HTML entities
+function decodeHTMLEntities(text: string): string {
+  const entities: Record<string, string> = {
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&#039;': "'",
+    '&apos;': "'",
+    '&#38;': '&',
+    '&#038;': '&',
+    '&#8211;': '-',
+    '&#8212;': '-',
+    '&#8216;': "'",
+    '&#8217;': "'",
+    '&#8220;': '"',
+    '&#8221;': '"',
+    '&#8230;': '...',
+    '&nbsp;': ' ',
+    '&ndash;': '-',
+    '&mdash;': '-',
+    '&lsquo;': "'",
+    '&rsquo;': "'",
+    '&ldquo;': '"',
+    '&rdquo;': '"',
+    '&hellip;': '...',
+  };
+  
+  let decoded = text;
+  for (const [entity, char] of Object.entries(entities)) {
+    decoded = decoded.split(entity).join(char);
+  }
+  
+  // Handle numeric entities
+  decoded = decoded.replace(/&#(\d+);/g, (_, num) => String.fromCharCode(parseInt(num)));
+  decoded = decoded.replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+  
+  return decoded;
+}
+
+// Clean and extract text from CDATA or regular content
+function cleanText(text: string): string {
+  // Remove CDATA wrapper if present
+  let cleaned = text.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1');
+  // Remove HTML tags
+  cleaned = cleaned.replace(/<[^>]*>/g, '');
+  // Decode HTML entities
+  cleaned = decodeHTMLEntities(cleaned);
+  // Clean up whitespace
+  cleaned = cleaned.replace(/\s+/g, ' ').trim();
+  return cleaned;
+}
+
+async function parseRSSFeed(feedUrl: string, source: string, category: string): Promise<NewsArticle[]> {
   try {
     console.log(`Fetching RSS feed from ${feedUrl}`);
     const response = await fetch(feedUrl, {
@@ -48,32 +102,33 @@ async function parseRSSFeed(feedUrl: string, source: string): Promise<NewsArticl
     while ((match = itemRegex.exec(xmlText)) !== null && items.length < 15) {
       const itemXml = match[1];
       
-      const titleMatch = /<title><!\[CDATA\[(.*?)\]\]><\/title>|<title>(.*?)<\/title>/s.exec(itemXml);
-      const linkMatch = /<link>(.*?)<\/link>/s.exec(itemXml);
-      const pubDateMatch = /<pubDate>(.*?)<\/pubDate>/s.exec(itemXml);
-      const descMatch = /<description><!\[CDATA\[(.*?)\]\]><\/description>|<description>(.*?)<\/description>/s.exec(itemXml);
+      // Extract title - handle both CDATA and regular content
+      const titleMatch = /<title>([\s\S]*?)<\/title>/s.exec(itemXml);
+      const linkMatch = /<link>([\s\S]*?)<\/link>/s.exec(itemXml);
+      const pubDateMatch = /<pubDate>([\s\S]*?)<\/pubDate>/s.exec(itemXml);
+      const descMatch = /<description>([\s\S]*?)<\/description>/s.exec(itemXml);
       
       if (titleMatch && linkMatch) {
-        const title = titleMatch[1] || titleMatch[2] || '';
-        const description = descMatch ? (descMatch[1] || descMatch[2] || '') : '';
+        const title = cleanText(titleMatch[1]);
+        const description = descMatch ? cleanText(descMatch[1]) : '';
+        const link = cleanText(linkMatch[1]);
+        
+        // Skip empty titles
+        if (!title || title.length < 5) continue;
         
         // Filter for digital skills, upskilling, and tech training keywords
         const relevantKeywords = [
-          // Digital skills & education
           'digital skills', 'upskilling', 'training', 'education', 'learning',
           'edtech', 'e-learning', 'online course', 'bootcamp', 'academy',
           'certification', 'workforce', 'talent', 'youth', 'graduates',
           'coding', 'programming', 'developer', 'tech talent',
-          // Big tech vendors
           'google', 'microsoft', 'amazon', 'aws', 'meta', 'facebook',
           'ibm', 'oracle', 'salesforce', 'cisco', 'intel', 'apple',
           'andela', 'flutterwave', 'paystack',
-          // Non-profits & organizations
           'foundation', 'non-profit', 'nonprofit', 'ngo', 'initiative',
           'partnership', 'grant', 'scholarship', 'fellowship', 'program',
           'world bank', 'african development', 'undp', 'usaid', 'mastercard foundation',
           'rockefeller', 'gates foundation', 'tony elumelu',
-          // Innovation & ecosystem
           'innovation', 'hub', 'incubator', 'accelerator', 'startup',
           'entrepreneurship', 'tech ecosystem', 'digital economy',
           'africa', 'african', 'kenya', 'nigeria', 'south africa', 'egypt', 'ghana', 'rwanda'
@@ -84,11 +139,12 @@ async function parseRSSFeed(feedUrl: string, source: string): Promise<NewsArticl
         
         if (isRelevant) {
           items.push({
-            title: title.trim(),
-            link: linkMatch[1].trim(),
-            pubDate: pubDateMatch ? pubDateMatch[1].trim() : new Date().toISOString(),
-            description: description.replace(/<[^>]*>/g, '').substring(0, 250).trim() + '...',
+            title: title,
+            link: link,
+            pubDate: pubDateMatch ? cleanText(pubDateMatch[1]) : new Date().toISOString(),
+            description: description.substring(0, 250).trim() + (description.length > 250 ? '...' : ''),
             source: source,
+            category: category,
           });
         }
       }
@@ -113,7 +169,7 @@ Deno.serve(async (req) => {
     
     // Fetch all RSS feeds in parallel
     const allArticles = await Promise.all(
-      RSS_FEEDS.map(feed => parseRSSFeed(feed.url, feed.source))
+      RSS_FEEDS.map(feed => parseRSSFeed(feed.url, feed.source, feed.category))
     );
     
     // Flatten and sort by date

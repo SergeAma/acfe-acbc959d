@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Globe, ExternalLink, Mail, ArrowRight, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ interface NewsArticle {
   pubDate: string;
   description: string;
   source: string;
+  category?: string;
 }
 
 const NEWS_CATEGORIES = ['ALL NEWS', 'DIGITAL SKILLS', 'INNOVATION', 'PARTNERSHIPS'] as const;
@@ -38,6 +39,7 @@ export const TechNewsSection = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Recent';
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
@@ -60,7 +62,6 @@ export const TechNewsSection = () => {
     
     setIsSubscribing(true);
     try {
-      // Add to contacts table for newsletter
       const { error } = await supabase.from('contacts').insert({
         email: email.trim(),
         source: 'newsletter_signup'
@@ -68,7 +69,7 @@ export const TechNewsSection = () => {
       
       if (error) {
         if (error.code === '23505') {
-          toast.success('You\'re already subscribed!');
+          toast.success("You're already subscribed!");
         } else {
           throw error;
         }
@@ -84,9 +85,16 @@ export const TechNewsSection = () => {
     }
   };
 
-  const articles = newsData?.articles || [];
-  const featuredArticle = articles[0];
-  const listArticles = articles.slice(1);
+  const allArticles = newsData?.articles || [];
+  
+  // Filter articles based on active category
+  const filteredArticles = useMemo(() => {
+    if (activeCategory === 'ALL NEWS') return allArticles;
+    return allArticles.filter(article => article.category === activeCategory);
+  }, [allArticles, activeCategory]);
+
+  const featuredArticle = filteredArticles[0];
+  const listArticles = filteredArticles.slice(1);
 
   return (
     <section className="py-20 bg-background">
@@ -127,16 +135,16 @@ export const TechNewsSection = () => {
         {/* News Grid */}
         {newsLoading ? (
           <div className="grid lg:grid-cols-2 gap-6 mb-8">
-            <div className="bg-card rounded-lg p-6 space-y-4">
+            <div className="bg-card rounded-lg p-6 space-y-4 border border-border">
               <Skeleton className="h-6 w-24" />
               <Skeleton className="h-8 w-full" />
               <Skeleton className="h-8 w-3/4" />
               <Skeleton className="h-20 w-full" />
               <Skeleton className="h-10 w-32" />
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="bg-card rounded-lg p-4 flex gap-4">
+                <div key={i} className="bg-card rounded-lg p-4 flex gap-4 border border-border">
                   <Skeleton className="h-10 w-10 rounded-full flex-shrink-0" />
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-4 w-24" />
@@ -146,14 +154,14 @@ export const TechNewsSection = () => {
               ))}
             </div>
           </div>
-        ) : articles.length > 0 ? (
+        ) : filteredArticles.length > 0 ? (
           <div className="grid lg:grid-cols-2 gap-6 mb-8">
             {/* Featured Article */}
             {featuredArticle && (
               <div className="bg-card rounded-lg p-6 flex flex-col h-full border border-border">
                 <div className="flex items-center gap-3 mb-4">
-                <span className="bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-md">
-                    DIGITAL SKILLS
+                  <span className="bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-md">
+                    {featuredArticle.category || 'DIGITAL SKILLS'}
                   </span>
                   <span className="text-muted-foreground text-sm">
                     {formatDate(featuredArticle.pubDate)}
@@ -193,7 +201,7 @@ export const TechNewsSection = () => {
                   href={article.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-card rounded-lg p-4 flex gap-4 items-start hover:bg-muted/50 transition-colors group border border-border"
+                  className="bg-card rounded-lg p-4 flex gap-4 items-start hover:bg-muted/50 transition-colors group border border-border block"
                 >
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <Globe className="h-5 w-5 text-primary" />
@@ -201,7 +209,7 @@ export const TechNewsSection = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-semibold text-primary uppercase">
-                        DIGITAL SKILLS
+                        {article.category || 'DIGITAL SKILLS'}
                       </span>
                       <span className="text-muted-foreground text-xs">•</span>
                       <span className="text-muted-foreground text-xs">
@@ -217,15 +225,19 @@ export const TechNewsSection = () => {
             </div>
           </div>
         ) : (
-          <div className="text-center py-12 bg-card rounded-lg mb-8">
-            <p className="text-muted-foreground">No news articles available at the moment. Check back soon!</p>
+          <div className="text-center py-12 bg-card rounded-lg mb-8 border border-border">
+            <p className="text-muted-foreground">
+              {activeCategory === 'ALL NEWS' 
+                ? 'No news articles available at the moment. Check back soon!'
+                : `No articles found for "${activeCategory}". Try selecting a different category.`}
+            </p>
           </div>
         )}
 
         {/* Article Count */}
-        {articles.length > 0 && (
+        {filteredArticles.length > 0 && (
           <p className="text-center text-muted-foreground text-sm mb-12">
-            Showing {articles.length} of {articles.length} articles
+            Showing {filteredArticles.length} of {allArticles.length} articles
           </p>
         )}
 
