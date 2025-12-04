@@ -26,7 +26,7 @@ export const Footer = () => {
                 href="https://spectrogramconsulting.com/home" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="inline-block hover-scale"
+                className="inline-block hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]"
               >
                 <img src={spectrogramLogo} alt="Spectrogram Consulting" className="h-10 w-auto" />
               </a>
