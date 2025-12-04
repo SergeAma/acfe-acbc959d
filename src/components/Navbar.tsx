@@ -47,11 +47,11 @@ export const Navbar = () => {
                     frame={profile?.profile_frame || 'none'}
                     size="sm"
                   />
-                  <span className="hidden sm:inline">My account</span>
+                  <span className="hidden sm:inline">Account</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-popover z-[100]">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuLabel>Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link to="/dashboard">Dashboard</Link>
@@ -83,7 +83,7 @@ export const Navbar = () => {
             </DropdownMenu>
           ) : (
             <Link to="/auth" className="text-sm font-bold text-foreground hover:text-primary transition-colors">
-              My account
+              Account
             </Link>
           )}
 
