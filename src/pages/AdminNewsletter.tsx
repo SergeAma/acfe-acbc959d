@@ -472,10 +472,10 @@ export const AdminNewsletter = () => {
             <span>Sequences</span>
             <span className="text-xs text-muted-foreground mt-1">Drip campaigns</span>
           </Button>
-          <Button variant="outline" className="h-auto py-4 flex flex-col items-center" disabled>
+          <Button variant="outline" className="h-auto py-4 flex flex-col items-center" onClick={() => navigate('/admin/email-analytics')}>
             <BarChart className="h-6 w-6 mb-2" />
             <span>Analytics</span>
-            <span className="text-xs text-muted-foreground mt-1">Coming soon</span>
+            <span className="text-xs text-muted-foreground mt-1">View insights</span>
           </Button>
         </div>
 
