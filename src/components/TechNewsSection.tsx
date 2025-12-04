@@ -15,7 +15,7 @@ interface NewsArticle {
   source: string;
 }
 
-const NEWS_CATEGORIES = ['ALL NEWS', 'AFRICA TECH', 'STARTUPS', 'FUNDING'] as const;
+const NEWS_CATEGORIES = ['ALL NEWS', 'DIGITAL SKILLS', 'INNOVATION', 'PARTNERSHIPS'] as const;
 
 export const TechNewsSection = () => {
   const [activeCategory, setActiveCategory] = useState<string>('ALL NEWS');
@@ -98,7 +98,7 @@ export const TechNewsSection = () => {
           </span>
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">
-              Global South Technology &<br className="hidden md:block" /> Investment News
+              Africa Digital Skills News<br className="hidden md:block" /> & Innovation
             </h2>
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <RefreshCw className="h-4 w-4" />
@@ -152,8 +152,8 @@ export const TechNewsSection = () => {
             {featuredArticle && (
               <div className="bg-card rounded-lg p-6 flex flex-col h-full border border-border">
                 <div className="flex items-center gap-3 mb-4">
-                  <span className="bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-md">
-                    AFRICA TECH
+                <span className="bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-md">
+                    DIGITAL SKILLS
                   </span>
                   <span className="text-muted-foreground text-sm">
                     {formatDate(featuredArticle.pubDate)}
@@ -201,7 +201,7 @@ export const TechNewsSection = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-semibold text-primary uppercase">
-                        AFRICA TECH
+                        DIGITAL SKILLS
                       </span>
                       <span className="text-muted-foreground text-xs">•</span>
                       <span className="text-muted-foreground text-xs">
