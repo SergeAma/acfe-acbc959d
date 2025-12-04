@@ -32,6 +32,33 @@ const replaceVariables = (content: string, recipient: Recipient): string => {
   return result;
 };
 
+const addTrackingPixel = (content: string, logId: string, supabaseUrl: string): string => {
+  const trackingPixelUrl = `${supabaseUrl}/functions/v1/email-tracking/open?id=${logId}`;
+  const trackingPixel = `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;visibility:hidden;" alt="" />`;
+  
+  // Insert tracking pixel before closing body tag, or at the end
+  if (content.includes('</body>')) {
+    return content.replace('</body>', `${trackingPixel}</body>`);
+  }
+  return content + trackingPixel;
+};
+
+const wrapLinksWithTracking = (content: string, logId: string, supabaseUrl: string): string => {
+  const trackingBaseUrl = `${supabaseUrl}/functions/v1/email-tracking/click?id=${logId}&url=`;
+  
+  // Match href attributes in anchor tags (but not tracking pixels or unsubscribe)
+  const linkRegex = /<a\s+([^>]*href=["'])([^"'#][^"']*)["']([^>]*)>/gi;
+  
+  return content.replace(linkRegex, (match, before, url, after) => {
+    // Skip if it's already a tracking URL or an anchor link
+    if (url.includes('email-tracking') || url.startsWith('#') || url.includes('unsubscribe')) {
+      return match;
+    }
+    const encodedUrl = encodeURIComponent(url);
+    return `<a ${before}${trackingBaseUrl}${encodedUrl}"${after}>`;
+  });
+};
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("Newsletter send function called");
   
@@ -46,7 +73,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { recipients, subject, html_content, template_id }: NewsletterRequest = await req.json();
 
-    console.log(`Sending newsletter to ${recipients.length} recipients`);
+    console.log(`Sending newsletter to ${recipients.length} recipients with tracking enabled`);
 
     const results = {
       sent: 0,
@@ -64,23 +91,46 @@ const handler = async (req: Request): Promise<Response> => {
           const personalizedContent = replaceVariables(html_content, recipient);
           const personalizedSubject = replaceVariables(subject, recipient);
 
+          // First create the email log to get the ID for tracking
+          const { data: logData, error: logError } = await supabase
+            .from('email_logs')
+            .insert({
+              contact_id: recipient.contact_id,
+              template_id: template_id,
+              subject: personalizedSubject,
+              status: 'pending',
+            })
+            .select('id')
+            .single();
+
+          if (logError || !logData) {
+            throw new Error(`Failed to create email log: ${logError?.message}`);
+          }
+
+          const logId = logData.id;
+          console.log(`Created email log with ID: ${logId} for ${recipient.email}`);
+
+          // Add tracking pixel and wrap links
+          let trackedContent = addTrackingPixel(personalizedContent, logId, supabaseUrl);
+          trackedContent = wrapLinksWithTracking(trackedContent, logId, supabaseUrl);
+
           const emailResponse = await resend.emails.send({
             from: "A Cloud for Everyone <newsletter@resend.dev>",
             to: [recipient.email],
             subject: personalizedSubject,
-            html: personalizedContent,
+            html: trackedContent,
           });
 
           console.log(`Email sent to ${recipient.email}:`, emailResponse);
 
-          // Log the sent email
-          await supabase.from('email_logs').insert({
-            contact_id: recipient.contact_id,
-            template_id: template_id,
-            subject: personalizedSubject,
-            status: 'sent',
-            sent_at: new Date().toISOString()
-          });
+          // Update the log status to sent
+          await supabase
+            .from('email_logs')
+            .update({ 
+              status: 'sent',
+              sent_at: new Date().toISOString()
+            })
+            .eq('id', logId);
 
           results.sent++;
         } catch (error: any) {
