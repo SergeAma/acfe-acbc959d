@@ -1,45 +1,19 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Cloud, Users, BookOpen, Globe, Award, FileText, TrendingUp, ExternalLink, Rss, Lightbulb } from 'lucide-react';
+import { Users, BookOpen, Globe, Award, FileText, TrendingUp, Lightbulb } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { TechNewsSection } from '@/components/TechNewsSection';
 import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png';
 import johannesburgLogo from '@/assets/johannesburg-logo.png';
 import spectrogramLogo from '@/assets/spectrogram-logo.png';
-import acfeLogo from '@/assets/acfe-logo.png';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Skeleton } from '@/components/ui/skeleton';
-interface NewsArticle {
-  title: string;
-  link: string;
-  pubDate: string;
-  description: string;
-  source: string;
-}
+
 export const Landing = () => {
   const {
     user
   } = useAuth();
-  const {
-    data: newsData,
-    isLoading: newsLoading
-  } = useQuery({
-    queryKey: ['tech-news'],
-    queryFn: async () => {
-      const {
-        data,
-        error
-      } = await supabase.functions.invoke('fetch-tech-news');
-      if (error) throw error;
-      return data as {
-        articles: NewsArticle[];
-      };
-    },
-    staleTime: 1000 * 60 * 30 // Cache for 30 minutes
-  });
   return <div className="min-h-screen">
       <Navbar />
       
@@ -199,66 +173,7 @@ export const Landing = () => {
       </section>
 
       {/* Latest Tech News Section */}
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <Rss className="h-8 w-8 text-primary animate-pulse" />
-              <h2 className="text-4xl font-bold text-foreground">Africa Tech Buzz</h2>
-            </div>
-            <p className="text-xl text-muted-foreground">
-              Stay updated with the latest African tech, education, and startup funding news
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-            {newsLoading ? Array.from({
-            length: 6
-          }).map((_, i) => <Card key={i} className="border-none shadow-lg bg-card">
-                  <CardContent className="p-6 space-y-4">
-                    <Skeleton className="h-6 w-3/4" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-1/2" />
-                  </CardContent>
-                </Card>) : newsData?.articles && newsData.articles.length > 0 ? newsData.articles.map((article, index) => <Card key={index} className="border-none shadow-lg hover:shadow-xl transition-all duration-300 bg-card group hover:scale-105">
-                  <CardContent className="p-6 space-y-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-lg font-bold text-card-foreground line-clamp-2 group-hover:text-primary transition-colors">
-                        {article.title}
-                      </h3>
-                      <ExternalLink className="h-5 w-5 text-muted-foreground flex-shrink-0 group-hover:text-primary transition-colors" />
-                    </div>
-                    
-                    <p className="text-sm text-muted-foreground line-clamp-3">
-                      {article.description}
-                    </p>
-                    
-                    <div className="flex items-center justify-between pt-2 border-t border-border">
-                      <span className="text-xs font-medium text-primary">
-                        {article.source}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(article.pubDate).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}
-                      </span>
-                    </div>
-                    
-                    <a href={article.link} target="_blank" rel="noopener noreferrer" className="block">
-                      <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                        Read Article
-                      </Button>
-                    </a>
-                  </CardContent>
-                </Card>) : <div className="col-span-full text-center py-12">
-                <p className="text-muted-foreground">No news articles available at the moment. Check back soon!</p>
-              </div>}
-          </div>
-        </div>
-      </section>
+      <TechNewsSection />
 
       {/* Partners Section */}
       <section className="py-12 bg-muted">
