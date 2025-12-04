@@ -18,6 +18,10 @@ const RSS_FEEDS = [
   { url: 'https://www.itnewsafrica.com/feed/', source: 'IT News Africa' },
   { url: 'https://techcabal.com/feed/', source: 'TechCabal' },
   { url: 'https://ventureburn.com/feed/', source: 'Ventureburn' },
+  { url: 'https://techpoint.africa/feed/', source: 'TechPoint Africa' },
+  { url: 'https://it-online.co.za/feed/', source: 'IT-Online Africa' },
+  { url: 'https://www.economist.com/middle-east-and-africa/rss.xml', source: 'The Economist' },
+  { url: 'https://www.jeuneafrique.com/feed/', source: 'Jeune Afrique' },
 ];
 
 async function parseRSSFeed(feedUrl: string, source: string): Promise<NewsArticle[]> {
