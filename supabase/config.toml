@@ -1,5 +1,11 @@
 project_id = "mefwbcbnctqjxrwldmjm"
 
+[functions.fetch-tech-news]
+verify_jwt = false
+
+[functions.automation-engine]
+verify_jwt = false
+
 [functions.send-idea-confirmation]
 verify_jwt = false
 
