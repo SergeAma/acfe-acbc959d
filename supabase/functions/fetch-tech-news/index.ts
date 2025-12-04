@@ -116,26 +116,41 @@ async function parseRSSFeed(feedUrl: string, source: string, category: string): 
         // Skip empty titles
         if (!title || title.length < 5) continue;
         
-        // Filter for digital skills, upskilling, and tech training keywords
+        // Filter for digital skills, education programs, funding, and AI education in Africa
         const relevantKeywords = [
-          'digital skills', 'upskilling', 'training', 'education', 'learning',
-          'edtech', 'e-learning', 'online course', 'bootcamp', 'academy',
-          'certification', 'workforce', 'talent', 'youth', 'graduates',
-          'coding', 'programming', 'developer', 'tech talent',
-          'google', 'microsoft', 'amazon', 'aws', 'meta', 'facebook',
-          'ibm', 'oracle', 'salesforce', 'cisco', 'intel', 'apple',
-          'andela', 'flutterwave', 'paystack',
-          'foundation', 'non-profit', 'nonprofit', 'ngo', 'initiative',
-          'partnership', 'grant', 'scholarship', 'fellowship', 'program',
-          'world bank', 'african development', 'undp', 'usaid', 'mastercard foundation',
-          'rockefeller', 'gates foundation', 'tony elumelu',
-          'innovation', 'hub', 'incubator', 'accelerator', 'startup',
-          'entrepreneurship', 'tech ecosystem', 'digital economy',
-          'africa', 'african', 'kenya', 'nigeria', 'south africa', 'egypt', 'ghana', 'rwanda'
+          // Digital skills across Africa
+          'digital skills', 'digital literacy', 'tech skills', 'coding skills',
+          'programming skills', 'data skills', 'cloud skills', 'cyber skills',
+          
+          // Digital education programs
+          'digital education', 'edtech', 'e-learning', 'online learning',
+          'tech training', 'digital training', 'coding bootcamp', 'tech bootcamp',
+          'digital academy', 'tech academy', 'digital program', 'education program',
+          'upskilling program', 'reskilling', 'workforce development',
+          
+          // Education funding
+          'education funding', 'scholarship', 'grant', 'fellowship',
+          'education investment', 'tech funding', 'digital inclusion',
+          'mastercard foundation', 'gates foundation', 'tony elumelu',
+          'world bank education', 'african development bank', 'usaid education',
+          
+          // AI education
+          'ai education', 'ai training', 'artificial intelligence education',
+          'machine learning training', 'ai skills', 'ai literacy',
+          'ai program', 'ai bootcamp', 'ai academy'
+        ];
+        
+        // Must also contain Africa-related terms
+        const africaKeywords = [
+          'africa', 'african', 'kenya', 'nigeria', 'south africa', 'egypt',
+          'ghana', 'rwanda', 'ethiopia', 'tanzania', 'uganda', 'morocco',
+          'senegal', 'cote d\'ivoire', 'cameroon', 'zimbabwe'
         ];
         
         const textToCheck = (title + ' ' + description).toLowerCase();
-        const isRelevant = relevantKeywords.some(keyword => textToCheck.includes(keyword));
+        const hasRelevantTopic = relevantKeywords.some(keyword => textToCheck.includes(keyword));
+        const hasAfricaContext = africaKeywords.some(keyword => textToCheck.includes(keyword));
+        const isRelevant = hasRelevantTopic && hasAfricaContext;
         
         if (isRelevant) {
           items.push({
