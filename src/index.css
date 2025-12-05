@@ -165,3 +165,32 @@ All colors MUST be HSL.
   height: 0;
   pointer-events: none;
 }
+
+/* Hide default video controls and play button */
+video::-webkit-media-controls {
+  display: none !important;
+}
+
+video::-webkit-media-controls-enclosure {
+  display: none !important;
+}
+
+video::-webkit-media-controls-panel {
+  display: none !important;
+}
+
+video::-webkit-media-controls-play-button {
+  display: none !important;
+}
+
+video::-webkit-media-controls-start-playback-button {
+  display: none !important;
+}
+
+video::-moz-media-controls {
+  display: none !important;
+}
+
+video::media-controls {
+  display: none !important;
+}
