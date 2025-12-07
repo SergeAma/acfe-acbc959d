@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
-import { GripVertical, Plus, Trash2, ChevronDown, ChevronUp, Pencil, Save, X } from 'lucide-react';
+import { GripVertical, Plus, Trash2, ChevronDown, ChevronUp, Pencil, Save, X, Copy } from 'lucide-react';
 import { ContentItemEditor } from './ContentItemEditor';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -41,6 +41,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Section {
   id: string;
@@ -66,9 +67,10 @@ interface SectionEditorProps {
   section: Section;
   onDelete: () => void;
   onUpdate?: (updatedSection: Section) => void;
+  onDuplicate?: () => void;
 }
 
-export const SectionEditor = ({ section, onDelete, onUpdate }: SectionEditorProps) => {
+export const SectionEditor = ({ section, onDelete, onUpdate, onDuplicate }: SectionEditorProps) => {
   const { toast } = useToast();
   const [contentItems, setContentItems] = useState<ContentItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -79,6 +81,8 @@ export const SectionEditor = ({ section, onDelete, onUpdate }: SectionEditorProp
   const [editingDescription, setEditingDescription] = useState(false);
   const [editedDescription, setEditedDescription] = useState(section.description || '');
   const [savingDescription, setSavingDescription] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: section.id,
@@ -240,6 +244,126 @@ export const SectionEditor = ({ section, onDelete, onUpdate }: SectionEditorProp
     }
   };
 
+  const handleDuplicateContent = async (contentId: string) => {
+    const itemToDuplicate = contentItems.find(c => c.id === contentId);
+    if (!itemToDuplicate) return;
+
+    const { data, error } = await supabase
+      .from('course_content')
+      .insert({
+        section_id: section.id,
+        title: `${itemToDuplicate.title} (Copy)`,
+        content_type: itemToDuplicate.content_type,
+        text_content: itemToDuplicate.text_content,
+        video_url: itemToDuplicate.video_url,
+        file_url: itemToDuplicate.file_url,
+        file_name: itemToDuplicate.file_name,
+        duration_minutes: itemToDuplicate.duration_minutes,
+        drip_delay_days: itemToDuplicate.drip_delay_days,
+        sort_order: contentItems.length,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to duplicate content',
+        variant: 'destructive',
+      });
+    } else {
+      setContentItems([...contentItems, data as ContentItem]);
+      toast({
+        title: 'Success',
+        description: 'Content duplicated',
+      });
+    }
+  };
+
+  const toggleItemSelection = (itemId: string) => {
+    const newSelection = new Set(selectedItems);
+    if (newSelection.has(itemId)) {
+      newSelection.delete(itemId);
+    } else {
+      newSelection.add(itemId);
+    }
+    setSelectedItems(newSelection);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedItems.size === contentItems.length) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set(contentItems.map(c => c.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.size === 0) return;
+    setBulkActionLoading(true);
+
+    const { error } = await supabase
+      .from('course_content')
+      .delete()
+      .in('id', Array.from(selectedItems));
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete selected items',
+        variant: 'destructive',
+      });
+    } else {
+      setContentItems(contentItems.filter(c => !selectedItems.has(c.id)));
+      setSelectedItems(new Set());
+      toast({
+        title: 'Success',
+        description: `Deleted ${selectedItems.size} items`,
+      });
+    }
+    setBulkActionLoading(false);
+  };
+
+  const handleBulkDuplicate = async () => {
+    if (selectedItems.size === 0) return;
+    setBulkActionLoading(true);
+
+    const itemsToDuplicate = contentItems.filter(c => selectedItems.has(c.id));
+    const newItems = itemsToDuplicate.map((item, index) => ({
+      section_id: section.id,
+      title: `${item.title} (Copy)`,
+      content_type: item.content_type,
+      text_content: item.text_content,
+      video_url: item.video_url,
+      file_url: item.file_url,
+      file_name: item.file_name,
+      duration_minutes: item.duration_minutes,
+      drip_delay_days: item.drip_delay_days,
+      sort_order: contentItems.length + index,
+    }));
+
+    const { data, error } = await supabase
+      .from('course_content')
+      .insert(newItems)
+      .select();
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to duplicate selected items',
+        variant: 'destructive',
+      });
+    } else {
+      setContentItems([...contentItems, ...(data as ContentItem[])]);
+      setSelectedItems(new Set());
+      toast({
+        title: 'Success',
+        description: `Duplicated ${selectedItems.size} items`,
+      });
+    }
+    setBulkActionLoading(false);
+  };
+
   return (
     <Card ref={setNodeRef} style={style}>
       <CardHeader>
@@ -339,6 +463,9 @@ export const SectionEditor = ({ section, onDelete, onUpdate }: SectionEditorProp
               </Button>
             </CollapsibleTrigger>
           </Collapsible>
+          <Button variant="ghost" size="sm" onClick={onDuplicate} title="Duplicate section">
+            <Copy className="h-4 w-4" />
+          </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="sm">
@@ -370,20 +497,76 @@ export const SectionEditor = ({ section, onDelete, onUpdate }: SectionEditorProp
             ) : (
               <>
                 {contentItems.length > 0 && (
-                  <DndContext sensors={contentSensors} collisionDetection={closestCenter} onDragEnd={handleContentDragEnd}>
-                    <SortableContext items={contentItems.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-                      <div className="space-y-4 mb-4">
-                        {contentItems.map((item) => (
-                          <ContentItemEditor
-                            key={item.id}
-                            item={item}
-                            onDelete={() => handleDeleteContent(item.id)}
-                            onUpdate={fetchContentItems}
-                          />
-                        ))}
+                  <>
+                    {/* Bulk Actions Bar */}
+                    <div className="flex items-center gap-4 mb-4 p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={selectedItems.size === contentItems.length && contentItems.length > 0}
+                          onCheckedChange={toggleSelectAll}
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          {selectedItems.size > 0 ? `${selectedItems.size} selected` : 'Select all'}
+                        </span>
                       </div>
-                    </SortableContext>
-                  </DndContext>
+                      {selectedItems.size > 0 && (
+                        <div className="flex gap-2 ml-auto">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={handleBulkDuplicate}
+                            disabled={bulkActionLoading}
+                          >
+                            <Copy className="h-4 w-4 mr-2" />
+                            Duplicate
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                disabled={bulkActionLoading}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Selected Items</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete {selectedItems.size} items? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive">
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      )}
+                    </div>
+                    <DndContext sensors={contentSensors} collisionDetection={closestCenter} onDragEnd={handleContentDragEnd}>
+                      <SortableContext items={contentItems.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+                        <div className="space-y-4 mb-4">
+                          {contentItems.map((item) => (
+                            <ContentItemEditor
+                              key={item.id}
+                              item={item}
+                              onDelete={() => handleDeleteContent(item.id)}
+                              onUpdate={fetchContentItems}
+                              onDuplicate={() => handleDuplicateContent(item.id)}
+                              isSelected={selectedItems.has(item.id)}
+                              onSelect={() => toggleItemSelection(item.id)}
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  </>
                 )}
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => handleCreateContent('text')}>

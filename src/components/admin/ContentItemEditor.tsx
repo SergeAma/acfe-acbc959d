@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { FileText, Video, File, Trash2, Save, Loader2, GripVertical } from 'lucide-react';
+import { FileText, Video, File, Trash2, Save, Loader2, GripVertical, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -27,9 +28,12 @@ interface ContentItemEditorProps {
   item: ContentItem;
   onDelete: () => void;
   onUpdate: () => void;
+  onDuplicate?: () => void;
+  isSelected?: boolean;
+  onSelect?: () => void;
 }
 
-export const ContentItemEditor = ({ item, onDelete, onUpdate }: ContentItemEditorProps) => {
+export const ContentItemEditor = ({ item, onDelete, onUpdate, onDuplicate, isSelected, onSelect }: ContentItemEditorProps) => {
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -191,9 +195,16 @@ export const ContentItemEditor = ({ item, onDelete, onUpdate }: ContentItemEdito
   };
 
   return (
-    <Card ref={setNodeRef} style={style}>
+    <Card ref={setNodeRef} style={style} className={isSelected ? 'ring-2 ring-primary' : ''}>
       <CardContent className="pt-6">
         <div className="flex items-start gap-3">
+          {onSelect && (
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={onSelect}
+              className="mt-1"
+            />
+          )}
           <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing mt-1">
             <GripVertical className="h-4 w-4 text-muted-foreground" />
           </button>
@@ -229,6 +240,11 @@ export const ContentItemEditor = ({ item, onDelete, onUpdate }: ContentItemEdito
                     <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
                       Edit
                     </Button>
+                    {onDuplicate && (
+                      <Button size="sm" variant="ghost" onClick={onDuplicate} title="Duplicate">
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button size="sm" variant="ghost" onClick={onDelete}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
