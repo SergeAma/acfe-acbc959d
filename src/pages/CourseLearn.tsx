@@ -314,6 +314,31 @@ export const CourseLearn = () => {
           title: 'Congratulations!',
           description: 'You earned a certificate!',
         });
+
+        // Send certificate email notification
+        try {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('email, full_name')
+            .eq('id', user.id)
+            .single();
+
+          if (profileData?.email) {
+            await supabase.functions.invoke('send-certificate-email', {
+              body: {
+                student_email: profileData.email,
+                student_name: profileData.full_name || 'Student',
+                course_name: course.title,
+                mentor_name: course.mentor_name,
+                certificate_number: certNumber,
+                issued_at: certData.issued_at,
+              },
+            });
+          }
+        } catch (emailError) {
+          console.error('Failed to send certificate email:', emailError);
+          // Don't show error to user - certificate was still issued successfully
+        }
       }
     }
   };
