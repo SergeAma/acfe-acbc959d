@@ -36,6 +36,7 @@ import NotFound from "./pages/NotFound";
 import { MyCertificates } from "./pages/MyCertificates";
 import { VerifyCertificate } from "./pages/VerifyCertificate";
 import { CertificatePublic } from "./pages/CertificatePublic";
+import AcceptMentorInvite from "./pages/AcceptMentorInvite";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +59,7 @@ const App = () => (
             <Route path="/certificate/:certificateId" element={<CertificatePublic />} />
             <Route path="/startups" element={<SubmitIdea />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/accept-mentor-invite" element={<AcceptMentorInvite />} />
             <Route path="/courses" element={<Courses />} />
             <Route path="/courses/:id" element={<CourseDetail />} />
             <Route path="/courses/:id/preview" element={<CoursePreview />} />

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { Plus, Edit, Trash2, BookOpen } from 'lucide-react';
+import { InviteMentorDialog } from '@/components/admin/InviteMentorDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -95,10 +96,13 @@ export const AdminCourses = () => {
             <h1 className="text-4xl font-bold mb-2">Course Management</h1>
             <p className="text-muted-foreground">Create and manage all platform courses</p>
           </div>
-          <Button onClick={() => navigate('/mentor/courses/new')}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Course
-          </Button>
+          <div className="flex gap-2">
+            <InviteMentorDialog />
+            <Button onClick={() => navigate('/mentor/courses/new')}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Course
+            </Button>
+          </div>
         </div>
 
         {loading ? (
