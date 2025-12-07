@@ -216,6 +216,63 @@ export const AdminCourseBuilder = () => {
     setSections(prev => prev.map(s => s.id === updatedSection.id ? updatedSection : s));
   };
 
+  const handleDuplicateSection = async (sectionId: string) => {
+    const sectionToDuplicate = sections.find(s => s.id === sectionId);
+    if (!sectionToDuplicate || !courseId) return;
+
+    // First, create the new section
+    const { data: newSection, error: sectionError } = await supabase
+      .from('course_sections')
+      .insert({
+        course_id: courseId,
+        title: `${sectionToDuplicate.title} (Copy)`,
+        description: sectionToDuplicate.description,
+        sort_order: sections.length,
+      })
+      .select()
+      .single();
+
+    if (sectionError || !newSection) {
+      toast({
+        title: 'Error',
+        description: 'Failed to duplicate section',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Fetch content items from original section
+    const { data: originalContent } = await supabase
+      .from('course_content')
+      .select('*')
+      .eq('section_id', sectionId)
+      .order('sort_order', { ascending: true });
+
+    // Duplicate content items
+    if (originalContent && originalContent.length > 0) {
+      const newContent = originalContent.map((item, index) => ({
+        section_id: newSection.id,
+        title: item.title,
+        content_type: item.content_type,
+        text_content: item.text_content,
+        video_url: item.video_url,
+        file_url: item.file_url,
+        file_name: item.file_name,
+        duration_minutes: item.duration_minutes,
+        drip_delay_days: item.drip_delay_days,
+        sort_order: index,
+      }));
+
+      await supabase.from('course_content').insert(newContent);
+    }
+
+    setSections([...sections, newSection as Section]);
+    toast({
+      title: 'Success',
+      description: 'Section duplicated with all content',
+    });
+  };
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -488,6 +545,7 @@ export const AdminCourseBuilder = () => {
                     section={section}
                     onDelete={() => handleDeleteSection(section.id)}
                     onUpdate={handleSectionUpdate}
+                    onDuplicate={() => handleDuplicateSection(section.id)}
                   />
                 ))}
               </div>
