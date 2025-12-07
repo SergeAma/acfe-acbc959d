@@ -713,6 +713,7 @@ export type Database = {
           idea_title: string
           phone: string | null
           status: string
+          submitter_id: string | null
           updated_at: string
           video_filename: string | null
           video_url: string | null
@@ -726,6 +727,7 @@ export type Database = {
           idea_title: string
           phone?: string | null
           status?: string
+          submitter_id?: string | null
           updated_at?: string
           video_filename?: string | null
           video_url?: string | null
@@ -739,6 +741,7 @@ export type Database = {
           idea_title?: string
           phone?: string | null
           status?: string
+          submitter_id?: string | null
           updated_at?: string
           video_filename?: string | null
           video_url?: string | null
@@ -1060,10 +1063,6 @@ export type Database = {
       reject_mentor_request: {
         Args: { _admin_id: string; _request_id: string }
         Returns: undefined
-      }
-      user_owns_idea_submission: {
-        Args: { _submission_email: string; _user_id: string }
-        Returns: boolean
       }
     }
     Enums: {

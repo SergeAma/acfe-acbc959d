@@ -146,7 +146,7 @@ export function SubmitIdea() {
 
       setUploadProgress(85);
 
-      // Insert submission into database
+      // Insert submission into database with submitter_id for secure ownership
       const { error: insertError } = await supabase.from("idea_submissions").insert({
         full_name: formData.fullName,
         email: formData.email,
@@ -155,6 +155,7 @@ export function SubmitIdea() {
         idea_description: formData.ideaDescription || null,
         video_url: videoPath,
         video_filename: videoFilename,
+        submitter_id: user?.id, // Link to authenticated user for secure RLS
       });
 
       if (insertError) throw insertError;

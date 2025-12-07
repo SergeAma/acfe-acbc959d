@@ -47,11 +47,7 @@ export const MySubmissions = () => {
 
   useEffect(() => {
     const fetchSubmissions = async () => {
-      if (!profile?.email) {
-        setLoading(false);
-        return;
-      }
-
+      // RLS now handles filtering by submitter_id automatically
       const { data, error } = await supabase
         .from('idea_submissions')
         .select('id, idea_title, idea_description, status, created_at, video_url')
@@ -64,7 +60,7 @@ export const MySubmissions = () => {
     };
 
     fetchSubmissions();
-  }, [profile]);
+  }, []);
 
   if (loading) {
     return (
