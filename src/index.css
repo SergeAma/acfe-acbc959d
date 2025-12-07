@@ -166,6 +166,47 @@ All colors MUST be HSL.
   pointer-events: none;
 }
 
+/* Rich text content display styles (for rendered HTML) */
+.rich-text-content h1 {
+  @apply text-2xl font-bold mb-4;
+}
+
+.rich-text-content h2 {
+  @apply text-xl font-bold mb-3;
+}
+
+.rich-text-content h3 {
+  @apply text-lg font-semibold mb-2;
+}
+
+.rich-text-content p {
+  @apply mb-3;
+}
+
+.rich-text-content ul {
+  @apply list-disc pl-6 mb-3;
+}
+
+.rich-text-content ol {
+  @apply list-decimal pl-6 mb-3;
+}
+
+.rich-text-content li {
+  @apply mb-1;
+}
+
+.rich-text-content blockquote {
+  @apply border-l-4 border-muted pl-4 italic text-muted-foreground my-4;
+}
+
+.rich-text-content a {
+  @apply text-primary underline;
+}
+
+.rich-text-content img {
+  @apply max-w-full rounded-lg my-4;
+}
+
 /* Hide default video controls and play button */
 video::-webkit-media-controls {
   display: none !important;
