@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
-import { GripVertical, Plus, Trash2, ChevronDown, ChevronUp, Pencil, Save, X, Copy } from 'lucide-react';
+import { GripVertical, Plus, Trash2, ChevronDown, ChevronUp, Pencil, Save, X, Copy, MoveRight } from 'lucide-react';
 import { ContentItemEditor } from './ContentItemEditor';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -42,6 +42,15 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+} from '@/components/ui/dropdown-menu';
 
 interface Section {
   id: string;
@@ -68,9 +77,11 @@ interface SectionEditorProps {
   onDelete: () => void;
   onUpdate?: (updatedSection: Section) => void;
   onDuplicate?: () => void;
+  allSections?: Section[];
+  onMoveContent?: (contentId: string, fromSectionId: string, toSectionId: string) => Promise<void>;
 }
 
-export const SectionEditor = ({ section, onDelete, onUpdate, onDuplicate }: SectionEditorProps) => {
+export const SectionEditor = ({ section, onDelete, onUpdate, onDuplicate, allSections, onMoveContent }: SectionEditorProps) => {
   const { toast } = useToast();
   const [contentItems, setContentItems] = useState<ContentItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -364,6 +375,32 @@ export const SectionEditor = ({ section, onDelete, onUpdate, onDuplicate }: Sect
     setBulkActionLoading(false);
   };
 
+  const handleMoveToSection = async (contentId: string, targetSectionId: string) => {
+    if (onMoveContent) {
+      await onMoveContent(contentId, section.id, targetSectionId);
+      setContentItems(contentItems.filter(c => c.id !== contentId));
+    }
+  };
+
+  const handleBulkMove = async (targetSectionId: string) => {
+    if (!onMoveContent || selectedItems.size === 0) return;
+    setBulkActionLoading(true);
+
+    for (const itemId of selectedItems) {
+      await onMoveContent(itemId, section.id, targetSectionId);
+    }
+
+    setContentItems(contentItems.filter(c => !selectedItems.has(c.id)));
+    setSelectedItems(new Set());
+    toast({
+      title: 'Success',
+      description: `Moved ${selectedItems.size} items`,
+    });
+    setBulkActionLoading(false);
+  };
+
+  const otherSections = allSections?.filter(s => s.id !== section.id) || [];
+
   return (
     <Card ref={setNodeRef} style={style}>
       <CardHeader>
@@ -546,6 +583,30 @@ export const SectionEditor = ({ section, onDelete, onUpdate, onDuplicate }: Sect
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
+                          {otherSections.length > 0 && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  disabled={bulkActionLoading}
+                                >
+                                  <MoveRight className="h-4 w-4 mr-2" />
+                                  Move to
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                {otherSections.map(s => (
+                                  <DropdownMenuItem 
+                                    key={s.id} 
+                                    onClick={() => handleBulkMove(s.id)}
+                                  >
+                                    {s.title}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </div>
                       )}
                     </div>
@@ -561,6 +622,8 @@ export const SectionEditor = ({ section, onDelete, onUpdate, onDuplicate }: Sect
                               onDuplicate={() => handleDuplicateContent(item.id)}
                               isSelected={selectedItems.has(item.id)}
                               onSelect={() => toggleItemSelection(item.id)}
+                              otherSections={otherSections}
+                              onMoveToSection={(targetSectionId) => handleMoveToSection(item.id, targetSectionId)}
                             />
                           ))}
                         </div>

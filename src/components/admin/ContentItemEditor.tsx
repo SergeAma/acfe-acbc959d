@@ -6,11 +6,22 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { FileText, Video, File, Trash2, Save, Loader2, GripVertical, Copy } from 'lucide-react';
+import { FileText, Video, File, Trash2, Save, Loader2, GripVertical, Copy, MoveRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+interface SectionInfo {
+  id: string;
+  title: string;
+}
 
 interface ContentItem {
   id: string;
@@ -31,9 +42,20 @@ interface ContentItemEditorProps {
   onDuplicate?: () => void;
   isSelected?: boolean;
   onSelect?: () => void;
+  otherSections?: SectionInfo[];
+  onMoveToSection?: (targetSectionId: string) => void;
 }
 
-export const ContentItemEditor = ({ item, onDelete, onUpdate, onDuplicate, isSelected, onSelect }: ContentItemEditorProps) => {
+export const ContentItemEditor = ({ 
+  item, 
+  onDelete, 
+  onUpdate, 
+  onDuplicate, 
+  isSelected, 
+  onSelect,
+  otherSections,
+  onMoveToSection 
+}: ContentItemEditorProps) => {
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -244,6 +266,25 @@ export const ContentItemEditor = ({ item, onDelete, onUpdate, onDuplicate, isSel
                       <Button size="sm" variant="ghost" onClick={onDuplicate} title="Duplicate">
                         <Copy className="h-4 w-4" />
                       </Button>
+                    )}
+                    {otherSections && otherSections.length > 0 && onMoveToSection && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="ghost" title="Move to section">
+                            <MoveRight className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          {otherSections.map(s => (
+                            <DropdownMenuItem 
+                              key={s.id} 
+                              onClick={() => onMoveToSection(s.id)}
+                            >
+                              {s.title}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
                     <Button size="sm" variant="ghost" onClick={onDelete}>
                       <Trash2 className="h-4 w-4" />
