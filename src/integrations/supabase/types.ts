@@ -1061,6 +1061,10 @@ export type Database = {
         Args: { _admin_id: string; _request_id: string }
         Returns: undefined
       }
+      user_owns_idea_submission: {
+        Args: { _submission_email: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "mentor" | "student"
