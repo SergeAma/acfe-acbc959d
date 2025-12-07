@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Plus, Pencil, Save, X } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 import { SectionEditor } from '@/components/admin/SectionEditor';
 import {
   DndContext,
@@ -24,7 +25,6 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RichTextEditor } from '@/components/RichTextEditor';
 
@@ -32,6 +32,7 @@ interface Course {
   id: string;
   title: string;
   description: string;
+  thumbnail_url: string | null;
 }
 
 interface Section {
@@ -56,6 +57,7 @@ export const AdminCourseBuilder = () => {
   const [editingTitle, setEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
   const [savingTitle, setSavingTitle] = useState(false);
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -159,6 +161,59 @@ export const AdminCourseBuilder = () => {
       });
     }
     setSavingDescription(false);
+  };
+
+  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !courseId) return;
+
+    setUploadingThumbnail(true);
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${courseId}-thumbnail.${fileExt}`;
+    const filePath = `thumbnails/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('course-files')
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+      toast({
+        title: 'Error',
+        description: 'Failed to upload thumbnail',
+        variant: 'destructive',
+      });
+      setUploadingThumbnail(false);
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('course-files')
+      .getPublicUrl(filePath);
+
+    const { error: updateError } = await supabase
+      .from('courses')
+      .update({ thumbnail_url: publicUrl })
+      .eq('id', courseId);
+
+    if (updateError) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update course thumbnail',
+        variant: 'destructive',
+      });
+    } else {
+      setCourse(prev => prev ? { ...prev, thumbnail_url: publicUrl } : null);
+      toast({
+        title: 'Success',
+        description: 'Thumbnail uploaded',
+      });
+    }
+    setUploadingThumbnail(false);
+  };
+
+  const handleSectionUpdate = (updatedSection: Section) => {
+    setSections(prev => prev.map(s => s.id === updatedSection.id ? updatedSection : s));
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -336,6 +391,43 @@ export const AdminCourseBuilder = () => {
               </Button>
             </div>
           )}
+
+          {/* Thumbnail Upload */}
+          <div className="mt-6">
+            <Label className="text-sm font-medium mb-2 block">Course Thumbnail</Label>
+            <div className="flex items-start gap-4">
+              {course?.thumbnail_url ? (
+                <img 
+                  src={course.thumbnail_url} 
+                  alt="Course thumbnail" 
+                  className="w-48 h-32 object-cover rounded-lg border"
+                />
+              ) : (
+                <div className="w-48 h-32 bg-muted rounded-lg border flex items-center justify-center">
+                  <Image className="h-8 w-8 text-muted-foreground" />
+                </div>
+              )}
+              <div>
+                <input
+                  type="file"
+                  id="thumbnail-upload"
+                  accept="image/*"
+                  onChange={handleThumbnailUpload}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.getElementById('thumbnail-upload')?.click()}
+                  disabled={uploadingThumbnail}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {uploadingThumbnail ? 'Uploading...' : course?.thumbnail_url ? 'Change Thumbnail' : 'Upload Thumbnail'}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">Recommended: 800x450px (16:9)</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-between items-center mb-6">
@@ -395,6 +487,7 @@ export const AdminCourseBuilder = () => {
                     key={section.id}
                     section={section}
                     onDelete={() => handleDeleteSection(section.id)}
+                    onUpdate={handleSectionUpdate}
                   />
                 ))}
               </div>
