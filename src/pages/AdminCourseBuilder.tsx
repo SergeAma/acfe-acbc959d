@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Plus, GripVertical } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Save, X } from 'lucide-react';
 import { SectionEditor } from '@/components/admin/SectionEditor';
 import {
   DndContext,
@@ -26,6 +26,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/RichTextEditor';
 
 interface Course {
   id: string;
@@ -49,6 +50,9 @@ export const AdminCourseBuilder = () => {
   const [loading, setLoading] = useState(true);
   const [newSectionOpen, setNewSectionOpen] = useState(false);
   const [newSectionData, setNewSectionData] = useState({ title: '', description: '' });
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [editedDescription, setEditedDescription] = useState('');
+  const [savingDescription, setSavingDescription] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -96,8 +100,35 @@ export const AdminCourseBuilder = () => {
     }
 
     setCourse(courseData);
+    setEditedDescription(courseData?.description || '');
     setSections(sectionsData || []);
     setLoading(false);
+  };
+
+  const handleSaveDescription = async () => {
+    if (!courseId) return;
+    setSavingDescription(true);
+
+    const { error } = await supabase
+      .from('courses')
+      .update({ description: editedDescription })
+      .eq('id', courseId);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update description',
+        variant: 'destructive',
+      });
+    } else {
+      setCourse(prev => prev ? { ...prev, description: editedDescription } : null);
+      setEditingDescription(false);
+      toast({
+        title: 'Success',
+        description: 'Description updated',
+      });
+    }
+    setSavingDescription(false);
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -195,8 +226,50 @@ export const AdminCourseBuilder = () => {
         </Button>
 
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">{course?.title}</h1>
-          <p className="text-muted-foreground">{course?.description}</p>
+          <h1 className="text-4xl font-bold mb-4">{course?.title}</h1>
+          
+          {editingDescription ? (
+            <div className="space-y-4">
+              <RichTextEditor
+                content={editedDescription}
+                onChange={setEditedDescription}
+                placeholder="Describe what students will learn in this course..."
+              />
+              <div className="flex gap-2">
+                <Button onClick={handleSaveDescription} disabled={savingDescription} size="sm">
+                  <Save className="h-4 w-4 mr-2" />
+                  {savingDescription ? 'Saving...' : 'Save'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setEditingDescription(false);
+                    setEditedDescription(course?.description || '');
+                  }}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="group relative">
+              <div 
+                className="prose prose-sm max-w-none text-muted-foreground"
+                dangerouslySetInnerHTML={{ __html: course?.description || '<p>No description</p>' }}
+              />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="mt-2"
+                onClick={() => setEditingDescription(true)}
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit Description
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-between items-center mb-6">

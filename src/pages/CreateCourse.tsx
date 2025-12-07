@@ -6,13 +6,13 @@ import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { z } from 'zod';
+import { RichTextEditor } from '@/components/RichTextEditor';
 
 const courseSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters').max(200),
@@ -127,13 +127,10 @@ export const CreateCourse = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="description">Description *</Label>
-                <Textarea
-                  id="description"
+                <RichTextEditor
+                  content={formData.description}
+                  onChange={(html) => setFormData({ ...formData, description: html })}
                   placeholder="Describe what students will learn in this course..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={5}
-                  required
                 />
                 {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
               </div>
