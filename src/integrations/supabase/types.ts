@@ -825,6 +825,39 @@ export type Database = {
           },
         ]
       }
+      mentor_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          status: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          status?: string
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          status?: string
+          token?: string
+        }
+        Relationships: []
+      }
       mentor_role_requests: {
         Row: {
           created_at: string | null
@@ -1045,6 +1078,10 @@ export type Database = {
       }
     }
     Functions: {
+      accept_mentor_invitation: {
+        Args: { _token: string; _user_id: string }
+        Returns: boolean
+      }
       approve_mentor_request: {
         Args: { _admin_id: string; _request_id: string }
         Returns: undefined
