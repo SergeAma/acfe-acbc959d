@@ -18,7 +18,8 @@ import {
   Video,
   File,
   Download,
-  Loader2
+  Loader2,
+  Award
 } from 'lucide-react';
 import {
   Accordion,
@@ -26,6 +27,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { CourseCertificate } from '@/components/CourseCertificate';
 
 interface ContentItem {
   id: string;
@@ -55,6 +63,14 @@ interface Course {
   title: string;
   description: string;
   drip_enabled: boolean;
+  certificate_enabled: boolean;
+  mentor_name: string;
+}
+
+interface Certificate {
+  id: string;
+  certificate_number: string;
+  issued_at: string;
 }
 
 export const CourseLearn = () => {
@@ -70,6 +86,9 @@ export const CourseLearn = () => {
   const [currentContent, setCurrentContent] = useState<ContentItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [overallProgress, setOverallProgress] = useState(0);
+  const [certificate, setCertificate] = useState<Certificate | null>(null);
+  const [showCertificateDialog, setShowCertificateDialog] = useState(false);
+  const [studentName, setStudentName] = useState('');
 
   useEffect(() => {
     if (id && user) {
@@ -102,15 +121,49 @@ export const CourseLearn = () => {
       setEnrollmentId(enrollmentData.id);
       setEnrolledAt(enrollmentData.enrolled_at);
 
-      // Fetch course details
+      // Fetch student profile for certificate
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user?.id)
+        .single();
+      
+      if (profileData?.full_name) {
+        setStudentName(profileData.full_name);
+      }
+
+      // Fetch course details with mentor name
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
-        .select('id, title, description, drip_enabled')
+        .select(`
+          id, 
+          title, 
+          description, 
+          drip_enabled, 
+          certificate_enabled,
+          profiles!courses_mentor_id_fkey(full_name)
+        `)
         .eq('id', id)
         .single();
 
       if (courseError) throw courseError;
-      setCourse(courseData);
+      
+      const mentorProfile = courseData.profiles as any;
+      setCourse({
+        ...courseData,
+        mentor_name: mentorProfile?.full_name || 'Instructor'
+      });
+
+      // Check for existing certificate
+      const { data: certData } = await supabase
+        .from('course_certificates')
+        .select('id, certificate_number, issued_at')
+        .eq('enrollment_id', enrollmentData.id)
+        .maybeSingle();
+      
+      if (certData) {
+        setCertificate(certData);
+      }
 
       // Fetch sections and content
       const { data: sectionsData, error: sectionsError } = await supabase
@@ -238,6 +291,31 @@ export const CourseLearn = () => {
       title: 'Progress saved',
       description: 'Lesson marked as complete',
     });
+
+    // Check if course is now 100% complete and issue certificate
+    if (newProgress === 100 && course?.certificate_enabled && !certificate && user) {
+      const certNumber = `ACFE-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      
+      const { data: certData, error: certError } = await supabase
+        .from('course_certificates')
+        .insert({
+          enrollment_id: enrollmentId,
+          student_id: user.id,
+          course_id: course.id,
+          certificate_number: certNumber,
+        })
+        .select()
+        .single();
+
+      if (!certError && certData) {
+        setCertificate(certData);
+        setShowCertificateDialog(true);
+        toast({
+          title: 'Congratulations!',
+          description: 'You earned a certificate!',
+        });
+      }
+    }
   };
 
   const navigateToContent = (contentId: string) => {
@@ -435,6 +513,17 @@ export const CourseLearn = () => {
                     <span className="font-medium">{overallProgress}%</span>
                   </div>
                   <Progress value={overallProgress} className="h-2" />
+                  {certificate && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full mt-2"
+                      onClick={() => setShowCertificateDialog(true)}
+                    >
+                      <Award className="h-4 w-4 mr-2" />
+                      View Certificate
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="p-0">
@@ -485,6 +574,24 @@ export const CourseLearn = () => {
           </div>
         </div>
       </div>
+
+      {/* Certificate Dialog */}
+      <Dialog open={showCertificateDialog} onOpenChange={setShowCertificateDialog}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Your Certificate</DialogTitle>
+          </DialogHeader>
+          {certificate && course && (
+            <CourseCertificate
+              studentName={studentName || 'Student'}
+              courseName={course.title}
+              mentorName={course.mentor_name}
+              completionDate={certificate.issued_at}
+              certificateNumber={certificate.certificate_number}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye, Award } from 'lucide-react';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { SectionEditor } from '@/components/admin/SectionEditor';
+import { CoursePrerequisites } from '@/components/admin/CoursePrerequisites';
 import {
   DndContext,
   closestCenter,
@@ -33,6 +36,8 @@ interface Course {
   title: string;
   description: string;
   thumbnail_url: string | null;
+  mentor_id: string;
+  certificate_enabled: boolean;
 }
 
 interface Section {
@@ -45,6 +50,7 @@ interface Section {
 export const AdminCourseBuilder = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [course, setCourse] = useState<Course | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
@@ -58,6 +64,7 @@ export const AdminCourseBuilder = () => {
   const [editedTitle, setEditedTitle] = useState('');
   const [savingTitle, setSavingTitle] = useState(false);
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
+  const [certificateEnabled, setCertificateEnabled] = useState(true);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -107,8 +114,34 @@ export const AdminCourseBuilder = () => {
     setCourse(courseData);
     setEditedDescription(courseData?.description || '');
     setEditedTitle(courseData?.title || '');
+    setCertificateEnabled(courseData?.certificate_enabled ?? true);
     setSections(sectionsData || []);
     setLoading(false);
+  };
+
+  const handleCertificateToggle = async (enabled: boolean) => {
+    if (!courseId) return;
+    
+    setCertificateEnabled(enabled);
+    const { error } = await supabase
+      .from('courses')
+      .update({ certificate_enabled: enabled })
+      .eq('id', courseId);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update certificate setting',
+        variant: 'destructive',
+      });
+      setCertificateEnabled(!enabled);
+    } else {
+      setCourse(prev => prev ? { ...prev, certificate_enabled: enabled } : null);
+      toast({
+        title: 'Success',
+        description: `Certificates ${enabled ? 'enabled' : 'disabled'}`,
+      });
+    }
   };
 
   const handleSaveTitle = async () => {
@@ -522,6 +555,42 @@ export const AdminCourseBuilder = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Course Settings Grid */}
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          {/* Prerequisites */}
+          {course && user && (
+            <CoursePrerequisites courseId={course.id} mentorId={course.mentor_id} />
+          )}
+
+          {/* Certificate Settings */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Award className="h-5 w-5" />
+                Completion Certificate
+              </CardTitle>
+              <CardDescription>
+                Issue certificates to students who complete this course
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="certificate-toggle">Enable certificates</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Students will receive a certificate upon completing all lessons
+                  </p>
+                </div>
+                <Switch
+                  id="certificate-toggle"
+                  checked={certificateEnabled}
+                  onCheckedChange={handleCertificateToggle}
+                />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="flex justify-between items-center mb-6">

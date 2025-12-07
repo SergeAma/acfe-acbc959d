@@ -226,6 +226,48 @@ export type Database = {
         }
         Relationships: []
       }
+      course_certificates: {
+        Row: {
+          certificate_number: string
+          course_id: string
+          enrollment_id: string
+          id: string
+          issued_at: string
+          student_id: string
+        }
+        Insert: {
+          certificate_number: string
+          course_id: string
+          enrollment_id: string
+          id?: string
+          issued_at?: string
+          student_id: string
+        }
+        Update: {
+          certificate_number?: string
+          course_id?: string
+          enrollment_id?: string
+          id?: string
+          issued_at?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_certificates_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_certificates_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: true
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_content: {
         Row: {
           content_type: string
@@ -282,6 +324,42 @@ export type Database = {
           },
         ]
       }
+      course_prerequisites: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          prerequisite_course_id: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          prerequisite_course_id: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          prerequisite_course_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_prerequisites_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_prerequisites_prerequisite_course_id_fkey"
+            columns: ["prerequisite_course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_sections: {
         Row: {
           course_id: string
@@ -323,6 +401,7 @@ export type Database = {
       courses: {
         Row: {
           category: string | null
+          certificate_enabled: boolean | null
           created_at: string | null
           description: string | null
           drip_enabled: boolean | null
@@ -337,6 +416,7 @@ export type Database = {
         }
         Insert: {
           category?: string | null
+          certificate_enabled?: boolean | null
           created_at?: string | null
           description?: string | null
           drip_enabled?: boolean | null
@@ -351,6 +431,7 @@ export type Database = {
         }
         Update: {
           category?: string | null
+          certificate_enabled?: boolean | null
           created_at?: string | null
           description?: string | null
           drip_enabled?: boolean | null
