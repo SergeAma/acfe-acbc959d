@@ -35,6 +35,7 @@ import { MentorProfile } from "./pages/MentorProfile";
 import NotFound from "./pages/NotFound";
 import { MyCertificates } from "./pages/MyCertificates";
 import { VerifyCertificate } from "./pages/VerifyCertificate";
+import { CertificatePublic } from "./pages/CertificatePublic";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/submit-idea" element={<SubmitIdea />} />
             <Route path="/verify-certificate" element={<VerifyCertificate />} />
+            <Route path="/certificate/:certificateId" element={<CertificatePublic />} />
             <Route path="/startups" element={<SubmitIdea />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/courses" element={<Courses />} />

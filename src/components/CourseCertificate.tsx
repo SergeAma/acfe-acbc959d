@@ -1,8 +1,14 @@
 import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Download, Award } from 'lucide-react';
+import { Download, Award, Share2, Linkedin, Twitter, Facebook, Link as LinkIcon } from 'lucide-react';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface CourseCertificateProps {
   studentName: string;
@@ -20,11 +26,11 @@ export const CourseCertificate = ({
   certificateNumber,
 }: CourseCertificateProps) => {
   const certificateRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   const handleDownload = () => {
     if (!certificateRef.current) return;
 
-    // Create a canvas and convert to image for download
     import('html2canvas').then(({ default: html2canvas }) => {
       html2canvas(certificateRef.current!, {
         scale: 2,
@@ -36,6 +42,56 @@ export const CourseCertificate = ({
         link.click();
       });
     });
+  };
+
+  const getShareUrl = () => {
+    return `${window.location.origin}/certificate/${certificateNumber}`;
+  };
+
+  const shareToLinkedIn = () => {
+    const url = encodeURIComponent(getShareUrl());
+    window.open(
+      `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
+      '_blank',
+      'width=600,height=400'
+    );
+  };
+
+  const shareToTwitter = () => {
+    const text = encodeURIComponent(
+      `🎓 I just earned my certificate in "${courseName}" from A Cloud for Everyone! #learning #certificate #ACFEcertified`
+    );
+    const url = encodeURIComponent(getShareUrl());
+    window.open(
+      `https://twitter.com/intent/tweet?text=${text}&url=${url}`,
+      '_blank',
+      'width=600,height=400'
+    );
+  };
+
+  const shareToFacebook = () => {
+    const url = encodeURIComponent(getShareUrl());
+    window.open(
+      `https://www.facebook.com/sharer/sharer.php?u=${url}`,
+      '_blank',
+      'width=600,height=400'
+    );
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(getShareUrl());
+      toast({
+        title: 'Link copied!',
+        description: 'Certificate link copied to clipboard',
+      });
+    } catch (err) {
+      toast({
+        title: 'Failed to copy',
+        description: 'Please copy the URL from your browser',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -103,11 +159,38 @@ export const CourseCertificate = ({
         </div>
       </div>
 
-      <div className="flex justify-center">
+      <div className="flex justify-center gap-3">
         <Button onClick={handleDownload} className="gap-2">
           <Download className="h-4 w-4" />
-          Download Certificate
+          Download
         </Button>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="gap-2">
+              <Share2 className="h-4 w-4" />
+              Share
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="center">
+            <DropdownMenuItem onClick={shareToLinkedIn}>
+              <Linkedin className="h-4 w-4 mr-2" />
+              Share on LinkedIn
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={shareToTwitter}>
+              <Twitter className="h-4 w-4 mr-2" />
+              Share on X (Twitter)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={shareToFacebook}>
+              <Facebook className="h-4 w-4 mr-2" />
+              Share on Facebook
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={copyLink}>
+              <LinkIcon className="h-4 w-4 mr-2" />
+              Copy Link
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
