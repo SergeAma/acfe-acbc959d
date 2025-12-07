@@ -33,10 +33,9 @@ export const Mentors = () => {
   const { data: mentors, isLoading } = useQuery({
     queryKey: ['mentors-list'],
     queryFn: async () => {
-      // Get mentor profiles from the public view
+      // Use the secure RPC function that excludes email
       const { data: mentorProfiles, error: profilesError } = await supabase
-        .from('profiles_public')
-        .select('*');
+        .rpc('get_public_mentor_profiles');
 
       if (profilesError) throw profilesError;
 
