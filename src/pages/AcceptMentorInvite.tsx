@@ -27,28 +27,35 @@ export default function AcceptMentorInvite() {
       }
 
       try {
-        const { data, error } = await supabase
-          .from('mentor_invitations')
-          .select('*')
-          .eq('token', token)
-          .maybeSingle();
+        // Use secure RPC function that doesn't expose email addresses
+        const { data, error } = await supabase.rpc('validate_mentor_invitation', {
+          _token: token
+        });
 
-        if (error || !data) {
+        if (error) {
+          console.error("Error validating invitation:", error);
           setStatus("invalid");
           return;
         }
 
-        if (data.status === 'accepted') {
+        if (!data || data.length === 0) {
+          setStatus("invalid");
+          return;
+        }
+
+        const invitation = data[0];
+
+        if (invitation.status === 'accepted') {
           setStatus("accepted");
           return;
         }
 
-        if (data.status === 'expired' || new Date(data.expires_at) < new Date()) {
+        if (!invitation.is_valid) {
           setStatus("invalid");
           return;
         }
 
-        setInvitation(data);
+        setInvitation(invitation);
         setStatus("valid");
       } catch (error) {
         console.error("Error checking invitation:", error);

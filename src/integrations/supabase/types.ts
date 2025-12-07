@@ -1133,6 +1133,14 @@ export type Database = {
         Args: { _admin_id: string; _request_id: string }
         Returns: undefined
       }
+      validate_mentor_invitation: {
+        Args: { _token: string }
+        Returns: {
+          expires_at: string
+          is_valid: boolean
+          status: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "mentor" | "student"
