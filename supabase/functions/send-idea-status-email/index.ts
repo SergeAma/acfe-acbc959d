@@ -94,7 +94,7 @@ const getStatusEmailContent = (firstName: string, ideaTitle: string, status: str
               ` : ''}
               
               <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #3f3f46;">
-                If you have any questions, feel free to reach out to us at <a href="mailto:hello@acloudforeveryone.org" style="color: ${content.color}; text-decoration: none;">hello@acloudforeveryone.org</a>.
+                If you have any questions, feel free to reach out to us at <a href="mailto:contact@acloudforeveryone.org" style="color: ${content.color}; text-decoration: none;">contact@acloudforeveryone.org</a>.
               </p>
               
               <p style="margin: 24px 0 0; font-size: 16px; line-height: 1.6; color: #3f3f46;">
