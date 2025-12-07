@@ -439,15 +439,15 @@ export const SectionEditor = ({ section, onDelete, onUpdate, onDuplicate, allSec
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-2 group">
-                <CardTitle 
-                  className="text-lg cursor-pointer hover:text-primary transition-colors"
-                  onClick={() => setEditingTitle(true)}
-                  title="Click to edit title"
-                >
+              <div 
+                className="flex items-center gap-2 cursor-pointer group hover:bg-muted/50 rounded-md px-2 py-1 -mx-2 transition-all"
+                onClick={() => setEditingTitle(true)}
+                title="Click to edit title"
+              >
+                <CardTitle className="text-lg group-hover:text-primary transition-colors">
                   {section.title}
                 </CardTitle>
-                <Pencil className="h-3 w-3 text-muted-foreground opacity-50" />
+                <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             )}
             {!editingTitle && (
@@ -475,15 +475,15 @@ export const SectionEditor = ({ section, onDelete, onUpdate, onDuplicate, allSec
                   </Button>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 group mt-1">
-                  <p 
-                    className="text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
-                    onClick={() => setEditingDescription(true)}
-                    title="Click to edit description"
-                  >
+                <div 
+                  className="flex items-center gap-2 mt-1 cursor-pointer group hover:bg-muted/50 rounded-md px-2 py-1 -mx-2 transition-all"
+                  onClick={() => setEditingDescription(true)}
+                  title="Click to edit description"
+                >
+                  <p className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
                     {section.description || 'Click to add description...'}
                   </p>
-                  <Pencil className="h-3 w-3 text-muted-foreground opacity-50" />
+                  <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               )
             )}
