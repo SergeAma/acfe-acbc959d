@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
@@ -10,13 +10,22 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, CheckCircle, Video, Lightbulb, DollarSign, Users } from "lucide-react";
 
+// Minimum time (in seconds) user must spend on form before submitting
+const MIN_FORM_TIME_SECONDS = 15;
+// Minimum description length to ensure thoughtful submissions
+const MIN_DESCRIPTION_LENGTH = 50;
+
 export function SubmitIdea() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const formLoadTime = useRef<number>(Date.now());
   const { toast } = useToast();
+
+  // Honeypot field - bots will fill this, humans won't see it
+  const [honeypot, setHoneypot] = useState("");
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -25,6 +34,11 @@ export function SubmitIdea() {
     ideaTitle: "",
     ideaDescription: "",
   });
+
+  // Reset form load time when component mounts
+  useEffect(() => {
+    formLoadTime.current = Date.now();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -58,6 +72,34 @@ export function SubmitIdea() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Spam check 1: Honeypot - if filled, it's a bot
+    if (honeypot) {
+      // Silently reject - don't give bots feedback
+      setIsSubmitted(true);
+      return;
+    }
+
+    // Spam check 2: Time-based validation - form filled too quickly
+    const timeSpentSeconds = (Date.now() - formLoadTime.current) / 1000;
+    if (timeSpentSeconds < MIN_FORM_TIME_SECONDS) {
+      toast({
+        title: "Please take your time",
+        description: "Please review your submission carefully before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Spam check 3: Require minimum description length for thoughtful submissions
+    if (!formData.ideaDescription || formData.ideaDescription.trim().length < MIN_DESCRIPTION_LENGTH) {
+      toast({
+        title: "Description too short",
+        description: `Please provide at least ${MIN_DESCRIPTION_LENGTH} characters describing your idea to help us understand it better.`,
+        variant: "destructive",
+      });
+      return;
+    }
     
     if (!formData.fullName || !formData.email || !formData.ideaTitle) {
       toast({
@@ -317,14 +359,33 @@ export function SubmitIdea() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="ideaDescription">Brief Description (Optional)</Label>
+                      <Label htmlFor="ideaDescription">Brief Description *</Label>
                       <Textarea
                         id="ideaDescription"
                         name="ideaDescription"
-                        placeholder="Briefly describe what problem you're solving and how..."
+                        placeholder="Briefly describe what problem you're solving and how... (minimum 50 characters)"
                         rows={4}
                         value={formData.ideaDescription}
                         onChange={handleInputChange}
+                        required
+                        minLength={MIN_DESCRIPTION_LENGTH}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {formData.ideaDescription.length}/{MIN_DESCRIPTION_LENGTH} characters minimum
+                      </p>
+                    </div>
+
+                    {/* Honeypot field - hidden from humans, visible to bots */}
+                    <div className="absolute -left-[9999px] opacity-0 h-0 overflow-hidden" aria-hidden="true">
+                      <Label htmlFor="website">Website</Label>
+                      <Input
+                        id="website"
+                        name="website"
+                        type="text"
+                        tabIndex={-1}
+                        autoComplete="off"
+                        value={honeypot}
+                        onChange={(e) => setHoneypot(e.target.value)}
                       />
                     </div>
 
@@ -408,7 +469,7 @@ export function SubmitIdea() {
                       type="submit"
                       size="lg"
                       className="w-full rounded-full"
-                      disabled={isSubmitting || !videoFile}
+                      disabled={isSubmitting || !videoFile || formData.ideaDescription.trim().length < MIN_DESCRIPTION_LENGTH}
                     >
                       {isSubmitting ? "Submitting..." : "Submit Your Idea"}
                     </Button>
