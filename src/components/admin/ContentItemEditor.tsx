@@ -1,16 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { FileText, Video, File, Trash2, Save, Loader2, GripVertical, Copy, MoveRight } from 'lucide-react';
+import { FileText, Video, File, Trash2, Save, Loader2, GripVertical, Copy, MoveRight, Pencil, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { RichTextEditor } from '@/components/RichTextEditor';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,15 +57,20 @@ export const ContentItemEditor = ({
   onMoveToSection 
 }: ContentItemEditorProps) => {
   const { toast } = useToast();
-  const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(item.title);
+  const [savingTitle, setSavingTitle] = useState(false);
+  
+  const [editingContent, setEditingContent] = useState(false);
+  const [editedContent, setEditedContent] = useState(item.text_content || '');
+  const [savingContent, setSavingContent] = useState(false);
+  
+  const [editingSettings, setEditingSettings] = useState(false);
+  const [durationMinutes, setDurationMinutes] = useState(item.duration_minutes || 0);
+  const [dripDelayDays, setDripDelayDays] = useState(item.drip_delay_days || 0);
+  const [savingSettings, setSavingSettings] = useState(false);
+  
   const [uploading, setUploading] = useState(false);
-  const [formData, setFormData] = useState({
-    title: item.title,
-    text_content: item.text_content || '',
-    duration_minutes: item.duration_minutes || 0,
-    drip_delay_days: item.drip_delay_days || 0,
-  });
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
@@ -76,6 +81,14 @@ export const ContentItemEditor = ({
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+
+  // Keep local state in sync with prop changes
+  useEffect(() => {
+    setEditedTitle(item.title);
+    setEditedContent(item.text_content || '');
+    setDurationMinutes(item.duration_minutes || 0);
+    setDripDelayDays(item.drip_delay_days || 0);
+  }, [item]);
 
   const getIcon = () => {
     switch (item.content_type) {
@@ -88,33 +101,83 @@ export const ContentItemEditor = ({
     }
   };
 
-  const handleSave = async () => {
-    setSaving(true);
+  const handleSaveTitle = async () => {
+    if (!editedTitle.trim()) return;
+    setSavingTitle(true);
+    
+    const { error } = await supabase
+      .from('course_content')
+      .update({ title: editedTitle.trim() })
+      .eq('id', item.id);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update title',
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Title updated',
+      });
+      setEditingTitle(false);
+      onUpdate();
+    }
+    setSavingTitle(false);
+  };
+
+  const handleSaveContent = async () => {
+    setSavingContent(true);
+    
+    const { error } = await supabase
+      .from('course_content')
+      .update({ text_content: editedContent || null })
+      .eq('id', item.id);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update content',
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Content updated',
+      });
+      setEditingContent(false);
+      onUpdate();
+    }
+    setSavingContent(false);
+  };
+
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    
     const { error } = await supabase
       .from('course_content')
       .update({
-        title: formData.title,
-        text_content: item.content_type === 'text' ? formData.text_content : null,
-        duration_minutes: formData.duration_minutes || null,
-        drip_delay_days: formData.drip_delay_days || 0,
+        duration_minutes: durationMinutes || null,
+        drip_delay_days: dripDelayDays || 0,
       })
       .eq('id', item.id);
 
     if (error) {
       toast({
         title: 'Error',
-        description: 'Failed to save changes',
+        description: 'Failed to update settings',
         variant: 'destructive',
       });
     } else {
       toast({
         title: 'Success',
-        description: 'Changes saved',
+        description: 'Settings updated',
       });
-      setEditing(false);
+      setEditingSettings(false);
       onUpdate();
     }
-    setSaving(false);
+    setSavingSettings(false);
   };
 
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -232,93 +295,157 @@ export const ContentItemEditor = ({
           </button>
           <div className="mt-1">{getIcon()}</div>
           <div className="flex-1 space-y-4">
+            {/* Title Section - Inline Editable */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {editing ? (
-                  <Input
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="font-medium"
-                  />
+              <div className="flex items-center gap-2 flex-1">
+                {editingTitle ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editedTitle}
+                      onChange={(e) => setEditedTitle(e.target.value)}
+                      className="h-8 font-medium"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveTitle();
+                        if (e.key === 'Escape') {
+                          setEditingTitle(false);
+                          setEditedTitle(item.title);
+                        }
+                      }}
+                    />
+                    <Button 
+                      onClick={handleSaveTitle} 
+                      disabled={savingTitle || !editedTitle.trim()} 
+                      size="sm" 
+                      variant="ghost"
+                    >
+                      {savingTitle ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => {
+                        setEditingTitle(false);
+                        setEditedTitle(item.title);
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 ) : (
-                  <h4 className="font-medium">{item.title}</h4>
+                  <div className="flex items-center gap-2 group">
+                    <h4 className="font-medium">{item.title}</h4>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
+                      onClick={() => setEditingTitle(true)}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                  </div>
                 )}
-                <Badge variant="outline" className="capitalize">
+                <Badge variant="outline" className="capitalize ml-2">
                   {item.content_type}
                 </Badge>
               </div>
-              <div className="flex gap-2">
-                {editing ? (
-                  <>
-                    <Button size="sm" onClick={handleSave} disabled={saving}>
-                      {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => setEditing(false)}>
-                      Cancel
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
-                      Edit
-                    </Button>
-                    {onDuplicate && (
-                      <Button size="sm" variant="ghost" onClick={onDuplicate} title="Duplicate">
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {otherSections && otherSections.length > 0 && onMoveToSection && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button size="sm" variant="ghost" title="Move to section">
-                            <MoveRight className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          {otherSections.map(s => (
-                            <DropdownMenuItem 
-                              key={s.id} 
-                              onClick={() => onMoveToSection(s.id)}
-                            >
-                              {s.title}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                    <Button size="sm" variant="ghost" onClick={onDelete}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </>
+              <div className="flex gap-1">
+                {onDuplicate && (
+                  <Button size="sm" variant="ghost" onClick={onDuplicate} title="Duplicate">
+                    <Copy className="h-4 w-4" />
+                  </Button>
                 )}
+                {otherSections && otherSections.length > 0 && onMoveToSection && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" variant="ghost" title="Move to section">
+                        <MoveRight className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      {otherSections.map(s => (
+                        <DropdownMenuItem 
+                          key={s.id} 
+                          onClick={() => onMoveToSection(s.id)}
+                        >
+                          {s.title}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+                <Button size="sm" variant="ghost" onClick={onDelete}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             </div>
 
-            {item.content_type === 'text' && editing && (
+            {/* Text Content - Rich Text Editing */}
+            {item.content_type === 'text' && (
               <div className="space-y-2">
-                <Label>Content</Label>
-                <Textarea
-                  value={formData.text_content}
-                  onChange={(e) => setFormData({ ...formData, text_content: e.target.value })}
-                  rows={6}
-                  placeholder="Enter your lesson content here..."
-                />
+                {editingContent ? (
+                  <>
+                    <RichTextEditor
+                      content={editedContent}
+                      onChange={setEditedContent}
+                      placeholder="Enter your lesson content here..."
+                    />
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={handleSaveContent} 
+                        disabled={savingContent} 
+                        size="sm"
+                      >
+                        {savingContent ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                        Save
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setEditingContent(false);
+                          setEditedContent(item.text_content || '');
+                        }}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Cancel
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="group">
+                    {item.text_content ? (
+                      <div 
+                        className="text-sm text-muted-foreground prose prose-sm max-w-none cursor-pointer hover:bg-muted/50 rounded-md p-2 -m-2"
+                        onClick={() => setEditingContent(true)}
+                        dangerouslySetInnerHTML={{ __html: item.text_content }}
+                      />
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingContent(true)}
+                        className="text-muted-foreground"
+                      >
+                        <Pencil className="h-3 w-3 mr-2" />
+                        Add content
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
-            {item.content_type === 'text' && !editing && item.text_content && (
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{item.text_content}</p>
-            )}
-
+            {/* Video Upload */}
             {item.content_type === 'video' && (
               <div className="space-y-2">
                 {item.video_url ? (
                   <div className="space-y-2">
-                    <video controls className="w-full rounded-md">
+                    <video controls className="w-full rounded-md max-h-64">
                       <source src={item.video_url} type="video/mp4" />
                       Your browser does not support the video tag.
                     </video>
-                    <p className="text-xs text-muted-foreground">Change video:</p>
+                    <p className="text-xs text-muted-foreground">Replace video:</p>
                   </div>
                 ) : (
                   <Label>Upload Video</Label>
@@ -333,6 +460,7 @@ export const ContentItemEditor = ({
               </div>
             )}
 
+            {/* File Upload */}
             {item.content_type === 'file' && (
               <div className="space-y-2">
                 {item.file_url ? (
@@ -360,33 +488,76 @@ export const ContentItemEditor = ({
               </div>
             )}
 
-            {editing && (item.content_type === 'video' || item.content_type === 'file') && (
-              <div className="space-y-2">
-                <Label>Duration (minutes)</Label>
-                <Input
-                  type="number"
-                  value={formData.duration_minutes}
-                  onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 0 })}
-                  min="0"
-                />
-              </div>
-            )}
-
-            {editing && (
-              <div className="space-y-2">
-                <Label>Drip Delay (days after enrollment)</Label>
-                <Input
-                  type="number"
-                  value={formData.drip_delay_days}
-                  onChange={(e) => setFormData({ ...formData, drip_delay_days: parseInt(e.target.value) || 0 })}
-                  min="0"
-                  placeholder="0 = available immediately"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Number of days after enrollment before this content becomes available
-                </p>
-              </div>
-            )}
+            {/* Settings: Duration & Drip Delay - Collapsible */}
+            <div className="border-t pt-3 mt-3">
+              {editingSettings ? (
+                <div className="space-y-3">
+                  {(item.content_type === 'video' || item.content_type === 'file') && (
+                    <div className="space-y-1">
+                      <Label className="text-xs">Duration (minutes)</Label>
+                      <Input
+                        type="number"
+                        value={durationMinutes}
+                        onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 0)}
+                        min="0"
+                        className="h-8"
+                      />
+                    </div>
+                  )}
+                  <div className="space-y-1">
+                    <Label className="text-xs">Drip Delay (days after enrollment)</Label>
+                    <Input
+                      type="number"
+                      value={dripDelayDays}
+                      onChange={(e) => setDripDelayDays(parseInt(e.target.value) || 0)}
+                      min="0"
+                      placeholder="0 = available immediately"
+                      className="h-8"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Days after enrollment before this content becomes available
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleSaveSettings} disabled={savingSettings} size="sm">
+                      {savingSettings ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                      Save Settings
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setEditingSettings(false);
+                        setDurationMinutes(item.duration_minutes || 0);
+                        setDripDelayDays(item.drip_delay_days || 0);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-4 text-xs text-muted-foreground group">
+                  {(item.content_type === 'video' || item.content_type === 'file') && item.duration_minutes && (
+                    <span>Duration: {item.duration_minutes} min</span>
+                  )}
+                  {item.drip_delay_days ? (
+                    <span>Available after {item.drip_delay_days} days</span>
+                  ) : (
+                    <span>Available immediately</span>
+                  )}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="opacity-0 group-hover:opacity-100 transition-opacity h-6 px-2"
+                    onClick={() => setEditingSettings(true)}
+                  >
+                    <Pencil className="h-3 w-3 mr-1" />
+                    Edit Settings
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </CardContent>
