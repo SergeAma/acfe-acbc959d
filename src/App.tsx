@@ -24,6 +24,7 @@ import { AdminEmailTemplates } from "./pages/AdminEmailTemplates";
 import { AdminEmailSequences } from "./pages/AdminEmailSequences";
 import { AdminNewsletter } from "./pages/AdminNewsletter";
 import { AdminEmailAnalytics } from "./pages/AdminEmailAnalytics";
+import { AdminEmailLogs } from "./pages/AdminEmailLogs";
 import AdminNewsCuration from "./pages/AdminNewsCuration";
 import { Partners } from "./pages/Partners";
 import { Jobs } from "./pages/Jobs";
@@ -73,6 +74,7 @@ const App = () => (
             <Route path="/admin/email-templates" element={<ProtectedRoute requiredRole="admin"><AdminEmailTemplates /></ProtectedRoute>} />
             <Route path="/admin/email-sequences" element={<ProtectedRoute requiredRole="admin"><AdminEmailSequences /></ProtectedRoute>} />
             <Route path="/admin/email-analytics" element={<ProtectedRoute requiredRole="admin"><AdminEmailAnalytics /></ProtectedRoute>} />
+            <Route path="/admin/email-logs" element={<ProtectedRoute requiredRole="admin"><AdminEmailLogs /></ProtectedRoute>} />
             <Route path="/admin/news-curation" element={<ProtectedRoute requiredRole="admin"><AdminNewsCuration /></ProtectedRoute>} />
             <Route path="/admin/courses" element={<ProtectedRoute><AdminCourses /></ProtectedRoute>} />
             <Route path="/admin/courses/:courseId/build" element={<ProtectedRoute><AdminCourseBuilder /></ProtectedRoute>} />
