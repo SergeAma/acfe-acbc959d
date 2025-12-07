@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
@@ -6,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, CheckCircle, Video, Lightbulb, DollarSign, Users } from "lucide-react";
+import { Upload, CheckCircle, Video, Lightbulb, DollarSign, Users, Rocket } from "lucide-react";
 
 // Minimum time (in seconds) user must spend on form before submitting
 const MIN_FORM_TIME_SECONDS = 15;
@@ -23,6 +26,7 @@ export function SubmitIdea() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formLoadTime = useRef<number>(Date.now());
   const { toast } = useToast();
+  const { user, profile } = useAuth();
 
   // Honeypot field - bots will fill this, humans won't see it
   const [honeypot, setHoneypot] = useState("");
@@ -237,7 +241,34 @@ export function SubmitIdea() {
         </section>
 
         {/* Main Content */}
-        <section className="py-16">
+        <section className="py-16 relative">
+          {/* Auth Gate Overlay for non-authenticated users */}
+          {!user && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+              <Card className="max-w-md mx-4 border border-border shadow-lg">
+                <CardContent className="p-8 text-center space-y-4">
+                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                    <Rocket className="h-8 w-8 text-primary" />
+                  </div>
+                  <h2 className="text-xl font-bold text-foreground">Ready to Submit Your Idea?</h2>
+                  <p className="text-muted-foreground text-sm">
+                    Create an account or sign in to submit your startup idea and get access to mentorship and funding opportunities.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                    <Button asChild className="rounded-full">
+                      <Link to="/auth">Sign Up</Link>
+                    </Button>
+                    <Button variant="outline" asChild className="rounded-full">
+                      <Link to="/auth">Sign In</Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Blurred content for non-authenticated users */}
+          <div className={!user ? 'blur-sm pointer-events-none select-none' : ''}>
           <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-5 gap-12 max-w-6xl mx-auto">
               
@@ -481,6 +512,7 @@ export function SubmitIdea() {
                 </div>
               </div>
             </div>
+          </div>
           </div>
         </section>
       </main>
