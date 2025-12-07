@@ -15,6 +15,47 @@ const TRACKING_PIXEL = new Uint8Array([
   0x01, 0x00, 0x3b
 ]);
 
+// Domain allowlist for redirect URLs - only allow redirects to trusted domains
+const ALLOWED_DOMAINS = [
+  "acloudforeveryone.org",
+  "www.acloudforeveryone.org",
+  "spectrogramconsulting.com",
+  "www.spectrogramconsulting.com",
+  // Add other trusted partner domains here
+];
+
+// Validate redirect URL to prevent open redirect attacks
+function isValidRedirectUrl(url: string): boolean {
+  try {
+    const parsedUrl = new URL(url);
+    
+    // Only allow HTTPS URLs
+    if (parsedUrl.protocol !== "https:") {
+      console.log(`Rejected URL: non-HTTPS protocol - ${parsedUrl.protocol}`);
+      return false;
+    }
+    
+    // Check if domain is in allowlist
+    const hostname = parsedUrl.hostname.toLowerCase();
+    const isAllowed = ALLOWED_DOMAINS.some(domain => 
+      hostname === domain || hostname.endsWith(`.${domain}`)
+    );
+    
+    if (!isAllowed) {
+      console.log(`Rejected URL: domain not in allowlist - ${hostname}`);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.log(`Rejected URL: invalid URL format - ${url}`);
+    return false;
+  }
+}
+
+// Fallback URL when redirect is blocked
+const FALLBACK_URL = "https://acloudforeveryone.org";
+
 const handler = async (req: Request): Promise<Response> => {
   const url = new URL(req.url);
   const pathParts = url.pathname.split('/');
@@ -86,17 +127,32 @@ const handler = async (req: Request): Promise<Response> => {
         console.log(`Recorded click for log ID: ${logId}`);
       }
 
-      // Redirect to actual URL
+      // Validate and redirect to actual URL
       if (redirectUrl) {
         const decodedUrl = decodeURIComponent(redirectUrl);
-        console.log(`Redirecting to: ${decodedUrl}`);
-        return new Response(null, {
-          status: 302,
-          headers: { 
-            "Location": decodedUrl,
-            ...corsHeaders 
-          },
-        });
+        
+        // Security: Validate URL before redirecting
+        if (isValidRedirectUrl(decodedUrl)) {
+          console.log(`Redirecting to validated URL: ${decodedUrl}`);
+          return new Response(null, {
+            status: 302,
+            headers: { 
+              "Location": decodedUrl,
+              ...corsHeaders 
+            },
+          });
+        } else {
+          // Log the blocked redirect attempt for security monitoring
+          console.warn(`SECURITY: Blocked redirect to untrusted URL: ${decodedUrl}`);
+          // Redirect to fallback instead of malicious URL
+          return new Response(null, {
+            status: 302,
+            headers: { 
+              "Location": FALLBACK_URL,
+              ...corsHeaders 
+            },
+          });
+        }
       }
 
       return new Response("Click recorded", { 
