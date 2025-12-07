@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, ArrowLeft, User, Mail, Calendar } from 'lucide-react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Table,
   TableBody,
@@ -16,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface UserProfile {
   id: string;
@@ -30,8 +31,11 @@ export const AdminUsers = () => {
   const { profile, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const filter = searchParams.get('filter') || 'all';
 
   useEffect(() => {
     if (profile?.role === 'admin') {
@@ -60,6 +64,10 @@ export const AdminUsers = () => {
     setLoading(false);
   };
 
+  const filteredUsers = filter === 'all' 
+    ? users 
+    : users.filter(u => u.role === filter);
+
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -81,7 +89,9 @@ export const AdminUsers = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold mb-2">All Users</h1>
+            <h1 className="text-3xl font-bold mb-2">
+              {filter === 'mentor' ? 'Manage Mentors' : filter === 'student' ? 'Manage Students' : 'All Users'}
+            </h1>
             <p className="text-muted-foreground">View and manage platform users</p>
           </div>
         </div>
@@ -134,6 +144,14 @@ export const AdminUsers = () => {
           </Card>
         </div>
 
+        <Tabs value={filter} onValueChange={(value) => setSearchParams({ filter: value })} className="mb-6">
+          <TabsList>
+            <TabsTrigger value="all">All Users</TabsTrigger>
+            <TabsTrigger value="mentor">Mentors</TabsTrigger>
+            <TabsTrigger value="student">Students</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -152,7 +170,7 @@ export const AdminUsers = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => (
+                  {filteredUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">

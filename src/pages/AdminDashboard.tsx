@@ -226,7 +226,7 @@ export const AdminDashboard = () => {
           <p className="text-muted-foreground">Manage mentor role requests</p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
@@ -247,12 +247,29 @@ export const AdminDashboard = () => {
               <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/news-curation')}>
                 News Curation
               </Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/users')}>
-                View All Users
-              </Button>
               <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/settings')}>
                 System Settings
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => navigate('/admin/users?filter=mentor')}>
+            <CardHeader>
+              <CardTitle>Manage Mentors</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-primary">View All</div>
+              <p className="text-sm text-muted-foreground">Manage mentor accounts</p>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => navigate('/admin/users?filter=student')}>
+            <CardHeader>
+              <CardTitle>Manage Students</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-primary">View All</div>
+              <p className="text-sm text-muted-foreground">Manage student accounts</p>
             </CardContent>
           </Card>
 
@@ -263,16 +280,6 @@ export const AdminDashboard = () => {
             <CardContent>
               <div className="text-3xl font-bold">{requests.filter(r => r.status === 'pending').length}</div>
               <p className="text-sm text-muted-foreground">Pending approval</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Platform Stats</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{requests.length}</div>
-              <p className="text-sm text-muted-foreground">Total mentor requests</p>
             </CardContent>
           </Card>
         </div>
