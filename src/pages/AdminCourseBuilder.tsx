@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye, Award } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye, Award, Info } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { SectionEditor } from '@/components/admin/SectionEditor';
@@ -65,6 +66,14 @@ export const AdminCourseBuilder = () => {
   const [savingTitle, setSavingTitle] = useState(false);
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const [certificateEnabled, setCertificateEnabled] = useState(true);
+  const [showEditingTip, setShowEditingTip] = useState(() => {
+    return localStorage.getItem('courseBuilderTipDismissed') !== 'true';
+  });
+
+  const dismissEditingTip = () => {
+    localStorage.setItem('courseBuilderTipDismissed', 'true');
+    setShowEditingTip(false);
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -436,6 +445,20 @@ export const AdminCourseBuilder = () => {
             Preview Course
           </Button>
         </div>
+
+        {showEditingTip && (
+          <Alert className="mb-6 bg-primary/5 border-primary/20">
+            <Info className="h-4 w-4 text-primary" />
+            <AlertDescription className="flex items-center justify-between">
+              <span className="text-sm">
+                <strong>Tip:</strong> Click directly on titles and descriptions to edit them. Look for the <Pencil className="h-3 w-3 inline mx-1" /> icon on hover.
+              </span>
+              <Button variant="ghost" size="sm" onClick={dismissEditingTip} className="ml-4 h-6 px-2">
+                Got it
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="mb-8">
           {editingTitle ? (
