@@ -58,22 +58,29 @@ export const ProfileSettings = () => {
     e.preventDefault();
     setLoading(true);
 
+    const updateData = {
+      full_name: formData.full_name,
+      bio: formData.bio,
+      country: formData.country,
+      avatar_url: formData.avatar_url,
+      profile_frame: formData.profile_frame,
+      linkedin_url: formData.linkedin_url || null,
+      twitter_url: formData.twitter_url || null,
+      instagram_url: formData.instagram_url || null,
+      github_url: formData.github_url || null,
+      website_url: formData.website_url || null,
+    };
+
+    console.log('Saving profile data:', updateData);
+
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .update({
-          full_name: formData.full_name,
-          bio: formData.bio,
-          country: formData.country,
-          avatar_url: formData.avatar_url,
-          profile_frame: formData.profile_frame,
-          linkedin_url: formData.linkedin_url,
-          twitter_url: formData.twitter_url,
-          instagram_url: formData.instagram_url,
-          github_url: formData.github_url,
-          website_url: formData.website_url,
-        })
-        .eq('id', profile?.id);
+        .update(updateData)
+        .eq('id', profile?.id)
+        .select();
+
+      console.log('Save response:', { data, error });
 
       if (error) throw error;
 
@@ -84,6 +91,7 @@ export const ProfileSettings = () => {
         description: 'Your profile has been updated successfully.',
       });
     } catch (error: any) {
+      console.error('Save error:', error);
       toast({
         title: 'Error',
         description: error.message,
