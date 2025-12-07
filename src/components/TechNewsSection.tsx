@@ -95,6 +95,17 @@ export const TechNewsSection = () => {
         }
       } else {
         toast.success('Successfully subscribed to the newsletter!');
+        
+        // Send welcome email automatically
+        try {
+          await supabase.functions.invoke('send-newsletter-welcome', {
+            body: {
+              email: email.trim(),
+            },
+          });
+        } catch (emailError) {
+          console.error('Failed to send newsletter welcome email:', emailError);
+        }
       }
       setEmail('');
     } catch (error) {

@@ -54,7 +54,7 @@ const handler = async (req: Request): Promise<Response> => {
     personalizedContent = personalizedContent.replace(/2024/g, currentYear.toString());
 
     const emailResponse = await resend.emails.send({
-      from: "A Cloud for Everyone <onboarding@resend.dev>",
+      from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
       to: [to_email],
       subject: `[TEST] ${personalizedSubject}`,
       html: personalizedContent,

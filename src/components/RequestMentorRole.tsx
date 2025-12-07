@@ -39,7 +39,7 @@ export const RequestMentorRole = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user) return;
+    if (!user || !profile) return;
 
     setLoading(true);
 
@@ -64,6 +64,19 @@ export const RequestMentorRole = () => {
       });
       setHasRequest(true);
       setRequestStatus('pending');
+
+      // Send confirmation email automatically
+      try {
+        const firstName = profile.full_name?.split(' ')[0] || 'there';
+        await supabase.functions.invoke('send-mentor-request-confirmation', {
+          body: {
+            email: profile.email,
+            first_name: firstName,
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send mentor request confirmation email:', emailError);
+      }
     }
 
     setLoading(false);
