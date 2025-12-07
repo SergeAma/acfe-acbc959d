@@ -61,8 +61,39 @@ export const AdminIdeaSubmissions = () => {
     setLoading(false);
   };
 
+  const sendStatusEmail = async (submission: IdeaSubmission, newStatus: string) => {
+    try {
+      const firstName = submission.full_name?.split(' ')[0] || 'Innovator';
+      
+      const { error } = await supabase.functions.invoke('send-idea-status-email', {
+        body: {
+          email: submission.email,
+          first_name: firstName,
+          idea_title: submission.idea_title,
+          new_status: newStatus
+        }
+      });
+
+      if (error) {
+        console.error('Error sending status email:', error);
+        toast({
+          title: "Note",
+          description: "Status updated but email notification failed to send.",
+          variant: "default",
+        });
+      } else {
+        console.log('Status email sent successfully');
+      }
+    } catch (err) {
+      console.error('Failed to send status email:', err);
+    }
+  };
+
   const updateStatus = async (id: string, newStatus: string) => {
     setUpdatingId(id);
+    
+    const submission = submissions.find(s => s.id === id);
+    const previousStatus = submission?.status;
     
     const { error } = await supabase
       .from('idea_submissions')
@@ -80,6 +111,12 @@ export const AdminIdeaSubmissions = () => {
         title: "Status updated",
         description: `Submission status changed to ${newStatus}`,
       });
+      
+      // Send email notification if status actually changed
+      if (submission && previousStatus !== newStatus) {
+        await sendStatusEmail(submission, newStatus);
+      }
+      
       fetchSubmissions();
     }
     

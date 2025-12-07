@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.send-newsletter-welcome]
 verify_jwt = false
+
+[functions.send-idea-status-email]
+verify_jwt = false

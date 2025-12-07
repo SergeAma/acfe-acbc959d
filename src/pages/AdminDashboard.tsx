@@ -235,6 +235,9 @@ export const AdminDashboard = () => {
               <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/newsletter')}>
                 Newsletter Management
               </Button>
+              <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/email-logs')}>
+                Email Logs
+              </Button>
               <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/email-templates')}>
                 Email Templates
               </Button>
