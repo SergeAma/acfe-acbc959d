@@ -19,7 +19,9 @@ import {
   Video,
   File,
   Loader2,
-  ArrowLeft
+  ArrowLeft,
+  AlertCircle,
+  Link2
 } from 'lucide-react';
 import {
   Accordion,
@@ -27,6 +29,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface Course {
   id: string;
@@ -60,6 +63,12 @@ interface Section {
   content: ContentItem[];
 }
 
+interface PrerequisiteCourse {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
 export const CoursePreview = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -70,15 +79,74 @@ export const CoursePreview = () => {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
+  const [prerequisites, setPrerequisites] = useState<PrerequisiteCourse[]>([]);
+  const [prerequisitesMet, setPrerequisitesMet] = useState(true);
 
   useEffect(() => {
     if (id) {
       fetchCourseData();
+      fetchPrerequisites();
       if (user) {
         checkEnrollment();
       }
     }
   }, [id, user]);
+
+  const fetchPrerequisites = async () => {
+    if (!id) return;
+
+    // Get prerequisites for this course
+    const { data: prereqData } = await supabase
+      .from('course_prerequisites')
+      .select('prerequisite_course_id')
+      .eq('course_id', id);
+
+    if (!prereqData || prereqData.length === 0) {
+      setPrerequisites([]);
+      setPrerequisitesMet(true);
+      return;
+    }
+
+    const prereqIds = prereqData.map(p => p.prerequisite_course_id);
+
+    // Fetch prerequisite course details
+    const { data: coursesData } = await supabase
+      .from('courses')
+      .select('id, title')
+      .in('id', prereqIds);
+
+    if (!user) {
+      // Not logged in - show prerequisites but can't check completion
+      const prereqs = coursesData?.map(c => ({
+        id: c.id,
+        title: c.title,
+        completed: false
+      })) || [];
+      setPrerequisites(prereqs);
+      setPrerequisitesMet(prereqs.length === 0);
+      return;
+    }
+
+    // Check which prerequisites are completed (100% progress)
+    const { data: enrollments } = await supabase
+      .from('enrollments')
+      .select('course_id, progress')
+      .eq('student_id', user.id)
+      .in('course_id', prereqIds);
+
+    const completedCourses = new Set(
+      enrollments?.filter(e => e.progress === 100).map(e => e.course_id) || []
+    );
+
+    const prereqs = coursesData?.map(c => ({
+      id: c.id,
+      title: c.title,
+      completed: completedCourses.has(c.id)
+    })) || [];
+
+    setPrerequisites(prereqs);
+    setPrerequisitesMet(prereqs.every(p => p.completed));
+  };
 
   const fetchCourseData = async () => {
     try {
@@ -149,6 +217,16 @@ export const CoursePreview = () => {
   const handleEnroll = async () => {
     if (!user) {
       navigate('/auth');
+      return;
+    }
+
+    // Check prerequisites before enrollment
+    if (!prerequisitesMet) {
+      toast({
+        title: 'Prerequisites Required',
+        description: 'You must complete all prerequisite courses before enrolling',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -298,6 +376,41 @@ export const CoursePreview = () => {
             </Card>
           )}
 
+          {/* Prerequisites Warning */}
+          {prerequisites.length > 0 && (
+            <Alert className={`mb-6 ${prerequisitesMet ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20'}`}>
+              <Link2 className={`h-4 w-4 ${prerequisitesMet ? 'text-green-600' : 'text-yellow-600'}`} />
+              <AlertTitle className={prerequisitesMet ? 'text-green-800 dark:text-green-200' : 'text-yellow-800 dark:text-yellow-200'}>
+                {prerequisitesMet ? 'Prerequisites Completed' : 'Prerequisites Required'}
+              </AlertTitle>
+              <AlertDescription>
+                <p className="text-sm mb-2">
+                  {prerequisitesMet 
+                    ? 'You have completed all required courses.'
+                    : 'Complete these courses before enrolling:'}
+                </p>
+                <ul className="space-y-1">
+                  {prerequisites.map((prereq) => (
+                    <li key={prereq.id} className="flex items-center gap-2 text-sm">
+                      {prereq.completed ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 text-yellow-600" />
+                      )}
+                      <Link 
+                        to={`/courses/${prereq.id}/preview`} 
+                        className="hover:underline"
+                      >
+                        {prereq.title}
+                      </Link>
+                      {prereq.completed && <span className="text-xs text-green-600">(Completed)</span>}
+                    </li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Enrollment Button */}
           {user ? (
             isEnrolled ? (
@@ -312,13 +425,18 @@ export const CoursePreview = () => {
                 </Button>
               </div>
             ) : (
-              <Button size="lg" onClick={handleEnroll} disabled={enrolling} className="w-full md:w-auto">
+              <Button 
+                size="lg" 
+                onClick={handleEnroll} 
+                disabled={enrolling || !prerequisitesMet} 
+                className="w-full md:w-auto"
+              >
                 {enrolling ? (
                   <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                 ) : (
                   <ChevronRight className="h-5 w-5 mr-2" />
                 )}
-                Enroll in Course
+                {prerequisitesMet ? 'Enroll in Course' : 'Complete Prerequisites First'}
               </Button>
             )
           ) : (

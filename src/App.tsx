@@ -33,6 +33,7 @@ import { SubmitIdea } from "./pages/SubmitIdea";
 import { Mentors } from "./pages/Mentors";
 import { MentorProfile } from "./pages/MentorProfile";
 import NotFound from "./pages/NotFound";
+import { MyCertificates } from "./pages/MyCertificates";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +81,7 @@ const App = () => (
             <Route path="/admin/courses/:courseId/build" element={<ProtectedRoute><AdminCourseBuilder /></ProtectedRoute>} />
             <Route path="/mentor/courses/new" element={<ProtectedRoute><CreateCourse /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
+            <Route path="/certificates" element={<ProtectedRoute><MyCertificates /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
