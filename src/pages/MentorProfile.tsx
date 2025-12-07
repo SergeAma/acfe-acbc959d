@@ -44,14 +44,13 @@ export const MentorProfile = () => {
   const { data: mentor, isLoading: mentorLoading } = useQuery({
     queryKey: ['mentor-profile', id],
     queryFn: async () => {
+      // Use the secure RPC function that excludes email
       const { data, error } = await supabase
-        .from('profiles_public')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
+        .rpc('get_public_mentor_profile', { mentor_id: id });
 
       if (error) throw error;
-      return data as MentorProfile | null;
+      // RPC returns an array, get the first item
+      return (data && data.length > 0 ? data[0] : null) as MentorProfile | null;
     },
     enabled: !!id,
   });
