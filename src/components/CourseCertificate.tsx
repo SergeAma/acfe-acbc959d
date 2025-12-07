@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, Award, Share2, Linkedin, Twitter, Facebook, Link as LinkIcon } from 'lucide-react';
+import { Download, Award, Share2, Linkedin, Twitter, Facebook, Link as LinkIcon, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -46,6 +46,24 @@ export const CourseCertificate = ({
 
   const getShareUrl = () => {
     return `${window.location.origin}/certificate/${certificateNumber}`;
+  };
+
+  const addToLinkedIn = () => {
+    const completionDateObj = new Date(completionDate);
+    const year = completionDateObj.getFullYear();
+    const month = completionDateObj.getMonth() + 1;
+    
+    // LinkedIn Add to Profile URL for certifications
+    const linkedInUrl = new URL('https://www.linkedin.com/profile/add');
+    linkedInUrl.searchParams.set('startTask', 'CERTIFICATION_NAME');
+    linkedInUrl.searchParams.set('name', courseName);
+    linkedInUrl.searchParams.set('organizationName', 'A Cloud for Everyone');
+    linkedInUrl.searchParams.set('issueYear', year.toString());
+    linkedInUrl.searchParams.set('issueMonth', month.toString());
+    linkedInUrl.searchParams.set('certUrl', getShareUrl());
+    linkedInUrl.searchParams.set('certId', certificateNumber);
+    
+    window.open(linkedInUrl.toString(), '_blank');
   };
 
   const shareToLinkedIn = () => {
@@ -159,10 +177,19 @@ export const CourseCertificate = ({
         </div>
       </div>
 
-      <div className="flex justify-center gap-3">
+      <div className="flex flex-col sm:flex-row justify-center gap-3">
         <Button onClick={handleDownload} className="gap-2">
           <Download className="h-4 w-4" />
           Download
+        </Button>
+
+        <Button 
+          onClick={addToLinkedIn} 
+          variant="outline" 
+          className="gap-2 bg-[#0077B5] hover:bg-[#006399] text-white hover:text-white border-[#0077B5]"
+        >
+          <Linkedin className="h-4 w-4" />
+          Add to LinkedIn
         </Button>
         
         <DropdownMenu>
