@@ -333,15 +333,15 @@ export const ContentItemEditor = ({
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <h4 
-                      className="font-medium cursor-pointer hover:text-primary transition-colors"
-                      onClick={() => setEditingTitle(true)}
-                      title="Click to edit title"
-                    >
+                  <div 
+                    className="flex items-center gap-2 cursor-pointer group hover:bg-muted/50 rounded-md px-2 py-1 -mx-2 transition-all"
+                    onClick={() => setEditingTitle(true)}
+                    title="Click to edit title"
+                  >
+                    <h4 className="font-medium group-hover:text-primary transition-colors">
                       {item.title}
                     </h4>
-                    <Pencil className="h-3 w-3 text-muted-foreground opacity-50" />
+                    <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                 )}
                 <Badge variant="outline" className="capitalize ml-2">
