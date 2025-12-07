@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { MySubmissions } from '@/components/dashboard/MySubmissions';
 import { BookOpen, Users, PlusCircle, TrendingUp } from 'lucide-react';
 
 interface Course {
@@ -101,6 +102,9 @@ export const MentorDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* My Startup Ideas Submissions */}
+      <MySubmissions />
 
       {/* My Courses */}
       <div>
