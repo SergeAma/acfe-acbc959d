@@ -53,6 +53,9 @@ export const AdminCourseBuilder = () => {
   const [editingDescription, setEditingDescription] = useState(false);
   const [editedDescription, setEditedDescription] = useState('');
   const [savingDescription, setSavingDescription] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState('');
+  const [savingTitle, setSavingTitle] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -101,8 +104,35 @@ export const AdminCourseBuilder = () => {
 
     setCourse(courseData);
     setEditedDescription(courseData?.description || '');
+    setEditedTitle(courseData?.title || '');
     setSections(sectionsData || []);
     setLoading(false);
+  };
+
+  const handleSaveTitle = async () => {
+    if (!courseId || !editedTitle.trim()) return;
+    setSavingTitle(true);
+
+    const { error } = await supabase
+      .from('courses')
+      .update({ title: editedTitle.trim() })
+      .eq('id', courseId);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update title',
+        variant: 'destructive',
+      });
+    } else {
+      setCourse(prev => prev ? { ...prev, title: editedTitle.trim() } : null);
+      setEditingTitle(false);
+      toast({
+        title: 'Success',
+        description: 'Title updated',
+      });
+    }
+    setSavingTitle(false);
   };
 
   const handleSaveDescription = async () => {
@@ -226,7 +256,43 @@ export const AdminCourseBuilder = () => {
         </Button>
 
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-4">{course?.title}</h1>
+          {editingTitle ? (
+            <div className="flex items-center gap-2 mb-4">
+              <Input
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                className="text-3xl font-bold h-auto py-2"
+                autoFocus
+              />
+              <Button onClick={handleSaveTitle} disabled={savingTitle || !editedTitle.trim()} size="sm">
+                <Save className="h-4 w-4 mr-2" />
+                {savingTitle ? 'Saving...' : 'Save'}
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setEditingTitle(false);
+                  setEditedTitle(course?.title || '');
+                }}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 mb-4 group">
+              <h1 className="text-4xl font-bold">{course?.title}</h1>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => setEditingTitle(true)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
           
           {editingDescription ? (
             <div className="space-y-4">
@@ -256,7 +322,7 @@ export const AdminCourseBuilder = () => {
           ) : (
             <div className="group relative">
               <div 
-                className="prose prose-sm max-w-none text-muted-foreground"
+                className="rich-text-content max-w-none text-muted-foreground"
                 dangerouslySetInnerHTML={{ __html: course?.description || '<p>No description</p>' }}
               />
               <Button 
