@@ -244,6 +244,9 @@ export const AdminDashboard = () => {
               <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/courses')}>
                 Manage Courses
               </Button>
+              <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/mentor-invitations')}>
+                Mentor Invitations
+              </Button>
               <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/ideas')}>
                 Idea Submissions
               </Button>

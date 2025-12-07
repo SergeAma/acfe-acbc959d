@@ -37,6 +37,7 @@ import { MyCertificates } from "./pages/MyCertificates";
 import { VerifyCertificate } from "./pages/VerifyCertificate";
 import { CertificatePublic } from "./pages/CertificatePublic";
 import AcceptMentorInvite from "./pages/AcceptMentorInvite";
+import AdminMentorInvitations from "./pages/AdminMentorInvitations";
 
 const queryClient = new QueryClient();
 
@@ -83,6 +84,7 @@ const App = () => (
             <Route path="/admin/email-analytics" element={<ProtectedRoute requiredRole="admin"><AdminEmailAnalytics /></ProtectedRoute>} />
             <Route path="/admin/email-logs" element={<ProtectedRoute requiredRole="admin"><AdminEmailLogs /></ProtectedRoute>} />
             <Route path="/admin/news-curation" element={<ProtectedRoute requiredRole="admin"><AdminNewsCuration /></ProtectedRoute>} />
+            <Route path="/admin/mentor-invitations" element={<ProtectedRoute requiredRole="admin"><AdminMentorInvitations /></ProtectedRoute>} />
             <Route path="/admin/courses" element={<ProtectedRoute><AdminCourses /></ProtectedRoute>} />
             <Route path="/admin/courses/:courseId/build" element={<ProtectedRoute><AdminCourseBuilder /></ProtectedRoute>} />
             <Route path="/mentor/courses/new" element={<ProtectedRoute><CreateCourse /></ProtectedRoute>} />
