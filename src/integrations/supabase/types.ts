@@ -703,6 +703,38 @@ export type Database = {
           },
         ]
       }
+      external_course_prerequisites: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          title: string
+          url: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          title: string
+          url: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          title?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_course_prerequisites_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       idea_submissions: {
         Row: {
           created_at: string
