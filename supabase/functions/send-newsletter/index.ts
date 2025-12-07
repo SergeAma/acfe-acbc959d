@@ -23,6 +23,41 @@ interface NewsletterRequest {
   template_id: string;
 }
 
+const verifyAdminRole = async (req: Request): Promise<{ isAdmin: boolean; userId: string | null; error?: string }> => {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return { isAdmin: false, userId: null, error: 'Missing authorization header' };
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } }
+  });
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return { isAdmin: false, userId: null, error: 'Invalid or expired token' };
+  }
+
+  // Check admin role using service role client
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+  
+  const { data: roleData, error: roleError } = await adminClient
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id)
+    .eq('role', 'admin')
+    .maybeSingle();
+
+  if (roleError || !roleData) {
+    return { isAdmin: false, userId: user.id, error: 'User is not an admin' };
+  }
+
+  return { isAdmin: true, userId: user.id };
+};
+
 const replaceVariables = (content: string, recipient: Recipient): string => {
   let result = content;
   result = result.replace(/\{\{first_name\}\}/gi, recipient.first_name || 'Subscriber');
@@ -36,7 +71,6 @@ const addTrackingPixel = (content: string, logId: string, supabaseUrl: string): 
   const trackingPixelUrl = `${supabaseUrl}/functions/v1/email-tracking/open?id=${logId}`;
   const trackingPixel = `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;visibility:hidden;" alt="" />`;
   
-  // Insert tracking pixel before closing body tag, or at the end
   if (content.includes('</body>')) {
     return content.replace('</body>', `${trackingPixel}</body>`);
   }
@@ -45,12 +79,9 @@ const addTrackingPixel = (content: string, logId: string, supabaseUrl: string): 
 
 const wrapLinksWithTracking = (content: string, logId: string, supabaseUrl: string): string => {
   const trackingBaseUrl = `${supabaseUrl}/functions/v1/email-tracking/click?id=${logId}&url=`;
-  
-  // Match href attributes in anchor tags (but not tracking pixels or unsubscribe)
   const linkRegex = /<a\s+([^>]*href=["'])([^"'#][^"']*)["']([^>]*)>/gi;
   
   return content.replace(linkRegex, (match, before, url, after) => {
-    // Skip if it's already a tracking URL or an anchor link
     if (url.includes('email-tracking') || url.startsWith('#') || url.includes('unsubscribe')) {
       return match;
     }
@@ -66,6 +97,16 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Verify admin role
+  const { isAdmin, error: authError } = await verifyAdminRole(req);
+  if (!isAdmin) {
+    console.error("Authorization failed:", authError);
+    return new Response(
+      JSON.stringify({ error: authError || 'Unauthorized' }),
+      { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  }
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -73,7 +114,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { recipients, subject, html_content, template_id }: NewsletterRequest = await req.json();
 
-    console.log(`Sending newsletter to ${recipients.length} recipients with tracking enabled`);
+    console.log(`Admin authorized. Sending newsletter to ${recipients.length} recipients with tracking enabled`);
 
     const results = {
       sent: 0,
@@ -81,7 +122,6 @@ const handler = async (req: Request): Promise<Response> => {
       errors: [] as string[]
     };
 
-    // Send emails in batches to avoid rate limits
     const batchSize = 10;
     for (let i = 0; i < recipients.length; i += batchSize) {
       const batch = recipients.slice(i, i + batchSize);
@@ -91,7 +131,6 @@ const handler = async (req: Request): Promise<Response> => {
           const personalizedContent = replaceVariables(html_content, recipient);
           const personalizedSubject = replaceVariables(subject, recipient);
 
-          // First create the email log to get the ID for tracking
           const { data: logData, error: logError } = await supabase
             .from('email_logs')
             .insert({
@@ -110,7 +149,6 @@ const handler = async (req: Request): Promise<Response> => {
           const logId = logData.id;
           console.log(`Created email log with ID: ${logId} for ${recipient.email}`);
 
-          // Add tracking pixel and wrap links
           let trackedContent = addTrackingPixel(personalizedContent, logId, supabaseUrl);
           trackedContent = wrapLinksWithTracking(trackedContent, logId, supabaseUrl);
 
@@ -123,7 +161,6 @@ const handler = async (req: Request): Promise<Response> => {
 
           console.log(`Email sent to ${recipient.email}:`, emailResponse);
 
-          // Update the log status to sent
           await supabase
             .from('email_logs')
             .update({ 
@@ -136,7 +173,6 @@ const handler = async (req: Request): Promise<Response> => {
         } catch (error: any) {
           console.error(`Failed to send to ${recipient.email}:`, error);
           
-          // Log the failed email
           await supabase.from('email_logs').insert({
             contact_id: recipient.contact_id,
             template_id: template_id,
@@ -151,7 +187,6 @@ const handler = async (req: Request): Promise<Response> => {
         }
       }));
 
-      // Small delay between batches to respect rate limits
       if (i + batchSize < recipients.length) {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
