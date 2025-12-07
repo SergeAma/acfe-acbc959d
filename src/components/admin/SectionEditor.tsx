@@ -3,8 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { GripVertical, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { GripVertical, Plus, Trash2, ChevronDown, ChevronUp, Pencil, Save, X } from 'lucide-react';
 import { ContentItemEditor } from './ContentItemEditor';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -48,13 +49,17 @@ interface ContentItem {
 interface SectionEditorProps {
   section: Section;
   onDelete: () => void;
+  onUpdate?: (updatedSection: Section) => void;
 }
 
-export const SectionEditor = ({ section, onDelete }: SectionEditorProps) => {
+export const SectionEditor = ({ section, onDelete, onUpdate }: SectionEditorProps) => {
   const { toast } = useToast();
   const [contentItems, setContentItems] = useState<ContentItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(section.title);
+  const [savingTitle, setSavingTitle] = useState(false);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: section.id,
@@ -64,6 +69,32 @@ export const SectionEditor = ({ section, onDelete }: SectionEditorProps) => {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+  };
+
+  const handleSaveTitle = async () => {
+    if (!editedTitle.trim()) return;
+    setSavingTitle(true);
+
+    const { error } = await supabase
+      .from('course_sections')
+      .update({ title: editedTitle.trim() })
+      .eq('id', section.id);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update section title',
+        variant: 'destructive',
+      });
+    } else {
+      onUpdate?.({ ...section, title: editedTitle.trim() });
+      setEditingTitle(false);
+      toast({
+        title: 'Success',
+        description: 'Section title updated',
+      });
+    }
+    setSavingTitle(false);
   };
 
   useEffect(() => {
@@ -144,8 +175,49 @@ export const SectionEditor = ({ section, onDelete }: SectionEditorProps) => {
             <GripVertical className="h-5 w-5 text-muted-foreground" />
           </button>
           <div className="flex-1">
-            <CardTitle className="text-lg">{section.title}</CardTitle>
-            {section.description && (
+            {editingTitle ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  value={editedTitle}
+                  onChange={(e) => setEditedTitle(e.target.value)}
+                  className="h-8"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveTitle();
+                    if (e.key === 'Escape') {
+                      setEditingTitle(false);
+                      setEditedTitle(section.title);
+                    }
+                  }}
+                />
+                <Button onClick={handleSaveTitle} disabled={savingTitle || !editedTitle.trim()} size="sm" variant="ghost">
+                  <Save className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    setEditingTitle(false);
+                    setEditedTitle(section.title);
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 group">
+                <CardTitle className="text-lg">{section.title}</CardTitle>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
+                  onClick={() => setEditingTitle(true)}
+                >
+                  <Pencil className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+            {section.description && !editingTitle && (
               <p className="text-sm text-muted-foreground mt-1">{section.description}</p>
             )}
           </div>
