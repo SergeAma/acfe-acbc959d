@@ -20,7 +20,7 @@ import {
   Twitter,
   Facebook,
   Link as LinkIcon,
-  Download
+  Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
 import {
@@ -97,6 +97,25 @@ export const CertificatePublic = () => {
 
   const getShareUrl = () => {
     return `${window.location.origin}/certificate/${certificateId}`;
+  };
+
+  const addToLinkedIn = () => {
+    if (!certificateDetails) return;
+    const completionDateObj = new Date(certificateDetails.issued_at);
+    const year = completionDateObj.getFullYear();
+    const month = completionDateObj.getMonth() + 1;
+    
+    // LinkedIn Add to Profile URL for certifications
+    const linkedInUrl = new URL('https://www.linkedin.com/profile/add');
+    linkedInUrl.searchParams.set('startTask', 'CERTIFICATION_NAME');
+    linkedInUrl.searchParams.set('name', certificateDetails.course_title);
+    linkedInUrl.searchParams.set('organizationName', 'A Cloud for Everyone');
+    linkedInUrl.searchParams.set('issueYear', year.toString());
+    linkedInUrl.searchParams.set('issueMonth', month.toString());
+    linkedInUrl.searchParams.set('certUrl', getShareUrl());
+    linkedInUrl.searchParams.set('certId', certificateDetails.certificate_number);
+    
+    window.open(linkedInUrl.toString(), '_blank');
   };
 
   const shareToLinkedIn = () => {
@@ -303,37 +322,48 @@ export const CertificatePublic = () => {
 
               <Separator className="my-6" />
 
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <Badge variant="secondary" className="font-mono text-xs">
                   {certificateDetails.certificate_number}
                 </Badge>
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Share
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={shareToLinkedIn}>
-                      <Linkedin className="h-4 w-4 mr-2" />
-                      Share on LinkedIn
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={shareToTwitter}>
-                      <Twitter className="h-4 w-4 mr-2" />
-                      Share on X (Twitter)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={shareToFacebook}>
-                      <Facebook className="h-4 w-4 mr-2" />
-                      Share on Facebook
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={copyLink}>
-                      <LinkIcon className="h-4 w-4 mr-2" />
-                      Copy Link
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    onClick={addToLinkedIn} 
+                    size="sm"
+                    className="gap-2 bg-[#0077B5] hover:bg-[#006399] text-white"
+                  >
+                    <Linkedin className="h-4 w-4" />
+                    Add to LinkedIn
+                  </Button>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Share2 className="h-4 w-4 mr-2" />
+                        Share
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={shareToLinkedIn}>
+                        <Linkedin className="h-4 w-4 mr-2" />
+                        Share on LinkedIn
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={shareToTwitter}>
+                        <Twitter className="h-4 w-4 mr-2" />
+                        Share on X (Twitter)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={shareToFacebook}>
+                        <Facebook className="h-4 w-4 mr-2" />
+                        Share on Facebook
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={copyLink}>
+                        <LinkIcon className="h-4 w-4 mr-2" />
+                        Copy Link
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             </CardContent>
           </Card>
