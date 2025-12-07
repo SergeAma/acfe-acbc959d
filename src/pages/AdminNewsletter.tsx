@@ -229,7 +229,7 @@ export const AdminNewsletter = () => {
 <body>
   <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #1f2937;">
-      <h1 style="font-size: 24px; font-weight: 700; color: #1f2937; margin: 0;">Spectrogram Consulting</h1>
+      <h1 style="font-size: 24px; font-weight: 700; color: #1f2937; margin: 0;">A Cloud for Everyone</h1>
       <p style="color: #6b7280; font-size: 14px; margin: 4px 0 0 0;">${newsletterData.subject || 'Weekly Africa Tech News Digest'}</p>
     </div>
     
@@ -239,7 +239,7 @@ export const AdminNewsletter = () => {
     
     <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e5e5; color: #6b7280; font-size: 12px;">
       <p style="margin: 0;">You're receiving this because you subscribed to our newsletter.</p>
-      <p style="margin: 8px 0 0 0;">© ${currentYear} Spectrogram Consulting. All rights reserved.</p>
+      <p style="margin: 8px 0 0 0;">© ${currentYear} A Cloud for Everyone. All rights reserved.</p>
       <a href="#" style="color: #6b7280; text-decoration: underline;">Unsubscribe here</a>
     </div>
   </div>
