@@ -36,6 +36,9 @@ export const Navbar = () => {
           <NavLink to="/jobs" className="text-sm font-bold text-foreground hover:text-primary transition-colors">
             Jobs
           </NavLink>
+          <NavLink to="/startups" className="text-sm font-bold text-foreground hover:text-primary transition-colors">
+            Startups
+          </NavLink>
 
           {user ? (
             <DropdownMenu>
