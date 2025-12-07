@@ -6,8 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { FileText, Video, File, Trash2, Save, Loader2 } from 'lucide-react';
+import { FileText, Video, File, Trash2, Save, Loader2, GripVertical } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface ContentItem {
   id: string;
@@ -38,6 +40,16 @@ export const ContentItemEditor = ({ item, onDelete, onUpdate }: ContentItemEdito
     duration_minutes: item.duration_minutes || 0,
     drip_delay_days: item.drip_delay_days || 0,
   });
+
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   const getIcon = () => {
     switch (item.content_type) {
@@ -179,9 +191,12 @@ export const ContentItemEditor = ({ item, onDelete, onUpdate }: ContentItemEdito
   };
 
   return (
-    <Card>
+    <Card ref={setNodeRef} style={style}>
       <CardContent className="pt-6">
         <div className="flex items-start gap-3">
+          <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing mt-1">
+            <GripVertical className="h-4 w-4 text-muted-foreground" />
+          </button>
           <div className="mt-1">{getIcon()}</div>
           <div className="flex-1 space-y-4">
             <div className="flex items-center justify-between">

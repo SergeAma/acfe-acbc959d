@@ -4,11 +4,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { GripVertical, Plus, Trash2, ChevronDown, ChevronUp, Pencil, Save, X } from 'lucide-react';
 import { ContentItemEditor } from './ContentItemEditor';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,10 +76,20 @@ export const SectionEditor = ({ section, onDelete, onUpdate }: SectionEditorProp
   const [editingTitle, setEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(section.title);
   const [savingTitle, setSavingTitle] = useState(false);
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [editedDescription, setEditedDescription] = useState(section.description || '');
+  const [savingDescription, setSavingDescription] = useState(false);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: section.id,
   });
+
+  const contentSensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -95,6 +121,53 @@ export const SectionEditor = ({ section, onDelete, onUpdate }: SectionEditorProp
       });
     }
     setSavingTitle(false);
+  };
+
+  const handleSaveDescription = async () => {
+    setSavingDescription(true);
+
+    const { error } = await supabase
+      .from('course_sections')
+      .update({ description: editedDescription.trim() || null })
+      .eq('id', section.id);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update section description',
+        variant: 'destructive',
+      });
+    } else {
+      onUpdate?.({ ...section, description: editedDescription.trim() || null });
+      setEditingDescription(false);
+      toast({
+        title: 'Success',
+        description: 'Section description updated',
+      });
+    }
+    setSavingDescription(false);
+  };
+
+  const handleContentDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = contentItems.findIndex((c) => c.id === active.id);
+      const newIndex = contentItems.findIndex((c) => c.id === over.id);
+
+      const newItems = arrayMove(contentItems, oldIndex, newIndex);
+      setContentItems(newItems);
+
+      // Update sort_order in database
+      const updates = newItems.map((item, index) =>
+        supabase
+          .from('course_content')
+          .update({ sort_order: index })
+          .eq('id', item.id)
+      );
+
+      await Promise.all(updates);
+    }
   };
 
   useEffect(() => {
@@ -217,8 +290,45 @@ export const SectionEditor = ({ section, onDelete, onUpdate }: SectionEditorProp
                 </Button>
               </div>
             )}
-            {section.description && !editingTitle && (
-              <p className="text-sm text-muted-foreground mt-1">{section.description}</p>
+            {!editingTitle && (
+              editingDescription ? (
+                <div className="flex items-start gap-2 mt-1">
+                  <Textarea
+                    value={editedDescription}
+                    onChange={(e) => setEditedDescription(e.target.value)}
+                    className="text-sm min-h-[60px]"
+                    placeholder="Add a section description..."
+                    autoFocus
+                  />
+                  <Button onClick={handleSaveDescription} disabled={savingDescription} size="sm" variant="ghost">
+                    <Save className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      setEditingDescription(false);
+                      setEditedDescription(section.description || '');
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 group mt-1">
+                  <p className="text-sm text-muted-foreground">
+                    {section.description || 'No description'}
+                  </p>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
+                    onClick={() => setEditingDescription(true)}
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+                </div>
+              )
             )}
           </div>
           <Badge variant="secondary">{contentItems.length} items</Badge>
@@ -260,16 +370,20 @@ export const SectionEditor = ({ section, onDelete, onUpdate }: SectionEditorProp
             ) : (
               <>
                 {contentItems.length > 0 && (
-                  <div className="space-y-4 mb-4">
-                    {contentItems.map((item) => (
-                      <ContentItemEditor
-                        key={item.id}
-                        item={item}
-                        onDelete={() => handleDeleteContent(item.id)}
-                        onUpdate={fetchContentItems}
-                      />
-                    ))}
-                  </div>
+                  <DndContext sensors={contentSensors} collisionDetection={closestCenter} onDragEnd={handleContentDragEnd}>
+                    <SortableContext items={contentItems.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+                      <div className="space-y-4 mb-4">
+                        {contentItems.map((item) => (
+                          <ContentItemEditor
+                            key={item.id}
+                            item={item}
+                            onDelete={() => handleDeleteContent(item.id)}
+                            onUpdate={fetchContentItems}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
                 )}
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => handleCreateContent('text')}>
