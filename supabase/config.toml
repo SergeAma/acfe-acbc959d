@@ -4,25 +4,25 @@ project_id = "mefwbcbnctqjxrwldmjm"
 verify_jwt = false
 
 [functions.automation-engine]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-idea-confirmation]
 verify_jwt = false
 
 [functions.send-newsletter]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-mentor-approval-email]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-test-email]
-verify_jwt = false
+verify_jwt = true
 
 [functions.email-tracking]
 verify_jwt = false
 
 [functions.send-mentor-rejection-email]
-verify_jwt = false
+verify_jwt = true
 
 [functions.process-scheduled-newsletters]
 verify_jwt = false

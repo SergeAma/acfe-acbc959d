@@ -15,11 +15,55 @@ interface MentorRejectionRequest {
   first_name: string;
 }
 
+const verifyAdminRole = async (req: Request): Promise<{ isAdmin: boolean; userId: string | null; error?: string }> => {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return { isAdmin: false, userId: null, error: 'Missing authorization header' };
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } }
+  });
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return { isAdmin: false, userId: null, error: 'Invalid or expired token' };
+  }
+
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+  
+  const { data: roleData, error: roleError } = await adminClient
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id)
+    .eq('role', 'admin')
+    .maybeSingle();
+
+  if (roleError || !roleData) {
+    return { isAdmin: false, userId: user.id, error: 'User is not an admin' };
+  }
+
+  return { isAdmin: true, userId: user.id };
+};
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("Mentor rejection email function called");
   
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Verify admin role
+  const { isAdmin, error: authError } = await verifyAdminRole(req);
+  if (!isAdmin) {
+    console.error("Authorization failed:", authError);
+    return new Response(
+      JSON.stringify({ error: authError || 'Unauthorized' }),
+      { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
   }
 
   try {
@@ -29,9 +73,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { user_id, email, first_name }: MentorRejectionRequest = await req.json();
 
-    console.log(`Sending mentor rejection email to ${email}`);
+    console.log(`Admin authorized. Sending mentor rejection email to ${email}`);
 
-    // Fetch the mentor rejection template
     const { data: template, error: templateError } = await supabase
       .from('email_templates')
       .select('*')
@@ -43,7 +86,6 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Mentor Rejection template not found");
     }
 
-    // Replace variables in template
     let htmlContent = template.html_content;
     let subject = template.subject;
     
@@ -62,7 +104,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Mentor rejection email sent:", emailResponse);
 
-    // Log the email
     await supabase.from('email_logs').insert({
       subject: subject,
       status: 'sent',
