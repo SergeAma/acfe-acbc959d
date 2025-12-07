@@ -214,6 +214,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .update({ linkedin_url: linkedinUrl })
           .eq('id', data.user.id);
       }
+
+      // Send welcome email automatically
+      if (data.user) {
+        const firstName = fullName?.split(' ')[0] || 'there';
+        try {
+          await supabase.functions.invoke('send-welcome-email', {
+            body: {
+              email: email,
+              first_name: firstName,
+              role: 'student',
+            },
+          });
+        } catch (emailError) {
+          console.error('Failed to send welcome email:', emailError);
+        }
+      }
     }
 
     return { error };

@@ -114,7 +114,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "A Cloud for Everyone <onboarding@resend.dev>",
+        from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
         to: [email],
         subject: "We've Received Your Idea Submission!",
         html: `

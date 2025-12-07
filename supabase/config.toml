@@ -26,3 +26,12 @@ verify_jwt = false
 
 [functions.process-scheduled-newsletters]
 verify_jwt = false
+
+[functions.send-welcome-email]
+verify_jwt = false
+
+[functions.send-mentor-request-confirmation]
+verify_jwt = false
+
+[functions.send-newsletter-welcome]
+verify_jwt = false
