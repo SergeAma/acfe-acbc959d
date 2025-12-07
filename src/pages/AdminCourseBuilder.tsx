@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { SectionEditor } from '@/components/admin/SectionEditor';
 import {
@@ -273,6 +273,37 @@ export const AdminCourseBuilder = () => {
     });
   };
 
+  const handleMoveContent = async (contentId: string, fromSectionId: string, toSectionId: string) => {
+    // Get the count of items in the target section to set sort_order
+    const { data: targetItems } = await supabase
+      .from('course_content')
+      .select('id')
+      .eq('section_id', toSectionId);
+
+    const newSortOrder = targetItems?.length || 0;
+
+    const { error } = await supabase
+      .from('course_content')
+      .update({ 
+        section_id: toSectionId,
+        sort_order: newSortOrder 
+      })
+      .eq('id', contentId);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to move content',
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Content moved to new section',
+      });
+    }
+  };
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -362,10 +393,16 @@ export const AdminCourseBuilder = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-8 max-w-5xl">
-        <Button variant="ghost" onClick={() => navigate('/admin/courses')} className="mb-6">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Courses
-        </Button>
+        <div className="flex justify-between items-center mb-6">
+          <Button variant="ghost" onClick={() => navigate('/admin/courses')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Courses
+          </Button>
+          <Button variant="outline" onClick={() => navigate(`/courses/${courseId}`)}>
+            <Eye className="h-4 w-4 mr-2" />
+            Preview Course
+          </Button>
+        </div>
 
         <div className="mb-8">
           {editingTitle ? (
@@ -546,6 +583,8 @@ export const AdminCourseBuilder = () => {
                     onDelete={() => handleDeleteSection(section.id)}
                     onUpdate={handleSectionUpdate}
                     onDuplicate={() => handleDuplicateSection(section.id)}
+                    allSections={sections}
+                    onMoveContent={handleMoveContent}
                   />
                 ))}
               </div>
