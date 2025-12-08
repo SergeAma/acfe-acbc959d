@@ -2,7 +2,8 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Crop, RotateCcw, RotateCw, Loader2, ZoomIn } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Crop, RotateCcw, RotateCw, Loader2, ZoomIn, Eye } from 'lucide-react';
 import ReactCrop, { type Crop as CropType, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { useToast } from '@/hooks/use-toast';
@@ -13,6 +14,7 @@ interface ThumbnailCropDialogProps {
   imgSrc: string;
   onSave: (croppedBlob: Blob) => void;
   onCancel: () => void;
+  courseTitle?: string;
 }
 
 function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: number) {
@@ -29,15 +31,18 @@ export const ThumbnailCropDialog = ({
   imgSrc,
   onSave,
   onCancel,
+  courseTitle = 'Course Title',
 }: ThumbnailCropDialogProps) => {
   const { toast } = useToast();
   const imgRef = useRef<HTMLImageElement>(null);
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const [crop, setCrop] = useState<CropType>();
   const [completedCrop, setCompletedCrop] = useState<CropType>();
   const [zoom, setZoom] = useState([1]);
   const [rotation, setRotation] = useState([0]);
   const [saving, setSaving] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   // Aspect ratio for thumbnails (16:9)
   const ASPECT_RATIO = 16 / 9;
@@ -50,8 +55,55 @@ export const ThumbnailCropDialog = ({
       setRotation([0]);
       setSaving(false);
       setImageError(false);
+      setPreviewUrl(null);
     }
   }, [open]);
+
+  // Update preview when crop changes
+  useEffect(() => {
+    if (!imgRef.current || !completedCrop) return;
+
+    const image = imgRef.current;
+    const canvas = document.createElement('canvas');
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    
+    const pixelCrop = {
+      x: (completedCrop.x / 100) * image.width * scaleX,
+      y: (completedCrop.y / 100) * image.height * scaleY,
+      width: (completedCrop.width / 100) * image.width * scaleX,
+      height: (completedCrop.height / 100) * image.height * scaleY,
+    };
+    
+    const outputWidth = 400;
+    const outputHeight = 225;
+    canvas.width = outputWidth;
+    canvas.height = outputHeight;
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) return;
+
+    ctx.save();
+    ctx.translate(outputWidth / 2, outputHeight / 2);
+    ctx.rotate((rotation[0] * Math.PI) / 180);
+    ctx.scale(zoom[0], zoom[0]);
+    ctx.translate(-outputWidth / 2, -outputHeight / 2);
+    
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      outputWidth,
+      outputHeight
+    );
+    ctx.restore();
+
+    setPreviewUrl(canvas.toDataURL('image/jpeg', 0.8));
+  }, [completedCrop, zoom, rotation]);
 
   const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const { width, height } = e.currentTarget;
@@ -157,7 +209,7 @@ export const ThumbnailCropDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Crop className="h-5 w-5" />
@@ -165,84 +217,129 @@ export const ThumbnailCropDialog = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 flex justify-center bg-muted rounded-lg p-4 min-h-[300px]">
-              {imgSrc && (
-                <div style={{ transform: `scale(${zoom[0]}) rotate(${rotation[0]}deg)` }}>
-                  <ReactCrop
-                    crop={crop}
-                    onChange={(_, percentCrop) => setCrop(percentCrop)}
-                    onComplete={(_, percentCrop) => setCompletedCrop(percentCrop)}
-                    aspect={ASPECT_RATIO}
+        <div className="grid md:grid-cols-[1fr,auto] gap-6">
+          {/* Left side: Crop area */}
+          <div className="space-y-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 flex justify-center bg-muted rounded-lg p-4 min-h-[280px]">
+                {imgSrc && (
+                  <div style={{ transform: `scale(${zoom[0]}) rotate(${rotation[0]}deg)` }}>
+                    <ReactCrop
+                      crop={crop}
+                      onChange={(_, percentCrop) => setCrop(percentCrop)}
+                      onComplete={(_, percentCrop) => setCompletedCrop(percentCrop)}
+                      aspect={ASPECT_RATIO}
+                    >
+                      <img
+                        ref={imgRef}
+                        alt="Crop preview"
+                        src={imgSrc}
+                        onLoad={onImageLoad}
+                        onError={onImageError}
+                        style={{ maxHeight: '350px', maxWidth: '100%' }}
+                      />
+                    </ReactCrop>
+                  </div>
+                )}
+              </div>
+              
+              <div className="w-full md:w-40 space-y-4">
+                <div className="flex justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setRotation([rotation[0] - 90])}
+                    title="Rotate left"
                   >
-                    <img
-                      ref={imgRef}
-                      alt="Crop preview"
-                      src={imgSrc}
-                      onLoad={onImageLoad}
-                      onError={onImageError}
-                      style={{ maxHeight: '400px', maxWidth: '100%' }}
-                    />
-                  </ReactCrop>
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setRotation([rotation[0] + 90])}
+                    title="Rotate right"
+                  >
+                    <RotateCw className="h-4 w-4" />
+                  </Button>
                 </div>
-              )}
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <ZoomIn className="h-4 w-4" />
+                    Zoom
+                  </label>
+                  <Slider
+                    value={zoom}
+                    onValueChange={setZoom}
+                    min={0.5}
+                    max={2}
+                    step={0.1}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Straighten</label>
+                  <Slider
+                    value={rotation}
+                    onValueChange={setRotation}
+                    min={-45}
+                    max={45}
+                    step={1}
+                  />
+                </div>
+                
+                <Button variant="ghost" size="sm" onClick={resetAdjustments} className="w-full">
+                  Reset
+                </Button>
+              </div>
             </div>
-            
-            <div className="w-full md:w-48 space-y-6">
-              <div className="flex justify-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setRotation([rotation[0] - 90])}
-                  title="Rotate left"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setRotation([rotation[0] + 90])}
-                  title="Rotate right"
-                >
-                  <RotateCw className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <ZoomIn className="h-4 w-4" />
-                  Zoom
-                </label>
-                <Slider
-                  value={zoom}
-                  onValueChange={setZoom}
-                  min={0.5}
-                  max={2}
-                  step={0.1}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Straighten</label>
-                <Slider
-                  value={rotation}
-                  onValueChange={setRotation}
-                  min={-45}
-                  max={45}
-                  step={1}
-                />
-              </div>
-              
-              <Button variant="ghost" size="sm" onClick={resetAdjustments} className="w-full">
-                Reset
-              </Button>
+          </div>
 
-              <div className="text-xs text-muted-foreground text-center pt-4 border-t">
-                <p className="font-medium mb-1">16:9 aspect ratio</p>
-                <p>Drag the crop area to select the best portion of your image</p>
-              </div>
+          {/* Right side: Card preview */}
+          <div className="md:w-64 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Eye className="h-4 w-4" />
+              Card Preview
             </div>
+            <Card className="overflow-hidden shadow-lg">
+              <div className="aspect-video bg-muted overflow-hidden">
+                {previewUrl ? (
+                  <img 
+                    src={previewUrl} 
+                    alt="Card preview" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+                    Preview loading...
+                  </div>
+                )}
+              </div>
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-sm line-clamp-2">{courseTitle}</CardTitle>
+                <div className="flex gap-1.5 mt-1.5">
+                  <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                    Category
+                  </span>
+                  <span className="text-[10px] bg-secondary/10 text-secondary-foreground px-1.5 py-0.5 rounded">
+                    Level
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="py-2 px-4">
+                <p className="text-[10px] text-muted-foreground line-clamp-2">
+                  Course description preview text...
+                </p>
+                <div className="mt-2">
+                  <div className="h-7 bg-primary rounded text-[10px] flex items-center justify-center text-primary-foreground font-medium">
+                    View Course
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <p className="text-xs text-muted-foreground text-center">
+              This is how your thumbnail will appear on course cards
+            </p>
           </div>
         </div>
 

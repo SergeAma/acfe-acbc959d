@@ -7,12 +7,14 @@ interface ThumbnailDropzoneProps {
   currentThumbnail?: string | null;
   onUpload: (file: File) => Promise<void>;
   uploading?: boolean;
+  courseTitle?: string;
 }
 
 export const ThumbnailDropzone = ({ 
   currentThumbnail, 
   onUpload, 
-  uploading = false 
+  uploading = false,
+  courseTitle,
 }: ThumbnailDropzoneProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
@@ -166,6 +168,7 @@ export const ThumbnailDropzone = ({
           imgSrc={selectedImageSrc}
           onSave={handleCropSave}
           onCancel={handleCropCancel}
+          courseTitle={courseTitle}
         />
       )}
     </>

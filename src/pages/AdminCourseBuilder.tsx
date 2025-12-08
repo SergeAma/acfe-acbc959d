@@ -555,6 +555,7 @@ export const AdminCourseBuilder = () => {
                 currentThumbnail={course?.thumbnail_url}
                 onUpload={handleThumbnailUpload}
                 uploading={uploadingThumbnail}
+                courseTitle={course?.title}
               />
             </div>
           </div>
