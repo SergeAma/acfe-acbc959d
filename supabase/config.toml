@@ -38,3 +38,12 @@ verify_jwt = false
 
 [functions.send-idea-status-email]
 verify_jwt = false
+
+[functions.send-weekly-newsletter]
+verify_jwt = false
+
+[functions.send-certificate-email]
+verify_jwt = false
+
+[functions.send-mentor-invitation]
+verify_jwt = false
