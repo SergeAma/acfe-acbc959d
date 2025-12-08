@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { SectionEditor } from '@/components/admin/SectionEditor';
+import { ThumbnailDropzone } from '@/components/admin/ThumbnailDropzone';
 import { CoursePrerequisites } from '@/components/admin/CoursePrerequisites';
 import {
   DndContext,
@@ -247,8 +248,7 @@ export const AdminCourseBuilder = () => {
     });
   };
 
-  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleThumbnailUpload = async (file: File) => {
     if (!file || !courseId) return;
 
     // Check if it's an image file
@@ -603,38 +603,13 @@ export const AdminCourseBuilder = () => {
 
           {/* Thumbnail Upload */}
           <div className="mt-6">
-            <Label className="text-sm font-medium mb-2 block">Course Thumbnail</Label>
-            <div className="flex items-start gap-4">
-              {course?.thumbnail_url ? (
-                <img 
-                  src={course.thumbnail_url} 
-                  alt="Course thumbnail" 
-                  className="w-48 h-32 object-cover rounded-lg border"
-                />
-              ) : (
-                <div className="w-48 h-32 bg-muted rounded-lg border flex items-center justify-center">
-                  <Image className="h-8 w-8 text-muted-foreground" />
-                </div>
-              )}
-              <div>
-                <input
-                  type="file"
-                  id="thumbnail-upload"
-                  accept="image/*"
-                  onChange={handleThumbnailUpload}
-                  className="hidden"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => document.getElementById('thumbnail-upload')?.click()}
-                  disabled={uploadingThumbnail}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  {uploadingThumbnail ? 'Uploading...' : course?.thumbnail_url ? 'Change Thumbnail' : 'Upload Thumbnail'}
-                </Button>
-                <p className="text-xs text-muted-foreground mt-2">Recommended: 800x450px (16:9)</p>
-              </div>
+            <label className="text-sm font-medium mb-3 block">Course Thumbnail</label>
+            <div className="max-w-md">
+              <ThumbnailDropzone
+                currentThumbnail={course?.thumbnail_url}
+                onUpload={handleThumbnailUpload}
+                uploading={uploadingThumbnail}
+              />
             </div>
           </div>
         </div>
