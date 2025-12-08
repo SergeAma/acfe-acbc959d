@@ -26,8 +26,15 @@ interface Course {
   category: string;
   is_published: boolean;
   created_at: string;
+  thumbnail_url: string | null;
   sections: { count: number }[];
 }
+
+// Helper to strip HTML tags for plain text display
+const stripHtml = (html: string | null) => {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, '');
+};
 
 export const AdminCourses = () => {
   const navigate = useNavigate();
@@ -122,7 +129,20 @@ export const AdminCourses = () => {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {courses.map((course) => (
-              <Card key={course.id} className="hover:shadow-lg transition-shadow">
+              <Card key={course.id} className="hover:shadow-lg transition-shadow overflow-hidden">
+                {course.thumbnail_url ? (
+                  <div className="aspect-video w-full overflow-hidden">
+                    <img 
+                      src={course.thumbnail_url} 
+                      alt={course.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="aspect-video w-full bg-muted flex items-center justify-center">
+                    <BookOpen className="h-12 w-12 text-muted-foreground/50" />
+                  </div>
+                )}
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-xl">{course.title}</CardTitle>
@@ -133,7 +153,7 @@ export const AdminCourses = () => {
                   <p className="text-sm text-muted-foreground">{course.category}</p>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm mb-4 line-clamp-2">{course.description}</p>
+                  <p className="text-sm mb-4 line-clamp-2">{stripHtml(course.description)}</p>
                   <div className="text-xs text-muted-foreground mb-4">
                     {course.sections[0]?.count || 0} sections
                   </div>
