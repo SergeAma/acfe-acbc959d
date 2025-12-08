@@ -205,53 +205,112 @@ export const AdminCourseBuilder = () => {
     setSavingDescription(false);
   };
 
+  const convertImageToJpeg = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        // Scale down if necessary
+        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+          const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context'));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('Failed to convert image'));
+            }
+          },
+          'image/jpeg',
+          0.85
+        );
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !courseId) return;
 
-    setUploadingThumbnail(true);
-
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${courseId}-thumbnail.${fileExt}`;
-    const filePath = `thumbnails/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('course-files')
-      .upload(filePath, file, { upsert: true });
-
-    if (uploadError) {
+    // Check if it's an image file
+    if (!file.type.startsWith('image/')) {
       toast({
         title: 'Error',
-        description: 'Failed to upload thumbnail',
+        description: 'Please upload an image file',
         variant: 'destructive',
       });
-      setUploadingThumbnail(false);
       return;
     }
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('course-files')
-      .getPublicUrl(filePath);
+    setUploadingThumbnail(true);
 
-    const { error: updateError } = await supabase
-      .from('courses')
-      .update({ thumbnail_url: publicUrl })
-      .eq('id', courseId);
+    try {
+      // Convert any image format to JPEG for consistency
+      const convertedBlob = await convertImageToJpeg(file);
+      const fileName = `${courseId}-thumbnail.jpg`;
+      const filePath = `thumbnails/${fileName}`;
 
-    if (updateError) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update course thumbnail',
-        variant: 'destructive',
-      });
-    } else {
-      setCourse(prev => prev ? { ...prev, thumbnail_url: publicUrl } : null);
+      const { error: uploadError } = await supabase.storage
+        .from('course-files')
+        .upload(filePath, convertedBlob, { 
+          upsert: true,
+          contentType: 'image/jpeg'
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('course-files')
+        .getPublicUrl(filePath);
+
+      // Add cache-busting query param to force refresh
+      const urlWithCacheBust = `${publicUrl}?t=${Date.now()}`;
+
+      const { error: updateError } = await supabase
+        .from('courses')
+        .update({ thumbnail_url: urlWithCacheBust })
+        .eq('id', courseId);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      setCourse(prev => prev ? { ...prev, thumbnail_url: urlWithCacheBust } : null);
       toast({
         title: 'Success',
         description: 'Thumbnail uploaded',
       });
+    } catch (error) {
+      console.error('Thumbnail upload error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to upload thumbnail. Please try a different image.',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingThumbnail(false);
     }
-    setUploadingThumbnail(false);
   };
 
   const handleSectionUpdate = (updatedSection: Section) => {
