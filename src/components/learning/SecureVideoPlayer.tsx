@@ -7,6 +7,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import {
   Tooltip,
@@ -25,6 +27,7 @@ import {
   Bookmark,
   SkipBack,
   SkipForward,
+  Check,
 } from 'lucide-react';
 
 interface SecureVideoPlayerProps {
@@ -36,6 +39,13 @@ interface SecureVideoPlayerProps {
 }
 
 const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+const VIDEO_QUALITIES = [
+  { label: 'Auto', value: 'auto' },
+  { label: '1080p', value: '1080' },
+  { label: '720p', value: '720' },
+  { label: '480p', value: '480' },
+  { label: '360p', value: '360' },
+];
 
 export const SecureVideoPlayer = ({
   videoUrl,
@@ -58,6 +68,7 @@ export const SecureVideoPlayer = ({
   const [showControls, setShowControls] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [hasRestoredPosition, setHasRestoredPosition] = useState(false);
+  const [videoQuality, setVideoQuality] = useState('auto');
 
   // Load saved progress on mount
   useEffect(() => {
@@ -209,6 +220,12 @@ export const SecureVideoPlayer = ({
     if (videoRef.current) {
       videoRef.current.playbackRate = speed;
     }
+  };
+
+  const handleQualityChange = (quality: string) => {
+    setVideoQuality(quality);
+    // Note: Actual quality switching requires HLS/DASH streaming with multiple quality sources
+    // This sets the preference for when streaming is available
   };
 
   const toggleFullscreen = async () => {
@@ -494,10 +511,30 @@ export const SecureVideoPlayer = ({
                   </TooltipTrigger>
                   <TooltipContent>Settings</TooltipContent>
                 </Tooltip>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => handleSpeedChange(1)}>
-                    Reset speed to 1x
-                  </DropdownMenuItem>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel>Quality</DropdownMenuLabel>
+                  {VIDEO_QUALITIES.map((quality) => (
+                    <DropdownMenuItem
+                      key={quality.value}
+                      onClick={() => handleQualityChange(quality.value)}
+                      className="flex items-center justify-between"
+                    >
+                      {quality.label}
+                      {videoQuality === quality.value && <Check className="h-4 w-4" />}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Speed</DropdownMenuLabel>
+                  {PLAYBACK_SPEEDS.map((speed) => (
+                    <DropdownMenuItem
+                      key={speed}
+                      onClick={() => handleSpeedChange(speed)}
+                      className="flex items-center justify-between"
+                    >
+                      {speed}x
+                      {playbackSpeed === speed && <Check className="h-4 w-4" />}
+                    </DropdownMenuItem>
+                  ))}
                 </DropdownMenuContent>
               </DropdownMenu>
 
