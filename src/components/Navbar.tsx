@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, BookOpen, Library, Shield, Instagram, Linkedin } from "lucide-react";
+import { LogOut, Instagram, Linkedin, Menu, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,29 +17,34 @@ import acfeLogo from "@/assets/acfe-logo.png";
 
 export const Navbar = () => {
   const { user, profile, signOut } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const navLinks = [
+    { to: "/home", label: "Home" },
+    { to: "/partners", label: "Partners" },
+    { to: "/jobs", label: "Jobs" },
+    { to: "/startups", label: "Startups" },
+  ];
 
   return (
     <nav className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
-      <div className="container mx-auto px-6 h-20 flex items-center justify-between">
+      <div className="container mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
         {/* Logo - Top Left */}
-        <Link to="/home" className="flex items-center hover:opacity-80 transition-opacity">
-          <img src={acfeLogo} alt="A Cloud for Everyone" className="h-24 w-auto" />
+        <Link to="/home" className="flex items-center hover:opacity-80 transition-opacity flex-shrink-0">
+          <img src={acfeLogo} alt="A Cloud for Everyone" className="h-16 sm:h-24 w-auto" />
         </Link>
 
-        {/* Navigation Tabs - Top Right */}
-        <div className="flex items-center gap-8">
-          <NavLink to="/home" className="text-sm font-bold text-foreground hover:text-primary transition-colors">
-            Home
-          </NavLink>
-          <NavLink to="/partners" className="text-sm font-bold text-foreground hover:text-primary transition-colors">
-            Partners
-          </NavLink>
-          <NavLink to="/jobs" className="text-sm font-bold text-foreground hover:text-primary transition-colors">
-            Jobs
-          </NavLink>
-          <NavLink to="/startups" className="text-sm font-bold text-foreground hover:text-primary transition-colors">
-            Startups
-          </NavLink>
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex items-center gap-6 lg:gap-8">
+          {navLinks.map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              className="text-sm font-bold text-foreground hover:text-primary transition-colors"
+            >
+              {link.label}
+            </NavLink>
+          ))}
 
           {user ? (
             <DropdownMenu>
@@ -50,7 +56,7 @@ export const Navbar = () => {
                     frame={profile?.profile_frame || 'none'}
                     size="sm"
                   />
-                  <span className="hidden sm:inline">Account</span>
+                  <span className="hidden lg:inline">Account</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-popover z-[100]">
@@ -90,23 +96,138 @@ export const Navbar = () => {
             </Link>
           )}
 
-          <button
-            onClick={() => window.open('https://www.instagram.com/acloudforeveryone/', '_blank', 'noopener,noreferrer')}
-            className="text-foreground hover:text-primary transition-colors"
-            aria-label="Instagram"
-          >
-            <Instagram className="h-5 w-5" />
-          </button>
-          <a
-            href="https://www.linkedin.com/company/a-cloud-for-everyone"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-foreground hover:text-primary transition-colors"
-          >
-            <Linkedin className="h-5 w-5" />
-          </a>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => window.open('https://www.instagram.com/acloudforeveryone/', '_blank', 'noopener,noreferrer')}
+              className="text-foreground hover:text-primary transition-colors"
+              aria-label="Instagram"
+            >
+              <Instagram className="h-5 w-5" />
+            </button>
+            <a
+              href="https://www.linkedin.com/company/a-cloud-for-everyone"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-primary transition-colors"
+            >
+              <Linkedin className="h-5 w-5" />
+            </a>
+          </div>
         </div>
+
+        {/* Mobile Menu Button */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="md:hidden p-2 text-foreground hover:text-primary transition-colors"
+          aria-label="Toggle menu"
+        >
+          {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
       </div>
+
+      {/* Mobile Navigation Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-border bg-background">
+          <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
+            {navLinks.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                className="text-sm font-bold text-foreground hover:text-primary transition-colors py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {link.label}
+              </NavLink>
+            ))}
+
+            {user ? (
+              <>
+                <Link
+                  to="/dashboard"
+                  className="text-sm font-bold text-foreground hover:text-primary transition-colors py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                {profile?.role === "student" && (
+                  <Link
+                    to="/courses"
+                    className="text-sm font-bold text-foreground hover:text-primary transition-colors py-2"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Browse Courses
+                  </Link>
+                )}
+                {(profile?.role === "mentor" || profile?.role === "admin") && (
+                  <Link
+                    to="/admin/courses"
+                    className="text-sm font-bold text-foreground hover:text-primary transition-colors py-2"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Manage Courses
+                  </Link>
+                )}
+                {profile?.role === "admin" && (
+                  <Link
+                    to="/admin"
+                    className="text-sm font-bold text-foreground hover:text-primary transition-colors py-2"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Admin Panel
+                  </Link>
+                )}
+                <Link
+                  to="/profile"
+                  className="text-sm font-bold text-foreground hover:text-primary transition-colors py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Profile Settings
+                </Link>
+                <button
+                  onClick={() => {
+                    signOut();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-sm font-bold text-foreground hover:text-primary transition-colors py-2 text-left flex items-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/auth"
+                className="text-sm font-bold text-foreground hover:text-primary transition-colors py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Account
+              </Link>
+            )}
+
+            <div className="flex items-center gap-4 pt-2 border-t border-border">
+              <button
+                onClick={() => {
+                  window.open('https://www.instagram.com/acloudforeveryone/', '_blank', 'noopener,noreferrer');
+                  setMobileMenuOpen(false);
+                }}
+                className="text-foreground hover:text-primary transition-colors"
+                aria-label="Instagram"
+              >
+                <Instagram className="h-5 w-5" />
+              </button>
+              <a
+                href="https://www.linkedin.com/company/a-cloud-for-everyone"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-foreground hover:text-primary transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Linkedin className="h-5 w-5" />
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };
