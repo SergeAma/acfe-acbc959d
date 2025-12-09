@@ -780,6 +780,60 @@ export type Database = {
         }
         Relationships: []
       }
+      learner_analytics: {
+        Row: {
+          completed: boolean | null
+          content_id: string
+          created_at: string | null
+          drop_off_point_seconds: number | null
+          enrollment_id: string
+          id: string
+          last_position_seconds: number | null
+          total_time_spent_seconds: number | null
+          updated_at: string | null
+          view_count: number | null
+        }
+        Insert: {
+          completed?: boolean | null
+          content_id: string
+          created_at?: string | null
+          drop_off_point_seconds?: number | null
+          enrollment_id: string
+          id?: string
+          last_position_seconds?: number | null
+          total_time_spent_seconds?: number | null
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          completed?: boolean | null
+          content_id?: string
+          created_at?: string | null
+          drop_off_point_seconds?: number | null
+          enrollment_id?: string
+          id?: string
+          last_position_seconds?: number | null
+          total_time_spent_seconds?: number | null
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learner_analytics_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "course_content"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learner_analytics_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_progress: {
         Row: {
           completed: boolean
@@ -1005,6 +1059,79 @@ export type Database = {
         }
         Relationships: []
       }
+      user_bookmarks: {
+        Row: {
+          content_id: string
+          created_at: string | null
+          id: string
+          note: string | null
+          timestamp_seconds: number | null
+          user_id: string
+        }
+        Insert: {
+          content_id: string
+          created_at?: string | null
+          id?: string
+          note?: string | null
+          timestamp_seconds?: number | null
+          user_id: string
+        }
+        Update: {
+          content_id?: string
+          created_at?: string | null
+          id?: string
+          note?: string | null
+          timestamp_seconds?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_bookmarks_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "course_content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_notes: {
+        Row: {
+          content_id: string
+          created_at: string | null
+          id: string
+          note_text: string
+          timestamp_seconds: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content_id: string
+          created_at?: string | null
+          id?: string
+          note_text: string
+          timestamp_seconds?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content_id?: string
+          created_at?: string | null
+          id?: string
+          note_text?: string
+          timestamp_seconds?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_notes_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "course_content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           approved_at: string | null
@@ -1031,6 +1158,60 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      video_progress: {
+        Row: {
+          content_id: string
+          created_at: string | null
+          current_time_seconds: number
+          enrollment_id: string
+          id: string
+          last_watched_at: string | null
+          playback_speed: number | null
+          total_duration_seconds: number | null
+          updated_at: string | null
+          watch_percentage: number | null
+        }
+        Insert: {
+          content_id: string
+          created_at?: string | null
+          current_time_seconds?: number
+          enrollment_id: string
+          id?: string
+          last_watched_at?: string | null
+          playback_speed?: number | null
+          total_duration_seconds?: number | null
+          updated_at?: string | null
+          watch_percentage?: number | null
+        }
+        Update: {
+          content_id?: string
+          created_at?: string | null
+          current_time_seconds?: number
+          enrollment_id?: string
+          id?: string
+          last_watched_at?: string | null
+          playback_speed?: number | null
+          total_duration_seconds?: number | null
+          updated_at?: string | null
+          watch_percentage?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_progress_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "course_content"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_progress_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

@@ -38,7 +38,7 @@ import { VerifyCertificate } from "./pages/VerifyCertificate";
 import { CertificatePublic } from "./pages/CertificatePublic";
 import AcceptMentorInvite from "./pages/AcceptMentorInvite";
 import AdminMentorInvitations from "./pages/AdminMentorInvitations";
-
+import { AdminLearnerAnalytics } from "./pages/AdminLearnerAnalytics";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -85,6 +85,7 @@ const App = () => (
             <Route path="/admin/email-logs" element={<ProtectedRoute requiredRole="admin"><AdminEmailLogs /></ProtectedRoute>} />
             <Route path="/admin/news-curation" element={<ProtectedRoute requiredRole="admin"><AdminNewsCuration /></ProtectedRoute>} />
             <Route path="/admin/mentor-invitations" element={<ProtectedRoute requiredRole="admin"><AdminMentorInvitations /></ProtectedRoute>} />
+            <Route path="/admin/learner-analytics" element={<ProtectedRoute requiredRole="admin"><AdminLearnerAnalytics /></ProtectedRoute>} />
             <Route path="/admin/courses" element={<ProtectedRoute><AdminCourses /></ProtectedRoute>} />
             <Route path="/admin/courses/:courseId/build" element={<ProtectedRoute><AdminCourseBuilder /></ProtectedRoute>} />
             <Route path="/mentor/courses/new" element={<ProtectedRoute><CreateCourse /></ProtectedRoute>} />
