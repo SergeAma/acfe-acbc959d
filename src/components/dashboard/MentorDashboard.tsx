@@ -6,12 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MySubmissions } from '@/components/dashboard/MySubmissions';
 import { BookOpen, Users, PlusCircle, TrendingUp } from 'lucide-react';
-
-// Helper to strip HTML tags for plain text display
-const stripHtml = (html: string | null) => {
-  if (!html) return '';
-  return html.replace(/<[^>]*>/g, '');
-};
+import { stripHtml } from '@/lib/html-utils';
 
 interface Course {
   id: string;

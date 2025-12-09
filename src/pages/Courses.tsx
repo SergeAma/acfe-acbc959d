@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, BookOpen, X, GraduationCap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { stripHtml } from '@/lib/html-utils';
 
 interface Course {
   id: string;
@@ -234,7 +235,7 @@ export const Courses = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                    {course.description}
+                    {stripHtml(course.description)}
                   </p>
                   <div className="flex items-center justify-between text-sm mb-4">
                     <span className="text-muted-foreground">By {course.mentor?.full_name}</span>

@@ -30,6 +30,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { stripHtml } from '@/lib/html-utils';
 
 interface Course {
   id: string;
@@ -329,7 +330,7 @@ export const CoursePreview = () => {
             <div className="flex-1">
               <Badge className="mb-3">{course.category}</Badge>
               <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
-              <p className="text-lg text-muted-foreground mb-6">{course.description}</p>
+              <p className="text-lg text-muted-foreground mb-6">{stripHtml(course.description)}</p>
             </div>
           </div>
 

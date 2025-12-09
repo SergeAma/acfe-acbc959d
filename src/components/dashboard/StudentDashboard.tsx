@@ -8,12 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { RequestMentorRole } from '@/components/RequestMentorRole';
 import { MySubmissions } from '@/components/dashboard/MySubmissions';
 import { BookOpen, Library, Award, TrendingUp } from 'lucide-react';
-
-// Helper to strip HTML tags for plain text display
-const stripHtml = (html: string | null) => {
-  if (!html) return '';
-  return html.replace(/<[^>]*>/g, '');
-};
+import { stripHtml } from '@/lib/html-utils';
 
 interface Enrollment {
   id: string;
