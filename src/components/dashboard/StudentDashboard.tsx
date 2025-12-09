@@ -9,6 +9,12 @@ import { RequestMentorRole } from '@/components/RequestMentorRole';
 import { MySubmissions } from '@/components/dashboard/MySubmissions';
 import { BookOpen, Library, Award, TrendingUp } from 'lucide-react';
 
+// Helper to strip HTML tags for plain text display
+const stripHtml = (html: string | null) => {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, '');
+};
+
 interface Enrollment {
   id: string;
   progress: number;
@@ -156,7 +162,7 @@ export const StudentDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {enrollment.course.description}
+                    {stripHtml(enrollment.course.description)}
                   </p>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">

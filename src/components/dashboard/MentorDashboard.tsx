@@ -7,6 +7,12 @@ import { Button } from '@/components/ui/button';
 import { MySubmissions } from '@/components/dashboard/MySubmissions';
 import { BookOpen, Users, PlusCircle, TrendingUp } from 'lucide-react';
 
+// Helper to strip HTML tags for plain text display
+const stripHtml = (html: string | null) => {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, '');
+};
+
 interface Course {
   id: string;
   title: string;
@@ -147,7 +153,7 @@ export const MentorDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {course.description}
+                    {stripHtml(course.description)}
                   </p>
                   <div className="flex items-center justify-between text-sm mb-4">
                     <div className="flex items-center text-muted-foreground">
