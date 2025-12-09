@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe, ArrowLeft, Clock, BarChart, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { stripHtml } from '@/lib/html-utils';
 
 interface MentorProfile {
   id: string;
@@ -339,7 +340,7 @@ export const MentorProfile = () => {
                     <CardContent>
                       {course.description && (
                         <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                          {course.description}
+                          {stripHtml(course.description)}
                         </p>
                       )}
                       {course.duration_weeks && (

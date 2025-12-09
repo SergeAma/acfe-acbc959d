@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { stripHtml } from '@/lib/html-utils';
 
 interface Course {
   id: string;
@@ -29,12 +30,6 @@ interface Course {
   thumbnail_url: string | null;
   sections: { count: number }[];
 }
-
-// Helper to strip HTML tags for plain text display
-const stripHtml = (html: string | null) => {
-  if (!html) return '';
-  return html.replace(/<[^>]*>/g, '');
-};
 
 export const AdminCourses = () => {
   const navigate = useNavigate();
