@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,6 +34,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { CourseCertificate } from '@/components/CourseCertificate';
+import { SecureVideoPlayer } from '@/components/learning/SecureVideoPlayer';
+import { NotesPanel } from '@/components/learning/NotesPanel';
+import { BookmarksPanel, useBookmarks } from '@/components/learning/BookmarksPanel';
 
 interface ContentItem {
   id: string;
@@ -445,16 +448,19 @@ export const CourseLearn = () => {
           </Card>
         )}
 
-        {currentContent.content_type === 'video' && currentContent.video_url && (
+        {currentContent.content_type === 'video' && currentContent.video_url && enrollmentId && (
           <Card>
             <CardContent className="pt-6">
-              <video 
-                controls 
-                className="w-full rounded-lg"
-                src={currentContent.video_url}
-              >
-                Your browser does not support the video tag.
-              </video>
+              <SecureVideoPlayer
+                videoUrl={currentContent.video_url}
+                contentId={currentContent.id}
+                enrollmentId={enrollmentId}
+                onBookmark={(timestamp) => {
+                  if ((window as any).__addBookmark) {
+                    (window as any).__addBookmark(timestamp);
+                  }
+                }}
+              />
             </CardContent>
           </Card>
         )}
@@ -590,12 +596,25 @@ export const CourseLearn = () => {
           </div>
 
           {/* Main Content Area */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 space-y-4">
             <Card>
               <CardContent className="pt-6">
                 {renderContent()}
               </CardContent>
             </Card>
+            
+            {/* Notes and Bookmarks Panels */}
+            {currentContent && (
+              <div className="grid md:grid-cols-2 gap-4">
+                <NotesPanel 
+                  contentId={currentContent.id} 
+                  currentTime={0}
+                />
+                <BookmarksPanel 
+                  contentId={currentContent.id}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
