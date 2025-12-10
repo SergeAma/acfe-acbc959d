@@ -109,7 +109,12 @@ export const MentorDashboard = () => {
 
       {/* My Courses */}
       <div>
-        <h2 className="text-2xl font-bold mb-6">My Courses</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">My Courses</h2>
+          <Link to="/mentor/courses">
+            <Button variant="outline">View All Courses</Button>
+          </Link>
+        </div>
 
         {loading ? (
           <div className="text-center py-8 text-muted-foreground">Loading your courses...</div>

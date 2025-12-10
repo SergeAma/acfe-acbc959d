@@ -17,6 +17,7 @@ import { CourseDetail } from "./pages/CourseDetail";
 import { CoursePreview } from "./pages/CoursePreview";
 import { CourseLearn } from "./pages/CourseLearn";
 import { CreateCourse } from "./pages/CreateCourse";
+import { MentorCourses } from "./pages/MentorCourses";
 import { AdminCourses } from "./pages/AdminCourses";
 import { AdminCourseBuilder } from "./pages/AdminCourseBuilder";
 import { AdminIdeaSubmissions } from "./pages/AdminIdeaSubmissions";
@@ -90,6 +91,7 @@ const App = () => (
             <Route path="/admin/learner-analytics" element={<ProtectedRoute requiredRole="admin"><AdminLearnerAnalytics /></ProtectedRoute>} />
             <Route path="/admin/courses" element={<ProtectedRoute requiredRole="admin"><AdminCourses /></ProtectedRoute>} />
             <Route path="/admin/courses/:courseId/build" element={<ProtectedRoute requiredRole="admin"><AdminCourseBuilder /></ProtectedRoute>} />
+            <Route path="/mentor/courses" element={<ProtectedRoute><MentorCourses /></ProtectedRoute>} />
             <Route path="/mentor/courses/new" element={<ProtectedRoute><CreateCourse /></ProtectedRoute>} />
             <Route path="/mentor/courses/:courseId/build" element={<ProtectedRoute><AdminCourseBuilder /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
