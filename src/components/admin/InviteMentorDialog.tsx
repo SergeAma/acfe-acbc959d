@@ -35,9 +35,10 @@ export function InviteMentorDialog() {
 
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error("Not authenticated");
+      // Refresh session to ensure we have a valid access token
+      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+      if (sessionError || !session) {
+        throw new Error("Session expired. Please log in again.");
       }
 
       const response = await supabase.functions.invoke('send-mentor-invitation', {
