@@ -1,6 +1,8 @@
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
+import { Button } from '@/components/ui/button';
+import { Mail } from 'lucide-react';
 import spectrogramLogo from '@/assets/spectrogram-logo.png';
 import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png';
 import johannesburgLogo from '@/assets/johannesburg-logo.png';
@@ -12,9 +14,20 @@ export const Partners = () => {
       <PageBreadcrumb items={[{ label: "Partners" }]} />
       
       <div className="container mx-auto px-4 py-12">
-        <h1 className="text-4xl md:text-5xl font-bold text-center mb-16 text-foreground">
-          Our Partners
-        </h1>
+        <div className="text-center mb-16">
+          <h1 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
+            Our Partners
+          </h1>
+          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Join leading organizations committed to empowering African youth with digital skills
+          </p>
+          <Button asChild size="lg">
+            <a href="mailto:contact@acloudforeveryone.org?subject=Partnership%20Inquiry%20with%20ACFE">
+              <Mail className="h-5 w-5 mr-2" />
+              Become a Partner
+            </a>
+          </Button>
+        </div>
 
         <div className="max-w-5xl mx-auto space-y-20">
           {/* Spectrogram Consulting - Featured Partner */}

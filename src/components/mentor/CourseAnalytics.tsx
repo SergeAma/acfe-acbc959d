@@ -3,9 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Users, Award, BarChart3, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { TrendingUp, Users, Award, BarChart3, Calendar, Download } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { format, subDays, startOfWeek, endOfWeek, eachWeekOfInterval } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 interface CourseAnalyticsProps {
   mentorId?: string;
@@ -29,12 +31,72 @@ interface EnrollmentTrend {
 }
 
 export const CourseAnalytics = ({ mentorId, isAdmin }: CourseAnalyticsProps) => {
+  const { toast } = useToast();
   const [courseStats, setCourseStats] = useState<CourseStats[]>([]);
   const [enrollmentTrends, setEnrollmentTrends] = useState<EnrollmentTrend[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalEnrollments, setTotalEnrollments] = useState(0);
   const [totalCompletions, setTotalCompletions] = useState(0);
   const [avgCompletionRate, setAvgCompletionRate] = useState(0);
+
+  const exportToCSV = (type: 'courses' | 'trends') => {
+    let csvContent = '';
+    let filename = '';
+
+    if (type === 'courses') {
+      // Export course stats
+      const headers = isAdmin 
+        ? ['Course Title', 'Mentor', 'Status', 'Enrollments', 'Completions', 'Completion Rate (%)']
+        : ['Course Title', 'Status', 'Enrollments', 'Completions', 'Completion Rate (%)'];
+      
+      csvContent = headers.join(',') + '\n';
+      
+      courseStats.forEach(course => {
+        const row = isAdmin
+          ? [
+              `"${course.title.replace(/"/g, '""')}"`,
+              `"${(course.mentor_name || 'Unknown').replace(/"/g, '""')}"`,
+              course.is_published ? 'Published' : 'Draft',
+              course.total_enrollments,
+              course.completed_enrollments,
+              course.completion_rate
+            ]
+          : [
+              `"${course.title.replace(/"/g, '""')}"`,
+              course.is_published ? 'Published' : 'Draft',
+              course.total_enrollments,
+              course.completed_enrollments,
+              course.completion_rate
+            ];
+        csvContent += row.join(',') + '\n';
+      });
+      
+      filename = `course-analytics-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    } else {
+      // Export enrollment trends
+      const headers = ['Week', 'Enrollments', 'Completions'];
+      csvContent = headers.join(',') + '\n';
+      
+      enrollmentTrends.forEach(trend => {
+        csvContent += `${trend.week},${trend.enrollments},${trend.completions}\n`;
+      });
+      
+      filename = `enrollment-trends-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    }
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+
+    toast({
+      title: "Export Complete",
+      description: `Downloaded ${filename}`
+    });
+  };
 
   useEffect(() => {
     fetchAnalytics();
@@ -215,9 +277,20 @@ export const CourseAnalytics = ({ mentorId, isAdmin }: CourseAnalyticsProps) => 
 
         <TabsContent value="trends">
           <Card>
-            <CardHeader>
-              <CardTitle>Enrollment Trends</CardTitle>
-              <CardDescription>Weekly enrollments and completions over the last 12 weeks</CardDescription>
+            <CardHeader className="flex flex-row items-start justify-between">
+              <div>
+                <CardTitle>Enrollment Trends</CardTitle>
+                <CardDescription>Weekly enrollments and completions over the last 12 weeks</CardDescription>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => exportToCSV('trends')}
+                disabled={enrollmentTrends.length === 0}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
             </CardHeader>
             <CardContent>
               {enrollmentTrends.length > 0 ? (
@@ -267,9 +340,20 @@ export const CourseAnalytics = ({ mentorId, isAdmin }: CourseAnalyticsProps) => 
 
         <TabsContent value="courses">
           <Card>
-            <CardHeader>
-              <CardTitle>Course Performance</CardTitle>
-              <CardDescription>Enrollment and completion statistics per course</CardDescription>
+            <CardHeader className="flex flex-row items-start justify-between">
+              <div>
+                <CardTitle>Course Performance</CardTitle>
+                <CardDescription>Enrollment and completion statistics per course</CardDescription>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => exportToCSV('courses')}
+                disabled={courseStats.length === 0}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
             </CardHeader>
             <CardContent>
               {courseStats.length > 0 ? (
