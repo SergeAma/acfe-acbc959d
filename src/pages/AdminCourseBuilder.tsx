@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
@@ -52,8 +52,10 @@ interface Section {
 export const AdminCourseBuilder = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const location = useLocation();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
+  const isAdminRoute = location.pathname.startsWith('/admin');
   const [course, setCourse] = useState<Course | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
@@ -441,9 +443,9 @@ export const AdminCourseBuilder = () => {
       <Navbar />
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <div className="flex justify-between items-center mb-6">
-          <Button variant="ghost" onClick={() => navigate('/admin/courses')}>
+          <Button variant="ghost" onClick={() => navigate(isAdminRoute ? '/admin/courses' : '/dashboard')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Courses
+            {isAdminRoute ? 'Back to Courses' : 'Back to Dashboard'}
           </Button>
           <Button variant="outline" onClick={() => navigate(`/courses/${courseId}`)}>
             <Eye className="h-4 w-4 mr-2" />

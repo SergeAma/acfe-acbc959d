@@ -156,7 +156,7 @@ export const MentorDashboard = () => {
                       {course.enrollments[0]?.count || 0} students
                     </div>
                   </div>
-                  <Link to={`/admin/courses/${course.id}/build`}>
+                  <Link to={`/mentor/courses/${course.id}/build`}>
                     <Button variant="outline" className="w-full">
                       Build Course
                     </Button>
