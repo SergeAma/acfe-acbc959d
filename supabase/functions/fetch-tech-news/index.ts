@@ -23,6 +23,7 @@ const RSS_FEEDS = [
   { url: 'https://it-online.co.za/feed/', source: 'IT-Online Africa', category: 'DIGITAL SKILLS' },
   { url: 'https://www.economist.com/middle-east-and-africa/rss.xml', source: 'The Economist', category: 'PARTNERSHIPS' },
   { url: 'https://www.jeuneafrique.com/feed/', source: 'Jeune Afrique', category: 'PARTNERSHIPS' },
+  { url: 'https://www.techinafrica.com/feed/', source: 'Tech in Africa', category: 'INNOVATION' },
 ];
 
 // Decode HTML entities
