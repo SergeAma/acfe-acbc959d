@@ -17,34 +17,56 @@ interface MentorInvitationRequest {
 const verifyAdminRole = async (req: Request): Promise<{ isAdmin: boolean; userId: string | null; error?: string }> => {
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) {
+    console.log("No authorization header found");
     return { isAdmin: false, userId: null, error: 'Missing authorization header' };
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader } }
-  });
+  // Extract the token from "Bearer <token>"
+  const token = authHeader.replace('Bearer ', '');
+  if (!token) {
+    console.log("No token found in authorization header");
+    return { isAdmin: false, userId: null, error: 'Missing token' };
+  }
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  
+  // Use service role client to verify the token
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  // Get user from the JWT token directly
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  
+  if (authError) {
+    console.log("Auth error:", authError.message);
+    return { isAdmin: false, userId: null, error: 'Invalid or expired token' };
+  }
+  
+  if (!user) {
+    console.log("No user found for token");
     return { isAdmin: false, userId: null, error: 'Invalid or expired token' };
   }
 
-  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+  console.log("User authenticated:", user.id);
   
-  const { data: roleData, error: roleError } = await adminClient
+  const { data: roleData, error: roleError } = await supabase
     .from('user_roles')
     .select('role')
     .eq('user_id', user.id)
     .eq('role', 'admin')
     .maybeSingle();
 
-  if (roleError || !roleData) {
+  if (roleError) {
+    console.log("Role check error:", roleError.message);
+    return { isAdmin: false, userId: user.id, error: 'Failed to check admin role' };
+  }
+
+  if (!roleData) {
+    console.log("User is not an admin");
     return { isAdmin: false, userId: user.id, error: 'User is not an admin' };
   }
 
+  console.log("Admin role verified for user:", user.id);
   return { isAdmin: true, userId: user.id };
 };
 
