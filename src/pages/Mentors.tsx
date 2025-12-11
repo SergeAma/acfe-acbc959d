@@ -169,8 +169,8 @@ export const Mentors = () => {
                     {mentor.companies_worked_for && mentor.companies_worked_for.length > 0 && (
                       <CompanyLogos 
                         companies={mentor.companies_worked_for} 
-                        maxDisplay={3}
-                        className="mb-3 justify-center"
+                        maxDisplay={2}
+                        className="mb-3 justify-center flex-nowrap"
                       />
                     )}
                     
