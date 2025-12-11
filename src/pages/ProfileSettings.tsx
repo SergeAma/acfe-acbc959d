@@ -9,9 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Upload, Pencil, Trash2 } from 'lucide-react';
+import { Loader2, Upload, Pencil, Trash2, X, Plus } from 'lucide-react';
 import { ProfilePhotoEditor } from '@/components/profile/ProfilePhotoEditor';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
+import { Badge } from '@/components/ui/badge';
 
 export const ProfileSettings = () => {
   const { profile, refreshProfile } = useAuth();
@@ -23,6 +24,7 @@ export const ProfileSettings = () => {
   const [showPhotoEditor, setShowPhotoEditor] = useState(false);
   const [imgSrc, setImgSrc] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [newCompany, setNewCompany] = useState('');
   
   const [formData, setFormData] = useState({
     full_name: '',
@@ -35,6 +37,7 @@ export const ProfileSettings = () => {
     instagram_url: '',
     github_url: '',
     website_url: '',
+    companies_worked_for: [] as string[],
   });
 
   useEffect(() => {
@@ -50,9 +53,27 @@ export const ProfileSettings = () => {
         instagram_url: profile.instagram_url || '',
         github_url: profile.github_url || '',
         website_url: profile.website_url || '',
+        companies_worked_for: (profile as any).companies_worked_for || [],
       });
     }
   }, [profile]);
+
+  const handleAddCompany = () => {
+    if (newCompany.trim() && !formData.companies_worked_for.includes(newCompany.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        companies_worked_for: [...prev.companies_worked_for, newCompany.trim()]
+      }));
+      setNewCompany('');
+    }
+  };
+
+  const handleRemoveCompany = (company: string) => {
+    setFormData(prev => ({
+      ...prev,
+      companies_worked_for: prev.companies_worked_for.filter(c => c !== company)
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +90,7 @@ export const ProfileSettings = () => {
       instagram_url: formData.instagram_url || null,
       github_url: formData.github_url || null,
       website_url: formData.website_url || null,
+      companies_worked_for: formData.companies_worked_for,
     };
 
     console.log('Saving profile data:', updateData);
@@ -343,6 +365,49 @@ export const ProfileSettings = () => {
                 <p className="text-xs text-muted-foreground">
                   You can also paste a direct image URL here
                 </p>
+              </div>
+
+              <div className="space-y-4 pt-4 border-t">
+                <h3 className="font-semibold text-lg">Work Experience</h3>
+                
+                <div className="space-y-2">
+                  <Label>Companies You Have Worked For</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newCompany}
+                      onChange={(e) => setNewCompany(e.target.value)}
+                      placeholder="e.g., Google, Microsoft, Andela..."
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddCompany();
+                        }
+                      }}
+                    />
+                    <Button type="button" variant="outline" onClick={handleAddCompany}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Add companies you've worked for. These will be displayed on your profile with logos when available.
+                  </p>
+                  {formData.companies_worked_for.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {formData.companies_worked_for.map((company, index) => (
+                        <Badge key={index} variant="secondary" className="pl-2 pr-1 py-1">
+                          {company}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCompany(company)}
+                            className="ml-1 hover:bg-muted rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-4 pt-4 border-t">

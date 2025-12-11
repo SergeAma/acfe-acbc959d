@@ -9,6 +9,7 @@ import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { CompanyLogos } from '@/components/CompanyLogos';
 import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe, UserPlus, LogIn } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -23,6 +24,7 @@ interface MentorProfile {
   instagram_url: string | null;
   github_url: string | null;
   website_url: string | null;
+  companies_worked_for: string[] | null;
   courseCount: number;
 }
 
@@ -70,6 +72,7 @@ export const Mentors = () => {
         instagram_url: mentor.instagram_url,
         github_url: mentor.github_url,
         website_url: mentor.website_url,
+        companies_worked_for: mentor.companies_worked_for,
         courseCount: courseCounts[mentor.id!] || 0
       }));
 
@@ -160,6 +163,14 @@ export const Mentors = () => {
                     <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
                       {mentor.full_name || 'Anonymous Mentor'}
                     </h3>
+                    
+                    {mentor.companies_worked_for && mentor.companies_worked_for.length > 0 && (
+                      <CompanyLogos 
+                        companies={mentor.companies_worked_for} 
+                        maxDisplay={3}
+                        className="mb-3 justify-center"
+                      />
+                    )}
                     
                     {mentor.courseCount > 0 && (
                       <Badge variant="secondary" className="mb-3">
