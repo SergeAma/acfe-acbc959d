@@ -13,6 +13,62 @@ import { Loader2, Upload, Pencil, Trash2, X, Plus } from 'lucide-react';
 import { ProfilePhotoEditor } from '@/components/profile/ProfilePhotoEditor';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { Badge } from '@/components/ui/badge';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+
+const SUGGESTED_SKILLS = {
+  'Technology & Engineering': [
+    'Cloud Computing', 'AWS', 'Google Cloud', 'Microsoft Azure', 'DevOps',
+    'Python', 'JavaScript', 'TypeScript', 'Java', 'C++', 'Go', 'Rust',
+    'React', 'Node.js', 'Next.js', 'Vue.js', 'Angular',
+    'Machine Learning', 'Artificial Intelligence', 'Data Science', 'Deep Learning',
+    'Natural Language Processing', 'Computer Vision', 'Data Analytics',
+    'Cybersecurity', 'Network Security', 'Blockchain', 'Web3',
+    'Mobile Development', 'iOS Development', 'Android Development', 'Flutter',
+    'Database Management', 'SQL', 'PostgreSQL', 'MongoDB', 'Redis',
+    'API Development', 'Microservices', 'System Design', 'Software Architecture',
+    'Agile', 'Scrum', 'CI/CD', 'Docker', 'Kubernetes',
+  ],
+  'Business & Management': [
+    'Project Management', 'Product Management', 'Program Management',
+    'Business Strategy', 'Business Development', 'Strategic Planning',
+    'Leadership', 'Team Management', 'Executive Coaching', 'Mentorship',
+    'Change Management', 'Operations Management', 'Process Improvement',
+    'Entrepreneurship', 'Startup Development', 'Venture Capital', 'Fundraising',
+  ],
+  'Sales & Marketing': [
+    'Sales', 'B2B Sales', 'Enterprise Sales', 'Sales Strategy',
+    'Digital Marketing', 'Content Marketing', 'SEO', 'SEM', 'Social Media Marketing',
+    'Brand Strategy', 'Marketing Analytics', 'Growth Hacking', 'Email Marketing',
+    'Public Relations', 'Communications', 'Copywriting', 'Content Creation',
+  ],
+  'Finance & Analytics': [
+    'Financial Analysis', 'Financial Modeling', 'Investment Analysis',
+    'Accounting', 'Budgeting', 'Risk Management', 'Compliance',
+    'Business Intelligence', 'Data Visualization', 'Excel', 'Power BI', 'Tableau',
+  ],
+  'Design & Creative': [
+    'UI/UX Design', 'Product Design', 'Graphic Design', 'Web Design',
+    'User Research', 'Design Thinking', 'Figma', 'Adobe Creative Suite',
+    'Video Production', 'Animation', 'Photography',
+  ],
+  'Soft Skills': [
+    'Communication', 'Presentation Skills', 'Public Speaking', 'Negotiation',
+    'Problem Solving', 'Critical Thinking', 'Decision Making',
+    'Time Management', 'Collaboration', 'Conflict Resolution',
+  ],
+};
 
 export const ProfileSettings = () => {
   const { profile, refreshProfile } = useAuth();
@@ -26,6 +82,7 @@ export const ProfileSettings = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [newCompany, setNewCompany] = useState('');
   const [newSkill, setNewSkill] = useState('');
+  const [skillsPopoverOpen, setSkillsPopoverOpen] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
     bio: '',
@@ -77,13 +134,17 @@ export const ProfileSettings = () => {
     }));
   };
 
-  const handleAddSkill = () => {
-    if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
+  const handleAddSkill = (skill?: string) => {
+    const skillToAdd = skill || newSkill.trim();
+    if (skillToAdd && !formData.skills.includes(skillToAdd)) {
       setFormData(prev => ({
         ...prev,
-        skills: [...prev.skills, newSkill.trim()]
+        skills: [...prev.skills, skillToAdd]
       }));
       setNewSkill('');
+      if (skill) {
+        setSkillsPopoverOpen(false);
+      }
     }
   };
 
@@ -432,23 +493,77 @@ export const ProfileSettings = () => {
                 <div className="space-y-2">
                   <Label>Skills & Expertise</Label>
                   <div className="flex gap-2">
-                    <Input
-                      value={newSkill}
-                      onChange={(e) => setNewSkill(e.target.value)}
-                      placeholder="e.g., Cloud Computing, Python, Data Science..."
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddSkill();
-                        }
-                      }}
-                    />
-                    <Button type="button" variant="outline" onClick={handleAddSkill}>
+                    <Popover open={skillsPopoverOpen} onOpenChange={setSkillsPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <div className="flex-1 relative">
+                          <Input
+                            value={newSkill}
+                            onChange={(e) => {
+                              setNewSkill(e.target.value);
+                              if (!skillsPopoverOpen) setSkillsPopoverOpen(true);
+                            }}
+                            onFocus={() => setSkillsPopoverOpen(true)}
+                            placeholder="Type or select a skill..."
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleAddSkill();
+                              }
+                            }}
+                          />
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[400px] p-0 bg-popover border border-border shadow-lg z-50" align="start">
+                        <Command>
+                          <CommandInput 
+                            placeholder="Search skills..." 
+                            value={newSkill}
+                            onValueChange={setNewSkill}
+                          />
+                          <CommandList className="max-h-[300px]">
+                            <CommandEmpty>
+                              {newSkill.trim() ? (
+                                <button
+                                  type="button"
+                                  className="w-full p-2 text-sm text-left hover:bg-accent"
+                                  onClick={() => handleAddSkill()}
+                                >
+                                  Add "{newSkill}" as custom skill
+                                </button>
+                              ) : (
+                                "Type to search or add custom skill"
+                              )}
+                            </CommandEmpty>
+                            {Object.entries(SUGGESTED_SKILLS).map(([category, skills]) => (
+                              <CommandGroup key={category} heading={category}>
+                                {skills
+                                  .filter(skill => !formData.skills.includes(skill))
+                                  .filter(skill => 
+                                    !newSkill || skill.toLowerCase().includes(newSkill.toLowerCase())
+                                  )
+                                  .slice(0, 10)
+                                  .map((skill) => (
+                                    <CommandItem
+                                      key={skill}
+                                      value={skill}
+                                      onSelect={() => handleAddSkill(skill)}
+                                      className="cursor-pointer"
+                                    >
+                                      {skill}
+                                    </CommandItem>
+                                  ))}
+                              </CommandGroup>
+                            ))}
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <Button type="button" variant="outline" onClick={() => handleAddSkill()}>
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Add your skills and areas of expertise. These help students find mentors with specific knowledge.
+                    Select from suggested skills or type your own. These help students find mentors with specific expertise.
                   </p>
                   {formData.skills.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
