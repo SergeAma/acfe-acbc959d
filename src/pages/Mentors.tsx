@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CompanyLogos } from '@/components/CompanyLogos';
-import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe, UserPlus, LogIn } from 'lucide-react';
+import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe, UserPlus, LogIn, X, Filter } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 interface MentorProfile {
@@ -32,6 +33,7 @@ interface MentorProfile {
 export const Mentors = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
 
   const { data: mentors, isLoading } = useQuery({
     queryKey: ['mentors-list'],
@@ -82,6 +84,35 @@ export const Mentors = () => {
     }
   });
 
+  // Extract all unique skills from mentors
+  const allSkills = useMemo(() => {
+    if (!mentors) return [];
+    const skillSet = new Set<string>();
+    mentors.forEach(mentor => {
+      mentor.skills?.forEach(skill => skillSet.add(skill));
+    });
+    return Array.from(skillSet).sort();
+  }, [mentors]);
+
+  // Filter mentors based on selected skills
+  const filteredMentors = useMemo(() => {
+    if (!mentors) return [];
+    if (selectedSkills.length === 0) return mentors;
+    return mentors.filter(mentor => 
+      selectedSkills.some(skill => mentor.skills?.includes(skill))
+    );
+  }, [mentors, selectedSkills]);
+
+  const toggleSkill = (skill: string) => {
+    setSelectedSkills(prev => 
+      prev.includes(skill) 
+        ? prev.filter(s => s !== skill)
+        : [...prev, skill]
+    );
+  };
+
+  const clearFilters = () => setSelectedSkills([]);
+
   const handleMentorClick = (mentorId: string) => {
     navigate(`/mentors/${mentorId}`);
   };
@@ -129,6 +160,42 @@ export const Mentors = () => {
           </p>
         </div>
 
+        {/* Skill Filters */}
+        {allSkills.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground">Filter by skills:</span>
+              {selectedSkills.length > 0 && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 px-2 text-xs">
+                  Clear all <X className="h-3 w-3 ml-1" />
+                </Button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {allSkills.map(skill => (
+                <Badge
+                  key={skill}
+                  variant={selectedSkills.includes(skill) ? "default" : "outline"}
+                  className={`cursor-pointer transition-colors ${
+                    selectedSkills.includes(skill) 
+                      ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                      : 'hover:bg-primary/10'
+                  }`}
+                  onClick={() => toggleSkill(skill)}
+                >
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+            {selectedSkills.length > 0 && (
+              <p className="text-sm text-muted-foreground mt-2">
+                Showing {filteredMentors.length} mentor{filteredMentors.length !== 1 ? 's' : ''} with selected skills
+              </p>
+            )}
+          </div>
+        )}
+
         {isLoading ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -144,9 +211,9 @@ export const Mentors = () => {
               </Card>
             ))}
           </div>
-        ) : mentors && mentors.length > 0 ? (
+        ) : filteredMentors && filteredMentors.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {mentors.map((mentor) => (
+            {filteredMentors.map((mentor) => (
               <Card 
                 key={mentor.id} 
                 className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
@@ -241,7 +308,16 @@ export const Mentors = () => {
           </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No mentors available yet. Check back soon!</p>
+            <p className="text-muted-foreground">
+              {selectedSkills.length > 0 
+                ? "No mentors match the selected skills. Try adjusting your filters."
+                : "No mentors available yet. Check back soon!"}
+            </p>
+            {selectedSkills.length > 0 && (
+              <Button variant="outline" size="sm" onClick={clearFilters} className="mt-4">
+                Clear filters
+              </Button>
+            )}
           </div>
         )}
       </main>
