@@ -17,7 +17,6 @@ import { Upload, CheckCircle, Video, Lightbulb, DollarSign, Users, Rocket } from
 const MIN_FORM_TIME_SECONDS = 15;
 // Minimum description length to ensure thoughtful submissions
 const MIN_DESCRIPTION_LENGTH = 50;
-
 export function SubmitIdea() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -25,30 +24,38 @@ export function SubmitIdea() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formLoadTime = useRef<number>(Date.now());
-  const { toast } = useToast();
-  const { user, profile } = useAuth();
+  const {
+    toast
+  } = useToast();
+  const {
+    user,
+    profile
+  } = useAuth();
 
   // Honeypot field - bots will fill this, humans won't see it
   const [honeypot, setHoneypot] = useState("");
-
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     phone: "",
     ideaTitle: "",
-    ideaDescription: "",
+    ideaDescription: ""
   });
 
   // Reset form load time when component mounts
   useEffect(() => {
     formLoadTime.current = Date.now();
   }, []);
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const {
+      name,
+      value
+    } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
-
   const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -57,7 +64,7 @@ export function SubmitIdea() {
         toast({
           title: "File too large",
           description: "Please upload a video smaller than 100MB",
-          variant: "destructive",
+          variant: "destructive"
         });
         return;
       }
@@ -66,14 +73,13 @@ export function SubmitIdea() {
         toast({
           title: "Invalid file type",
           description: "Please upload a video file",
-          variant: "destructive",
+          variant: "destructive"
         });
         return;
       }
       setVideoFile(file);
     }
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -90,7 +96,7 @@ export function SubmitIdea() {
       toast({
         title: "Please take your time",
         description: "Please review your submission carefully before submitting.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
@@ -100,23 +106,20 @@ export function SubmitIdea() {
       toast({
         title: "Description too short",
         description: `Please provide at least ${MIN_DESCRIPTION_LENGTH} characters describing your idea to help us understand it better.`,
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-    
     if (!formData.fullName || !formData.email || !formData.ideaTitle) {
       toast({
         title: "Missing required fields",
         description: "Please fill in all required fields",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     setIsSubmitting(true);
     setUploadProgress(0);
-
     try {
       let videoPath = null;
       let videoFilename = null;
@@ -125,29 +128,26 @@ export function SubmitIdea() {
       if (videoFile) {
         const fileExt = videoFile.name.split(".").pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        
         setUploadProgress(10);
-        
-        const { error: uploadError } = await supabase.storage
-          .from("idea-videos")
-          .upload(fileName, videoFile, {
-            cacheControl: "3600",
-            upsert: false,
-          });
-
+        const {
+          error: uploadError
+        } = await supabase.storage.from("idea-videos").upload(fileName, videoFile, {
+          cacheControl: "3600",
+          upsert: false
+        });
         if (uploadError) throw uploadError;
-
         setUploadProgress(70);
 
         // Store just the file path (bucket is now private, admins use signed URLs)
         videoPath = fileName;
         videoFilename = videoFile.name;
       }
-
       setUploadProgress(85);
 
       // Insert submission into database with submitter_id for secure ownership
-      const { error: insertError } = await supabase.from("idea_submissions").insert({
+      const {
+        error: insertError
+      } = await supabase.from("idea_submissions").insert({
         full_name: formData.fullName,
         email: formData.email,
         phone: formData.phone || null,
@@ -155,11 +155,9 @@ export function SubmitIdea() {
         idea_description: formData.ideaDescription || null,
         video_url: videoPath,
         video_filename: videoFilename,
-        submitter_id: user?.id, // Link to authenticated user for secure RLS
+        submitter_id: user?.id // Link to authenticated user for secure RLS
       });
-
       if (insertError) throw insertError;
-
       setUploadProgress(95);
 
       // Send confirmation email
@@ -168,14 +166,13 @@ export function SubmitIdea() {
           body: {
             name: formData.fullName,
             email: formData.email,
-            ideaTitle: formData.ideaTitle,
-          },
+            ideaTitle: formData.ideaTitle
+          }
         });
       } catch (emailError) {
         console.error('Failed to send confirmation email:', emailError);
         // Don't fail the whole submission if email fails
       }
-
       setUploadProgress(100);
       setIsSubmitted(true);
     } catch (error: any) {
@@ -183,16 +180,14 @@ export function SubmitIdea() {
       toast({
         title: "Submission failed",
         description: error.message || "Please try again later",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-
   if (isSubmitted) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
+    return <div className="min-h-screen flex flex-col bg-background">
         <Navbar />
         <main className="flex-grow flex items-center justify-center py-20">
           <div className="max-w-xl mx-auto px-4 text-center">
@@ -217,14 +212,13 @@ export function SubmitIdea() {
           </div>
         </main>
         <Footer />
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen flex flex-col bg-background">
+  return <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      <PageBreadcrumb items={[{ label: "Submit Idea" }]} />
+      <PageBreadcrumb items={[{
+      label: "Submit Idea"
+    }]} />
       
       <main className="flex-grow">
         {/* Hero Section */}
@@ -244,8 +238,7 @@ export function SubmitIdea() {
         {/* Main Content */}
         <section className="py-16 relative">
           {/* Auth Gate Overlay for non-authenticated users */}
-          {!user && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+          {!user && <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/60 backdrop-blur-sm">
               <Card className="max-w-md mx-4 border border-border shadow-lg">
                 <CardContent className="p-8 text-center space-y-4">
                   <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
@@ -265,8 +258,7 @@ export function SubmitIdea() {
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          )}
+            </div>}
 
           {/* Blurred content for non-authenticated users */}
           <div className={!user ? 'blur-sm pointer-events-none select-none' : ''}>
@@ -290,7 +282,7 @@ export function SubmitIdea() {
                         <DollarSign className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-semibold mb-1">Up to $500 Funding</h3>
+                        <h3 className="font-semibold mb-1">Up to $1000 Funding</h3>
                         <p className="text-sm text-background/70">
                           New founders are eligible for up to $500 in seed funding from our partner, 
                           Spectrogram Consulting.
@@ -343,65 +335,27 @@ export function SubmitIdea() {
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="fullName">Full Name *</Label>
-                        <Input
-                          id="fullName"
-                          name="fullName"
-                          placeholder="Your full name"
-                          value={formData.fullName}
-                          onChange={handleInputChange}
-                          required
-                        />
+                        <Input id="fullName" name="fullName" placeholder="Your full name" value={formData.fullName} onChange={handleInputChange} required />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="email">Email Address *</Label>
-                        <Input
-                          id="email"
-                          name="email"
-                          type="email"
-                          placeholder="you@example.com"
-                          value={formData.email}
-                          onChange={handleInputChange}
-                          required
-                        />
+                        <Input id="email" name="email" type="email" placeholder="you@example.com" value={formData.email} onChange={handleInputChange} required />
                       </div>
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number (Optional)</Label>
-                      <Input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        placeholder="+254 7XX XXX XXX"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                      />
+                      <Input id="phone" name="phone" type="tel" placeholder="+254 7XX XXX XXX" value={formData.phone} onChange={handleInputChange} />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="ideaTitle">Idea / Startup Name *</Label>
-                      <Input
-                        id="ideaTitle"
-                        name="ideaTitle"
-                        placeholder="What do you call your idea or startup?"
-                        value={formData.ideaTitle}
-                        onChange={handleInputChange}
-                        required
-                      />
+                      <Input id="ideaTitle" name="ideaTitle" placeholder="What do you call your idea or startup?" value={formData.ideaTitle} onChange={handleInputChange} required />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="ideaDescription">Brief Description *</Label>
-                      <Textarea
-                        id="ideaDescription"
-                        name="ideaDescription"
-                        placeholder="Briefly describe what problem you're solving and how... (minimum 50 characters)"
-                        rows={4}
-                        value={formData.ideaDescription}
-                        onChange={handleInputChange}
-                        required
-                        minLength={MIN_DESCRIPTION_LENGTH}
-                      />
+                      <Textarea id="ideaDescription" name="ideaDescription" placeholder="Briefly describe what problem you're solving and how... (minimum 50 characters)" rows={4} value={formData.ideaDescription} onChange={handleInputChange} required minLength={MIN_DESCRIPTION_LENGTH} />
                       <p className="text-xs text-muted-foreground">
                         {formData.ideaDescription.length}/{MIN_DESCRIPTION_LENGTH} characters minimum
                       </p>
@@ -410,15 +364,7 @@ export function SubmitIdea() {
                     {/* Honeypot field - hidden from humans, visible to bots */}
                     <div className="absolute -left-[9999px] opacity-0 h-0 overflow-hidden" aria-hidden="true">
                       <Label htmlFor="website">Website</Label>
-                      <Input
-                        id="website"
-                        name="website"
-                        type="text"
-                        tabIndex={-1}
-                        autoComplete="off"
-                        value={honeypot}
-                        onChange={(e) => setHoneypot(e.target.value)}
-                      />
+                      <Input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" value={honeypot} onChange={e => setHoneypot(e.target.value)} />
                     </div>
 
                     {/* Video Upload Section */}
@@ -429,43 +375,22 @@ export function SubmitIdea() {
                         and why you're the right person to build it.
                       </p>
                       
-                      <div
-                        className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-                          videoFile
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50 hover:bg-muted/50"
-                        }`}
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="video/*"
-                          className="hidden"
-                          onChange={handleVideoSelect}
-                        />
+                      <div className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${videoFile ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/50"}`} onClick={() => fileInputRef.current?.click()}>
+                        <input ref={fileInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoSelect} />
                         
-                        {videoFile ? (
-                          <div className="space-y-2">
+                        {videoFile ? <div className="space-y-2">
                             <Video className="h-12 w-12 text-primary mx-auto" />
                             <p className="font-medium text-foreground">{videoFile.name}</p>
                             <p className="text-sm text-muted-foreground">
                               {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
                             </p>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setVideoFile(null);
-                              }}
-                            >
+                            <Button type="button" variant="outline" size="sm" onClick={e => {
+                            e.stopPropagation();
+                            setVideoFile(null);
+                          }}>
                               Remove
                             </Button>
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
+                          </div> : <div className="space-y-2">
                             <Upload className="h-12 w-12 text-muted-foreground mx-auto" />
                             <p className="font-medium text-foreground">
                               Click to upload your video
@@ -473,36 +398,23 @@ export function SubmitIdea() {
                             <p className="text-sm text-muted-foreground">
                               MP4, MOV, or WebM up to 100MB
                             </p>
-                          </div>
-                        )}
+                          </div>}
                       </div>
                     </div>
 
                     {/* Progress Bar */}
-                    {isSubmitting && (
-                      <div className="space-y-2">
+                    {isSubmitting && <div className="space-y-2">
                         <div className="h-2 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-primary transition-all duration-300"
-                            style={{ width: `${uploadProgress}%` }}
-                          />
+                          <div className="h-full bg-primary transition-all duration-300" style={{
+                          width: `${uploadProgress}%`
+                        }} />
                         </div>
                         <p className="text-sm text-muted-foreground text-center">
-                          {uploadProgress < 70
-                            ? "Uploading video..."
-                            : uploadProgress < 100
-                            ? "Saving submission..."
-                            : "Complete!"}
+                          {uploadProgress < 70 ? "Uploading video..." : uploadProgress < 100 ? "Saving submission..." : "Complete!"}
                         </p>
-                      </div>
-                    )}
+                      </div>}
 
-                    <Button
-                      type="submit"
-                      size="lg"
-                      className="w-full rounded-full"
-                      disabled={isSubmitting || !videoFile || formData.ideaDescription.trim().length < MIN_DESCRIPTION_LENGTH}
-                    >
+                    <Button type="submit" size="lg" className="w-full rounded-full" disabled={isSubmitting || !videoFile || formData.ideaDescription.trim().length < MIN_DESCRIPTION_LENGTH}>
                       {isSubmitting ? "Submitting..." : "Submit Your Idea"}
                     </Button>
                     
@@ -519,6 +431,5 @@ export function SubmitIdea() {
       </main>
 
       <Footer />
-    </div>
-  );
+    </div>;
 }
