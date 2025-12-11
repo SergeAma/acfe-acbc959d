@@ -11,7 +11,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CompanyLogos } from '@/components/CompanyLogos';
-import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe, UserPlus, LogIn, X, Filter } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe, UserPlus, LogIn, X, Filter, Search } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 interface MentorProfile {
@@ -34,6 +35,7 @@ export const Mentors = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: mentors, isLoading } = useQuery({
     queryKey: ['mentors-list'],
@@ -94,14 +96,17 @@ export const Mentors = () => {
     return Array.from(skillSet).sort();
   }, [mentors]);
 
-  // Filter mentors based on selected skills
+  // Filter mentors based on selected skills and search query
   const filteredMentors = useMemo(() => {
     if (!mentors) return [];
-    if (selectedSkills.length === 0) return mentors;
-    return mentors.filter(mentor => 
-      selectedSkills.some(skill => mentor.skills?.includes(skill))
-    );
-  }, [mentors, selectedSkills]);
+    return mentors.filter(mentor => {
+      const matchesSkills = selectedSkills.length === 0 || 
+        selectedSkills.some(skill => mentor.skills?.includes(skill));
+      const matchesSearch = !searchQuery || 
+        mentor.full_name?.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesSkills && matchesSearch;
+    });
+  }, [mentors, selectedSkills, searchQuery]);
 
   const toggleSkill = (skill: string) => {
     setSelectedSkills(prev => 
@@ -111,7 +116,12 @@ export const Mentors = () => {
     );
   };
 
-  const clearFilters = () => setSelectedSkills([]);
+  const clearFilters = () => {
+    setSelectedSkills([]);
+    setSearchQuery('');
+  };
+
+  const hasFilters = selectedSkills.length > 0 || searchQuery.length > 0;
 
   const handleMentorClick = (mentorId: string) => {
     navigate(`/mentors/${mentorId}`);
@@ -160,41 +170,57 @@ export const Mentors = () => {
           </p>
         </div>
 
-        {/* Skill Filters */}
-        {allSkills.length > 0 && (
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-3">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground">Filter by skills:</span>
-              {selectedSkills.length > 0 && (
-                <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 px-2 text-xs">
-                  Clear all <X className="h-3 w-3 ml-1" />
-                </Button>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {allSkills.map(skill => (
-                <Badge
-                  key={skill}
-                  variant={selectedSkills.includes(skill) ? "default" : "outline"}
-                  className={`cursor-pointer transition-colors ${
-                    selectedSkills.includes(skill) 
-                      ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                      : 'hover:bg-primary/10'
-                  }`}
-                  onClick={() => toggleSkill(skill)}
-                >
-                  {skill}
-                </Badge>
-              ))}
-            </div>
-            {selectedSkills.length > 0 && (
-              <p className="text-sm text-muted-foreground mt-2">
-                Showing {filteredMentors.length} mentor{filteredMentors.length !== 1 ? 's' : ''} with selected skills
-              </p>
-            )}
+        {/* Search and Filters */}
+        <div className="mb-8 space-y-4">
+          {/* Search Input */}
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search mentors by name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
           </div>
-        )}
+
+          {/* Skill Filters */}
+          {allSkills.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">Filter by skills:</span>
+                {hasFilters && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 px-2 text-xs">
+                    Clear all <X className="h-3 w-3 ml-1" />
+                  </Button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {allSkills.map(skill => (
+                  <Badge
+                    key={skill}
+                    variant={selectedSkills.includes(skill) ? "default" : "outline"}
+                    className={`cursor-pointer transition-colors ${
+                      selectedSkills.includes(skill) 
+                        ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                        : 'hover:bg-primary/10'
+                    }`}
+                    onClick={() => toggleSkill(skill)}
+                  >
+                    {skill}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Filter Results Count */}
+          {hasFilters && (
+            <p className="text-sm text-muted-foreground">
+              Showing {filteredMentors.length} mentor{filteredMentors.length !== 1 ? 's' : ''} matching your filters
+            </p>
+          )}
+        </div>
 
         {isLoading ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
