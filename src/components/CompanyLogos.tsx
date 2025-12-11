@@ -130,13 +130,13 @@ export const CompanyLogos = ({
   const remainingCount = companies.length - maxDisplay;
 
   return (
-    <div className={`flex flex-wrap items-center gap-2 ${className}`}>
-      <span className="text-xs text-muted-foreground">Has worked with:</span>
+    <div className={`flex items-center gap-2 ${className}`}>
+      <span className="text-xs text-muted-foreground whitespace-nowrap">Has worked with:</span>
       {displayCompanies.map((company, index) => (
         <CompanyLogo key={index} company={company} showName={showNames} />
       ))}
       {remainingCount > 0 && (
-        <span className="text-xs text-muted-foreground">
+        <span className="text-xs text-muted-foreground whitespace-nowrap">
           +{remainingCount} more
         </span>
       )}
