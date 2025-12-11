@@ -88,7 +88,7 @@ const CompanyLogo = ({ company, showName = true }: CompanyLogoProps) => {
   
   if (!domain || imageError) {
     return (
-      <span className="px-3 py-1.5 text-xs bg-primary text-primary-foreground rounded-md font-medium">
+      <span className="px-2 py-0.5 text-[10px] bg-primary text-primary-foreground rounded font-medium">
         {company}
       </span>
     );
@@ -97,15 +97,15 @@ const CompanyLogo = ({ company, showName = true }: CompanyLogoProps) => {
   const logoUrl = `https://logo.clearbit.com/${domain}`;
   
   return (
-    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-md" title={company}>
+    <div className="flex items-center gap-1 px-2 py-0.5 bg-primary text-primary-foreground rounded" title={company}>
       <img
         src={logoUrl}
         alt={`${company} logo`}
-        className="h-4 w-4 object-contain rounded"
+        className="h-3 w-3 object-contain rounded-sm"
         onError={() => setImageError(true)}
       />
       {showName && (
-        <span className="text-xs font-medium">{company}</span>
+        <span className="text-[10px] font-medium">{company}</span>
       )}
     </div>
   );
