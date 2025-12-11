@@ -10,6 +10,7 @@ import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { CompanyLogos } from '@/components/CompanyLogos';
 import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe, ArrowLeft, Clock, BarChart, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { stripHtml } from '@/lib/html-utils';
@@ -25,6 +26,7 @@ interface MentorProfile {
   instagram_url: string | null;
   github_url: string | null;
   website_url: string | null;
+  companies_worked_for: string[] | null;
 }
 
 interface Course {
@@ -286,6 +288,15 @@ export const MentorProfile = () => {
                   </div>
                 </TooltipProvider>
               </div>
+              
+              {mentor.companies_worked_for && mentor.companies_worked_for.length > 0 && (
+                <CompanyLogos 
+                  companies={mentor.companies_worked_for} 
+                  maxDisplay={6}
+                  showNames={true}
+                  className="mb-4"
+                />
+              )}
               
               <Badge variant="secondary" className="mb-4">
                 <BookOpen className="h-3 w-3 mr-1" />

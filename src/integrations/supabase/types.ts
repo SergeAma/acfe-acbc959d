@@ -1270,6 +1270,40 @@ export type Database = {
         Args: { _admin_id: string; _request_id: string }
         Returns: undefined
       }
+      get_public_mentor_profile: {
+        Args: { mentor_id: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          companies_worked_for: string[]
+          full_name: string
+          github_url: string
+          id: string
+          instagram_url: string
+          linkedin_url: string
+          profile_frame: string
+          role: string
+          twitter_url: string
+          website_url: string
+        }[]
+      }
+      get_public_mentor_profiles: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          bio: string
+          companies_worked_for: string[]
+          full_name: string
+          github_url: string
+          id: string
+          instagram_url: string
+          linkedin_url: string
+          profile_frame: string
+          role: string
+          twitter_url: string
+          website_url: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
