@@ -283,10 +283,7 @@ export function SubmitIdea() {
                       </div>
                       <div>
                         <h3 className="font-semibold mb-1">Up to $1000 Funding</h3>
-                        <p className="text-sm text-background/70">
-                          New founders are eligible for up to $500 in seed funding from our partner, 
-                          Spectrogram Consulting.
-                        </p>
+                        <p className="text-sm text-background/70">New founders are eligible for up to $1000 in seed funding from our partner, Spectrogram Consulting.</p>
                       </div>
                     </div>
                     
