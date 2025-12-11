@@ -27,6 +27,7 @@ interface MentorProfile {
   github_url: string | null;
   website_url: string | null;
   companies_worked_for: string[] | null;
+  skills: string[] | null;
 }
 
 interface Course {
@@ -307,6 +308,19 @@ export const MentorProfile = () => {
                 <p className="text-muted-foreground mb-6 leading-relaxed">
                   {mentor.bio}
                 </p>
+              )}
+
+              {mentor.skills && mentor.skills.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-foreground mb-2">Skills & Expertise</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {mentor.skills.map((skill, index) => (
+                      <Badge key={index} variant="outline" className="bg-primary/5">
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           </div>

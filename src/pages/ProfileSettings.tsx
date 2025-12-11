@@ -25,7 +25,7 @@ export const ProfileSettings = () => {
   const [imgSrc, setImgSrc] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [newCompany, setNewCompany] = useState('');
-  
+  const [newSkill, setNewSkill] = useState('');
   const [formData, setFormData] = useState({
     full_name: '',
     bio: '',
@@ -38,6 +38,7 @@ export const ProfileSettings = () => {
     github_url: '',
     website_url: '',
     companies_worked_for: [] as string[],
+    skills: [] as string[],
   });
 
   useEffect(() => {
@@ -54,6 +55,7 @@ export const ProfileSettings = () => {
         github_url: profile.github_url || '',
         website_url: profile.website_url || '',
         companies_worked_for: (profile as any).companies_worked_for || [],
+        skills: (profile as any).skills || [],
       });
     }
   }, [profile]);
@@ -75,6 +77,23 @@ export const ProfileSettings = () => {
     }));
   };
 
+  const handleAddSkill = () => {
+    if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        skills: [...prev.skills, newSkill.trim()]
+      }));
+      setNewSkill('');
+    }
+  };
+
+  const handleRemoveSkill = (skill: string) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: prev.skills.filter(s => s !== skill)
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -91,6 +110,7 @@ export const ProfileSettings = () => {
       github_url: formData.github_url || null,
       website_url: formData.website_url || null,
       companies_worked_for: formData.companies_worked_for,
+      skills: formData.skills,
     };
 
     console.log('Saving profile data:', updateData);
@@ -399,6 +419,45 @@ export const ProfileSettings = () => {
                           <button
                             type="button"
                             onClick={() => handleRemoveCompany(company)}
+                            className="ml-1 hover:bg-muted rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Skills & Expertise</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newSkill}
+                      onChange={(e) => setNewSkill(e.target.value)}
+                      placeholder="e.g., Cloud Computing, Python, Data Science..."
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddSkill();
+                        }
+                      }}
+                    />
+                    <Button type="button" variant="outline" onClick={handleAddSkill}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Add your skills and areas of expertise. These help students find mentors with specific knowledge.
+                  </p>
+                  {formData.skills.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {formData.skills.map((skill, index) => (
+                        <Badge key={index} variant="outline" className="pl-2 pr-1 py-1 bg-primary/10">
+                          {skill}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSkill(skill)}
                             className="ml-1 hover:bg-muted rounded-full p-0.5"
                           >
                             <X className="h-3 w-3" />

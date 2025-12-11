@@ -25,6 +25,7 @@ interface MentorProfile {
   github_url: string | null;
   website_url: string | null;
   companies_worked_for: string[] | null;
+  skills: string[] | null;
   courseCount: number;
 }
 
@@ -73,6 +74,7 @@ export const Mentors = () => {
         github_url: mentor.github_url,
         website_url: mentor.website_url,
         companies_worked_for: mentor.companies_worked_for,
+        skills: mentor.skills,
         courseCount: courseCounts[mentor.id!] || 0
       }));
 
@@ -177,6 +179,21 @@ export const Mentors = () => {
                         <BookOpen className="h-3 w-3 mr-1" />
                         {mentor.courseCount} Course{mentor.courseCount !== 1 ? 's' : ''}
                       </Badge>
+                    )}
+
+                    {mentor.skills && mentor.skills.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-3 justify-center">
+                        {mentor.skills.slice(0, 3).map((skill, index) => (
+                          <Badge key={index} variant="outline" className="text-xs bg-primary/5">
+                            {skill}
+                          </Badge>
+                        ))}
+                        {mentor.skills.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{mentor.skills.length - 3}
+                          </Badge>
+                        )}
+                      </div>
                     )}
                     
                     {mentor.bio && (

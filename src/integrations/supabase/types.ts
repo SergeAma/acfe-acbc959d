@@ -960,6 +960,7 @@ export type Database = {
           linkedin_url: string | null
           profile_frame: string | null
           role: Database["public"]["Enums"]["user_role"]
+          skills: string[] | null
           twitter_url: string | null
           updated_at: string | null
           website_url: string | null
@@ -978,6 +979,7 @@ export type Database = {
           linkedin_url?: string | null
           profile_frame?: string | null
           role: Database["public"]["Enums"]["user_role"]
+          skills?: string[] | null
           twitter_url?: string | null
           updated_at?: string | null
           website_url?: string | null
@@ -996,6 +998,7 @@ export type Database = {
           linkedin_url?: string | null
           profile_frame?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          skills?: string[] | null
           twitter_url?: string | null
           updated_at?: string | null
           website_url?: string | null
@@ -1283,6 +1286,7 @@ export type Database = {
           linkedin_url: string
           profile_frame: string
           role: string
+          skills: string[]
           twitter_url: string
           website_url: string
         }[]
@@ -1300,6 +1304,7 @@ export type Database = {
           linkedin_url: string
           profile_frame: string
           role: string
+          skills: string[]
           twitter_url: string
           website_url: string
         }[]
