@@ -135,25 +135,25 @@ export const Mentors = () => {
       <main className="container mx-auto px-4 py-12">
         {/* Auth prompt banner for unauthenticated users */}
         {!user && (
-          <div className="mb-8 p-6 rounded-xl bg-primary/5 border border-primary/20">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="mb-8 p-4 sm:p-6 rounded-xl bg-primary/5 border border-primary/20">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
               <div>
-                <h2 className="text-lg font-semibold text-foreground mb-1">
+                <h2 className="text-base sm:text-lg font-semibold text-foreground mb-1">
                   Ready to start learning?
                 </h2>
                 <p className="text-sm text-muted-foreground">
                   Create a free account to enroll in courses and connect with mentors.
                 </p>
               </div>
-              <div className="flex gap-3">
-                <Link to="/auth?mode=login">
-                  <Button variant="outline" size="sm">
+              <div className="flex gap-3 w-full sm:w-auto">
+                <Link to="/auth?mode=login" className="flex-1 sm:flex-initial">
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
                     <LogIn className="h-4 w-4 mr-2" />
                     Log in
                   </Button>
                 </Link>
-                <Link to="/auth?mode=signup&role=student">
-                  <Button size="sm">
+                <Link to="/auth?mode=signup&role=student" className="flex-1 sm:flex-initial">
+                  <Button size="sm" className="w-full sm:w-auto">
                     <UserPlus className="h-4 w-4 mr-2" />
                     Sign up free
                   </Button>
@@ -163,9 +163,9 @@ export const Mentors = () => {
           </div>
         )}
 
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-foreground mb-4">Our Mentors</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <div className="text-center mb-8 sm:mb-12">
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-3 sm:mb-4">Our Mentors</h1>
+          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-2">
             Learn from experienced professionals who are passionate about sharing their knowledge and empowering the next generation of African tech talent.
           </p>
         </div>
@@ -223,7 +223,7 @@ export const Mentors = () => {
         </div>
 
         {isLoading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
             {Array.from({ length: 6 }).map((_, i) => (
               <Card key={i} className="overflow-hidden">
                 <CardContent className="p-6">
@@ -238,7 +238,7 @@ export const Mentors = () => {
             ))}
           </div>
         ) : filteredMentors && filteredMentors.length > 0 ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
             {filteredMentors.map((mentor) => (
               <Card 
                 key={mentor.id} 

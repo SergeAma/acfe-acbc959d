@@ -147,13 +147,13 @@ export const Jobs = () => {
       <PageBreadcrumb items={[{ label: "Community & Jobs" }]} />
       
       {/* Hero Section */}
-      <section className="relative border-b border-border py-8 bg-gradient-to-b from-muted/30 to-background">
+      <section className="relative border-b border-border py-6 sm:py-8 bg-gradient-to-b from-muted/30 to-background">
         <div className="container mx-auto px-4">
-          <div className="max-w-2xl mx-auto text-center space-y-3">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
+          <div className="max-w-2xl mx-auto text-center space-y-2 sm:space-y-3">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground tracking-tight">
               Community & Opportunities
             </h1>
-            <p className="text-base text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Connect with learners and mentors, discover tips, events, and career opportunities
             </p>
           </div>
