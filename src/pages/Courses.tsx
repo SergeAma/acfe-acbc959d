@@ -140,9 +140,9 @@ export const Courses = () => {
 
         {/* Blurred content for non-authenticated users */}
         <div className={!user ? 'blur-sm pointer-events-none select-none' : ''}>
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Explore Courses</h1>
-          <p className="text-muted-foreground text-lg">Find the perfect course to advance your skills</p>
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold mb-2">Explore Courses</h1>
+          <p className="text-muted-foreground text-base sm:text-lg">Find the perfect course to advance your skills</p>
         </div>
 
         {/* Mentor Filter Banner */}
@@ -162,7 +162,7 @@ export const Courses = () => {
         )}
 
         {/* Filters */}
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -219,7 +219,7 @@ export const Courses = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredCourses.map((course) => (
               <Card key={course.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>

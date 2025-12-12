@@ -13,12 +13,12 @@ export const Partners = () => {
       <Navbar />
       <PageBreadcrumb items={[{ label: "Partners" }]} />
       
-      <div className="container mx-auto px-4 py-12">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
+      <div className="container mx-auto px-4 py-8 sm:py-12">
+        <div className="text-center mb-10 sm:mb-16">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 text-foreground">
             Our Partners
           </h1>
-          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto">
             Join leading organizations committed to empowering African youth with digital skills
           </p>
           <Button asChild size="lg">
@@ -29,9 +29,9 @@ export const Partners = () => {
           </Button>
         </div>
 
-        <div className="max-w-5xl mx-auto space-y-20">
+        <div className="max-w-5xl mx-auto space-y-12 sm:space-y-20">
           {/* Spectrogram Consulting - Featured Partner */}
-          <div className="bg-card rounded-lg p-8 shadow-lg border-2 border-primary/20">
+          <div className="bg-card rounded-lg p-6 sm:p-8 shadow-lg border-2 border-primary/20">
             <div className="flex flex-col items-center mb-6">
               <span className="text-xs uppercase tracking-wider text-primary font-semibold mb-4">Featured Partner</span>
               <a 
@@ -56,7 +56,7 @@ export const Partners = () => {
           </div>
 
           {/* East African University Partnership */}
-          <div className="bg-card rounded-lg p-8 shadow-lg">
+          <div className="bg-card rounded-lg p-6 sm:p-8 shadow-lg">
             <div className="flex flex-col items-center mb-6">
               <a href="https://teau.ac.ke" target="_blank" rel="noopener noreferrer" className="hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
                 <img 
@@ -75,7 +75,7 @@ export const Partners = () => {
           </div>
 
           {/* Johustleburg Partnership */}
-          <div className="bg-card rounded-lg p-8 shadow-lg">
+          <div className="bg-card rounded-lg p-6 sm:p-8 shadow-lg">
             <div className="flex flex-col items-center mb-6">
               <a href="https://www.facebook.com/Thehonestgroupfundation/" target="_blank" rel="noopener noreferrer" className="hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
                 <img 

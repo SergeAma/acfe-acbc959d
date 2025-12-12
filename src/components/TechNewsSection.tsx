@@ -143,15 +143,15 @@ export const TechNewsSection = () => {
   }, [allArticles, activeCategory, curatedData]);
   const featuredArticle = filteredArticles[0];
   const listArticles = filteredArticles.slice(1);
-  return <section className="py-20 bg-background">
+  return <section className="py-12 sm:py-20 bg-background">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <span className="text-xs font-semibold tracking-wider text-primary uppercase mb-2 block">
             Latest Insights
           </span>
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 sm:gap-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground leading-tight">
               Africa Digital News<br className="hidden md:block" /> & Innovation
             </h2>
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
@@ -162,14 +162,14 @@ export const TechNewsSection = () => {
         </div>
 
         {/* Category Tabs */}
-        <div className="flex flex-wrap gap-2 mb-8">
-          {NEWS_CATEGORIES.map(category => <button key={category} onClick={() => setActiveCategory(category)} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeCategory === category ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+        <div className="flex flex-wrap gap-2 mb-6 sm:mb-8">
+          {NEWS_CATEGORIES.map(category => <button key={category} onClick={() => setActiveCategory(category)} className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors ${activeCategory === category ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
               {category}
             </button>)}
         </div>
 
         {/* News Grid */}
-        {newsLoading ? <div className="grid lg:grid-cols-2 gap-6 mb-8">
+        {newsLoading ? <div className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <div className="bg-card rounded-lg p-6 space-y-4 border border-border">
               <Skeleton className="h-6 w-24" />
               <Skeleton className="h-8 w-full" />
@@ -188,10 +188,10 @@ export const TechNewsSection = () => {
                   </div>
                 </div>)}
             </div>
-          </div> : filteredArticles.length > 0 ? <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          </div> : filteredArticles.length > 0 ? <div className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
             {/* Featured Article */}
-            {featuredArticle && <div className="bg-card rounded-lg p-6 flex flex-col h-full border border-border">
-                <div className="flex items-center gap-3 mb-4">
+            {featuredArticle && <div className="bg-card rounded-lg p-4 sm:p-6 flex flex-col h-full border border-border">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                   <span className="bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-md">
                     {featuredArticle.category || 'DIGITAL SKILLS'}
                   </span>
@@ -200,11 +200,11 @@ export const TechNewsSection = () => {
                   </span>
                 </div>
                 
-                <h3 className="text-xl md:text-2xl font-bold text-card-foreground mb-4 leading-tight">
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-card-foreground mb-3 sm:mb-4 leading-tight">
                   {featuredArticle.title}
                 </h3>
                 
-                <p className="text-muted-foreground mb-6 flex-1 line-clamp-4">
+                <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6 flex-1 line-clamp-3 sm:line-clamp-4">
                   {featuredArticle.description}
                 </p>
                 
@@ -253,13 +253,13 @@ export const TechNewsSection = () => {
           </p>}
 
         {/* Newsletter Signup */}
-        <div className="bg-card rounded-xl p-8 border border-border">
-          <div className="flex flex-col md:flex-row md:items-center gap-6">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Mail className="h-6 w-6 text-primary" />
+        <div className="bg-card rounded-xl p-6 sm:p-8 border border-border">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mx-auto sm:mx-0">
+              <Mail className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             </div>
-            <div className="flex-1">
-              <h3 className="text-xl font-bold text-foreground mb-1">
+            <div className="flex-1 text-center sm:text-left">
+              <h3 className="text-lg sm:text-xl font-bold text-foreground mb-1">
                 Weekly Africa Tech Digest
               </h3>
               <p className="text-muted-foreground text-sm">
@@ -268,7 +268,7 @@ export const TechNewsSection = () => {
             </div>
           </div>
           
-          <form onSubmit={handleSubscribe} className="mt-6">
+          <form onSubmit={handleSubscribe} className="mt-4 sm:mt-6">
             <div className="flex flex-col sm:flex-row gap-3">
               <Input type="email" placeholder="Enter your email" value={email} onChange={e => setEmail(e.target.value)} className="flex-1 bg-background" required />
               <Button type="submit" disabled={isSubscribing} className="bg-primary hover:bg-primary/90 text-primary-foreground whitespace-nowrap">

@@ -83,26 +83,26 @@ export const Landing = () => {
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-white">Join 300+ Learners and Master a Career-Boosting Digital Skill!</h1>
-            <p className="text-lg md:text-xl text-white/90 mb-4 leading-relaxed">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 text-white leading-tight">Join 300+ Learners and Master a Career-Boosting Digital Skill!</h1>
+            <p className="text-base sm:text-lg md:text-xl text-white/90 mb-3 sm:mb-4 leading-relaxed">
               Zero experience required | Any background | Learn Anytime
             </p>
-            <p className="text-base text-white/80 mb-8">
+            <p className="text-sm sm:text-base text-white/80 mb-6 sm:mb-8">
               Training delivered by African tech experts.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              {user ? <Link to="/dashboard">
-                  <Button size="lg" className="text-lg px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
+              {user ? <Link to="/dashboard" className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
                     Go to Dashboard
                   </Button>
                 </Link> : <>
-                  <Link to="/auth?mode=signup&role=student">
-                    <Button size="lg" className="text-lg px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
+                  <Link to="/auth?mode=signup&role=student" className="w-full sm:w-auto">
+                    <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
                       START LEARNING
                     </Button>
                   </Link>
-                  <Link to="/auth?mode=signup&role=mentor">
-                    <Button size="lg" className="text-lg px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
+                  <Link to="/auth?mode=signup&role=mentor" className="w-full sm:w-auto">
+                    <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
                       BECOME A MENTOR
                     </Button>
                   </Link>
@@ -113,13 +113,13 @@ export const Landing = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-background">
+      <section className="py-12 sm:py-20 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Why Choose Us</h2>
+          <div className="text-center mb-10 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Why Choose Us</h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto items-stretch">
             <Link to="/mentors" className="h-full">
               <Card className="border-2 hover:border-primary transition-colors cursor-pointer group h-full">
                 <CardContent className="pt-6 h-full flex flex-col">
@@ -166,26 +166,26 @@ export const Landing = () => {
       </section>
 
       {/* Innovators Incubator Section */}
-      <section className="py-20 bg-muted">
+      <section className="py-12 sm:py-20 bg-muted">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-6">
-              <Lightbulb className="h-5 w-5 text-white" />
-              <span className="text-sm font-semibold text-white">Innovation Hub</span>
+            <div className="inline-flex items-center gap-2 bg-primary/10 px-3 sm:px-4 py-2 rounded-full mb-4 sm:mb-6">
+              <Lightbulb className="h-4 sm:h-5 w-4 sm:w-5 text-white" />
+              <span className="text-xs sm:text-sm font-semibold text-white">Innovation Hub</span>
             </div>
             
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4 sm:mb-6">
               Got a Big Idea?<br />
               <span className="text-primary">We'll Help You Build It.</span>
             </h2>
             
-            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto">
               We're building Africa's next generation of tech leaders. If you're a young innovator with a vision 
               that could transform communities, we want to hear from you. Get access to mentorship, resources, 
               and the support you need to bring your idea to life.
             </p>
             
-            <div className="grid md:grid-cols-3 gap-6 mb-10">
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-10">
               <Link to="/submit-idea" className="bg-card p-6 rounded-xl border border-border shadow-sm hover:border-primary transition-colors">
                 <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                   <TrendingUp className="h-6 w-6 text-primary" />
@@ -225,20 +225,20 @@ export const Landing = () => {
       <TechNewsSection />
 
       {/* Partners Section */}
-      <section className="py-12 bg-muted">
+      <section className="py-10 sm:py-12 bg-muted">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Our Partners</h2>
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Our Partners</h2>
           </div>
-          <div className="flex flex-wrap justify-center items-center gap-12 max-w-5xl mx-auto">
+          <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-8 md:gap-12 max-w-5xl mx-auto">
             <a href="https://spectrogramconsulting.com/home" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
-              <img src={spectrogramLogo} alt="Spectrogram Consulting" className="h-16 w-auto object-contain" />
+              <img src={spectrogramLogo} alt="Spectrogram Consulting" className="h-12 sm:h-16 w-auto object-contain" />
             </a>
             <a href="https://teau.ac.ke" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
-              <img src={eastAfricanUniversityLogo} alt="The East African University" className="h-24 w-auto object-contain" />
+              <img src={eastAfricanUniversityLogo} alt="The East African University" className="h-16 sm:h-24 w-auto object-contain" />
             </a>
             <a href="https://www.facebook.com/Thehonestgroupfundation/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
-              <img src={johannesburgLogo} alt="Johannesburg" className="h-24 w-auto object-contain" />
+              <img src={johannesburgLogo} alt="Johannesburg" className="h-16 sm:h-24 w-auto object-contain" />
             </a>
           </div>
         </div>
