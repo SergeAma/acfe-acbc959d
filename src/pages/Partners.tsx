@@ -6,6 +6,7 @@ import { Mail } from 'lucide-react';
 import spectrogramLogo from '@/assets/spectrogram-logo.png';
 import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png';
 import johannesburgLogo from '@/assets/johannesburg-logo.png';
+import learnProjectLogo from '@/assets/learn-project-logo.png';
 
 export const Partners = () => {
   return (
@@ -92,6 +93,28 @@ export const Partners = () => {
               their Johannesburg hub into a powerhouse of digital education and entrepreneurship in the heart of 
               Maboneng. Over the next five years, they aim to equip 10,000 students with the skills needed to succeed in the 
               global job market, transforming Maboneng into a center for youth education. Join us on this transformative journey!
+            </p>
+          </div>
+
+          {/* The LEARN Project Partnership */}
+          <div className="bg-card rounded-lg p-6 sm:p-8 shadow-lg">
+            <div className="flex flex-col items-center mb-6">
+              <a href="https://thelearnproject.co.za/" target="_blank" rel="noopener noreferrer" className="hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
+                <img 
+                  src={learnProjectLogo} 
+                  alt="The LEARN Project" 
+                  className="h-32 w-auto mb-6"
+                />
+              </a>
+            </div>
+            <p className="text-lg text-foreground/90 leading-relaxed text-center">
+              The LEARN Project (Let's Educate A Rainbow Nation) is a South African non-profit trust based in Durban, 
+              KwaZulu Natal, dedicated to uplifting education through the power of books and literacy. To date, LEARN 
+              has donated nearly 100,000 books, established 30 school libraries, and placed over 350 book corners in 
+              schools and organisations. Believing that "Readers Make Leaders and Leaders Build Nations," their work 
+              has earned recognition from The Department of Education and numerous awards for excellence. Through this 
+              partnership, ACFE and The LEARN Project will work together to expand access to digital skills education 
+              alongside literacy initiatives.
             </p>
           </div>
         </div>
