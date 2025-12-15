@@ -21,7 +21,30 @@ const ALLOWED_DOMAINS = [
   "www.acloudforeveryone.org",
   "spectrogramconsulting.com",
   "www.spectrogramconsulting.com",
-  // Add other trusted partner domains here
+  // News sources used in newsletters
+  "techpoint.africa",
+  "www.techpoint.africa",
+  "itnewsafrica.com",
+  "www.itnewsafrica.com",
+  "disrupt-africa.com",
+  "old.disruptafrica.com",
+  "www.disrupt-africa.com",
+  "theafricareport.com",
+  "www.theafricareport.com",
+  "techcabal.com",
+  "www.techcabal.com",
+  "ventureburn.com",
+  "www.ventureburn.com",
+  "it-online.co.za",
+  "www.it-online.co.za",
+  "techinafrica.com",
+  "www.techinafrica.com",
+  "economist.com",
+  "www.economist.com",
+  "jeuneafrique.com",
+  "www.jeuneafrique.com",
+  "techcrunch.com",
+  "www.techcrunch.com",
 ];
 
 // Validate redirect URL to prevent open redirect attacks
