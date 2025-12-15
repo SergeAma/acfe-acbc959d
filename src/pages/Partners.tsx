@@ -103,7 +103,7 @@ export const Partners = () => {
                 <img 
                   src={learnProjectLogo} 
                   alt="The LEARN Project" 
-                  className="h-32 w-auto mb-6"
+                  className="h-40 w-auto mb-6"
                 />
               </a>
             </div>
