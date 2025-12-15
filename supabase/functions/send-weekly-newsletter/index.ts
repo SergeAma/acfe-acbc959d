@@ -158,7 +158,7 @@ function generateNewsletterHtml(articles: NewsArticle[], supabaseUrl: string, lo
     
     categoryArticles.forEach(article => {
       const trackingLink = logId 
-        ? `${supabaseUrl}/functions/v1/email-tracking?type=click&logId=${logId}&url=${encodeURIComponent(article.link)}`
+        ? `${supabaseUrl}/functions/v1/email-tracking/click?id=${logId}&url=${encodeURIComponent(article.link)}`
         : article.link;
       
       articlesHtml += `
@@ -269,7 +269,7 @@ function generateNewsletterHtml(articles: NewsArticle[], supabaseUrl: string, lo
           </td>
         </tr>
       </table>
-      ${logId ? `<img src="${supabaseUrl}/functions/v1/email-tracking?type=open&logId=${logId}" width="1" height="1" style="display:none;" />` : ''}
+      ${logId ? `<img src="${supabaseUrl}/functions/v1/email-tracking/open?id=${logId}" width="1" height="1" style="display:none;" />` : ''}
     </body>
     </html>
   `;
