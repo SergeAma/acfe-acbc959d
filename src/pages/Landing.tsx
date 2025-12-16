@@ -242,7 +242,7 @@ export const Landing = () => {
               <img src={johannesburgLogo} alt="Johannesburg" className="h-16 sm:h-24 w-auto object-contain" />
             </a>
             <a href="https://thelearnproject.co.za/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
-              <img src={learnProjectLogo} alt="The LEARN Project" className="h-12 sm:h-16 w-auto object-contain" />
+              <img src={learnProjectLogo} alt="The LEARN Project" className="h-16 sm:h-24 w-auto object-contain" />
             </a>
           </div>
         </div>
