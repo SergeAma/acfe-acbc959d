@@ -10,6 +10,7 @@ import { TechNewsSection } from '@/components/TechNewsSection';
 import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png';
 import johannesburgLogo from '@/assets/johannesburg-logo.png';
 import spectrogramLogo from '@/assets/spectrogram-logo.png';
+import learnProjectLogo from '@/assets/learn-project-logo.png';
 
 const heroVideos = [
   '/videos/hero-background.mp4',
@@ -239,6 +240,9 @@ export const Landing = () => {
             </a>
             <a href="https://www.facebook.com/Thehonestgroupfundation/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
               <img src={johannesburgLogo} alt="Johannesburg" className="h-16 sm:h-24 w-auto object-contain" />
+            </a>
+            <a href="https://thelearnproject.co.za/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
+              <img src={learnProjectLogo} alt="The LEARN Project" className="h-12 sm:h-16 w-auto object-contain" />
             </a>
           </div>
         </div>
