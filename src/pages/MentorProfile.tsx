@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { CompanyLogos } from '@/components/CompanyLogos';
+import { MentorshipRequestDialog } from '@/components/mentorship/MentorshipRequestDialog';
 import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe, ArrowLeft, Clock, BarChart, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { stripHtml } from '@/lib/html-utils';
@@ -303,6 +304,13 @@ export const MentorProfile = () => {
                 <BookOpen className="h-3 w-3 mr-1" />
                 {courses?.length || 0} Course{(courses?.length || 0) !== 1 ? 's' : ''}
               </Badge>
+
+              {/* Mentorship Request Button */}
+              {user && id && (
+                <div className="mb-6">
+                  <MentorshipRequestDialog mentorId={id} mentorName={mentor.full_name || 'this mentor'} />
+                </div>
+              )}
 
               {mentor.bio && (
                 <p className="text-muted-foreground mb-6 leading-relaxed">

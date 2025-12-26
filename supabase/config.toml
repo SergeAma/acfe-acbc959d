@@ -50,3 +50,9 @@ verify_jwt = false
 
 [functions.send-mentor-welcome-email]
 verify_jwt = false
+
+[functions.send-mentorship-request-notification]
+verify_jwt = false
+
+[functions.send-mentorship-response-notification]
+verify_jwt = false
