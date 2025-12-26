@@ -127,6 +127,33 @@ export type Database = {
         }
         Relationships: []
       }
+      cohort_messages: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          mentor_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+          mentor_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          mentor_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       community_posts: {
         Row: {
           content: string
@@ -944,6 +971,59 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      mentorship_requests: {
+        Row: {
+          career_ambitions: string
+          course_to_complete_id: string | null
+          created_at: string
+          id: string
+          mentor_id: string
+          mentor_response: string | null
+          reason_for_mentor: string
+          responded_at: string | null
+          status: string
+          student_bio: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          career_ambitions: string
+          course_to_complete_id?: string | null
+          created_at?: string
+          id?: string
+          mentor_id: string
+          mentor_response?: string | null
+          reason_for_mentor: string
+          responded_at?: string | null
+          status?: string
+          student_bio: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          career_ambitions?: string
+          course_to_complete_id?: string | null
+          created_at?: string
+          id?: string
+          mentor_id?: string
+          mentor_response?: string | null
+          reason_for_mentor?: string
+          responded_at?: string | null
+          status?: string
+          student_bio?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentorship_requests_course_to_complete_id_fkey"
+            columns: ["course_to_complete_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

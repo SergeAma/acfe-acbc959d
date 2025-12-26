@@ -41,6 +41,8 @@ import { CertificatePublic } from "./pages/CertificatePublic";
 import AcceptMentorInvite from "./pages/AcceptMentorInvite";
 import AdminMentorInvitations from "./pages/AdminMentorInvitations";
 import { AdminLearnerAnalytics } from "./pages/AdminLearnerAnalytics";
+import { MentorCohort } from "./pages/MentorCohort";
+import { CohortCommunity } from "./pages/CohortCommunity";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -94,6 +96,9 @@ const App = () => (
             <Route path="/mentor/courses" element={<ProtectedRoute><MentorCourses /></ProtectedRoute>} />
             <Route path="/mentor/courses/new" element={<ProtectedRoute><CreateCourse /></ProtectedRoute>} />
             <Route path="/mentor/courses/:courseId/build" element={<ProtectedRoute><AdminCourseBuilder /></ProtectedRoute>} />
+            <Route path="/mentor/cohort" element={<ProtectedRoute><MentorCohort /></ProtectedRoute>} />
+            <Route path="/mentor/cohort/community" element={<ProtectedRoute><CohortCommunity /></ProtectedRoute>} />
+            <Route path="/cohort/community" element={<ProtectedRoute><CohortCommunity /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
             <Route path="/certificates" element={<ProtectedRoute><MyCertificates /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
