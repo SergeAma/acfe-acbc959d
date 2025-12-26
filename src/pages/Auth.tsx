@@ -31,14 +31,20 @@ const authSchema = z.object({
 export const Auth = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user, signIn, signUp } = useAuth();
+  const { user, signIn, signUp, resetPassword, updatePassword } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<'signin' | 'signup'>(
-    searchParams.get('mode') === 'signup' ? 'signup' : 'signin'
+  const [mode, setMode] = useState<'signin' | 'signup' | 'forgot' | 'reset'>(
+    searchParams.get('mode') === 'signup' ? 'signup' : 
+    searchParams.get('mode') === 'forgot' ? 'forgot' :
+    searchParams.get('mode') === 'reset' ? 'reset' : 'signin'
   );
   
   // Get redirect URL from query params, default to dashboard
   const redirectUrl = searchParams.get('redirect') || '/dashboard';
+
+  const [resetEmail, setResetEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const [formData, setFormData] = useState({
     email: '',
@@ -113,6 +119,36 @@ export const Auth = () => {
     setLoading(false);
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail) return;
+    
+    setLoading(true);
+    await resetPassword(resetEmail);
+    setLoading(false);
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newPassword !== confirmPassword) {
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await updatePassword(newPassword);
+    if (!error) {
+      setMode('signin');
+      setNewPassword('');
+      setConfirmPassword('');
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-accent/10">
       <Navbar />
@@ -124,10 +160,14 @@ export const Auth = () => {
           </div>
           <CardTitle className="text-2xl">Welcome to A Cloud for Everyone</CardTitle>
           <CardDescription>
-            {mode === 'signin' ? 'Sign in to your account' : 'Create your account to get started'}
+            {mode === 'signin' ? 'Sign in to your account' : 
+             mode === 'signup' ? 'Create your account to get started' :
+             mode === 'forgot' ? 'Enter your email to reset your password' :
+             'Enter your new password'}
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {(mode === 'signin' || mode === 'signup') ? (
           <Tabs value={mode} onValueChange={(v) => setMode(v as 'signin' | 'signup')}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
@@ -149,7 +189,16 @@ export const Auth = () => {
                   {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="signin-password">Password</Label>
+                    <button
+                      type="button"
+                      onClick={() => setMode('forgot')}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
                   <Input
                     id="signin-password"
                     type="password"
@@ -347,6 +396,69 @@ export const Auth = () => {
               </form>
             </TabsContent>
           </Tabs>
+          ) : mode === 'forgot' ? (
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reset-email">Email</Label>
+                <Input
+                  id="reset-email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send Reset Link'}
+              </Button>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                className="w-full"
+                onClick={() => setMode('signin')}
+              >
+                Back to Sign In
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">New Password</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+                {newPassword && confirmPassword && newPassword !== confirmPassword && (
+                  <p className="text-sm text-destructive">Passwords do not match</p>
+                )}
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={loading || newPassword !== confirmPassword || newPassword.length < 6}
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Update Password'}
+              </Button>
+            </form>
+          )}
         </CardContent>
       </Card>
       </div>

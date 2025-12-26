@@ -1027,6 +1027,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_status: string
           avatar_url: string | null
           bio: string | null
           companies_worked_for: string[] | null
@@ -1040,12 +1041,14 @@ export type Database = {
           linkedin_url: string | null
           profile_frame: string | null
           role: Database["public"]["Enums"]["user_role"]
+          scheduled_deletion_at: string | null
           skills: string[] | null
           twitter_url: string | null
           updated_at: string | null
           website_url: string | null
         }
         Insert: {
+          account_status?: string
           avatar_url?: string | null
           bio?: string | null
           companies_worked_for?: string[] | null
@@ -1059,12 +1062,14 @@ export type Database = {
           linkedin_url?: string | null
           profile_frame?: string | null
           role: Database["public"]["Enums"]["user_role"]
+          scheduled_deletion_at?: string | null
           skills?: string[] | null
           twitter_url?: string | null
           updated_at?: string | null
           website_url?: string | null
         }
         Update: {
+          account_status?: string
           avatar_url?: string | null
           bio?: string | null
           companies_worked_for?: string[] | null
@@ -1078,6 +1083,7 @@ export type Database = {
           linkedin_url?: string | null
           profile_frame?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          scheduled_deletion_at?: string | null
           skills?: string[] | null
           twitter_url?: string | null
           updated_at?: string | null
