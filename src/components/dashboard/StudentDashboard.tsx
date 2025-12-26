@@ -5,9 +5,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { RequestMentorRole } from '@/components/RequestMentorRole';
 import { MySubmissions } from '@/components/dashboard/MySubmissions';
-import { BookOpen, Library, Award, TrendingUp } from 'lucide-react';
+import { BookOpen, Library, Award, TrendingUp, UserCheck, Clock, BookOpenCheck, MessageSquare } from 'lucide-react';
 import { stripHtml } from '@/lib/html-utils';
 
 interface Enrollment {
@@ -24,14 +25,32 @@ interface Enrollment {
   };
 }
 
+interface MentorshipRequest {
+  id: string;
+  status: string;
+  mentor_response: string | null;
+  created_at: string;
+  mentor_id: string;
+  course_to_complete_id: string | null;
+  course_to_complete?: {
+    id: string;
+    title: string;
+  } | null;
+}
+
 export const StudentDashboard = () => {
   const { profile } = useAuth();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [mentorshipRequests, setMentorshipRequests] = useState<MentorshipRequest[]>([]);
+  const [mentorProfiles, setMentorProfiles] = useState<Record<string, { full_name: string; avatar_url: string }>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchEnrollments = async () => {
-      const { data, error } = await supabase
+    const fetchData = async () => {
+      if (!profile?.id) return;
+
+      // Fetch enrollments
+      const { data: enrollmentData } = await supabase
         .from('enrollments')
         .select(`
           *,
@@ -44,18 +63,56 @@ export const StudentDashboard = () => {
             thumbnail_url
           )
         `)
-        .eq('student_id', profile?.id)
+        .eq('student_id', profile.id)
         .order('enrolled_at', { ascending: false });
 
-      if (!error && data) {
-        setEnrollments(data as any);
+      if (enrollmentData) {
+        setEnrollments(enrollmentData as any);
       }
+
+      // Fetch mentorship requests
+      const { data: requestData } = await supabase
+        .from('mentorship_requests')
+        .select(`
+          id,
+          status,
+          mentor_response,
+          created_at,
+          mentor_id,
+          course_to_complete_id,
+          course_to_complete:courses!mentorship_requests_course_to_complete_id_fkey (
+            id,
+            title
+          )
+        `)
+        .eq('student_id', profile.id)
+        .order('created_at', { ascending: false });
+
+      if (requestData) {
+        setMentorshipRequests(requestData as any);
+        
+        // Fetch mentor profiles
+        const mentorIds = [...new Set(requestData.map(r => r.mentor_id))];
+        if (mentorIds.length > 0) {
+          const { data: profiles } = await supabase
+            .rpc('get_public_mentor_profiles');
+          
+          if (profiles) {
+            const profileMap: Record<string, { full_name: string; avatar_url: string }> = {};
+            profiles.forEach((p: any) => {
+              if (mentorIds.includes(p.id)) {
+                profileMap[p.id] = { full_name: p.full_name, avatar_url: p.avatar_url };
+              }
+            });
+            setMentorProfiles(profileMap);
+          }
+        }
+      }
+
       setLoading(false);
     };
 
-    if (profile) {
-      fetchEnrollments();
-    }
+    fetchData();
   }, [profile]);
 
   return (
@@ -107,6 +164,101 @@ export const StudentDashboard = () => {
             </CardContent>
           </Card>
         </Link>
+      </div>
+
+      {/* Mentorship Requests Section */}
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">My Mentorship Requests</h2>
+          <Link to="/mentors">
+            <Button variant="outline">
+              <UserCheck className="h-4 w-4 mr-2" />
+              Find a Mentor
+            </Button>
+          </Link>
+        </div>
+
+        {mentorshipRequests.length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center">
+              <UserCheck className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No mentorship requests yet</h3>
+              <p className="text-muted-foreground mb-4">Connect with a mentor to accelerate your growth</p>
+              <Link to="/mentors">
+                <Button>Browse Mentors</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-4">
+            {mentorshipRequests.map((request) => (
+              <Card key={request.id} className="hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <UserCheck className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base">
+                          {mentorProfiles[request.mentor_id]?.full_name || 'Mentor'}
+                        </CardTitle>
+                        <p className="text-xs text-muted-foreground">
+                          Requested {new Date(request.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge 
+                      variant={
+                        request.status === 'accepted' ? 'default' :
+                        request.status === 'course_required' ? 'secondary' : 'outline'
+                      }
+                    >
+                      {request.status === 'accepted' && <UserCheck className="h-3 w-3 mr-1" />}
+                      {request.status === 'course_required' && <BookOpenCheck className="h-3 w-3 mr-1" />}
+                      {request.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
+                      {request.status === 'accepted' ? 'Accepted' : 
+                       request.status === 'course_required' ? 'Course Required' : 'Pending'}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  {request.status === 'accepted' && (
+                    <div className="space-y-3">
+                      {request.mentor_response && (
+                        <p className="text-sm text-muted-foreground">{request.mentor_response}</p>
+                      )}
+                      <Link to={`/cohort/community?mentor=${request.mentor_id}`}>
+                        <Button size="sm" className="w-full">
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          Join Cohort Community
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                  {request.status === 'course_required' && request.course_to_complete && (
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        Complete the following course to join the cohort:
+                      </p>
+                      <Link to={`/courses/${request.course_to_complete.id}`}>
+                        <Button size="sm" variant="outline" className="w-full">
+                          <BookOpen className="h-4 w-4 mr-2" />
+                          {request.course_to_complete.title}
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                  {request.status === 'pending' && (
+                    <p className="text-sm text-muted-foreground">
+                      Waiting for mentor's response...
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Mentor Role Request - Only shown to students */}

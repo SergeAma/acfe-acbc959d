@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MySubmissions } from '@/components/dashboard/MySubmissions';
 import { MentorOnboardingChecklist } from '@/components/dashboard/MentorOnboardingChecklist';
-import { BookOpen, Users, PlusCircle, TrendingUp } from 'lucide-react';
+import { BookOpen, Users, PlusCircle, TrendingUp, UsersRound } from 'lucide-react';
 import { stripHtml } from '@/lib/html-utils';
 
 interface Course {
@@ -60,12 +60,20 @@ export const MentorDashboard = () => {
           <h1 className="text-4xl font-bold mb-2">Mentor Dashboard</h1>
           <p className="text-muted-foreground text-lg">Manage your courses and students</p>
         </div>
-        <Link to="/mentor/courses/new">
-          <Button size="lg">
-            <PlusCircle className="h-5 w-5 mr-2" />
-            Create New Course
-          </Button>
-        </Link>
+        <div className="flex gap-3">
+          <Link to="/mentor/cohort">
+            <Button size="lg" variant="outline">
+              <UsersRound className="h-5 w-5 mr-2" />
+              My Cohort
+            </Button>
+          </Link>
+          <Link to="/mentor/courses/new">
+            <Button size="lg">
+              <PlusCircle className="h-5 w-5 mr-2" />
+              Create New Course
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats Cards */}
