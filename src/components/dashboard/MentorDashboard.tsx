@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MySubmissions } from '@/components/dashboard/MySubmissions';
+import { MentorOnboardingChecklist } from '@/components/dashboard/MentorOnboardingChecklist';
 import { BookOpen, Users, PlusCircle, TrendingUp } from 'lucide-react';
 import { stripHtml } from '@/lib/html-utils';
 
@@ -51,6 +52,9 @@ export const MentorDashboard = () => {
 
   return (
     <div className="space-y-8">
+      {/* Onboarding Checklist */}
+      <MentorOnboardingChecklist />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold mb-2">Mentor Dashboard</h1>

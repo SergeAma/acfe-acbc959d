@@ -33,9 +33,14 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Sending mentor welcome email to ${email}`);
 
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
     const currentYear = new Date().getFullYear();
     const displayName = name || "there";
 
+    // Send welcome email to the new mentor
     const htmlContent = `
 <!DOCTYPE html>
 <html>
@@ -92,16 +97,98 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Mentor welcome email sent:", emailResponse);
 
-    // Log the email
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
+    // Log the welcome email
     await supabase.from('email_logs').insert({
       subject: "Mentor Welcome Email",
       status: 'sent',
       sent_at: new Date().toISOString()
     });
+
+    // Get admin emails to notify them
+    const { data: adminRoles } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'admin');
+
+    if (adminRoles && adminRoles.length > 0) {
+      // Get admin profiles to get their emails
+      const adminIds = adminRoles.map(r => r.user_id);
+      const { data: adminProfiles } = await supabase
+        .from('profiles')
+        .select('email, full_name')
+        .in('id', adminIds);
+
+      if (adminProfiles && adminProfiles.length > 0) {
+        const adminEmails = adminProfiles.map(p => p.email);
+        
+        // Send notification email to admins
+        const adminNotificationHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #4a7c59 0%, #2d4a35 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">New Mentor Joined! 🎉</h1>
+  </div>
+  
+  <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+    <p>Hello Admin,</p>
+    
+    <p>Great news! A new mentor has accepted their invitation and joined <strong>A Cloud for Everyone</strong>.</p>
+    
+    <div style="background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4a7c59;">
+      <h3 style="margin-top: 0; color: #4a7c59;">New Mentor Details</h3>
+      <p><strong>Name:</strong> ${displayName}</p>
+      <p><strong>Email:</strong> ${email}</p>
+      <p><strong>Joined:</strong> ${new Date().toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}</p>
+    </div>
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="https://acloudforeveryone.org/admin/users" style="background: #4a7c59; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">View All Users</a>
+    </div>
+    
+    <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+    
+    <p style="font-size: 12px; color: #999; text-align: center;">
+      © ${currentYear} A Cloud for Everyone. All rights reserved.
+    </p>
+  </div>
+</body>
+</html>
+        `;
+
+        try {
+          await resend.emails.send({
+            from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
+            to: adminEmails,
+            subject: `New Mentor Joined: ${displayName}`,
+            html: adminNotificationHtml,
+          });
+
+          console.log("Admin notification sent to:", adminEmails);
+
+          // Log the admin notification email
+          await supabase.from('email_logs').insert({
+            subject: `Admin Notification: New Mentor ${displayName}`,
+            status: 'sent',
+            sent_at: new Date().toISOString()
+          });
+        } catch (adminEmailError) {
+          console.error("Failed to send admin notification:", adminEmailError);
+          // Don't fail the whole request if admin notification fails
+        }
+      }
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
