@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { MySubmissions } from '@/components/dashboard/MySubmissions';
 import { MentorOnboardingChecklist } from '@/components/dashboard/MentorOnboardingChecklist';
 import { BookOpen, Users, PlusCircle, TrendingUp, UsersRound } from 'lucide-react';
@@ -22,28 +23,39 @@ interface Course {
 export const MentorDashboard = () => {
   const { profile } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [pendingRequestCount, setPendingRequestCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchCourses = async () => {
-      const { data, error } = await supabase
+    const fetchData = async () => {
+      if (!profile?.id) return;
+
+      // Fetch courses
+      const { data: coursesData } = await supabase
         .from('courses')
         .select(`
           *,
           enrollments:enrollments(count)
         `)
-        .eq('mentor_id', profile?.id)
+        .eq('mentor_id', profile.id)
         .order('created_at', { ascending: false });
 
-      if (!error && data) {
-        setCourses(data as any);
+      if (coursesData) {
+        setCourses(coursesData as any);
       }
+
+      // Fetch pending mentorship request count
+      const { count } = await supabase
+        .from('mentorship_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('mentor_id', profile.id)
+        .eq('status', 'pending');
+
+      setPendingRequestCount(count || 0);
       setLoading(false);
     };
 
-    if (profile) {
-      fetchCourses();
-    }
+    fetchData();
   }, [profile]);
 
   const totalStudents = courses.reduce((acc, course) => {
@@ -62,9 +74,17 @@ export const MentorDashboard = () => {
         </div>
         <div className="flex gap-3">
           <Link to="/mentor/cohort">
-            <Button size="lg" variant="outline">
+            <Button size="lg" variant="outline" className="relative">
               <UsersRound className="h-5 w-5 mr-2" />
               My Cohort
+              {pendingRequestCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                >
+                  {pendingRequestCount}
+                </Badge>
+              )}
             </Button>
           </Link>
           <Link to="/mentor/courses/new">
@@ -72,7 +92,7 @@ export const MentorDashboard = () => {
               <PlusCircle className="h-5 w-5 mr-2" />
               Create New Course
             </Button>
-          </Link>
+        </Link>
         </div>
       </div>
 

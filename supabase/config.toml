@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.send-mentorship-response-notification]
 verify_jwt = false
+
+[functions.send-course-completion-notification]
+verify_jwt = false
