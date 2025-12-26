@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.send-mentor-invitation]
 verify_jwt = false
+
+[functions.send-mentor-welcome-email]
+verify_jwt = false

@@ -86,6 +86,19 @@ export default function AcceptMentorInvite() {
 
       await refreshProfile();
 
+      // Send welcome email to new mentor
+      try {
+        await supabase.functions.invoke('send-mentor-welcome-email', {
+          body: {
+            email: user.email,
+            name: user.user_metadata?.full_name || user.email?.split('@')[0]
+          }
+        });
+      } catch (emailError) {
+        console.error("Failed to send welcome email:", emailError);
+        // Don't block the flow if email fails
+      }
+
       toast({
         title: "Welcome, Mentor!",
         description: "You now have mentor privileges. Let's set up your profile!",
