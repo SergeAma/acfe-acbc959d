@@ -58,6 +58,7 @@ export const Auth = () => {
     linkedinUrl: '',
     cloudBrands: [] as string[],
     emailConsent: false,
+    termsAccepted: false,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -95,6 +96,12 @@ export const Auth = () => {
     e.preventDefault();
     
     if (!validateForm()) return;
+    
+    // Check terms acceptance for signup
+    if (mode === 'signup' && !formData.termsAccepted) {
+      setErrors(prev => ({ ...prev, termsAccepted: 'You must accept the terms of service to continue' }));
+      return;
+    }
 
     setLoading(true);
 
@@ -382,15 +389,39 @@ export const Auth = () => {
                     htmlFor="email-consent"
                     className="text-sm text-muted-foreground cursor-pointer leading-tight"
                   >
-                    By submitting this form, I agree to receive email updates from A Cloud for Everyone, including information about training programs and bootcamps.
+                    I agree to receive email updates from A Cloud for Everyone, including information about training programs and bootcamps.
                   </label>
                 </div>
+
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="terms-consent"
+                    checked={formData.termsAccepted}
+                    onCheckedChange={(checked) => {
+                      setFormData({ ...formData, termsAccepted: checked as boolean });
+                      if (checked) {
+                        setErrors(prev => {
+                          const { termsAccepted, ...rest } = prev;
+                          return rest;
+                        });
+                      }
+                    }}
+                    className={errors.termsAccepted ? 'border-destructive' : ''}
+                  />
+                  <label 
+                    htmlFor="terms-consent"
+                    className={`text-sm cursor-pointer leading-tight ${errors.termsAccepted ? 'text-destructive' : 'text-muted-foreground'}`}
+                  >
+                    I accept the Terms of Service and Privacy Policy *
+                  </label>
+                </div>
+                {errors.termsAccepted && <p className="text-sm text-destructive">{errors.termsAccepted}</p>}
 
                 <p className="text-sm text-muted-foreground text-center">
                   All accounts start as student accounts. You can request mentor access after signing up.
                 </p>
 
-                <Button type="submit" className="w-full bg-foreground text-background hover:bg-foreground/90 font-semibold" disabled={loading}>
+                <Button type="submit" className="w-full bg-foreground text-background hover:bg-foreground/90 font-semibold" disabled={loading || !formData.termsAccepted}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'REGISTER'}
                 </Button>
               </form>

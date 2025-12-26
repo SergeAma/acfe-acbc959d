@@ -82,6 +82,18 @@ const SUGGESTED_SKILLS = {
   ],
 };
 
+const COUNTRIES = [
+  'Nigeria', 'South Africa', 'Kenya', 'Ghana', 'Egypt', 'Morocco', 'Ethiopia', 'Tanzania', 
+  'Uganda', 'Algeria', 'Sudan', 'Angola', 'Mozambique', 'Cameroon', 'Ivory Coast', 
+  'Democratic Republic of Congo', 'Zimbabwe', 'Senegal', 'Rwanda', 'Tunisia',
+  'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 'France', 
+  'Netherlands', 'Belgium', 'Switzerland', 'Sweden', 'Norway', 'Denmark', 'Finland',
+  'India', 'China', 'Japan', 'Singapore', 'Malaysia', 'Indonesia', 'Thailand', 'Vietnam',
+  'Brazil', 'Mexico', 'Argentina', 'Colombia', 'Chile', 'Peru',
+  'United Arab Emirates', 'Saudi Arabia', 'Qatar', 'Israel', 'Turkey',
+  'New Zealand', 'Ireland', 'Portugal', 'Spain', 'Italy', 'Poland', 'Austria'
+];
+
 export const ProfileSettings = () => {
   const navigate = useNavigate();
   const { profile, refreshProfile, signOut } = useAuth();
@@ -98,6 +110,7 @@ export const ProfileSettings = () => {
   const [newCompany, setNewCompany] = useState('');
   const [newSkill, setNewSkill] = useState('');
   const [skillsPopoverOpen, setSkillsPopoverOpen] = useState(false);
+  const [countryPopoverOpen, setCountryPopoverOpen] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
     bio: '',
@@ -537,13 +550,53 @@ export const ProfileSettings = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="country">Country</Label>
-                <Input
-                  id="country"
-                  name="country"
-                  value={formData.country}
-                  onChange={handleChange}
-                  placeholder="Enter your country"
-                />
+                <Popover open={countryPopoverOpen} onOpenChange={setCountryPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <div className="relative">
+                      <Input
+                        id="country"
+                        name="country"
+                        value={formData.country}
+                        onChange={(e) => {
+                          setFormData(prev => ({ ...prev, country: e.target.value }));
+                          if (!countryPopoverOpen) setCountryPopoverOpen(true);
+                        }}
+                        onFocus={() => setCountryPopoverOpen(true)}
+                        placeholder="Type to search countries..."
+                        autoComplete="off"
+                      />
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[300px] p-0 bg-popover border border-border shadow-lg z-50" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
+                    <Command>
+                      <CommandList className="max-h-[200px]">
+                        {COUNTRIES
+                          .filter(country => 
+                            !formData.country || country.toLowerCase().includes(formData.country.toLowerCase())
+                          )
+                          .slice(0, 10)
+                          .map((country) => (
+                            <CommandItem
+                              key={country}
+                              value={country}
+                              onSelect={() => {
+                                setFormData(prev => ({ ...prev, country }));
+                                setCountryPopoverOpen(false);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              {country}
+                            </CommandItem>
+                          ))}
+                        {COUNTRIES.filter(country => 
+                          !formData.country || country.toLowerCase().includes(formData.country.toLowerCase())
+                        ).length === 0 && (
+                          <div className="p-2 text-sm text-muted-foreground">No countries found</div>
+                        )}
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="space-y-2">
@@ -617,7 +670,7 @@ export const ProfileSettings = () => {
                 <div className="space-y-2">
                   <Label>Skills & Expertise</Label>
                   <div className="flex gap-2">
-                    <Popover open={skillsPopoverOpen} onOpenChange={setSkillsPopoverOpen}>
+                    <Popover open={skillsPopoverOpen} onOpenChange={setSkillsPopoverOpen} modal={false}>
                       <PopoverTrigger asChild>
                         <div className="flex-1 relative">
                           <Input
@@ -633,40 +686,35 @@ export const ProfileSettings = () => {
                                 e.preventDefault();
                                 handleAddSkill();
                               }
+                              if (e.key === 'Escape') {
+                                setSkillsPopoverOpen(false);
+                              }
                             }}
+                            autoComplete="off"
                           />
                         </div>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[400px] p-0 bg-popover border border-border shadow-lg z-50" align="start">
-                        <Command>
-                          <CommandInput 
-                            placeholder="Search skills..." 
-                            value={newSkill}
-                            onValueChange={setNewSkill}
-                          />
+                      <PopoverContent 
+                        className="w-[400px] p-0 bg-popover border border-border shadow-lg z-50" 
+                        align="start"
+                        onOpenAutoFocus={(e) => e.preventDefault()}
+                        onCloseAutoFocus={(e) => e.preventDefault()}
+                      >
+                        <Command shouldFilter={false}>
                           <CommandList className="max-h-[300px]">
-                            <CommandEmpty>
-                              {newSkill.trim() ? (
-                                <button
-                                  type="button"
-                                  className="w-full p-2 text-sm text-left hover:bg-accent"
-                                  onClick={() => handleAddSkill()}
-                                >
-                                  Add "{newSkill}" as custom skill
-                                </button>
-                              ) : (
-                                "Type to search or add custom skill"
-                              )}
-                            </CommandEmpty>
-                            {Object.entries(SUGGESTED_SKILLS).map(([category, skills]) => (
-                              <CommandGroup key={category} heading={category}>
-                                {skills
-                                  .filter(skill => !formData.skills.includes(skill))
-                                  .filter(skill => 
-                                    !newSkill || skill.toLowerCase().includes(newSkill.toLowerCase())
-                                  )
-                                  .slice(0, 10)
-                                  .map((skill) => (
+                            {Object.entries(SUGGESTED_SKILLS).map(([category, skills]) => {
+                              const filteredSkills = skills
+                                .filter(skill => !formData.skills.includes(skill))
+                                .filter(skill => 
+                                  !newSkill || skill.toLowerCase().includes(newSkill.toLowerCase())
+                                )
+                                .slice(0, 8);
+                              
+                              if (filteredSkills.length === 0) return null;
+                              
+                              return (
+                                <CommandGroup key={category} heading={category}>
+                                  {filteredSkills.map((skill) => (
                                     <CommandItem
                                       key={skill}
                                       value={skill}
@@ -676,8 +724,22 @@ export const ProfileSettings = () => {
                                       {skill}
                                     </CommandItem>
                                   ))}
+                                </CommandGroup>
+                              );
+                            })}
+                            {newSkill.trim() && !Object.values(SUGGESTED_SKILLS).flat().some(
+                              skill => skill.toLowerCase() === newSkill.trim().toLowerCase()
+                            ) && (
+                              <CommandGroup heading="Custom">
+                                <CommandItem
+                                  value={newSkill}
+                                  onSelect={() => handleAddSkill()}
+                                  className="cursor-pointer"
+                                >
+                                  Add "{newSkill}" as custom skill
+                                </CommandItem>
                               </CommandGroup>
-                            ))}
+                            )}
                           </CommandList>
                         </Command>
                       </PopoverContent>

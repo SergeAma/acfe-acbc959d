@@ -242,11 +242,11 @@ export const Mentors = () => {
             {filteredMentors.map((mentor) => (
               <Card 
                 key={mentor.id} 
-                className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
+                className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group h-full flex flex-col"
                 onClick={() => handleMentorClick(mentor.id)}
               >
-                <CardContent className="p-6">
-                  <div className="flex flex-col items-center text-center">
+                <CardContent className="p-6 flex flex-col h-full">
+                  <div className="flex flex-col items-center text-center flex-1">
                     <ProfileAvatar
                       src={mentor.avatar_url || undefined}
                       name={mentor.full_name || undefined}
@@ -323,11 +323,12 @@ export const Mentors = () => {
                         </a>
                       )}
                     </div>
-
-                    <Button variant="outline" size="sm" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                      View Profile & Courses
-                    </Button>
                   </div>
+
+                  {/* Button always at bottom */}
+                  <Button variant="outline" size="sm" className="w-full mt-auto group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                    View Profile & Courses
+                  </Button>
                 </CardContent>
               </Card>
             ))}
