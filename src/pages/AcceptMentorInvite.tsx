@@ -91,7 +91,7 @@ export default function AcceptMentorInvite() {
         description: "You now have mentor privileges. Let's set up your profile!",
       });
 
-      navigate("/settings?tab=profile");
+      navigate("/profile");
     } catch (error: any) {
       console.error("Error accepting invitation:", error);
       toast({
