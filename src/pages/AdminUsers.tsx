@@ -17,6 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { UserStatusManager } from '@/components/admin/UserStatusManager';
 
 interface UserProfile {
   id: string;
@@ -25,6 +26,7 @@ interface UserProfile {
   role: string;
   created_at: string;
   country: string | null;
+  account_status: string;
 }
 
 export const AdminUsers = () => {
@@ -48,7 +50,7 @@ export const AdminUsers = () => {
     
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, email, full_name, role, created_at, country')
+      .select('id, email, full_name, role, created_at, country, account_status')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -167,6 +169,7 @@ export const AdminUsers = () => {
                     <TableHead>Role</TableHead>
                     <TableHead>Country</TableHead>
                     <TableHead>Joined</TableHead>
+                    <TableHead>Status & Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -195,6 +198,15 @@ export const AdminUsers = () => {
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           {new Date(user.created_at).toLocaleDateString()}
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <UserStatusManager
+                          userId={user.id}
+                          userName={user.full_name || 'Unknown'}
+                          currentRole={user.role}
+                          currentStatus={user.account_status || 'active'}
+                          onUpdate={fetchUsers}
+                        />
                       </TableCell>
                     </TableRow>
                   ))}
