@@ -246,6 +246,7 @@ export const Mentors = () => {
                 onClick={() => handleMentorClick(mentor.id)}
               >
                 <CardContent className="p-6 flex flex-col h-full">
+                  {/* Top content section */}
                   <div className="flex flex-col items-center text-center flex-1">
                     <ProfileAvatar
                       src={mentor.avatar_url || undefined}
@@ -290,11 +291,14 @@ export const Mentors = () => {
                     )}
                     
                     {mentor.bio && (
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                      <p className="text-sm text-muted-foreground line-clamp-3">
                         {mentor.bio}
                       </p>
                     )}
+                  </div>
 
+                  {/* Bottom section - always aligned */}
+                  <div className="mt-auto pt-4 flex flex-col items-center">
                     {/* Social Links */}
                     <div className="flex gap-3 mb-4" onClick={(e) => e.stopPropagation()}>
                       {mentor.linkedin_url && (
@@ -323,12 +327,12 @@ export const Mentors = () => {
                         </a>
                       )}
                     </div>
-                  </div>
 
-                  {/* Button always at bottom */}
-                  <Button variant="outline" size="sm" className="w-full mt-auto group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                    View Profile & Courses
-                  </Button>
+                    {/* Button */}
+                    <Button variant="outline" size="sm" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                      View Profile & Courses
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
