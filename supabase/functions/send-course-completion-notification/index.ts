@@ -1,0 +1,166 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
+
+interface CourseCompletionRequest {
+  studentId: string;
+  courseId: string;
+  courseTitle: string;
+}
+
+const handler = async (req: Request): Promise<Response> => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { studentId, courseId, courseTitle }: CourseCompletionRequest = await req.json();
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Find mentorship requests with course_required status for this course
+    const { data: requests, error: requestsError } = await supabase
+      .from("mentorship_requests")
+      .select("id, mentor_id, student_bio, career_ambitions")
+      .eq("student_id", studentId)
+      .eq("course_to_complete_id", courseId)
+      .eq("status", "course_required");
+
+    if (requestsError) {
+      console.error("Error fetching requests:", requestsError);
+      throw requestsError;
+    }
+
+    if (!requests || requests.length === 0) {
+      return new Response(
+        JSON.stringify({ message: "No pending course requirements found" }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Get student info
+    const { data: studentProfile } = await supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", studentId)
+      .single();
+
+    const studentName = studentProfile?.full_name || "A student";
+
+    // Send notification to each mentor
+    let emailsSent = 0;
+    
+    for (const request of requests) {
+      // Get mentor's email from profiles table using service role
+      const { data: mentorData } = await supabase
+        .from("profiles")
+        .select("email, full_name")
+        .eq("id", request.mentor_id)
+        .single();
+
+      if (!mentorData?.email) {
+        console.log("No email found for mentor:", request.mentor_id);
+        continue;
+      }
+
+      const mentorName = mentorData.full_name || "Mentor";
+
+      const emailHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+            .highlight { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea; }
+            .button { display: inline-block; background: #667eea; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; margin-top: 20px; }
+            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🎓 Course Completed!</h1>
+            </div>
+            <div class="content">
+              <p>Hi ${mentorName},</p>
+              <p><strong>${studentName}</strong> has successfully completed the course you recommended:</p>
+              
+              <div class="highlight">
+                <h3 style="margin: 0; color: #667eea;">${courseTitle}</h3>
+              </div>
+
+              <p>They previously applied to join your mentorship cohort. You can now reconsider their request and accept them into your cohort.</p>
+
+              <div class="highlight">
+                <h4 style="margin: 0 0 10px 0;">About the Student:</h4>
+                <p style="margin: 5px 0;"><strong>Bio:</strong> ${request.student_bio}</p>
+                <p style="margin: 5px 0;"><strong>Career Ambitions:</strong> ${request.career_ambitions}</p>
+              </div>
+
+              <center>
+                <a href="https://learnproject.co/mentor/cohort" class="button">
+                  Review Request
+                </a>
+              </center>
+
+              <div class="footer">
+                <p>Keep inspiring the next generation of tech leaders!</p>
+                <p>— The Learn Project Team</p>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${RESEND_API_KEY}`,
+        },
+        body: JSON.stringify({
+          from: "Learn Project <noreply@learnproject.co>",
+          to: [mentorData.email],
+          subject: `${studentName} completed "${courseTitle}" - Review their mentorship request`,
+          html: emailHtml,
+        }),
+      });
+
+      if (res.ok) {
+        emailsSent++;
+        console.log(`Email sent to mentor: ${mentorData.email}`);
+      } else {
+        const error = await res.text();
+        console.error(`Failed to send email to ${mentorData.email}:`, error);
+      }
+    }
+
+    console.log(`Sent ${emailsSent} notification emails`);
+
+    return new Response(
+      JSON.stringify({ success: true, emailsSent }),
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  } catch (error: any) {
+    console.error("Error in send-course-completion-notification:", error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  }
+};
+
+serve(handler);

@@ -295,52 +295,67 @@ export const CourseLearn = () => {
       description: 'Lesson marked as complete',
     });
 
-    // Check if course is now 100% complete and issue certificate
-    if (newProgress === 100 && course?.certificate_enabled && !certificate && user) {
-      const certNumber = `ACFE-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-      
-      const { data: certData, error: certError } = await supabase
-        .from('course_certificates')
-        .insert({
-          enrollment_id: enrollmentId,
-          student_id: user.id,
-          course_id: course.id,
-          certificate_number: certNumber,
-        })
-        .select()
-        .single();
-
-      if (!certError && certData) {
-        setCertificate(certData);
-        setShowCertificateDialog(true);
-        toast({
-          title: 'Congratulations!',
-          description: 'You earned a certificate!',
+    // Check if course is now 100% complete
+    if (newProgress === 100 && user && course) {
+      // Notify mentors about course completion for pending mentorship requests
+      try {
+        await supabase.functions.invoke('send-course-completion-notification', {
+          body: {
+            studentId: user.id,
+            courseId: course.id,
+            courseTitle: course.title,
+          },
         });
+      } catch (notifyError) {
+        console.error('Failed to send course completion notification:', notifyError);
+      }
 
-        // Send certificate email notification
-        try {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('email, full_name')
-            .eq('id', user.id)
-            .single();
+      // Issue certificate if enabled
+      if (course.certificate_enabled && !certificate) {
+        const certNumber = `ACFE-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+        
+        const { data: certData, error: certError } = await supabase
+          .from('course_certificates')
+          .insert({
+            enrollment_id: enrollmentId,
+            student_id: user.id,
+            course_id: course.id,
+            certificate_number: certNumber,
+          })
+          .select()
+          .single();
 
-          if (profileData?.email) {
-            await supabase.functions.invoke('send-certificate-email', {
-              body: {
-                student_email: profileData.email,
-                student_name: profileData.full_name || 'Student',
-                course_name: course.title,
-                mentor_name: course.mentor_name,
-                certificate_number: certNumber,
-                issued_at: certData.issued_at,
-              },
-            });
+        if (!certError && certData) {
+          setCertificate(certData);
+          setShowCertificateDialog(true);
+          toast({
+            title: 'Congratulations!',
+            description: 'You earned a certificate!',
+          });
+
+          // Send certificate email notification
+          try {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('email, full_name')
+              .eq('id', user.id)
+              .single();
+
+            if (profileData?.email) {
+              await supabase.functions.invoke('send-certificate-email', {
+                body: {
+                  student_email: profileData.email,
+                  student_name: profileData.full_name || 'Student',
+                  course_name: course.title,
+                  mentor_name: course.mentor_name,
+                  certificate_number: certNumber,
+                  issued_at: certData.issued_at,
+                },
+              });
+            }
+          } catch (emailError) {
+            console.error('Failed to send certificate email:', emailError);
           }
-        } catch (emailError) {
-          console.error('Failed to send certificate email:', emailError);
-          // Don't show error to user - certificate was still issued successfully
         }
       }
     }
