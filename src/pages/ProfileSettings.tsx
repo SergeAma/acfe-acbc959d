@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth, ProfileFrame } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
@@ -9,10 +10,21 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Upload, Pencil, Trash2, X, Plus } from 'lucide-react';
+import { Loader2, Upload, Pencil, Trash2, X, Plus, AlertTriangle, Pause, Play } from 'lucide-react';
 import { ProfilePhotoEditor } from '@/components/profile/ProfilePhotoEditor';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import {
   Command,
   CommandEmpty,
@@ -71,10 +83,13 @@ const SUGGESTED_SKILLS = {
 };
 
 export const ProfileSettings = () => {
-  const { profile, refreshProfile } = useAuth();
+  const navigate = useNavigate();
+  const { profile, refreshProfile, signOut } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [accountActionLoading, setAccountActionLoading] = useState(false);
+  const [accountStatus, setAccountStatus] = useState<'active' | 'paused' | 'deleted'>('active');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [showPhotoEditor, setShowPhotoEditor] = useState(false);
@@ -114,8 +129,117 @@ export const ProfileSettings = () => {
         companies_worked_for: (profile as any).companies_worked_for || [],
         skills: (profile as any).skills || [],
       });
+      
+      // Fetch account status
+      fetchAccountStatus();
     }
   }, [profile]);
+
+  const fetchAccountStatus = async () => {
+    if (!profile?.id) return;
+    
+    const { data } = await supabase
+      .from('profiles')
+      .select('account_status')
+      .eq('id', profile.id)
+      .single();
+    
+    if (data?.account_status) {
+      setAccountStatus(data.account_status as 'active' | 'paused' | 'deleted');
+    }
+  };
+
+  const handlePauseAccount = async () => {
+    if (!profile?.id) return;
+    
+    setAccountActionLoading(true);
+    const newStatus = accountStatus === 'paused' ? 'active' : 'paused';
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({ account_status: newStatus })
+      .eq('id', profile.id);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      setAccountStatus(newStatus);
+      toast({
+        title: newStatus === 'paused' ? 'Account Paused' : 'Account Reactivated',
+        description: newStatus === 'paused' 
+          ? 'Your account has been paused. You can reactivate it anytime.'
+          : 'Welcome back! Your account is now active.',
+      });
+    }
+    setAccountActionLoading(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!profile?.id) return;
+    
+    setAccountActionLoading(true);
+    
+    // Set scheduled deletion date (30 days from now)
+    const scheduledDeletionAt = new Date();
+    scheduledDeletionAt.setDate(scheduledDeletionAt.getDate() + 30);
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({ 
+        account_status: 'deleted',
+        scheduled_deletion_at: scheduledDeletionAt.toISOString()
+      })
+      .eq('id', profile.id);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Account Scheduled for Deletion',
+        description: 'Your account will be permanently deleted in 30 days. You can cancel this by signing in and reactivating your account.',
+      });
+      await signOut();
+      navigate('/');
+    }
+    setAccountActionLoading(false);
+  };
+
+  const handleCancelDeletion = async () => {
+    if (!profile?.id) return;
+    
+    setAccountActionLoading(true);
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({ 
+        account_status: 'active',
+        scheduled_deletion_at: null
+      })
+      .eq('id', profile.id);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      setAccountStatus('active');
+      toast({
+        title: 'Deletion Cancelled',
+        description: 'Your account is now active again.',
+      });
+    }
+    setAccountActionLoading(false);
+  };
 
   const handleAddCompany = () => {
     if (newCompany.trim() && !formData.companies_worked_for.includes(newCompany.trim())) {
@@ -653,6 +777,103 @@ export const ProfileSettings = () => {
                 </Button>
               </div>
             </form>
+          </CardContent>
+        </Card>
+
+        {/* Account Management Section */}
+        <Card className="border-destructive/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Account Management
+            </CardTitle>
+            <CardDescription>Manage your account status</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {accountStatus === 'deleted' ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/20">
+                  <h4 className="font-semibold text-destructive mb-2">Account Scheduled for Deletion</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Your account is scheduled to be permanently deleted. You can cancel this and reactivate your account.
+                  </p>
+                </div>
+                <Button 
+                  onClick={handleCancelDeletion}
+                  disabled={accountActionLoading}
+                  className="w-full"
+                >
+                  {accountActionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Cancel Deletion & Reactivate Account
+                </Button>
+              </div>
+            ) : (
+              <>
+                {/* Pause Account */}
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <h4 className="font-medium flex items-center gap-2">
+                      {accountStatus === 'paused' ? (
+                        <><Play className="h-4 w-4" /> Reactivate Account</>
+                      ) : (
+                        <><Pause className="h-4 w-4" /> Pause Account</>
+                      )}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      {accountStatus === 'paused' 
+                        ? 'Your account is currently paused. Click to reactivate.'
+                        : 'Temporarily pause your account. You can reactivate anytime.'}
+                    </p>
+                  </div>
+                  <Button 
+                    variant={accountStatus === 'paused' ? 'default' : 'outline'}
+                    onClick={handlePauseAccount}
+                    disabled={accountActionLoading}
+                  >
+                    {accountActionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {accountStatus === 'paused' ? 'Reactivate' : 'Pause'}
+                  </Button>
+                </div>
+
+                {/* Delete Account */}
+                <div className="flex items-center justify-between p-4 border border-destructive/30 rounded-lg bg-destructive/5">
+                  <div className="space-y-1">
+                    <h4 className="font-medium text-destructive flex items-center gap-2">
+                      <Trash2 className="h-4 w-4" /> Delete Account
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Permanently delete your account and all data. This action can be cancelled within 30 days.
+                    </p>
+                  </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" disabled={accountActionLoading}>
+                        Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will schedule your account for permanent deletion. Your account will be deleted in 30 days.
+                          During this period, you can sign in and cancel the deletion to recover your account.
+                          After 30 days, all your data will be permanently removed and cannot be recovered.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDeleteAccount}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Yes, delete my account
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
