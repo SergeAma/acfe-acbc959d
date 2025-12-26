@@ -1406,6 +1406,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      reinstate_mentor: {
+        Args: { _admin_id: string; _user_id: string }
+        Returns: boolean
+      }
       reject_mentor_request: {
         Args: { _admin_id: string; _request_id: string }
         Returns: undefined
