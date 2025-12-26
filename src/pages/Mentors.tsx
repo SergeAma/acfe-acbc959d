@@ -238,7 +238,7 @@ export const Mentors = () => {
             ))}
           </div>
         ) : filteredMentors && filteredMentors.length > 0 ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 auto-rows-fr">
             {filteredMentors.map((mentor) => (
               <Card 
                 key={mentor.id} 
