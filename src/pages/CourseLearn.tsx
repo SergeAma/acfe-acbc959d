@@ -35,8 +35,10 @@ import {
 } from '@/components/ui/dialog';
 import { CourseCertificate } from '@/components/CourseCertificate';
 import { SecureVideoPlayer } from '@/components/learning/SecureVideoPlayer';
+import { ExternalVideoPlayer } from '@/components/learning/ExternalVideoPlayer';
 import { NotesPanel } from '@/components/learning/NotesPanel';
 import { BookmarksPanel, useBookmarks } from '@/components/learning/BookmarksPanel';
+import { getVideoEmbedInfo } from '@/lib/video-utils';
 
 interface ContentItem {
   id: string;
@@ -466,16 +468,24 @@ export const CourseLearn = () => {
         {currentContent.content_type === 'video' && currentContent.video_url && enrollmentId && (
           <Card>
             <CardContent className="pt-6">
-              <SecureVideoPlayer
-                videoUrl={currentContent.video_url}
-                contentId={currentContent.id}
-                enrollmentId={enrollmentId}
-                onBookmark={(timestamp) => {
-                  if ((window as any).__addBookmark) {
-                    (window as any).__addBookmark(timestamp);
-                  }
-                }}
-              />
+              {(() => {
+                const embedInfo = getVideoEmbedInfo(currentContent.video_url);
+                if (embedInfo.isExternal) {
+                  return <ExternalVideoPlayer videoUrl={currentContent.video_url} />;
+                }
+                return (
+                  <SecureVideoPlayer
+                    videoUrl={currentContent.video_url}
+                    contentId={currentContent.id}
+                    enrollmentId={enrollmentId}
+                    onBookmark={(timestamp) => {
+                      if ((window as any).__addBookmark) {
+                        (window as any).__addBookmark(timestamp);
+                      }
+                    }}
+                  />
+                );
+              })()}
             </CardContent>
           </Card>
         )}

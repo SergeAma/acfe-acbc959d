@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { FileText, Video, File, Trash2, Save, Loader2, GripVertical, Copy, MoveRight, Pencil, X } from 'lucide-react';
+import { FileText, Video, File, Trash2, Save, Loader2, GripVertical, Copy, MoveRight, Pencil, X, Link, Upload, ExternalLink, Youtube } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getVideoEmbedInfo, isValidVideoUrl, getProviderDisplayName } from '@/lib/video-utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -71,6 +73,11 @@ export const ContentItemEditor = ({
   const [savingSettings, setSavingSettings] = useState(false);
   
   const [uploading, setUploading] = useState(false);
+  
+  // External video URL state
+  const [externalVideoUrl, setExternalVideoUrl] = useState('');
+  const [savingExternalUrl, setSavingExternalUrl] = useState(false);
+  const [videoInputMode, setVideoInputMode] = useState<'upload' | 'external'>('upload');
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
@@ -88,6 +95,18 @@ export const ContentItemEditor = ({
     setEditedContent(item.text_content || '');
     setDurationMinutes(item.duration_minutes || 0);
     setDripDelayDays(item.drip_delay_days || 0);
+    
+    // Determine if the current video is external
+    if (item.video_url) {
+      const embedInfo = getVideoEmbedInfo(item.video_url);
+      if (embedInfo.isExternal) {
+        setVideoInputMode('external');
+        setExternalVideoUrl(item.video_url);
+      } else {
+        setVideoInputMode('upload');
+        setExternalVideoUrl('');
+      }
+    }
   }, [item]);
 
   const getIcon = () => {
@@ -226,6 +245,63 @@ export const ContentItemEditor = ({
       onUpdate();
     }
     setUploading(false);
+  };
+
+  const handleSaveExternalVideoUrl = async () => {
+    if (!externalVideoUrl.trim()) return;
+    
+    if (!isValidVideoUrl(externalVideoUrl)) {
+      toast({
+        title: 'Invalid URL',
+        description: 'Please enter a valid YouTube, Vimeo, Loom, or Wistia video URL',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setSavingExternalUrl(true);
+    
+    const { error } = await supabase
+      .from('course_content')
+      .update({ video_url: externalVideoUrl.trim() })
+      .eq('id', item.id);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save video URL',
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Success',
+        description: 'External video URL saved',
+      });
+      onUpdate();
+    }
+    setSavingExternalUrl(false);
+  };
+
+  const handleRemoveVideo = async () => {
+    const { error } = await supabase
+      .from('course_content')
+      .update({ video_url: null })
+      .eq('id', item.id);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to remove video',
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Video removed',
+      });
+      setExternalVideoUrl('');
+      onUpdate();
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -435,27 +511,125 @@ export const ContentItemEditor = ({
               </div>
             )}
 
-            {/* Video Upload */}
+            {/* Video Upload/External Link */}
             {item.content_type === 'video' && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {item.video_url ? (
-                  <div className="space-y-2">
-                    <video controls className="w-full rounded-md max-h-64">
-                      <source src={item.video_url} type="video/mp4" />
-                      Your browser does not support the video tag.
-                    </video>
+                  <div className="space-y-3">
+                    {/* Show current video preview */}
+                    {(() => {
+                      const embedInfo = getVideoEmbedInfo(item.video_url);
+                      if (embedInfo.isExternal && embedInfo.embedUrl) {
+                        return (
+                          <div className="space-y-2">
+                            <div className="relative w-full aspect-video bg-black rounded-md overflow-hidden max-h-48">
+                              <iframe
+                                src={embedInfo.embedUrl}
+                                className="absolute inset-0 w-full h-full"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                                title="Video preview"
+                              />
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <Badge variant="secondary" className="gap-1.5 text-xs">
+                                {embedInfo.provider === 'youtube' ? <Youtube className="h-3 w-3" /> : <ExternalLink className="h-3 w-3" />}
+                                {getProviderDisplayName(embedInfo.provider)}
+                              </Badge>
+                              <Button variant="ghost" size="sm" onClick={handleRemoveVideo} className="text-destructive hover:text-destructive">
+                                <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                Remove
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="space-y-2">
+                          <video controls className="w-full rounded-md max-h-48">
+                            <source src={item.video_url} type="video/mp4" />
+                            Your browser does not support the video tag.
+                          </video>
+                          <div className="flex justify-end">
+                            <Button variant="ghost" size="sm" onClick={handleRemoveVideo} className="text-destructive hover:text-destructive">
+                              <Trash2 className="h-3.5 w-3.5 mr-1" />
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })()}
                     <p className="text-xs text-muted-foreground">Replace video:</p>
                   </div>
-                ) : (
-                  <Label>Upload Video</Label>
-                )}
-                <Input
-                  type="file"
-                  accept="video/*"
-                  onChange={handleVideoUpload}
-                  disabled={uploading}
-                />
-                {uploading && <p className="text-sm text-muted-foreground">Uploading...</p>}
+                ) : null}
+
+                <Tabs value={videoInputMode} onValueChange={(v) => setVideoInputMode(v as 'upload' | 'external')} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="upload" className="gap-1.5">
+                      <Upload className="h-3.5 w-3.5" />
+                      Upload
+                    </TabsTrigger>
+                    <TabsTrigger value="external" className="gap-1.5">
+                      <Link className="h-3.5 w-3.5" />
+                      External Link
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="upload" className="mt-3 space-y-2">
+                    <Label className="text-sm text-muted-foreground">Upload a video file</Label>
+                    <Input
+                      type="file"
+                      accept="video/*"
+                      onChange={handleVideoUpload}
+                      disabled={uploading}
+                    />
+                    {uploading && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Uploading...
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="external" className="mt-3 space-y-3">
+                    <div className="space-y-2">
+                      <Label className="text-sm text-muted-foreground">
+                        Paste a video URL from YouTube, Vimeo, Loom, or Wistia
+                      </Label>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="https://youtube.com/watch?v=..."
+                          value={externalVideoUrl}
+                          onChange={(e) => setExternalVideoUrl(e.target.value)}
+                          className="flex-1"
+                        />
+                        <Button 
+                          onClick={handleSaveExternalVideoUrl} 
+                          disabled={savingExternalUrl || !externalVideoUrl.trim()}
+                          size="sm"
+                        >
+                          {savingExternalUrl ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4 mr-1" />
+                              Save
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        <Youtube className="h-3 w-3 mr-1" />
+                        YouTube
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">Vimeo</Badge>
+                      <Badge variant="outline" className="text-xs">Loom</Badge>
+                      <Badge variant="outline" className="text-xs">Wistia</Badge>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </div>
             )}
 
