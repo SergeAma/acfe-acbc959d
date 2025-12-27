@@ -471,7 +471,13 @@ export const CourseLearn = () => {
               {(() => {
                 const embedInfo = getVideoEmbedInfo(currentContent.video_url);
                 if (embedInfo.isExternal) {
-                  return <ExternalVideoPlayer videoUrl={currentContent.video_url} />;
+                  return (
+                    <ExternalVideoPlayer 
+                      videoUrl={currentContent.video_url} 
+                      contentId={currentContent.id}
+                      enrollmentId={enrollmentId}
+                    />
+                  );
                 }
                 return (
                   <SecureVideoPlayer
