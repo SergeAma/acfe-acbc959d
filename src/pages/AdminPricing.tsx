@@ -453,13 +453,13 @@ export const AdminPricing = () => {
                 Default Pricing
               </CardTitle>
               <CardDescription>
-                All paid courses are priced at $10. Mentors can set their courses as free or paid.
+                All paid courses are priced at $10/month. Mentors can set their courses as free or paid.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="bg-muted/50 rounded-lg p-4 text-center">
                 <span className="text-4xl font-bold">$10</span>
-                <p className="text-sm text-muted-foreground mt-1">per course</p>
+                <p className="text-sm text-muted-foreground mt-1">per month subscription</p>
               </div>
             </CardContent>
           </Card>
