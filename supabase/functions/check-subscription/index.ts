@@ -58,20 +58,23 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
-    // Get all active subscriptions
-    const subscriptions = await stripe.subscriptions.list({
+    // Get all active and paused subscriptions
+    const activeSubscriptions = await stripe.subscriptions.list({
       customer: customerId,
       status: "active",
       expand: ["data.items.data.price.product"],
     });
 
-    // Also check for canceled subscriptions that are still in their billing period
-    const canceledSubscriptions = await stripe.subscriptions.list({
+    const pausedSubscriptions = await stripe.subscriptions.list({
       customer: customerId,
-      status: "canceled",
+      status: "paused",
+      expand: ["data.items.data.price.product"],
     });
 
-    const activeSubscriptionDetails = subscriptions.data.map((sub: Stripe.Subscription) => {
+    // Combine active and paused subscriptions
+    const allSubscriptions = [...activeSubscriptions.data, ...pausedSubscriptions.data];
+
+    const subscriptionDetails = allSubscriptions.map((sub: Stripe.Subscription) => {
       const item = sub.items.data[0];
       const product = item.price.product as Stripe.Product;
       return {
@@ -85,17 +88,18 @@ serve(async (req) => {
         amount: item.price.unit_amount,
         currency: item.price.currency,
         interval: item.price.recurring?.interval,
+        pause_collection: sub.pause_collection,
       };
     });
 
     logStep("Subscription check complete", { 
-      hasActiveSubscriptions: activeSubscriptionDetails.length > 0,
-      count: activeSubscriptionDetails.length
+      hasSubscriptions: subscriptionDetails.length > 0,
+      count: subscriptionDetails.length
     });
 
     return new Response(JSON.stringify({
-      subscribed: activeSubscriptionDetails.length > 0,
-      subscriptions: activeSubscriptionDetails,
+      subscribed: subscriptionDetails.some(s => s.status === 'active'),
+      subscriptions: subscriptionDetails,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
