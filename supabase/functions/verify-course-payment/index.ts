@@ -47,13 +47,23 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ['subscription']
+    });
     logStep("Stripe session retrieved", { 
       status: session.payment_status,
+      mode: session.mode,
       metadata: session.metadata 
     });
 
-    if (session.payment_status !== "paid") {
+    // For subscriptions, check if subscription is active
+    if (session.mode === 'subscription') {
+      const subscription = session.subscription as Stripe.Subscription;
+      if (!subscription || subscription.status !== 'active') {
+        throw new Error("Subscription not active");
+      }
+      logStep("Subscription verified", { subscriptionId: subscription.id, status: subscription.status });
+    } else if (session.payment_status !== "paid") {
       throw new Error("Payment not completed");
     }
 
@@ -91,6 +101,11 @@ serve(async (req) => {
       logStep("Already enrolled");
     }
 
+    // Get subscription ID if available
+    const subscriptionId = session.mode === 'subscription' 
+      ? (session.subscription as Stripe.Subscription)?.id 
+      : null;
+
     // Record purchase
     const { error: purchaseError } = await serviceClient
       .from("course_purchases")
@@ -98,9 +113,10 @@ serve(async (req) => {
         student_id: user.id,
         course_id: courseId,
         stripe_checkout_session_id: sessionId,
-        stripe_payment_intent_id: session.payment_intent as string,
+        stripe_payment_intent_id: session.payment_intent as string || null,
+        stripe_subscription_id: subscriptionId,
         amount_cents: session.amount_total || 0,
-        status: "completed",
+        status: "active",
         purchased_at: new Date().toISOString(),
       }, { onConflict: "student_id,course_id" });
 
@@ -108,6 +124,42 @@ serve(async (req) => {
       logStep("Purchase record error", { error: purchaseError });
     } else {
       logStep("Purchase recorded");
+    }
+
+    // Get course and user details for email
+    const { data: course } = await serviceClient
+      .from("courses")
+      .select("title")
+      .eq("id", courseId)
+      .single();
+
+    const { data: profile } = await serviceClient
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", user.id)
+      .single();
+
+    // Send purchase confirmation email
+    if (profile?.email && course?.title) {
+      try {
+        await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-purchase-confirmation`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify({
+            email: profile.email,
+            firstName: profile.full_name?.split(' ')[0] || 'Student',
+            courseTitle: course.title,
+            amount: (session.amount_total || 0) / 100,
+            isSubscription: session.mode === 'subscription',
+          }),
+        });
+        logStep("Purchase confirmation email triggered");
+      } catch (emailError) {
+        logStep("Email trigger failed", { error: emailError });
+      }
     }
 
     return new Response(JSON.stringify({ 
