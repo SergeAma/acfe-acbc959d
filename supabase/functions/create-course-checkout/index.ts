@@ -194,10 +194,17 @@ serve(async (req) => {
         
         if (promoCodes.data.length > 0) {
           const promo = promoCodes.data[0];
-          // Apply 7-day free trial for 100% off coupons
+          // Get trial days from metadata (default to 7 if not set)
+          const trialDays = parseInt(
+            promo.metadata?.trial_days || 
+            (typeof promo.coupon === 'object' && promo.coupon.metadata?.trial_days) || 
+            '7'
+          );
+          
+          // Apply trial for 100% off coupons
           if (typeof promo.coupon === 'object' && promo.coupon.percent_off === 100) {
-            sessionOptions.subscription_data!.trial_period_days = 7;
-            logStep("Applied 7-day trial from promo code", { code: promoCode });
+            sessionOptions.subscription_data!.trial_period_days = trialDays;
+            logStep("Applied trial from promo code", { code: promoCode, trialDays });
           }
           // Apply promo code to session
           sessionOptions.discounts = [{ promotion_code: promo.id }];
