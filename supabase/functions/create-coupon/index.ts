@@ -45,30 +45,51 @@ serve(async (req) => {
     }
     logStep("Admin verified");
 
-    const { code, name } = await req.json();
+    const { code, name, trialDays = 7 } = await req.json();
     if (!code) throw new Error("Coupon code is required");
-    logStep("Coupon details", { code, name });
+    
+    // Validate trial days (min 1, max 90)
+    const validTrialDays = Math.min(Math.max(parseInt(trialDays) || 7, 1), 90);
+    logStep("Coupon details", { code, name, trialDays: validTrialDays });
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    // Create coupon for 1 week free (100% off, duration 7 days)
+    // Format trial duration for display
+    const formatTrialDuration = (days: number) => {
+      if (days === 1) return "1 Day";
+      if (days < 7) return `${days} Days`;
+      if (days === 7) return "1 Week";
+      if (days === 14) return "2 Weeks";
+      if (days === 30) return "1 Month";
+      return `${days} Days`;
+    };
+
+    const trialLabel = formatTrialDuration(validTrialDays);
+
+    // Create coupon for trial (100% off for the trial period)
     const coupon = await stripe.coupons.create({
       percent_off: 100,
       duration: "once",
-      name: name || "1 Week Free Trial",
+      name: name || `${trialLabel} Free Trial`,
       max_redemptions: 100,
       redeem_by: Math.floor(Date.now() / 1000) + (90 * 24 * 60 * 60), // Valid for 90 days
+      metadata: {
+        trial_days: validTrialDays.toString(),
+      },
     });
-    logStep("Stripe coupon created", { couponId: coupon.id });
+    logStep("Stripe coupon created", { couponId: coupon.id, trialDays: validTrialDays });
 
     // Create promotion code with the custom code
     const promotionCode = await stripe.promotionCodes.create({
       coupon: coupon.id,
       code: code.toUpperCase(),
       max_redemptions: 100,
+      metadata: {
+        trial_days: validTrialDays.toString(),
+      },
     });
     logStep("Promotion code created", { code: promotionCode.code });
 
@@ -76,7 +97,8 @@ serve(async (req) => {
       success: true,
       coupon_id: coupon.id,
       promo_code: promotionCode.code,
-      message: `Coupon "${promotionCode.code}" created successfully! Users can apply this at checkout for 1 week free.`
+      trial_days: validTrialDays,
+      message: `Coupon "${promotionCode.code}" created! Users get ${trialLabel} free, then normal billing.`
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

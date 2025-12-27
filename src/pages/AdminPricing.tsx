@@ -8,8 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, DollarSign, Gift, Loader2, Save, Ticket, Plus, Copy, Check, Trash2 } from 'lucide-react';
+import { ArrowLeft, DollarSign, Gift, Loader2, Save, Ticket, Plus, Copy, Check, Trash2, BarChart3, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface PricingOverride {
@@ -28,7 +29,31 @@ interface Coupon {
   max_redemptions: number | null;
   active: boolean;
   created: number;
+  trial_days: number;
 }
+
+interface CouponAnalytics {
+  total_coupons: number;
+  active_coupons: number;
+  total_redemptions: number;
+  top_coupon: Coupon | null;
+}
+
+const TRIAL_OPTIONS = [
+  { value: '3', label: '3 Days' },
+  { value: '7', label: '1 Week' },
+  { value: '14', label: '2 Weeks' },
+  { value: '30', label: '1 Month' },
+];
+
+const formatTrialDays = (days: number) => {
+  if (days === 1) return "1 day";
+  if (days < 7) return `${days} days`;
+  if (days === 7) return "1 week";
+  if (days === 14) return "2 weeks";
+  if (days === 30) return "1 month";
+  return `${days} days`;
+};
 
 export const AdminPricing = () => {
   const navigate = useNavigate();
@@ -49,8 +74,10 @@ export const AdminPricing = () => {
   });
 
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [analytics, setAnalytics] = useState<CouponAnalytics | null>(null);
   const [newCouponCode, setNewCouponCode] = useState('');
   const [newCouponName, setNewCouponName] = useState('');
+  const [newCouponTrialDays, setNewCouponTrialDays] = useState('7');
 
   useEffect(() => {
     if (!authLoading && profile?.role !== 'mentor') {
@@ -89,6 +116,9 @@ export const AdminPricing = () => {
       if (error) throw error;
       if (data?.coupons) {
         setCoupons(data.coupons);
+      }
+      if (data?.analytics) {
+        setAnalytics(data.analytics);
       }
     } catch (error) {
       console.error('Error fetching coupons:', error);
@@ -139,7 +169,8 @@ export const AdminPricing = () => {
       const { data, error } = await supabase.functions.invoke('create-coupon', {
         body: { 
           code: newCouponCode.trim(),
-          name: newCouponName.trim() || '1 Week Free Trial'
+          name: newCouponName.trim() || undefined,
+          trialDays: parseInt(newCouponTrialDays),
         },
         headers: {
           Authorization: `Bearer ${session.session?.access_token}`,
@@ -155,6 +186,7 @@ export const AdminPricing = () => {
       
       setNewCouponCode('');
       setNewCouponName('');
+      setNewCouponTrialDays('7');
       fetchCoupons();
     } catch (error: any) {
       toast({
@@ -212,6 +244,9 @@ export const AdminPricing = () => {
     );
   }
 
+  const activeCoupons = coupons.filter(c => c.active);
+  const inactiveCoupons = coupons.filter(c => !c.active);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -221,13 +256,50 @@ export const AdminPricing = () => {
           Back to Admin Dashboard
         </Button>
 
-        <div className="max-w-2xl mx-auto space-y-6">
+        <div className="max-w-3xl mx-auto space-y-6">
           <div>
             <h1 className="text-3xl font-bold">Pricing Settings</h1>
             <p className="text-muted-foreground mt-2">
               Control course pricing and discount codes
             </p>
           </div>
+
+          {/* Analytics Summary */}
+          {analytics && analytics.total_coupons > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <BarChart3 className="h-5 w-5" />
+                  Coupon Analytics
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-3 bg-muted/30 rounded-lg">
+                    <p className="text-2xl font-bold text-primary">{analytics.total_coupons}</p>
+                    <p className="text-xs text-muted-foreground">Total Coupons</p>
+                  </div>
+                  <div className="text-center p-3 bg-muted/30 rounded-lg">
+                    <p className="text-2xl font-bold text-green-600">{analytics.active_coupons}</p>
+                    <p className="text-xs text-muted-foreground">Active</p>
+                  </div>
+                  <div className="text-center p-3 bg-muted/30 rounded-lg">
+                    <p className="text-2xl font-bold text-blue-600">{analytics.total_redemptions}</p>
+                    <p className="text-xs text-muted-foreground">Total Redemptions</p>
+                  </div>
+                  {analytics.top_coupon && analytics.top_coupon.times_redeemed > 0 && (
+                    <div className="text-center p-3 bg-muted/30 rounded-lg">
+                      <div className="flex items-center justify-center gap-1">
+                        <TrendingUp className="h-4 w-4 text-amber-500" />
+                        <code className="font-mono font-bold text-sm">{analytics.top_coupon.code}</code>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Top Coupon ({analytics.top_coupon.times_redeemed} uses)</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Coupon Management */}
           <Card>
@@ -237,20 +309,35 @@ export const AdminPricing = () => {
                 Discount Codes
               </CardTitle>
               <CardDescription>
-                Create discount codes that give learners 1 week free trial. After the trial, they'll be charged normally.
+                Create discount codes with custom trial periods. After the trial, learners are charged normally.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
-                <div className="space-y-2">
-                  <Label htmlFor="coupon_code">Coupon Code</Label>
-                  <Input
-                    id="coupon_code"
-                    placeholder="e.g., FREEWEEK, LAUNCH2024"
-                    value={newCouponCode}
-                    onChange={(e) => setNewCouponCode(e.target.value.toUpperCase())}
-                    className="uppercase"
-                  />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="coupon_code">Coupon Code</Label>
+                    <Input
+                      id="coupon_code"
+                      placeholder="e.g., FREEWEEK"
+                      value={newCouponCode}
+                      onChange={(e) => setNewCouponCode(e.target.value.toUpperCase())}
+                      className="uppercase"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="trial_duration">Trial Duration</Label>
+                    <Select value={newCouponTrialDays} onValueChange={setNewCouponTrialDays}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TRIAL_OPTIONS.map(opt => (
+                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="coupon_name">Name (optional)</Label>
@@ -267,38 +354,38 @@ export const AdminPricing = () => {
                   ) : (
                     <Plus className="h-4 w-4 mr-2" />
                   )}
-                  Create 1 Week Free Coupon
+                  Create Coupon
                 </Button>
               </div>
 
-              {/* Existing Coupons */}
+              {/* Active Coupons */}
               <div className="space-y-3">
                 <h4 className="font-medium text-sm text-muted-foreground">Active Coupons</h4>
                 {loadingCoupons ? (
                   <div className="flex justify-center py-4">
                     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                   </div>
-                ) : coupons.length === 0 ? (
+                ) : activeCoupons.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">No active coupons</p>
                 ) : (
                   <div className="space-y-2">
-                    {coupons.map((coupon) => (
+                    {activeCoupons.map((coupon) => (
                       <div 
                         key={coupon.id} 
                         className="flex items-center justify-between p-3 bg-background border rounded-lg"
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <code className="font-mono font-bold text-primary">{coupon.code}</code>
-                          <Badge variant="secondary" className="text-xs">
-                            {coupon.percent_off}% off
+                          <Badge variant="outline" className="text-xs">
+                            {formatTrialDays(coupon.trial_days)} free
                           </Badge>
                           {coupon.name && (
-                            <span className="text-sm text-muted-foreground">{coupon.name}</span>
+                            <span className="text-sm text-muted-foreground hidden sm:inline">{coupon.name}</span>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-muted-foreground">
-                            {coupon.times_redeemed}/{coupon.max_redemptions || '∞'} used
+                            {coupon.times_redeemed}/{coupon.max_redemptions || '∞'}
                           </span>
                           <Button
                             variant="ghost"
@@ -331,6 +418,31 @@ export const AdminPricing = () => {
                   </div>
                 )}
               </div>
+
+              {/* Inactive Coupons */}
+              {inactiveCoupons.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-medium text-sm text-muted-foreground">Inactive Coupons</h4>
+                  <div className="space-y-2">
+                    {inactiveCoupons.map((coupon) => (
+                      <div 
+                        key={coupon.id} 
+                        className="flex items-center justify-between p-3 bg-muted/20 border border-dashed rounded-lg opacity-60"
+                      >
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <code className="font-mono font-bold line-through">{coupon.code}</code>
+                          <Badge variant="secondary" className="text-xs">
+                            {formatTrialDays(coupon.trial_days)} free
+                          </Badge>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {coupon.times_redeemed} redemptions
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 

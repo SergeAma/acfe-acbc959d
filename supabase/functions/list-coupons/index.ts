@@ -50,26 +50,61 @@ serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    // List all promotion codes
-    const promoCodes = await stripe.promotionCodes.list({
-      limit: 50,
-      active: true,
+    // List all promotion codes (both active and inactive for analytics)
+    const [activePromoCodes, inactivePromoCodes] = await Promise.all([
+      stripe.promotionCodes.list({ limit: 50, active: true }),
+      stripe.promotionCodes.list({ limit: 50, active: false }),
+    ]);
+    
+    const allPromoCodes = [...activePromoCodes.data, ...inactivePromoCodes.data];
+    logStep("Fetched promotion codes", { 
+      active: activePromoCodes.data.length, 
+      inactive: inactivePromoCodes.data.length 
     });
-    logStep("Fetched promotion codes", { count: promoCodes.data.length });
 
-    const coupons = promoCodes.data.map((promo: any) => ({
-      id: promo.id,
-      code: promo.code,
-      coupon_id: promo.coupon.id,
-      name: typeof promo.coupon === 'object' ? promo.coupon.name : null,
-      percent_off: typeof promo.coupon === 'object' ? promo.coupon.percent_off : null,
-      times_redeemed: promo.times_redeemed,
-      max_redemptions: promo.max_redemptions,
-      active: promo.active,
-      created: promo.created,
-    }));
+    // Calculate analytics
+    let totalRedemptions = 0;
+    let totalActiveCoupons = 0;
+    
+    const coupons = allPromoCodes.map((promo: any) => {
+      const trialDays = promo.metadata?.trial_days || 
+        (typeof promo.coupon === 'object' && promo.coupon.metadata?.trial_days) || 
+        7;
+      
+      totalRedemptions += promo.times_redeemed || 0;
+      if (promo.active) totalActiveCoupons++;
 
-    return new Response(JSON.stringify({ coupons }), {
+      return {
+        id: promo.id,
+        code: promo.code,
+        coupon_id: promo.coupon.id,
+        name: typeof promo.coupon === 'object' ? promo.coupon.name : null,
+        percent_off: typeof promo.coupon === 'object' ? promo.coupon.percent_off : null,
+        times_redeemed: promo.times_redeemed,
+        max_redemptions: promo.max_redemptions,
+        active: promo.active,
+        created: promo.created,
+        trial_days: parseInt(trialDays) || 7,
+      };
+    });
+
+    // Sort: active first, then by times_redeemed desc
+    coupons.sort((a, b) => {
+      if (a.active !== b.active) return b.active ? 1 : -1;
+      return (b.times_redeemed || 0) - (a.times_redeemed || 0);
+    });
+
+    // Analytics summary
+    const analytics = {
+      total_coupons: coupons.length,
+      active_coupons: totalActiveCoupons,
+      total_redemptions: totalRedemptions,
+      top_coupon: coupons.length > 0 ? coupons.reduce((max, c) => 
+        (c.times_redeemed || 0) > (max.times_redeemed || 0) ? c : max, coupons[0]
+      ) : null,
+    };
+
+    return new Response(JSON.stringify({ coupons, analytics }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
