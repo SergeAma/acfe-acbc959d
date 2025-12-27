@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, DollarSign, Gift, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, DollarSign, Gift, Loader2, Save, Ticket, Plus, Copy, Check } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface PricingOverride {
   enabled: boolean;
@@ -18,12 +19,26 @@ interface PricingOverride {
   sponsor_message: string | null;
 }
 
+interface Coupon {
+  id: string;
+  code: string;
+  name: string | null;
+  percent_off: number | null;
+  times_redeemed: number;
+  max_redemptions: number | null;
+  active: boolean;
+  created: number;
+}
+
 export const AdminPricing = () => {
   const navigate = useNavigate();
   const { profile, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [creatingCoupon, setCreatingCoupon] = useState(false);
+  const [loadingCoupons, setLoadingCoupons] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
   
   const [pricingOverride, setPricingOverride] = useState<PricingOverride>({
     enabled: false,
@@ -31,6 +46,10 @@ export const AdminPricing = () => {
     sponsor_name: null,
     sponsor_message: null,
   });
+
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [newCouponCode, setNewCouponCode] = useState('');
+  const [newCouponName, setNewCouponName] = useState('');
 
   useEffect(() => {
     if (!authLoading && profile?.role !== 'mentor') {
@@ -53,7 +72,28 @@ export const AdminPricing = () => {
     };
 
     fetchSettings();
+    fetchCoupons();
   }, []);
+
+  const fetchCoupons = async () => {
+    setLoadingCoupons(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke('list-coupons', {
+        headers: {
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.coupons) {
+        setCoupons(data.coupons);
+      }
+    } catch (error) {
+      console.error('Error fetching coupons:', error);
+    }
+    setLoadingCoupons(false);
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -82,6 +122,55 @@ export const AdminPricing = () => {
     setSaving(false);
   };
 
+  const handleCreateCoupon = async () => {
+    if (!newCouponCode.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a coupon code",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCreatingCoupon(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke('create-coupon', {
+        body: { 
+          code: newCouponCode.trim(),
+          name: newCouponName.trim() || '1 Week Free Trial'
+        },
+        headers: {
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+      
+      toast({
+        title: "Coupon Created",
+        description: data.message,
+      });
+      
+      setNewCouponCode('');
+      setNewCouponName('');
+      fetchCoupons();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create coupon",
+        variant: "destructive",
+      });
+    }
+    setCreatingCoupon(false);
+  };
+
+  const copyToClipboard = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -106,9 +195,101 @@ export const AdminPricing = () => {
           <div>
             <h1 className="text-3xl font-bold">Pricing Settings</h1>
             <p className="text-muted-foreground mt-2">
-              Control course pricing across the entire platform
+              Control course pricing and discount codes
             </p>
           </div>
+
+          {/* Coupon Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Ticket className="h-5 w-5" />
+                Discount Codes
+              </CardTitle>
+              <CardDescription>
+                Create discount codes that give learners 1 week free trial. After the trial, they'll be charged normally.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+                <div className="space-y-2">
+                  <Label htmlFor="coupon_code">Coupon Code</Label>
+                  <Input
+                    id="coupon_code"
+                    placeholder="e.g., FREEWEEK, LAUNCH2024"
+                    value={newCouponCode}
+                    onChange={(e) => setNewCouponCode(e.target.value.toUpperCase())}
+                    className="uppercase"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="coupon_name">Name (optional)</Label>
+                  <Input
+                    id="coupon_name"
+                    placeholder="e.g., Launch Promotion"
+                    value={newCouponName}
+                    onChange={(e) => setNewCouponName(e.target.value)}
+                  />
+                </div>
+                <Button onClick={handleCreateCoupon} disabled={creatingCoupon} className="w-full">
+                  {creatingCoupon ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Plus className="h-4 w-4 mr-2" />
+                  )}
+                  Create 1 Week Free Coupon
+                </Button>
+              </div>
+
+              {/* Existing Coupons */}
+              <div className="space-y-3">
+                <h4 className="font-medium text-sm text-muted-foreground">Active Coupons</h4>
+                {loadingCoupons ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : coupons.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">No active coupons</p>
+                ) : (
+                  <div className="space-y-2">
+                    {coupons.map((coupon) => (
+                      <div 
+                        key={coupon.id} 
+                        className="flex items-center justify-between p-3 bg-background border rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <code className="font-mono font-bold text-primary">{coupon.code}</code>
+                          <Badge variant="secondary" className="text-xs">
+                            {coupon.percent_off}% off
+                          </Badge>
+                          {coupon.name && (
+                            <span className="text-sm text-muted-foreground">{coupon.name}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            {coupon.times_redeemed}/{coupon.max_redemptions || '∞'} used
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => copyToClipboard(coupon.code)}
+                          >
+                            {copiedCode === coupon.code ? (
+                              <Check className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>

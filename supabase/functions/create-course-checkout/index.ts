@@ -25,9 +25,9 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    const { courseId } = await req.json();
+    const { courseId, promoCode } = await req.json();
     if (!courseId) throw new Error("Course ID is required");
-    logStep("Course ID received", { courseId });
+    logStep("Course ID received", { courseId, promoCode: promoCode || "none" });
 
     // Authenticate user
     const authHeader = req.headers.get("Authorization");
@@ -146,8 +146,8 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "https://lovable.dev";
     
-    // Create subscription checkout session
-    const session = await stripe.checkout.sessions.create({
+    // Build checkout session options
+    const sessionOptions: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [
@@ -178,8 +178,39 @@ serve(async (req) => {
           course_id: courseId,
           student_id: user.id,
         },
+        trial_period_days: undefined,
       },
-    });
+      allow_promotion_codes: true,
+    };
+
+    // If promo code provided, look it up and apply trial
+    if (promoCode) {
+      try {
+        const promoCodes = await stripe.promotionCodes.list({
+          code: promoCode.toUpperCase(),
+          active: true,
+          limit: 1,
+        });
+        
+        if (promoCodes.data.length > 0) {
+          const promo = promoCodes.data[0];
+          // Apply 7-day free trial for 100% off coupons
+          if (typeof promo.coupon === 'object' && promo.coupon.percent_off === 100) {
+            sessionOptions.subscription_data!.trial_period_days = 7;
+            logStep("Applied 7-day trial from promo code", { code: promoCode });
+          }
+          // Apply promo code to session
+          sessionOptions.discounts = [{ promotion_code: promo.id }];
+        } else {
+          logStep("Promo code not found or inactive", { code: promoCode });
+        }
+      } catch (promoError) {
+        logStep("Error looking up promo code", { error: String(promoError) });
+      }
+    }
+
+    // Create subscription checkout session
+    const session = await stripe.checkout.sessions.create(sessionOptions);
 
     logStep("Subscription checkout session created", { sessionId: session.id });
 

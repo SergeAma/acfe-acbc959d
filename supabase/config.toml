@@ -101,3 +101,9 @@ verify_jwt = false
 
 [functions.send-subscription-resumed]
 verify_jwt = false
+
+[functions.create-coupon]
+verify_jwt = true
+
+[functions.list-coupons]
+verify_jwt = true
