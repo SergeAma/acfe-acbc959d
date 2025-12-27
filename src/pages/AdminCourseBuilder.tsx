@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye, Award, Info } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye, Award, Info, DollarSign } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -40,6 +40,8 @@ interface Course {
   thumbnail_url: string | null;
   mentor_id: string;
   certificate_enabled: boolean;
+  is_paid: boolean;
+  price_cents: number;
 }
 
 interface Section {
@@ -69,6 +71,7 @@ export const AdminCourseBuilder = () => {
   const [savingTitle, setSavingTitle] = useState(false);
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const [certificateEnabled, setCertificateEnabled] = useState(true);
+  const [isPaid, setIsPaid] = useState(false);
   const [showEditingTip, setShowEditingTip] = useState(() => {
     return localStorage.getItem('courseBuilderTipDismissed') !== 'true';
   });
@@ -127,6 +130,7 @@ export const AdminCourseBuilder = () => {
     setEditedDescription(courseData?.description || '');
     setEditedTitle(courseData?.title || '');
     setCertificateEnabled(courseData?.certificate_enabled ?? true);
+    setIsPaid(courseData?.is_paid ?? false);
     setSections(sectionsData || []);
     setLoading(false);
   };
@@ -152,6 +156,31 @@ export const AdminCourseBuilder = () => {
       toast({
         title: 'Success',
         description: `Certificates ${enabled ? 'enabled' : 'disabled'}`,
+      });
+    }
+  };
+
+  const handlePricingToggle = async (paid: boolean) => {
+    if (!courseId) return;
+    
+    setIsPaid(paid);
+    const { error } = await supabase
+      .from('courses')
+      .update({ is_paid: paid })
+      .eq('id', courseId);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update pricing',
+        variant: 'destructive',
+      });
+      setIsPaid(!paid);
+    } else {
+      setCourse(prev => prev ? { ...prev, is_paid: paid } : null);
+      toast({
+        title: 'Success',
+        description: paid ? 'Course set to $10' : 'Course set to free',
       });
     }
   };
@@ -593,6 +622,34 @@ export const AdminCourseBuilder = () => {
                   id="certificate-toggle"
                   checked={certificateEnabled}
                   onCheckedChange={handleCertificateToggle}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pricing Settings */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Course Pricing
+              </CardTitle>
+              <CardDescription>
+                Set whether this course is free or paid ($10)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="pricing-toggle">Paid course ($10)</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {isPaid ? 'Students pay $10 for access' : 'Students can enroll for free'}
+                  </p>
+                </div>
+                <Switch
+                  id="pricing-toggle"
+                  checked={isPaid}
+                  onCheckedChange={handlePricingToggle}
                 />
               </div>
             </CardContent>

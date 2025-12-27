@@ -43,6 +43,8 @@ import AdminMentorInvitations from "./pages/AdminMentorInvitations";
 import { AdminLearnerAnalytics } from "./pages/AdminLearnerAnalytics";
 import { MentorCohort } from "./pages/MentorCohort";
 import { CohortCommunity } from "./pages/CohortCommunity";
+import { PaymentSuccess } from "./pages/PaymentSuccess";
+import { AdminPricing } from "./pages/AdminPricing";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -91,8 +93,10 @@ const App = () => (
             <Route path="/admin/news-curation" element={<ProtectedRoute requiredRole="admin"><AdminNewsCuration /></ProtectedRoute>} />
             <Route path="/admin/mentor-invitations" element={<ProtectedRoute requiredRole="admin"><AdminMentorInvitations /></ProtectedRoute>} />
             <Route path="/admin/learner-analytics" element={<ProtectedRoute requiredRole="admin"><AdminLearnerAnalytics /></ProtectedRoute>} />
+            <Route path="/admin/pricing" element={<ProtectedRoute requiredRole="admin"><AdminPricing /></ProtectedRoute>} />
             <Route path="/admin/courses" element={<ProtectedRoute requiredRole="admin"><AdminCourses /></ProtectedRoute>} />
             <Route path="/admin/courses/:courseId/build" element={<ProtectedRoute requiredRole="admin"><AdminCourseBuilder /></ProtectedRoute>} />
+            <Route path="/payment-success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
             <Route path="/mentor/courses" element={<ProtectedRoute><MentorCourses /></ProtectedRoute>} />
             <Route path="/mentor/courses/new" element={<ProtectedRoute><CreateCourse /></ProtectedRoute>} />
             <Route path="/mentor/courses/:courseId/build" element={<ProtectedRoute><AdminCourseBuilder /></ProtectedRoute>} />
