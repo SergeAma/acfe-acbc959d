@@ -65,16 +65,13 @@ serve(async (req) => {
       sponsor_name?: string;
     } | null;
 
-    // If platform forces free, don't charge
-    if (override?.enabled && override?.force_free) {
-      logStep("Platform override: course is free");
-      
-      // Create a free "purchase" record and enroll
-      const serviceClient = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-      );
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
 
+    // Helper function for free enrollment
+    const enrollFree = async (message: string, sponsored = false) => {
       // Check if already enrolled
       const { data: existingEnrollment } = await serviceClient
         .from("enrollments")
@@ -94,12 +91,12 @@ serve(async (req) => {
         });
       }
 
-      // Create enrollment directly
+      // Create enrollment
       await serviceClient
         .from("enrollments")
         .insert({ student_id: user.id, course_id: courseId });
 
-      // Record as sponsored purchase
+      // Record purchase
       await serviceClient
         .from("course_purchases")
         .upsert({
@@ -113,57 +110,27 @@ serve(async (req) => {
       return new Response(JSON.stringify({ 
         success: true, 
         free: true, 
-        message: `Course sponsored by ${override.sponsor_name || 'our partners'}` 
+        message 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
+    };
+
+    // If platform forces free, enroll directly
+    if (override?.enabled && override?.force_free) {
+      logStep("Platform override: course is free");
+      return await enrollFree(`Course sponsored by ${override.sponsor_name || 'our partners'}`);
     }
 
     // If course is free, enroll directly
     if (!course.is_paid) {
       logStep("Course is free, enrolling directly");
-      
-      const serviceClient = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-      );
-
-      // Check if already enrolled
-      const { data: existingEnrollment } = await serviceClient
-        .from("enrollments")
-        .select("id")
-        .eq("student_id", user.id)
-        .eq("course_id", courseId)
-        .single();
-
-      if (existingEnrollment) {
-        return new Response(JSON.stringify({ 
-          success: true, 
-          free: true, 
-          message: "Already enrolled" 
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
-      }
-
-      await serviceClient
-        .from("enrollments")
-        .insert({ student_id: user.id, course_id: courseId });
-
-      return new Response(JSON.stringify({ 
-        success: true, 
-        free: true, 
-        message: "Enrolled successfully" 
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
+      return await enrollFree("Enrolled successfully");
     }
 
-    // Paid course - create Stripe checkout session
-    logStep("Creating Stripe checkout session");
+    // Paid course - create Stripe subscription checkout session
+    logStep("Creating Stripe subscription checkout session");
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
@@ -179,6 +146,7 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "https://lovable.dev";
     
+    // Create subscription checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -188,23 +156,32 @@ serve(async (req) => {
             currency: "usd",
             product_data: {
               name: course.title,
-              description: "One-time course access",
+              description: "Monthly subscription for course access",
             },
             unit_amount: course.price_cents || 1000,
+            recurring: {
+              interval: "month",
+            },
           },
           quantity: 1,
         },
       ],
-      mode: "payment",
+      mode: "subscription",
       success_url: `${origin}/payment-success?course_id=${courseId}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/courses/${courseId}`,
       metadata: {
         course_id: courseId,
         student_id: user.id,
       },
+      subscription_data: {
+        metadata: {
+          course_id: courseId,
+          student_id: user.id,
+        },
+      },
     });
 
-    logStep("Checkout session created", { sessionId: session.id });
+    logStep("Subscription checkout session created", { sessionId: session.id });
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
