@@ -102,6 +102,77 @@ serve(async (req) => {
         break;
       }
 
+      case "customer.subscription.created": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const customerId = subscription.customer as string;
+        
+        logStep("Subscription created", { subscriptionId: subscription.id, customerId });
+
+        const customer = await stripe.customers.retrieve(customerId);
+        if (!customer.deleted && customer.email) {
+          try {
+            await supabase.functions.invoke('send-subscription-created', {
+              body: {
+                email: customer.email,
+                name: customer.name || 'Learner',
+                subscription_start: new Date(subscription.current_period_start * 1000).toLocaleDateString(),
+              },
+            });
+            logStep("Subscription created email sent");
+          } catch (emailError) {
+            logStep("Error sending subscription created email", { error: String(emailError) });
+          }
+        }
+        break;
+      }
+
+      case "customer.subscription.paused": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const customerId = subscription.customer as string;
+        
+        logStep("Subscription paused", { subscriptionId: subscription.id, customerId });
+
+        const customer = await stripe.customers.retrieve(customerId);
+        if (!customer.deleted && customer.email) {
+          try {
+            await supabase.functions.invoke('send-subscription-paused', {
+              body: {
+                email: customer.email,
+                name: customer.name || 'Learner',
+              },
+            });
+            logStep("Subscription paused email sent");
+          } catch (emailError) {
+            logStep("Error sending subscription paused email", { error: String(emailError) });
+          }
+        }
+        break;
+      }
+
+      case "customer.subscription.resumed": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const customerId = subscription.customer as string;
+        
+        logStep("Subscription resumed", { subscriptionId: subscription.id, customerId });
+
+        const customer = await stripe.customers.retrieve(customerId);
+        if (!customer.deleted && customer.email) {
+          try {
+            await supabase.functions.invoke('send-subscription-resumed', {
+              body: {
+                email: customer.email,
+                name: customer.name || 'Learner',
+                next_billing: new Date(subscription.current_period_end * 1000).toLocaleDateString(),
+              },
+            });
+            logStep("Subscription resumed email sent");
+          } catch (emailError) {
+            logStep("Error sending subscription resumed email", { error: String(emailError) });
+          }
+        }
+        break;
+      }
+
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
         logStep("Subscription updated", { 
