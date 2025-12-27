@@ -387,6 +387,50 @@ export type Database = {
           },
         ]
       }
+      course_purchases: {
+        Row: {
+          amount_cents: number
+          course_id: string
+          created_at: string
+          id: string
+          purchased_at: string | null
+          status: string
+          stripe_checkout_session_id: string | null
+          stripe_payment_intent_id: string | null
+          student_id: string
+        }
+        Insert: {
+          amount_cents: number
+          course_id: string
+          created_at?: string
+          id?: string
+          purchased_at?: string | null
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          student_id: string
+        }
+        Update: {
+          amount_cents?: number
+          course_id?: string
+          created_at?: string
+          id?: string
+          purchased_at?: string | null
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_purchases_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_sections: {
         Row: {
           course_id: string
@@ -434,9 +478,11 @@ export type Database = {
           drip_enabled: boolean | null
           duration_weeks: number | null
           id: string
+          is_paid: boolean | null
           is_published: boolean | null
           level: string | null
           mentor_id: string
+          price_cents: number | null
           thumbnail_url: string | null
           title: string
           updated_at: string | null
@@ -449,9 +495,11 @@ export type Database = {
           drip_enabled?: boolean | null
           duration_weeks?: number | null
           id?: string
+          is_paid?: boolean | null
           is_published?: boolean | null
           level?: string | null
           mentor_id: string
+          price_cents?: number | null
           thumbnail_url?: string | null
           title: string
           updated_at?: string | null
@@ -464,9 +512,11 @@ export type Database = {
           drip_enabled?: boolean | null
           duration_weeks?: number | null
           id?: string
+          is_paid?: boolean | null
           is_published?: boolean | null
           level?: string | null
           mentor_id?: string
+          price_cents?: number | null
           thumbnail_url?: string | null
           title?: string
           updated_at?: string | null
@@ -1024,6 +1074,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_settings: {
+        Row: {
+          created_at: string
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          setting_key: string
+          setting_value: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {

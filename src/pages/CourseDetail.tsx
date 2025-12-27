@@ -6,7 +6,7 @@ import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Clock, BarChart, Loader2, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Clock, BarChart, Loader2, CheckCircle, DollarSign, Gift } from 'lucide-react';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 
 interface Course {
@@ -16,12 +16,21 @@ interface Course {
   category: string;
   level: string;
   duration_weeks: number;
+  is_paid: boolean;
+  price_cents: number;
   mentor: {
     full_name: string;
     bio: string;
     avatar_url: string;
     profile_frame: ProfileFrame;
   };
+}
+
+interface PricingOverride {
+  enabled: boolean;
+  force_free: boolean;
+  sponsor_name: string | null;
+  sponsor_message: string | null;
 }
 
 export const CourseDetail = () => {
@@ -33,9 +42,11 @@ export const CourseDetail = () => {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
+  const [pricingOverride, setPricingOverride] = useState<PricingOverride | null>(null);
 
   useEffect(() => {
-    const fetchCourse = async () => {
+    const fetchData = async () => {
+      // Fetch course
       const { data: courseData, error } = await supabase
         .from('courses')
         .select(`
@@ -62,6 +73,17 @@ export const CourseDetail = () => {
 
       setCourse(courseData as any);
 
+      // Fetch pricing override settings
+      const { data: settingsData } = await supabase
+        .from('platform_settings')
+        .select('setting_value')
+        .eq('setting_key', 'pricing_override')
+        .single();
+
+      if (settingsData?.setting_value) {
+        setPricingOverride(settingsData.setting_value as unknown as PricingOverride);
+      }
+
       if (profile) {
         const { data: enrollmentData } = await supabase
           .from('enrollments')
@@ -76,7 +98,7 @@ export const CourseDetail = () => {
       setLoading(false);
     };
 
-    fetchCourse();
+    fetchData();
   }, [id, profile, navigate, toast]);
 
   const handleEnroll = async () => {
@@ -96,28 +118,58 @@ export const CourseDetail = () => {
 
     setEnrolling(true);
 
-    const { error } = await supabase
-      .from('enrollments')
-      .insert({
-        student_id: profile.id,
-        course_id: id,
+    try {
+      const { data, error } = await supabase.functions.invoke('create-course-checkout', {
+        body: { courseId: id }
       });
 
-    if (error) {
+      if (error) throw error;
+
+      if (data.free) {
+        // Free enrollment completed
+        setIsEnrolled(true);
+        toast({
+          title: "Success!",
+          description: data.message || "You're now enrolled in this course",
+        });
+      } else if (data.url) {
+        // Redirect to Stripe checkout
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
       toast({
         title: "Enrollment failed",
-        description: error.message,
+        description: error.message || "Something went wrong",
         variant: "destructive",
-      });
-    } else {
-      setIsEnrolled(true);
-      toast({
-        title: "Success!",
-        description: "You're now enrolled in this course",
       });
     }
 
     setEnrolling(false);
+  };
+
+  // Determine display price
+  const getDisplayPrice = () => {
+    if (!course) return null;
+
+    const isSponsored = pricingOverride?.enabled && pricingOverride?.force_free;
+    const isFree = !course.is_paid;
+    const price = (course.price_cents || 1000) / 100;
+
+    if (isFree) {
+      return { type: 'free', label: 'Free', originalPrice: null };
+    }
+
+    if (isSponsored) {
+      return {
+        type: 'sponsored',
+        label: 'Free',
+        originalPrice: `$${price.toFixed(2)}`,
+        sponsor: pricingOverride?.sponsor_name || 'Our Partners',
+        message: pricingOverride?.sponsor_message
+      };
+    }
+
+    return { type: 'paid', label: `$${price.toFixed(2)}`, originalPrice: null };
   };
 
   if (loading) {
@@ -132,6 +184,8 @@ export const CourseDetail = () => {
   }
 
   if (!course) return null;
+
+  const priceInfo = getDisplayPrice();
 
   return (
     <div className="min-h-screen bg-background">
@@ -185,6 +239,43 @@ export const CourseDetail = () => {
           <div className="space-y-6">
             <Card>
               <CardContent className="pt-6">
+                {/* Price Display */}
+                <div className="mb-6 text-center">
+                  {priceInfo?.type === 'sponsored' && (
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 mb-4">
+                      <Gift className="h-6 w-6 text-green-600 mx-auto mb-2" />
+                      <p className="text-sm text-green-700 font-medium">
+                        Sponsored by {priceInfo.sponsor}
+                      </p>
+                      {priceInfo.message && (
+                        <p className="text-xs text-green-600 mt-1">{priceInfo.message}</p>
+                      )}
+                      <div className="mt-2 flex items-center justify-center gap-2">
+                        <span className="text-lg line-through text-muted-foreground">
+                          {priceInfo.originalPrice}
+                        </span>
+                        <span className="text-2xl font-bold text-green-600">Free</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {priceInfo?.type === 'paid' && (
+                    <div className="mb-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <DollarSign className="h-5 w-5 text-primary" />
+                        <span className="text-3xl font-bold">{priceInfo.label}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">One-time payment</p>
+                    </div>
+                  )}
+
+                  {priceInfo?.type === 'free' && (
+                    <div className="mb-4">
+                      <span className="text-3xl font-bold text-green-600">Free</span>
+                    </div>
+                  )}
+                </div>
+
                 {isEnrolled ? (
                   <div className="space-y-4">
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
@@ -200,7 +291,7 @@ export const CourseDetail = () => {
                     {enrolling ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     ) : null}
-                    Enroll Now
+                    {priceInfo?.type === 'paid' ? 'Buy Course' : 'Enroll Now'}
                   </Button>
                 )}
 
