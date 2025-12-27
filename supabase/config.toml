@@ -74,3 +74,18 @@ verify_jwt = true
 
 [functions.check-subscription]
 verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.send-subscription-cancelled]
+verify_jwt = false
+
+[functions.send-subscription-renewed]
+verify_jwt = false
+
+[functions.send-subscription-ending-reminder]
+verify_jwt = false
+
+[functions.send-payment-failed]
+verify_jwt = false

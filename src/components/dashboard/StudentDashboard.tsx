@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { RequestMentorRole } from '@/components/RequestMentorRole';
 import { MySubmissions } from '@/components/dashboard/MySubmissions';
 import { SubscriptionStatus } from '@/components/dashboard/SubscriptionStatus';
-import { BookOpen, Library, Award, TrendingUp, UserCheck, Clock, BookOpenCheck, MessageSquare } from 'lucide-react';
+import { BookOpen, Library, Award, TrendingUp, UserCheck, Clock, BookOpenCheck, MessageSquare, CreditCard } from 'lucide-react';
 import { stripHtml } from '@/lib/html-utils';
 
 interface Enrollment {
@@ -44,6 +44,7 @@ export const StudentDashboard = () => {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [mentorshipRequests, setMentorshipRequests] = useState<MentorshipRequest[]>([]);
   const [mentorProfiles, setMentorProfiles] = useState<Record<string, { full_name: string; avatar_url: string }>>({});
+  const [subscribedCourseIds, setSubscribedCourseIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -108,6 +109,17 @@ export const StudentDashboard = () => {
             setMentorProfiles(profileMap);
           }
         }
+      }
+
+      // Fetch subscribed courses
+      const { data: purchaseData } = await supabase
+        .from('course_purchases')
+        .select('course_id')
+        .eq('student_id', profile.id)
+        .eq('status', 'completed');
+
+      if (purchaseData) {
+        setSubscribedCourseIds(purchaseData.map(p => p.course_id));
       }
 
       setLoading(false);
@@ -298,8 +310,18 @@ export const StudentDashboard = () => {
           </Card>
         ) : (
           <div className="grid md:grid-cols-2 gap-6">
-            {enrollments.map((enrollment) => (
-              <Card key={enrollment.id} className="hover:shadow-lg transition-shadow">
+            {enrollments.map((enrollment) => {
+              const isSubscribed = subscribedCourseIds.includes(enrollment.course.id);
+              return (
+              <Card key={enrollment.id} className={`hover:shadow-lg transition-shadow relative ${isSubscribed ? 'ring-2 ring-primary' : ''}`}>
+                {isSubscribed && (
+                  <div className="absolute top-2 right-2 z-10">
+                    <Badge className="bg-primary text-primary-foreground">
+                      <CreditCard className="h-3 w-3 mr-1" />
+                      Subscribed
+                    </Badge>
+                  </div>
+                )}
                 <CardHeader>
                   <CardTitle className="line-clamp-1">{enrollment.course.title}</CardTitle>
                   <div className="flex gap-2 mt-2">
@@ -329,7 +351,8 @@ export const StudentDashboard = () => {
                   </Link>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
