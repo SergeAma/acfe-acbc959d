@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, BookOpen, X, GraduationCap } from 'lucide-react';
+import { Search, BookOpen, X, GraduationCap, CreditCard } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { stripHtml } from '@/lib/html-utils';
 
@@ -21,13 +21,14 @@ interface Course {
   duration_weeks: number;
   thumbnail_url: string;
   mentor_id: string;
+  is_paid: boolean;
   mentor: {
     full_name: string;
   };
 }
 
 export const Courses = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const mentorFilter = searchParams.get('mentor');
   
@@ -38,6 +39,7 @@ export const Courses = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [levelFilter, setLevelFilter] = useState('all');
   const [mentorName, setMentorName] = useState<string | null>(null);
+  const [subscribedCourseIds, setSubscribedCourseIds] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -67,8 +69,23 @@ export const Courses = () => {
       setLoading(false);
     };
 
+    const fetchSubscribedCourses = async () => {
+      if (!profile?.id) return;
+      
+      const { data } = await supabase
+        .from('course_purchases')
+        .select('course_id')
+        .eq('student_id', profile.id)
+        .eq('status', 'completed');
+      
+      if (data) {
+        setSubscribedCourseIds(data.map(p => p.course_id));
+      }
+    };
+
     fetchCourses();
-  }, [mentorFilter]);
+    fetchSubscribedCourses();
+  }, [mentorFilter, profile?.id]);
 
   useEffect(() => {
     let filtered = courses;
@@ -220,8 +237,26 @@ export const Courses = () => {
           </Card>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {filteredCourses.map((course) => (
-              <Card key={course.id} className="hover:shadow-lg transition-shadow">
+            {filteredCourses.map((course) => {
+              const isSubscribed = subscribedCourseIds.includes(course.id);
+              return (
+              <Card key={course.id} className={`hover:shadow-lg transition-shadow relative ${isSubscribed ? 'ring-2 ring-primary' : ''}`}>
+                {isSubscribed && (
+                  <div className="absolute top-2 right-2 z-10">
+                    <Badge className="bg-primary text-primary-foreground">
+                      <CreditCard className="h-3 w-3 mr-1" />
+                      Subscribed
+                    </Badge>
+                  </div>
+                )}
+                {course.is_paid && !isSubscribed && (
+                  <div className="absolute top-2 right-2 z-10">
+                    <Badge variant="secondary">
+                      <CreditCard className="h-3 w-3 mr-1" />
+                      Premium
+                    </Badge>
+                  </div>
+                )}
                 <CardHeader>
                   <CardTitle className="line-clamp-2">{course.title}</CardTitle>
                   <div className="flex gap-2 mt-2">
@@ -246,7 +281,8 @@ export const Courses = () => {
                   </Link>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
         </div>
