@@ -80,7 +80,7 @@ export const AdminPricing = () => {
   const [newCouponTrialDays, setNewCouponTrialDays] = useState('7');
 
   useEffect(() => {
-    if (!authLoading && profile?.role !== 'mentor') {
+    if (!authLoading && profile?.role !== 'admin') {
       navigate('/dashboard');
     }
   }, [profile, authLoading, navigate]);
