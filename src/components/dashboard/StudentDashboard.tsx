@@ -180,7 +180,15 @@ export const StudentDashboard = () => {
       </div>
 
       {/* Subscription Status */}
-      <SubscriptionStatus />
+      <div className="flex items-center justify-between">
+        <SubscriptionStatus />
+        <Link to="/subscriptions">
+          <Button variant="outline" size="sm">
+            <CreditCard className="h-4 w-4 mr-2" />
+            Manage Subscriptions
+          </Button>
+        </Link>
+      </div>
 
       {/* Mentorship Requests Section */}
       <div>

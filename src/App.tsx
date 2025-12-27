@@ -36,6 +36,7 @@ import { Mentors } from "./pages/Mentors";
 import { MentorProfile } from "./pages/MentorProfile";
 import NotFound from "./pages/NotFound";
 import { MyCertificates } from "./pages/MyCertificates";
+import { MySubscriptions } from "./pages/MySubscriptions";
 import { VerifyCertificate } from "./pages/VerifyCertificate";
 import { CertificatePublic } from "./pages/CertificatePublic";
 import AcceptMentorInvite from "./pages/AcceptMentorInvite";
@@ -107,6 +108,7 @@ const App = () => (
             <Route path="/cohort/community" element={<ProtectedRoute><CohortCommunity /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
             <Route path="/certificates" element={<ProtectedRoute><MyCertificates /></ProtectedRoute>} />
+            <Route path="/subscriptions" element={<ProtectedRoute><MySubscriptions /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
