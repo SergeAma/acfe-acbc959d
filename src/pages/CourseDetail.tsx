@@ -5,8 +5,9 @@ import { useAuth, ProfileFrame } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Clock, BarChart, Loader2, CheckCircle, DollarSign, Gift } from 'lucide-react';
+import { ArrowLeft, Clock, BarChart, Loader2, CheckCircle, DollarSign, Gift, Ticket } from 'lucide-react';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 
 interface Course {
@@ -43,6 +44,8 @@ export const CourseDetail = () => {
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [pricingOverride, setPricingOverride] = useState<PricingOverride | null>(null);
+  const [promoCode, setPromoCode] = useState('');
+  const [showPromoInput, setShowPromoInput] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -120,7 +123,7 @@ export const CourseDetail = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke('create-course-checkout', {
-        body: { courseId: id }
+        body: { courseId: id, promoCode: promoCode.trim() || undefined }
       });
 
       if (error) throw error;
@@ -288,12 +291,51 @@ export const CourseDetail = () => {
                     </Button>
                   </div>
                 ) : (
-                  <Button onClick={handleEnroll} disabled={enrolling} className="w-full" size="lg">
-                    {enrolling ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : null}
-                    {priceInfo?.type === 'paid' ? 'Buy Course' : 'Enroll Now'}
-                  </Button>
+                  <div className="space-y-3">
+                    {priceInfo?.type === 'paid' && (
+                      <div className="space-y-2">
+                        {showPromoInput ? (
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Enter promo code"
+                              value={promoCode}
+                              onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                              className="uppercase"
+                            />
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                setShowPromoInput(false);
+                                setPromoCode('');
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setShowPromoInput(true)}
+                            className="flex items-center gap-1 text-sm text-primary hover:underline mx-auto"
+                          >
+                            <Ticket className="h-3 w-3" />
+                            Have a promo code?
+                          </button>
+                        )}
+                        {promoCode && (
+                          <p className="text-xs text-center text-green-600">
+                            Code "{promoCode}" will be applied at checkout
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    <Button onClick={handleEnroll} disabled={enrolling} className="w-full" size="lg">
+                      {enrolling ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : null}
+                      {priceInfo?.type === 'paid' ? 'Buy Course' : 'Enroll Now'}
+                    </Button>
+                  </div>
                 )}
 
                 <div className="mt-6 space-y-4">

@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, DollarSign, Gift, Loader2, Save, Ticket, Plus, Copy, Check } from 'lucide-react';
+import { ArrowLeft, DollarSign, Gift, Loader2, Save, Ticket, Plus, Copy, Check, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface PricingOverride {
@@ -39,6 +39,7 @@ export const AdminPricing = () => {
   const [creatingCoupon, setCreatingCoupon] = useState(false);
   const [loadingCoupons, setLoadingCoupons] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
   
   const [pricingOverride, setPricingOverride] = useState<PricingOverride>({
     enabled: false,
@@ -165,6 +166,35 @@ export const AdminPricing = () => {
     setCreatingCoupon(false);
   };
 
+  const handleDeactivateCoupon = async (promotionCodeId: string, code: string) => {
+    setDeactivatingId(promotionCodeId);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke('deactivate-coupon', {
+        body: { promotionCodeId },
+        headers: {
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+      
+      toast({
+        title: "Coupon Deactivated",
+        description: `"${code}" has been deactivated`,
+      });
+      
+      fetchCoupons();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to deactivate coupon",
+        variant: "destructive",
+      });
+    }
+    setDeactivatingId(null);
+  };
+
   const copyToClipboard = (code: string) => {
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
@@ -280,6 +310,19 @@ export const AdminPricing = () => {
                               <Check className="h-4 w-4 text-green-500" />
                             ) : (
                               <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => handleDeactivateCoupon(coupon.id, coupon.code)}
+                            disabled={deactivatingId === coupon.id}
+                          >
+                            {deactivatingId === coupon.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
                             )}
                           </Button>
                         </div>
