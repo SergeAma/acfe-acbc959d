@@ -107,3 +107,6 @@ verify_jwt = true
 
 [functions.list-coupons]
 verify_jwt = true
+
+[functions.deactivate-coupon]
+verify_jwt = true
