@@ -86,6 +86,8 @@ export const AdminPricing = () => {
   }, [profile, authLoading, navigate]);
 
   useEffect(() => {
+    if (authLoading) return;
+    
     const fetchSettings = async () => {
       const { data } = await supabase
         .from('platform_settings')
@@ -100,16 +102,26 @@ export const AdminPricing = () => {
     };
 
     fetchSettings();
-    fetchCoupons();
-  }, []);
+    if (profile?.role === 'admin') {
+      fetchCoupons();
+    }
+  }, [authLoading, profile]);
 
   const fetchCoupons = async () => {
     setLoadingCoupons(true);
     try {
-      const { data: session } = await supabase.auth.getSession();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      
+      if (!accessToken) {
+        console.error('No access token available');
+        setLoadingCoupons(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('list-coupons', {
         headers: {
-          Authorization: `Bearer ${session.session?.access_token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       });
 
@@ -122,6 +134,11 @@ export const AdminPricing = () => {
       }
     } catch (error) {
       console.error('Error fetching coupons:', error);
+      toast({
+        title: "Error loading coupons",
+        description: "Please try refreshing the page",
+        variant: "destructive",
+      });
     }
     setLoadingCoupons(false);
   };
