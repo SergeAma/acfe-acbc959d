@@ -397,6 +397,7 @@ export type Database = {
           status: string
           stripe_checkout_session_id: string | null
           stripe_payment_intent_id: string | null
+          stripe_subscription_id: string | null
           student_id: string
         }
         Insert: {
@@ -408,6 +409,7 @@ export type Database = {
           status?: string
           stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
+          stripe_subscription_id?: string | null
           student_id: string
         }
         Update: {
@@ -419,6 +421,7 @@ export type Database = {
           status?: string
           stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
+          stripe_subscription_id?: string | null
           student_id?: string
         }
         Relationships: [

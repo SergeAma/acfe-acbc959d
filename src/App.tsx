@@ -45,6 +45,7 @@ import { MentorCohort } from "./pages/MentorCohort";
 import { CohortCommunity } from "./pages/CohortCommunity";
 import { PaymentSuccess } from "./pages/PaymentSuccess";
 import { AdminPricing } from "./pages/AdminPricing";
+import { AdminRevenue } from "./pages/AdminRevenue";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -94,6 +95,7 @@ const App = () => (
             <Route path="/admin/mentor-invitations" element={<ProtectedRoute requiredRole="admin"><AdminMentorInvitations /></ProtectedRoute>} />
             <Route path="/admin/learner-analytics" element={<ProtectedRoute requiredRole="admin"><AdminLearnerAnalytics /></ProtectedRoute>} />
             <Route path="/admin/pricing" element={<ProtectedRoute requiredRole="admin"><AdminPricing /></ProtectedRoute>} />
+            <Route path="/admin/revenue" element={<ProtectedRoute requiredRole="admin"><AdminRevenue /></ProtectedRoute>} />
             <Route path="/admin/courses" element={<ProtectedRoute requiredRole="admin"><AdminCourses /></ProtectedRoute>} />
             <Route path="/admin/courses/:courseId/build" element={<ProtectedRoute requiredRole="admin"><AdminCourseBuilder /></ProtectedRoute>} />
             <Route path="/payment-success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
