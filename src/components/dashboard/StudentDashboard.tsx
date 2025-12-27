@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { RequestMentorRole } from '@/components/RequestMentorRole';
 import { MySubmissions } from '@/components/dashboard/MySubmissions';
+import { SubscriptionStatus } from '@/components/dashboard/SubscriptionStatus';
 import { BookOpen, Library, Award, TrendingUp, UserCheck, Clock, BookOpenCheck, MessageSquare } from 'lucide-react';
 import { stripHtml } from '@/lib/html-utils';
 
@@ -165,6 +166,9 @@ export const StudentDashboard = () => {
           </Card>
         </Link>
       </div>
+
+      {/* Subscription Status */}
+      <SubscriptionStatus />
 
       {/* Mentorship Requests Section */}
       <div>
