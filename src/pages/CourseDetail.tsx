@@ -264,8 +264,9 @@ export const CourseDetail = () => {
                       <div className="flex items-center justify-center gap-2">
                         <DollarSign className="h-5 w-5 text-primary" />
                         <span className="text-3xl font-bold">{priceInfo.label}</span>
+                        <span className="text-muted-foreground">/month</span>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">One-time payment</p>
+                      <p className="text-sm text-muted-foreground mt-1">Monthly subscription • Cancel anytime</p>
                     </div>
                   )}
 
