@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye, Award, Info, DollarSign, Globe, EyeOff, Users, CheckCircle, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye, Award, Info, DollarSign, Globe, EyeOff, Users, CheckCircle, BarChart3, Clock, Zap } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -44,6 +44,8 @@ interface Course {
   is_paid: boolean;
   price_cents: number;
   is_published: boolean;
+  drip_enabled: boolean;
+  duration_weeks: number | null;
 }
 
 interface Section {
@@ -74,6 +76,8 @@ export const AdminCourseBuilder = () => {
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const [certificateEnabled, setCertificateEnabled] = useState(true);
   const [isPaid, setIsPaid] = useState(false);
+  const [dripEnabled, setDripEnabled] = useState(false);
+  const [durationWeeks, setDurationWeeks] = useState<number | null>(null);
   const [isPublished, setIsPublished] = useState(false);
   const [togglingPublish, setTogglingPublish] = useState(false);
   const [enrolledCount, setEnrolledCount] = useState(0);
@@ -177,6 +181,8 @@ export const AdminCourseBuilder = () => {
     setEditedTitle(courseData?.title || '');
     setCertificateEnabled(courseData?.certificate_enabled ?? true);
     setIsPaid(courseData?.is_paid ?? false);
+    setDripEnabled(courseData?.drip_enabled ?? false);
+    setDurationWeeks(courseData?.duration_weeks ?? null);
     setIsPublished(courseData?.is_published ?? false);
     setSections(sectionsData || []);
     setLoading(false);
@@ -265,6 +271,55 @@ export const AdminCourseBuilder = () => {
       toast({
         title: 'Success',
         description: paid ? 'Course set to $10' : 'Course set to free',
+      });
+    }
+  };
+
+  const handleDripToggle = async (enabled: boolean) => {
+    if (!courseId) return;
+    
+    setDripEnabled(enabled);
+    const { error } = await supabase
+      .from('courses')
+      .update({ drip_enabled: enabled })
+      .eq('id', courseId);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update delivery mode',
+        variant: 'destructive',
+      });
+      setDripEnabled(!enabled);
+    } else {
+      setCourse(prev => prev ? { ...prev, drip_enabled: enabled } : null);
+      toast({
+        title: 'Success',
+        description: enabled ? 'Drip content enabled' : 'On-demand mode enabled',
+      });
+    }
+  };
+
+  const handleDurationChange = async (weeks: number | null) => {
+    if (!courseId) return;
+    
+    setDurationWeeks(weeks);
+    const { error } = await supabase
+      .from('courses')
+      .update({ duration_weeks: weeks })
+      .eq('id', courseId);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update duration',
+        variant: 'destructive',
+      });
+    } else {
+      setCourse(prev => prev ? { ...prev, duration_weeks: weeks } : null);
+      toast({
+        title: 'Success',
+        description: 'Course duration updated',
       });
     }
   };
@@ -829,6 +884,68 @@ export const AdminCourseBuilder = () => {
                   onCheckedChange={handlePricingToggle}
                 />
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Course Delivery Mode */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Zap className="h-5 w-5" />
+                Course Delivery
+              </CardTitle>
+              <CardDescription>
+                Control how students access content
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="drip-toggle">Drip Content</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {dripEnabled ? 'Content released progressively' : 'All content available immediately'}
+                  </p>
+                </div>
+                <Switch
+                  id="drip-toggle"
+                  checked={dripEnabled}
+                  onCheckedChange={handleDripToggle}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Course Duration */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Estimated Duration
+              </CardTitle>
+              <CardDescription>
+                How long should it take to complete this course?
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-3">
+                <Input
+                  type="number"
+                  min="1"
+                  max="52"
+                  value={durationWeeks || ''}
+                  onChange={(e) => {
+                    const value = e.target.value ? parseInt(e.target.value) : null;
+                    setDurationWeeks(value);
+                  }}
+                  onBlur={() => handleDurationChange(durationWeeks)}
+                  placeholder="e.g., 4"
+                  className="w-24"
+                />
+                <span className="text-sm text-muted-foreground">weeks</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Leave blank if self-paced with no estimated time
+              </p>
             </CardContent>
           </Card>
         </div>
