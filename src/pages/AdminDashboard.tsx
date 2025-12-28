@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Clock, UserX, UserCheck, Pause } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
 
 interface MentorRequest {
@@ -205,6 +205,65 @@ export const AdminDashboard = () => {
     setProcessingId(null);
   };
 
+  const handleRevokeMentor = async (userId: string) => {
+    setProcessingId(userId);
+    
+    // Update profiles table to set role back to student
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ role: 'student' })
+      .eq('id', userId);
+
+    if (profileError) {
+      toast({
+        title: "Revoke failed",
+        description: profileError.message,
+        variant: "destructive",
+      });
+    } else {
+      // Also update user_roles table
+      await supabase
+        .from('user_roles')
+        .update({ role: 'student' })
+        .eq('user_id', userId);
+      
+      toast({
+        title: "Mentor role revoked",
+        description: "User has been demoted to student role.",
+      });
+      fetchRequests();
+    }
+    
+    setProcessingId(null);
+  };
+
+  const handleReinstateMentor = async (userId: string) => {
+    if (!profile?.id) return;
+    
+    setProcessingId(userId);
+    
+    const { error } = await supabase.rpc('reinstate_mentor', {
+      _user_id: userId,
+      _admin_id: profile.id
+    });
+
+    if (error) {
+      toast({
+        title: "Reinstate failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Mentor reinstated",
+        description: "User has been granted mentor role again.",
+      });
+      fetchRequests();
+    }
+    
+    setProcessingId(null);
+  };
+
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -315,67 +374,96 @@ export const AdminDashboard = () => {
           <div className="grid gap-6">
             {requests.map((request) => (
               <Card key={request.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-xl">
-                        {request.profiles?.full_name || 'Unknown User'}
-                      </CardTitle>
-                      <CardDescription>{request.profiles?.email}</CardDescription>
-                    </div>
-                    <Badge 
-                      variant={
-                        request.status === 'approved' ? 'default' : 
-                        request.status === 'rejected' ? 'destructive' : 
-                        'secondary'
-                      }
-                      className="flex items-center gap-1"
-                    >
-                      {request.status === 'pending' && <Clock className="h-3 w-3" />}
-                      {request.status === 'approved' && <CheckCircle className="h-3 w-3" />}
-                      {request.status === 'rejected' && <XCircle className="h-3 w-3" />}
-                      {request.status}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-semibold mb-2">Request Reason:</h4>
-                      <p className="text-muted-foreground">{request.reason}</p>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Requested on: {new Date(request.created_at).toLocaleDateString()}
-                    </div>
-                    {request.status === 'pending' && (
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => handleApprove(request.id)}
-                          disabled={processingId === request.id}
-                          className="flex-1"
+                <CardContent className="p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-1">
+                        <h3 className="font-semibold text-lg truncate">
+                          {request.profiles?.full_name || 'Unknown User'}
+                        </h3>
+                        <Badge 
+                          variant={
+                            request.status === 'approved' ? 'default' : 
+                            request.status === 'rejected' ? 'destructive' : 
+                            'secondary'
+                          }
+                          className="flex items-center gap-1 shrink-0"
                         >
-                          {processingId === request.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          ) : (
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                          )}
-                          Approve
-                        </Button>
-                        <Button
-                          onClick={() => handleReject(request.id)}
-                          disabled={processingId === request.id}
-                          variant="destructive"
-                          className="flex-1"
-                        >
-                          {processingId === request.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          ) : (
-                            <XCircle className="h-4 w-4 mr-2" />
-                          )}
-                          Reject
-                        </Button>
+                          {request.status === 'pending' && <Clock className="h-3 w-3" />}
+                          {request.status === 'approved' && <CheckCircle className="h-3 w-3" />}
+                          {request.status === 'rejected' && <XCircle className="h-3 w-3" />}
+                          {request.status}
+                        </Badge>
                       </div>
-                    )}
+                      <p className="text-sm text-muted-foreground truncate">{request.profiles?.email}</p>
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{request.reason}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Requested: {new Date(request.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    
+                    <div className="flex gap-2 shrink-0">
+                      {request.status === 'pending' && (
+                        <>
+                          <Button
+                            onClick={() => handleApprove(request.id)}
+                            disabled={processingId === request.id}
+                            size="sm"
+                          >
+                            {processingId === request.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <CheckCircle className="h-4 w-4" />
+                            )}
+                            <span className="ml-2 hidden sm:inline">Approve</span>
+                          </Button>
+                          <Button
+                            onClick={() => handleReject(request.id)}
+                            disabled={processingId === request.id}
+                            variant="destructive"
+                            size="sm"
+                          >
+                            {processingId === request.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <XCircle className="h-4 w-4" />
+                            )}
+                            <span className="ml-2 hidden sm:inline">Reject</span>
+                          </Button>
+                        </>
+                      )}
+                      {request.status === 'approved' && (
+                        <Button
+                          onClick={() => handleRevokeMentor(request.user_id)}
+                          disabled={processingId === request.user_id}
+                          variant="outline"
+                          size="sm"
+                          className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                        >
+                          {processingId === request.user_id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <UserX className="h-4 w-4" />
+                          )}
+                          <span className="ml-2 hidden sm:inline">Revoke</span>
+                        </Button>
+                      )}
+                      {request.status === 'rejected' && (
+                        <Button
+                          onClick={() => handleReinstateMentor(request.user_id)}
+                          disabled={processingId === request.user_id}
+                          variant="outline"
+                          size="sm"
+                        >
+                          {processingId === request.user_id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <UserCheck className="h-4 w-4" />
+                          )}
+                          <span className="ml-2 hidden sm:inline">Reinstate</span>
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
