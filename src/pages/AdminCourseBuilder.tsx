@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye, Award, Info, DollarSign } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye, Award, Info, DollarSign, Globe, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -42,6 +42,7 @@ interface Course {
   certificate_enabled: boolean;
   is_paid: boolean;
   price_cents: number;
+  is_published: boolean;
 }
 
 interface Section {
@@ -72,6 +73,8 @@ export const AdminCourseBuilder = () => {
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const [certificateEnabled, setCertificateEnabled] = useState(true);
   const [isPaid, setIsPaid] = useState(false);
+  const [isPublished, setIsPublished] = useState(false);
+  const [togglingPublish, setTogglingPublish] = useState(false);
   const [showEditingTip, setShowEditingTip] = useState(() => {
     return localStorage.getItem('courseBuilderTipDismissed') !== 'true';
   });
@@ -131,8 +134,37 @@ export const AdminCourseBuilder = () => {
     setEditedTitle(courseData?.title || '');
     setCertificateEnabled(courseData?.certificate_enabled ?? true);
     setIsPaid(courseData?.is_paid ?? false);
+    setIsPublished(courseData?.is_published ?? false);
     setSections(sectionsData || []);
     setLoading(false);
+  };
+
+  const handleTogglePublish = async () => {
+    if (!courseId) return;
+    
+    setTogglingPublish(true);
+    const newStatus = !isPublished;
+    
+    const { error } = await supabase
+      .from('courses')
+      .update({ is_published: newStatus })
+      .eq('id', courseId);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: `Failed to ${newStatus ? 'publish' : 'unpublish'} course`,
+        variant: 'destructive',
+      });
+    } else {
+      setIsPublished(newStatus);
+      setCourse(prev => prev ? { ...prev, is_published: newStatus } : null);
+      toast({
+        title: 'Success',
+        description: newStatus ? 'Course published' : 'Course moved to draft',
+      });
+    }
+    setTogglingPublish(false);
   };
 
   const handleCertificateToggle = async (enabled: boolean) => {
@@ -476,10 +508,29 @@ export const AdminCourseBuilder = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             {isAdminRoute ? 'Back to Courses' : 'Back to Dashboard'}
           </Button>
-          <Button variant="outline" onClick={() => navigate(`/courses/${courseId}`)}>
-            <Eye className="h-4 w-4 mr-2" />
-            Preview Course
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate(`/courses/${courseId}`)}>
+              <Eye className="h-4 w-4 mr-2" />
+              Preview Course
+            </Button>
+            <Button 
+              variant={isPublished ? "outline" : "default"}
+              onClick={handleTogglePublish}
+              disabled={togglingPublish}
+            >
+              {isPublished ? (
+                <>
+                  <EyeOff className="h-4 w-4 mr-2" />
+                  {togglingPublish ? 'Unpublishing...' : 'Unpublish'}
+                </>
+              ) : (
+                <>
+                  <Globe className="h-4 w-4 mr-2" />
+                  {togglingPublish ? 'Publishing...' : 'Publish'}
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
         {showEditingTip && (
