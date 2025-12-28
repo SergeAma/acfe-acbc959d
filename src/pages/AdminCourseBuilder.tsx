@@ -29,9 +29,10 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { RichTextEditor } from '@/components/RichTextEditor';
+import { Badge } from '@/components/ui/badge';
 
 interface Course {
   id: string;
@@ -75,6 +76,8 @@ export const AdminCourseBuilder = () => {
   const [isPaid, setIsPaid] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   const [togglingPublish, setTogglingPublish] = useState(false);
+  const [enrolledCount, setEnrolledCount] = useState(0);
+  const [showUnpublishDialog, setShowUnpublishDialog] = useState(false);
   const [showEditingTip, setShowEditingTip] = useState(() => {
     return localStorage.getItem('courseBuilderTipDismissed') !== 'true';
   });
@@ -94,8 +97,18 @@ export const AdminCourseBuilder = () => {
   useEffect(() => {
     if (courseId) {
       fetchCourseData();
+      fetchEnrolledCount();
     }
   }, [courseId]);
+
+  const fetchEnrolledCount = async () => {
+    if (!courseId) return;
+    const { count } = await supabase
+      .from('enrollments')
+      .select('*', { count: 'exact', head: true })
+      .eq('course_id', courseId);
+    setEnrolledCount(count || 0);
+  };
 
   const fetchCourseData = async () => {
     if (!courseId) return;
@@ -139,10 +152,19 @@ export const AdminCourseBuilder = () => {
     setLoading(false);
   };
 
+  const handleUnpublishClick = () => {
+    if (enrolledCount > 0) {
+      setShowUnpublishDialog(true);
+    } else {
+      handleTogglePublish();
+    }
+  };
+
   const handleTogglePublish = async () => {
     if (!courseId) return;
     
     setTogglingPublish(true);
+    setShowUnpublishDialog(false);
     const newStatus = !isPublished;
     
     const { error } = await supabase
@@ -515,7 +537,7 @@ export const AdminCourseBuilder = () => {
             </Button>
             <Button 
               variant={isPublished ? "outline" : "default"}
-              onClick={handleTogglePublish}
+              onClick={isPublished ? handleUnpublishClick : handleTogglePublish}
               disabled={togglingPublish}
             >
               {isPublished ? (
@@ -532,6 +554,27 @@ export const AdminCourseBuilder = () => {
             </Button>
           </div>
         </div>
+
+        {/* Unpublish Confirmation Dialog */}
+        <Dialog open={showUnpublishDialog} onOpenChange={setShowUnpublishDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Unpublish Course?</DialogTitle>
+              <DialogDescription>
+                This course has <strong>{enrolledCount}</strong> enrolled student{enrolledCount !== 1 ? 's' : ''}. 
+                Unpublishing will hide the course from new students, but enrolled students will retain access.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowUnpublishDialog(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleTogglePublish} disabled={togglingPublish}>
+                {togglingPublish ? 'Unpublishing...' : 'Unpublish Course'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {showEditingTip && (
           <Alert className="mb-6 bg-primary/5 border-primary/20">
@@ -573,8 +616,11 @@ export const AdminCourseBuilder = () => {
               </Button>
             </div>
           ) : (
-            <div className="flex items-center gap-2 mb-4 group">
+            <div className="flex items-center gap-3 mb-4 group">
               <h1 className="text-4xl font-bold">{course?.title}</h1>
+              <Badge variant={isPublished ? "default" : "secondary"} className="text-sm">
+                {isPublished ? 'Published' : 'Draft'}
+              </Badge>
               <Button 
                 variant="ghost" 
                 size="sm" 
