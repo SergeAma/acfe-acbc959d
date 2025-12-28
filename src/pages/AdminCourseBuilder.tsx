@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye, Award, Info, DollarSign, Globe, EyeOff } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye, Award, Info, DollarSign, Globe, EyeOff, Users, CheckCircle, BarChart3 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -77,6 +77,8 @@ export const AdminCourseBuilder = () => {
   const [isPublished, setIsPublished] = useState(false);
   const [togglingPublish, setTogglingPublish] = useState(false);
   const [enrolledCount, setEnrolledCount] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
+  const [totalLessons, setTotalLessons] = useState(0);
   const [showUnpublishDialog, setShowUnpublishDialog] = useState(false);
   const [showEditingTip, setShowEditingTip] = useState(() => {
     return localStorage.getItem('courseBuilderTipDismissed') !== 'true';
@@ -97,17 +99,42 @@ export const AdminCourseBuilder = () => {
   useEffect(() => {
     if (courseId) {
       fetchCourseData();
-      fetchEnrolledCount();
+      fetchAnalytics();
     }
   }, [courseId]);
 
-  const fetchEnrolledCount = async () => {
+  const fetchAnalytics = async () => {
     if (!courseId) return;
-    const { count } = await supabase
+    
+    // Fetch enrollment count
+    const { count: enrolled } = await supabase
       .from('enrollments')
       .select('*', { count: 'exact', head: true })
       .eq('course_id', courseId);
-    setEnrolledCount(count || 0);
+    setEnrolledCount(enrolled || 0);
+    
+    // Fetch completed enrollments (progress = 100)
+    const { count: completed } = await supabase
+      .from('enrollments')
+      .select('*', { count: 'exact', head: true })
+      .eq('course_id', courseId)
+      .eq('progress', 100);
+    setCompletedCount(completed || 0);
+    
+    // Fetch total lessons count
+    const { data: sections } = await supabase
+      .from('course_sections')
+      .select('id')
+      .eq('course_id', courseId);
+    
+    if (sections && sections.length > 0) {
+      const sectionIds = sections.map(s => s.id);
+      const { count: lessons } = await supabase
+        .from('course_content')
+        .select('*', { count: 'exact', head: true })
+        .in('section_id', sectionIds);
+      setTotalLessons(lessons || 0);
+    }
   };
 
   const fetchCourseData = async () => {
@@ -674,6 +701,56 @@ export const AdminCourseBuilder = () => {
               </Button>
             </div>
           )}
+
+          {/* Quick Analytics Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 mb-6">
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Users className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{enrolledCount}</p>
+                  <p className="text-xs text-muted-foreground">Enrolled</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-green-500/5 border-green-500/20">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="p-2 bg-green-500/10 rounded-lg">
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{completedCount}</p>
+                  <p className="text-xs text-muted-foreground">Completed</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-blue-500/5 border-blue-500/20">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="p-2 bg-blue-500/10 rounded-lg">
+                  <BarChart3 className="h-5 w-5 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">
+                    {enrolledCount > 0 ? Math.round((completedCount / enrolledCount) * 100) : 0}%
+                  </p>
+                  <p className="text-xs text-muted-foreground">Completion Rate</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-amber-500/5 border-amber-500/20">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="p-2 bg-amber-500/10 rounded-lg">
+                  <Award className="h-5 w-5 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{totalLessons}</p>
+                  <p className="text-xs text-muted-foreground">Lessons</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Thumbnail Upload */}
           <div className="mt-6">
