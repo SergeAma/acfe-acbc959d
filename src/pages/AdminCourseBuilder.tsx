@@ -121,12 +121,23 @@ export const AdminCourseBuilder = () => {
       .eq('progress', 100);
     setCompletedCount(completed || 0);
     
-    // Fetch total lessons count directly from course_content via course_sections
-    const { count: lessons } = await supabase
-      .from('course_content')
-      .select('id, course_sections!inner(course_id)', { count: 'exact', head: true })
-      .eq('course_sections.course_id', courseId);
-    setTotalLessons(lessons || 0);
+    // Fetch total lessons count - count all course_content items that have a title
+    const { data: courseSections } = await supabase
+      .from('course_sections')
+      .select('id')
+      .eq('course_id', courseId);
+    
+    if (courseSections && courseSections.length > 0) {
+      const sectionIds = courseSections.map(s => s.id);
+      const { count: lessons } = await supabase
+        .from('course_content')
+        .select('*', { count: 'exact', head: true })
+        .in('section_id', sectionIds)
+        .not('title', 'is', null);
+      setTotalLessons(lessons || 0);
+    } else {
+      setTotalLessons(0);
+    }
   };
 
   const fetchCourseData = async () => {
