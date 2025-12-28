@@ -124,7 +124,7 @@ export const AdminCourses = () => {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {courses.map((course) => (
-              <Card key={course.id} className="hover:shadow-lg transition-shadow overflow-hidden">
+              <Card key={course.id} className="hover:shadow-lg transition-shadow overflow-hidden flex flex-col">
                 {course.thumbnail_url ? (
                   <div className="aspect-video w-full overflow-hidden">
                     <img 
@@ -138,21 +138,21 @@ export const AdminCourses = () => {
                     <BookOpen className="h-12 w-12 text-muted-foreground/50" />
                   </div>
                 )}
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-xl">{course.title}</CardTitle>
-                    <Badge variant={course.is_published ? 'default' : 'secondary'}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="text-lg leading-tight line-clamp-2 flex-1">{course.title}</CardTitle>
+                    <Badge variant={course.is_published ? 'default' : 'secondary'} className="shrink-0">
                       {course.is_published ? 'Published' : 'Draft'}
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">{course.category}</p>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm mb-4 line-clamp-2">{stripHtml(course.description)}</p>
-                  <div className="text-xs text-muted-foreground mb-4">
+                <CardContent className="flex-1 flex flex-col">
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2 flex-1">{stripHtml(course.description)}</p>
+                  <div className="text-xs text-muted-foreground mb-3">
                     {course.sections[0]?.count || 0} sections
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -164,7 +164,8 @@ export const AdminCourses = () => {
                     </Button>
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="icon"
+                      className="h-9 w-9 shrink-0"
                       onClick={() => {
                         setCourseToDelete(course.id);
                         setDeleteDialogOpen(true);
