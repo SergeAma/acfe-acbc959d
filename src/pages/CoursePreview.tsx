@@ -78,6 +78,7 @@ export const CoursePreview = () => {
   const [course, setCourse] = useState<Course | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [enrollmentProgress, setEnrollmentProgress] = useState(0);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [prerequisites, setPrerequisites] = useState<PrerequisiteCourse[]>([]);
@@ -207,12 +208,13 @@ export const CoursePreview = () => {
   const checkEnrollment = async () => {
     const { data } = await supabase
       .from('enrollments')
-      .select('id')
+      .select('id, progress')
       .eq('course_id', id)
       .eq('student_id', user?.id)
       .maybeSingle();
 
     setIsEnrolled(!!data);
+    setEnrollmentProgress(data?.progress || 0);
   };
 
   const handleEnroll = async () => {
@@ -422,7 +424,7 @@ export const CoursePreview = () => {
                   className="flex-1"
                 >
                   <ChevronRight className="h-5 w-5 mr-2" />
-                  Continue Learning
+                  {enrollmentProgress === 0 ? 'Start Learning' : 'Continue Learning'}
                 </Button>
               </div>
             ) : (

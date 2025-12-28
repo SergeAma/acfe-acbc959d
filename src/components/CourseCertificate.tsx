@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, Award, Share2, Linkedin, Twitter, Facebook, Link as LinkIcon, Plus } from 'lucide-react';
+import { Download, Share2, Linkedin, Twitter, Facebook, Link as LinkIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import acfeLogo from '@/assets/acfe-logo.png';
 
 interface CourseCertificateProps {
   studentName: string;
@@ -126,9 +127,9 @@ export const CourseCertificate = ({
         <div className="absolute bottom-4 right-4 w-16 h-16 border-r-4 border-b-4 border-primary/30" />
 
         <div className="text-center space-y-6 relative z-10">
-          {/* Header */}
-          <div className="flex items-center justify-center gap-2">
-            <Award className="h-10 w-10 text-primary" />
+          {/* Header with ACFE Logo */}
+          <div className="flex items-center justify-center">
+            <img src={acfeLogo} alt="ACFE" className="h-16 w-auto" />
           </div>
           
           <div>
@@ -157,7 +158,7 @@ export const CourseCertificate = ({
           {/* Mentor */}
           <div className="py-2">
             <p className="text-sm text-muted-foreground">
-              Instructed by <span className="font-medium text-foreground">{mentorName}</span>
+              Instructed by <span className="font-medium text-foreground">{mentorName || 'Instructor'}</span>
             </p>
           </div>
 
