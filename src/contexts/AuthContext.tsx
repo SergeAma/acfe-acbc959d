@@ -27,7 +27,7 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, fullName: string, linkedinUrl?: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string, linkedinUrl?: string, wantsMentor?: boolean) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
@@ -185,7 +185,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
-  const signUp = async (email: string, password: string, fullName: string, linkedinUrl?: string) => {
+  const signUp = async (email: string, password: string, fullName: string, linkedinUrl?: string, wantsMentor?: boolean) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -206,7 +206,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else {
       toast({
         title: "Account created!",
-        description: "Welcome to A Cloud for Everyone. All users start as students.",
+        description: wantsMentor 
+          ? "Welcome! Your mentor application will be reviewed by our team." 
+          : "Welcome to A Cloud for Everyone. All users start as learners.",
       });
       
       // Update profile with LinkedIn URL if provided
@@ -215,6 +217,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .from('profiles')
           .update({ linkedin_url: linkedinUrl })
           .eq('id', data.user.id);
+      }
+
+      // If user wants to become a mentor, create a mentor request
+      if (wantsMentor && data.user) {
+        try {
+          await supabase
+            .from('mentor_role_requests')
+            .insert({
+              user_id: data.user.id,
+              reason: 'Applied during registration',
+              status: 'pending'
+            });
+        } catch (mentorRequestError) {
+          console.error('Failed to create mentor request:', mentorRequestError);
+        }
       }
 
       // Send welcome email automatically
@@ -226,6 +243,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               email: email,
               first_name: firstName,
               role: 'student',
+              wants_mentor: wantsMentor || false,
+              user_id: data.user.id,
             },
           });
         } catch (emailError) {

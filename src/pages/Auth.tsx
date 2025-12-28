@@ -59,6 +59,7 @@ export const Auth = () => {
     cloudBrands: [] as string[],
     emailConsent: false,
     termsAccepted: false,
+    wantsMentor: false,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -116,7 +117,8 @@ export const Auth = () => {
         formData.email,
         formData.password,
         fullName,
-        formData.linkedinUrl
+        formData.linkedinUrl,
+        formData.wantsMentor
       );
       if (!error) {
         navigate(redirectUrl);
@@ -417,8 +419,27 @@ export const Auth = () => {
                 </div>
                 {errors.termsAccepted && <p className="text-sm text-destructive">{errors.termsAccepted}</p>}
 
+                <div className="flex items-start space-x-2 p-4 bg-muted/50 rounded-lg border">
+                  <Checkbox
+                    id="wants-mentor"
+                    checked={formData.wantsMentor}
+                    onCheckedChange={(checked) => setFormData({ ...formData, wantsMentor: checked as boolean })}
+                  />
+                  <div>
+                    <label 
+                      htmlFor="wants-mentor"
+                      className="text-sm font-medium cursor-pointer"
+                    >
+                      I want to become a mentor
+                    </label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Check this if you'd like to teach courses and mentor students. Your application will be reviewed by our team.
+                    </p>
+                  </div>
+                </div>
+
                 <p className="text-sm text-muted-foreground text-center">
-                  All accounts start as student accounts. You can request mentor access after signing up.
+                  All accounts start as learner accounts. {!formData.wantsMentor && 'You can also request mentor access after signing up.'}
                 </p>
 
                 <Button type="submit" className="w-full bg-foreground text-background hover:bg-foreground/90 font-semibold" disabled={loading || !formData.termsAccepted}>
