@@ -8,6 +8,7 @@ interface ProfileAvatarProps {
   frame?: ProfileFrame;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
+  showBadge?: boolean;
 }
 
 const sizeClasses = {
@@ -44,18 +45,19 @@ export const ProfileAvatar = ({
   frame = 'none',
   size = 'md',
   className = '',
+  showBadge = true,
 }: ProfileAvatarProps) => {
   return (
-    <div className={`relative inline-block ${className}`}>
+    <div className={`relative inline-flex flex-col items-center ${className}`}>
       <Avatar className={`${sizeClasses[size]} ${ringClasses[frame]}`}>
         <AvatarImage src={src} alt={name} />
         <AvatarFallback className={size === 'xl' ? 'text-4xl' : size === 'lg' ? 'text-2xl' : ''}>
           <User className={size === 'xl' ? 'h-20 w-20' : size === 'lg' ? 'h-12 w-12' : size === 'md' ? 'h-8 w-8' : 'h-4 w-4'} />
         </AvatarFallback>
       </Avatar>
-      {frame !== 'none' && (
+      {showBadge && frame !== 'none' && (
         <div
-          className={`absolute -bottom-0.5 left-1/2 -translate-x-1/2 px-1 py-px rounded text-[6px] font-semibold text-white whitespace-nowrap ${badgeColors[frame]}`}
+          className={`mt-2 px-3 py-1 rounded-full text-xs font-semibold text-white whitespace-nowrap ${badgeColors[frame]}`}
         >
           {badgeText[frame]}
         </div>
