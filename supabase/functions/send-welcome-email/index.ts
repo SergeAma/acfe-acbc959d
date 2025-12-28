@@ -13,6 +13,8 @@ interface WelcomeEmailRequest {
   email: string;
   first_name: string;
   role: 'student' | 'mentor';
+  wants_mentor?: boolean;
+  user_id?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -23,9 +25,13 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, first_name, role }: WelcomeEmailRequest = await req.json();
+    const { email, first_name, role, wants_mentor, user_id }: WelcomeEmailRequest = await req.json();
     
-    console.log(`Sending welcome email to ${email} (${role})`);
+    console.log(`Sending welcome email to ${email} (${role}, wants_mentor: ${wants_mentor})`);
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const currentYear = new Date().getFullYear();
     const firstName = first_name || 'there';
@@ -33,7 +39,196 @@ const handler = async (req: Request): Promise<Response> => {
     let subject: string;
     let htmlContent: string;
 
-    if (role === 'mentor') {
+    if (wants_mentor) {
+      // Email for users who want to become mentors
+      subject = `Welcome to A Cloud for Everyone, ${firstName}! 🎓`;
+      htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #4a5d4a; color: #ffffff;">
+    <!-- Header -->
+    <div style="padding: 40px 40px 20px 40px;">
+      <h1 style="margin: 0; font-size: 28px; font-weight: normal;">Hello and welcome <strong>${firstName}</strong>,</h1>
+    </div>
+    
+    <!-- Main content -->
+    <div style="padding: 20px 40px;">
+      <p style="margin: 0 0 20px 0; line-height: 1.6;">
+        Welcome to A Cloud for Everyone (ACFE)! We're thrilled to have you join our community and excited to see that you're interested in becoming a mentor.
+      </p>
+      
+      <div style="background-color: rgba(255,255,255,0.1); border-radius: 8px; padding: 20px; margin: 25px 0;">
+        <h3 style="margin: 0 0 10px 0; font-size: 16px;">📋 About Your Mentor Application</h3>
+        <p style="margin: 0; line-height: 1.6; font-size: 14px;">
+          All accounts start as learner accounts to ensure everyone understands our platform. We've received your interest in becoming a mentor, and our team will review your application shortly.
+        </p>
+      </div>
+      
+      <h2 style="margin: 30px 0 15px 0; font-size: 20px;">🎯 What happens next?</h2>
+      <ul style="margin: 0 0 20px 0; padding-left: 0; list-style: none;">
+        <li style="margin-bottom: 8px;">✔️ Our team will review your application within <strong>3-5 business days</strong></li>
+        <li style="margin-bottom: 8px;">✔️ You'll receive an email notification with our decision</li>
+        <li style="margin-bottom: 8px;">✔️ Once approved, you'll get access to create courses and mentor students</li>
+        <li style="margin-bottom: 8px;">✔️ In the meantime, explore our platform as a learner!</li>
+      </ul>
+      
+      <p style="margin: 20px 0; line-height: 1.6;">
+        🚀 Thank you for stepping forward to mentor the next generation of tech talent. Your knowledge and experience can help shape futures across Africa.
+      </p>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="https://www.acloudforeveryone.org/courses" style="display: inline-block; background-color: #ffffff; color: #4a5d4a; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 6px;">Explore Courses</a>
+      </div>
+      
+      <p style="margin: 30px 0 10px 0; font-weight: bold; font-size: 18px;">There's a cloud for everyone!</p>
+      
+      <p style="margin: 20px 0;">
+        With gratitude,<br>
+        <strong>The ACFE Team</strong><br>
+        📧 contact@acloudforeveryone.org
+      </p>
+    </div>
+    
+    <!-- Footer -->
+    <div style="padding: 20px 40px; border-top: 1px solid rgba(255,255,255,0.2); text-align: center;">
+      <p style="margin: 0; font-size: 12px; color: rgba(255,255,255,0.7);">
+        © ${currentYear} A Cloud for Everyone. All rights reserved.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+      `;
+
+      // Get the mentor role request ID for this user
+      let requestId = null;
+      if (user_id) {
+        const { data: mentorRequest } = await supabase
+          .from('mentor_role_requests')
+          .select('id')
+          .eq('user_id', user_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (mentorRequest) {
+          requestId = mentorRequest.id;
+        }
+      }
+
+      // Notify admins about the new mentor application
+      const { data: adminRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin');
+
+      if (adminRoles && adminRoles.length > 0) {
+        const adminUserIds = adminRoles.map((r: { user_id: string }) => r.user_id);
+        const { data: adminProfiles } = await supabase
+          .from('profiles')
+          .select('email, full_name')
+          .in('id', adminUserIds);
+
+        if (adminProfiles && adminProfiles.length > 0) {
+          const baseUrl = "https://www.acloudforeveryone.org";
+          const approveUrl = requestId ? `${baseUrl}/api/mentor-action?action=approve&request_id=${requestId}` : '';
+          const declineUrl = requestId ? `${baseUrl}/api/mentor-action?action=decline&request_id=${requestId}` : '';
+
+          for (const admin of adminProfiles) {
+            const adminHtmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+    <!-- Header -->
+    <div style="background-color: #4a5d4a; padding: 30px 40px;">
+      <h1 style="margin: 0; font-size: 22px; color: #ffffff;">New Mentor Application</h1>
+    </div>
+    
+    <!-- Main content -->
+    <div style="padding: 40px;">
+      <p style="margin: 0 0 20px 0; line-height: 1.6; color: #333333;">
+        Hello ${admin.full_name?.split(' ')[0] || 'Admin'},
+      </p>
+      
+      <p style="margin: 0 0 20px 0; line-height: 1.6; color: #333333;">
+        A new user has registered and expressed interest in becoming a mentor on A Cloud for Everyone.
+      </p>
+      
+      <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0;">
+        <h3 style="margin: 0 0 15px 0; color: #1a1a1a; font-size: 16px;">Applicant Details:</h3>
+        <table style="width: 100%;">
+          <tr>
+            <td style="padding: 5px 0; color: #666666;">Name:</td>
+            <td style="padding: 5px 0; color: #1a1a1a; font-weight: 500;">${firstName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 5px 0; color: #666666;">Email:</td>
+            <td style="padding: 5px 0; color: #1a1a1a; font-weight: 500;">${email}</td>
+          </tr>
+          <tr>
+            <td style="padding: 5px 0; color: #666666;">Status:</td>
+            <td style="padding: 5px 0;"><span style="background-color: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 12px;">Pending Review</span></td>
+          </tr>
+        </table>
+      </div>
+      
+      ${requestId ? `
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${approveUrl}" style="display: inline-block; background-color: #16a34a; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 6px; margin-right: 10px;">✓ Approve</a>
+        <a href="${declineUrl}" style="display: inline-block; background-color: #dc2626; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 6px;">✗ Decline</a>
+      </div>
+      ` : ''}
+      
+      <p style="margin: 20px 0; line-height: 1.6; color: #666666; font-size: 14px;">
+        You can also review this application in the <a href="https://www.acloudforeveryone.org/admin/users" style="color: #4a5d4a;">Admin Dashboard</a>.
+      </p>
+    </div>
+    
+    <!-- Footer -->
+    <div style="background-color: #f8f9fa; padding: 20px 40px; text-align: center; border-top: 1px solid #e5e5e5;">
+      <p style="margin: 0; font-size: 12px; color: #999999;">
+        © ${currentYear} A Cloud for Everyone. All rights reserved.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+            `;
+
+            try {
+              await resend.emails.send({
+                from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
+                to: [admin.email],
+                subject: `🎓 New Mentor Application: ${firstName}`,
+                html: adminHtmlContent,
+              });
+              console.log(`Admin notification sent to ${admin.email}`);
+            } catch (adminEmailError) {
+              console.error(`Failed to send admin notification to ${admin.email}:`, adminEmailError);
+            }
+          }
+
+          // Log the admin notification
+          await supabase.from('email_logs').insert({
+            subject: `Admin Notification: New Mentor Application - ${firstName}`,
+            status: 'sent',
+            sent_at: new Date().toISOString()
+          });
+        }
+      }
+
+    } else if (role === 'mentor') {
+      // Approved mentor welcome email
       subject = `Welcome to A Cloud for Everyone, ${firstName}!`;
       htmlContent = `
 <!DOCTYPE html>
@@ -96,7 +291,7 @@ const handler = async (req: Request): Promise<Response> => {
 </html>
       `;
     } else {
-      // Student welcome email
+      // Standard student welcome email
       subject = `Welcome to A Cloud for Everyone, ${firstName}! 🎓`;
       htmlContent = `
 <!DOCTYPE html>
@@ -169,10 +364,6 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Welcome email sent:", emailResponse);
 
     // Log the email
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
     await supabase.from('email_logs').insert({
       subject: subject,
       status: 'sent',
