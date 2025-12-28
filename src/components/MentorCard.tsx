@@ -52,6 +52,7 @@ export function MentorCard({ mentor, index, onClick }: MentorCardProps) {
               frame={(mentor.profile_frame as 'none' | 'hiring' | 'open_to_work' | 'looking_for_cofounder') || 'none'}
               size="lg"
               className="mb-4"
+              showBadge={false}
             />
             
             <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
