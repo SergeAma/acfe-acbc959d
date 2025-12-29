@@ -60,18 +60,18 @@ const getStatusEmailContent = (firstName: string, ideaTitle: string, status: str
   <table role="presentation" style="width: 100%; border-collapse: collapse;">
     <tr>
       <td align="center" style="padding: 40px 20px;">
-        <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-          <!-- Header -->
+        <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse;">
+          <!-- ACFE Text Header -->
           <tr>
-            <td style="padding: 40px 40px 20px; text-align: center; border-bottom: 1px solid #e4e4e7;">
-              <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #18181b;">A Cloud for Everyone</h1>
-              <p style="margin: 8px 0 0; font-size: 14px; color: #71717a;">Innovators Incubator</p>
+            <td style="text-align: center; background-color: #3f3f3f; padding: 24px; border-radius: 12px 12px 0 0;">
+              <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin-bottom: 4px;">ACFE</div>
+              <div style="font-size: 12px; color: #d4d4d4; letter-spacing: 2px; text-transform: uppercase;">Innovators Incubator</div>
             </td>
           </tr>
           
           <!-- Content -->
           <tr>
-            <td style="padding: 40px;">
+            <td style="background-color: #ffffff; padding: 40px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
               <div style="width: 60px; height: 4px; background-color: ${content.color}; margin-bottom: 24px; border-radius: 2px;"></div>
               
               <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 600; color: #18181b;">${content.heading}</h2>
@@ -99,15 +99,16 @@ const getStatusEmailContent = (firstName: string, ideaTitle: string, status: str
               
               <p style="margin: 24px 0 0; font-size: 16px; line-height: 1.6; color: #3f3f46;">
                 Best regards,<br>
-                <strong>The A Cloud for Everyone Team</strong>
+                <strong>The ACFE Team</strong>
               </p>
             </td>
           </tr>
           
           <!-- Footer -->
           <tr>
-            <td style="padding: 24px 40px; background-color: #fafafa; border-top: 1px solid #e4e4e7; border-radius: 0 0 12px 12px;">
-              <p style="margin: 0; font-size: 12px; color: #71717a; text-align: center;">
+            <td style="padding: 24px; text-align: center;">
+              <div style="font-size: 18px; font-weight: 700; color: #3f3f3f; letter-spacing: 2px; margin-bottom: 8px;">ACFE</div>
+              <p style="margin: 0; font-size: 12px; color: #71717a;">
                 © ${currentYear} A Cloud for Everyone. All rights reserved.<br>
                 <a href="https://acloudforeveryone.org" style="color: #71717a;">acloudforeveryone.org</a>
               </p>

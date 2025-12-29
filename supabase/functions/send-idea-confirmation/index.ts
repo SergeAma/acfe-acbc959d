@@ -104,6 +104,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Sanitize user inputs for HTML
     const safeName = escapeHtml(name.trim());
     const safeIdeaTitle = escapeHtml(ideaTitle.trim());
+    const currentYear = new Date().getFullYear();
     
     console.log(`Sending confirmation email to ${email} for verified idea submission: ${submission.id}`);
 
@@ -121,46 +122,43 @@ const handler = async (req: Request): Promise<Response> => {
           <!DOCTYPE html>
           <html>
           <head>
-            <style>
-              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-              .header { text-align: center; margin-bottom: 30px; }
-              .logo { font-size: 24px; font-weight: bold; color: #1a1a1a; }
-              .content { background: #f9f9f9; border-radius: 12px; padding: 30px; margin-bottom: 30px; }
-              .highlight { background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0; }
-              .footer { text-align: center; font-size: 14px; color: #666; }
-              h1 { color: #1a1a1a; margin-bottom: 20px; }
-              .idea-title { font-weight: bold; color: #2e7d32; }
-            </style>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
           </head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <div class="logo">A Cloud for Everyone</div>
+          <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+              <!-- ACFE Text Header -->
+              <div style="text-align: center; margin-bottom: 0; background-color: #3f3f3f; padding: 24px; border-radius: 12px 12px 0 0;">
+                <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin-bottom: 4px;">ACFE</div>
+                <div style="font-size: 12px; color: #d4d4d4; letter-spacing: 2px; text-transform: uppercase;">Innovators Incubator</div>
               </div>
               
-              <div class="content">
-                <h1>Thank You, ${safeName}!</h1>
+              <div style="background-color: #ffffff; padding: 32px; border-radius: 0 0 12px 12px;">
+                <h1 style="color: #1a1a1a; margin: 0 0 20px 0; font-size: 24px;">Thank You, ${safeName}!</h1>
                 
-                <p>We're excited to let you know that we've received your idea submission:</p>
+                <p style="color: #3f3f46; line-height: 1.6; margin: 0 0 20px 0;">We're excited to let you know that we've received your idea submission:</p>
                 
-                <div class="highlight">
-                  <p><strong>Your Idea:</strong> <span class="idea-title">${safeIdeaTitle}</span></p>
+                <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4a5d4a;">
+                  <p style="margin: 0;"><strong>Your Idea:</strong> <span style="font-weight: bold; color: #166534;">${safeIdeaTitle}</span></p>
                 </div>
                 
-                <p>Our team is reviewing your submission and we'll be in touch within <strong>7 days</strong> with next steps.</p>
+                <p style="color: #3f3f46; line-height: 1.6; margin: 0 0 16px 0;">Our team is reviewing your submission and we'll be in touch within <strong>7 days</strong> with next steps.</p>
                 
-                <p>As a reminder, new founders are eligible for up to <strong>$500 in seed funding</strong> from our partner, Spectrogram Consulting.</p>
+                <p style="color: #3f3f46; line-height: 1.6; margin: 0 0 16px 0;">As a reminder, new founders are eligible for up to <strong>$500 in seed funding</strong> from our partner, Spectrogram Consulting.</p>
                 
-                <p>In the meantime, feel free to explore our courses and resources to help develop your skills further.</p>
+                <p style="color: #3f3f46; line-height: 1.6; margin: 0 0 20px 0;">In the meantime, feel free to explore our courses and resources to help develop your skills further.</p>
                 
-                <p>Best regards,<br>
-                The A Cloud for Everyone Team</p>
+                <p style="color: #3f3f46; margin: 24px 0 0 0;">
+                  Best regards,<br>
+                  <strong>The ACFE Team</strong>
+                </p>
               </div>
               
-              <div class="footer">
-                <p>Building Africa's next generation of tech leaders</p>
-                <p>© ${new Date().getFullYear()} A Cloud for Everyone. All rights reserved.</p>
+              <!-- Footer -->
+              <div style="text-align: center; padding: 24px; background-color: #f8f9fa; margin-top: 0;">
+                <p style="margin: 0 0 10px 0; font-size: 14px; color: #666666;">Building Africa's next generation of tech leaders</p>
+                <div style="font-size: 18px; font-weight: 700; color: #3f3f3f; letter-spacing: 2px; margin-bottom: 8px;">ACFE</div>
+                <p style="margin: 0; font-size: 12px; color: #71717a;">© ${currentYear} A Cloud for Everyone. All rights reserved.</p>
               </div>
             </div>
           </body>

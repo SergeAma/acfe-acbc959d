@@ -55,6 +55,7 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     const studentName = studentProfile?.full_name || "A student";
+    const currentYear = new Date().getFullYear();
 
     // Send notification to each mentor
     let emailsSent = 0;
@@ -78,47 +79,50 @@ const handler = async (req: Request): Promise<Response> => {
         <!DOCTYPE html>
         <html>
         <head>
-          <style>
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
-            .highlight { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea; }
-            .button { display: inline-block; background: #667eea; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; margin-top: 20px; }
-            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
-          </style>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
         </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🎓 Course Completed!</h1>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5;">
+          <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+            <!-- ACFE Text Header -->
+            <div style="text-align: center; margin-bottom: 0; background-color: #3f3f3f; padding: 24px; border-radius: 12px 12px 0 0;">
+              <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin-bottom: 4px;">ACFE</div>
+              <div style="font-size: 12px; color: #d4d4d4; letter-spacing: 2px; text-transform: uppercase;">A Cloud for Everyone</div>
             </div>
-            <div class="content">
-              <p>Hi ${mentorName},</p>
-              <p><strong>${studentName}</strong> has successfully completed the course you recommended:</p>
+            
+            <div style="background-color: #ffffff; padding: 32px; border-radius: 0 0 12px 12px;">
+              <h1 style="margin: 0 0 20px 0; font-size: 24px; color: #18181b;">🎓 Course Completed!</h1>
               
-              <div class="highlight">
-                <h3 style="margin: 0; color: #667eea;">${courseTitle}</h3>
+              <p style="color: #3f3f46;">Hi ${mentorName},</p>
+              <p style="color: #3f3f46; line-height: 1.6;"><strong>${studentName}</strong> has successfully completed the course you recommended:</p>
+              
+              <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4a5d4a;">
+                <h3 style="margin: 0; color: #166534;">${courseTitle}</h3>
               </div>
 
-              <p>They previously applied to join your mentorship cohort. You can now reconsider their request and accept them into your cohort.</p>
+              <p style="color: #3f3f46; line-height: 1.6;">They previously applied to join your mentorship cohort. You can now reconsider their request and accept them into your cohort.</p>
 
-              <div class="highlight">
-                <h4 style="margin: 0 0 10px 0;">About the Student:</h4>
-                <p style="margin: 5px 0;"><strong>Bio:</strong> ${request.student_bio}</p>
-                <p style="margin: 5px 0;"><strong>Career Ambitions:</strong> ${request.career_ambitions}</p>
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h4 style="margin: 0 0 10px 0; color: #18181b;">About the Student:</h4>
+                <p style="margin: 5px 0; color: #3f3f46;"><strong>Bio:</strong> ${request.student_bio}</p>
+                <p style="margin: 5px 0; color: #3f3f46;"><strong>Career Ambitions:</strong> ${request.career_ambitions}</p>
               </div>
 
-              <center>
-                <a href="https://learnproject.co/mentor/cohort" class="button">
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="https://acloudforeveryone.org/mentor/cohort" style="background: #4a5d4a; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
                   Review Request
                 </a>
-              </center>
-
-              <div class="footer">
-                <p>Keep inspiring the next generation of tech leaders!</p>
-                <p>— The Learn Project Team</p>
               </div>
+
+              <p style="color: #666; font-size: 14px; text-align: center; margin-top: 24px;">Keep inspiring the next generation of tech leaders!</p>
+            </div>
+            
+            <!-- Footer -->
+            <div style="text-align: center; padding: 24px;">
+              <div style="font-size: 18px; font-weight: 700; color: #3f3f3f; letter-spacing: 2px; margin-bottom: 8px;">ACFE</div>
+              <p style="font-size: 12px; color: #71717a; margin: 0;">
+                © ${currentYear} A Cloud for Everyone. All rights reserved.
+              </p>
             </div>
           </div>
         </body>
@@ -132,7 +136,7 @@ const handler = async (req: Request): Promise<Response> => {
           Authorization: `Bearer ${RESEND_API_KEY}`,
         },
         body: JSON.stringify({
-          from: "Learn Project <noreply@learnproject.co>",
+          from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
           to: [mentorData.email],
           subject: `${studentName} completed "${courseTitle}" - Review their mentorship request`,
           html: emailHtml,
