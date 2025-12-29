@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye, Award, Info, DollarSign, Globe, EyeOff, Users, CheckCircle, BarChart3, Clock, Zap } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye, Award, Info, DollarSign, Globe, EyeOff, Users, CheckCircle, BarChart3, Clock, Zap, Radio, Video, Link2, Calendar } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -46,6 +46,12 @@ interface Course {
   is_published: boolean;
   drip_enabled: boolean;
   duration_weeks: number | null;
+  is_live: boolean;
+  live_date: string | null;
+  live_platform: string | null;
+  live_url: string | null;
+  registration_deadline: string | null;
+  recording_url: string | null;
 }
 
 interface Section {
@@ -84,6 +90,13 @@ export const AdminCourseBuilder = () => {
   const [completedCount, setCompletedCount] = useState(0);
   const [totalLessons, setTotalLessons] = useState(0);
   const [showUnpublishDialog, setShowUnpublishDialog] = useState(false);
+  // Live course settings
+  const [isLive, setIsLive] = useState(false);
+  const [liveDate, setLiveDate] = useState('');
+  const [livePlatform, setLivePlatform] = useState('');
+  const [liveUrl, setLiveUrl] = useState('');
+  const [registrationDeadline, setRegistrationDeadline] = useState('');
+  const [recordingUrl, setRecordingUrl] = useState('');
   const [showEditingTip, setShowEditingTip] = useState(() => {
     return localStorage.getItem('courseBuilderTipDismissed') !== 'true';
   });
@@ -184,6 +197,13 @@ export const AdminCourseBuilder = () => {
     setDripEnabled(courseData?.drip_enabled ?? false);
     setDurationWeeks(courseData?.duration_weeks ?? null);
     setIsPublished(courseData?.is_published ?? false);
+    // Live course settings
+    setIsLive(courseData?.is_live ?? false);
+    setLiveDate(courseData?.live_date ? new Date(courseData.live_date).toISOString().slice(0, 16) : '');
+    setLivePlatform(courseData?.live_platform || '');
+    setLiveUrl(courseData?.live_url || '');
+    setRegistrationDeadline(courseData?.registration_deadline ? new Date(courseData.registration_deadline).toISOString().slice(0, 16) : '');
+    setRecordingUrl(courseData?.recording_url || '');
     setSections(sectionsData || []);
     setLoading(false);
   };
@@ -595,6 +615,38 @@ export const AdminCourseBuilder = () => {
     }
   };
 
+  const handleLiveSettingsUpdate = async (field: string, value: any) => {
+    if (!courseId) return;
+    
+    const updateData: any = { [field]: value };
+    
+    // If turning off live mode, clear related fields
+    if (field === 'is_live' && !value) {
+      updateData.live_date = null;
+      updateData.live_platform = null;
+      updateData.live_url = null;
+      updateData.registration_deadline = null;
+    }
+    
+    const { error } = await supabase
+      .from('courses')
+      .update(updateData)
+      .eq('id', courseId);
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update live settings',
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Saved',
+        description: 'Live course settings updated',
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -946,6 +998,114 @@ export const AdminCourseBuilder = () => {
               <p className="text-xs text-muted-foreground mt-2">
                 Leave blank if self-paced with no estimated time
               </p>
+            </CardContent>
+          </Card>
+
+          {/* Live Course Settings */}
+          <Card className="md:col-span-2">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Radio className="h-5 w-5" />
+                Live Course Settings
+              </CardTitle>
+              <CardDescription>
+                Configure this as a live session with external meeting platform
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="live-toggle">Live Course</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {isLive ? 'Requires registration for scheduled live session' : 'Standard on-demand course'}
+                  </p>
+                </div>
+                <Switch
+                  id="live-toggle"
+                  checked={isLive}
+                  onCheckedChange={(checked) => {
+                    setIsLive(checked);
+                    handleLiveSettingsUpdate('is_live', checked);
+                  }}
+                />
+              </div>
+              
+              {isLive && (
+                <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
+                  <div className="space-y-2">
+                    <Label htmlFor="live-platform">Platform</Label>
+                    <select
+                      id="live-platform"
+                      value={livePlatform}
+                      onChange={(e) => {
+                        setLivePlatform(e.target.value);
+                        handleLiveSettingsUpdate('live_platform', e.target.value);
+                      }}
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                    >
+                      <option value="">Select platform</option>
+                      <option value="zoom">Zoom</option>
+                      <option value="google_meet">Google Meet</option>
+                      <option value="webex">Webex</option>
+                      <option value="teams">Microsoft Teams</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="live-date">Live Session Date & Time</Label>
+                    <Input
+                      id="live-date"
+                      type="datetime-local"
+                      value={liveDate}
+                      onChange={(e) => {
+                        setLiveDate(e.target.value);
+                        handleLiveSettingsUpdate('live_date', e.target.value ? new Date(e.target.value).toISOString() : null);
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="live-url">Meeting URL</Label>
+                    <Input
+                      id="live-url"
+                      type="url"
+                      placeholder="https://zoom.us/j/..."
+                      value={liveUrl}
+                      onChange={(e) => setLiveUrl(e.target.value)}
+                      onBlur={() => handleLiveSettingsUpdate('live_url', liveUrl || null)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="registration-deadline">Registration Deadline</Label>
+                    <Input
+                      id="registration-deadline"
+                      type="datetime-local"
+                      value={registrationDeadline}
+                      onChange={(e) => {
+                        setRegistrationDeadline(e.target.value);
+                        handleLiveSettingsUpdate('registration_deadline', e.target.value ? new Date(e.target.value).toISOString() : null);
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="recording-url">Recording URL (after session)</Label>
+                    <Input
+                      id="recording-url"
+                      type="url"
+                      placeholder="Add recording URL after the live session"
+                      value={recordingUrl}
+                      onChange={(e) => setRecordingUrl(e.target.value)}
+                      onBlur={() => handleLiveSettingsUpdate('recording_url', recordingUrl || null)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Upload your recording and add the URL here for on-demand viewing
+                    </p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
