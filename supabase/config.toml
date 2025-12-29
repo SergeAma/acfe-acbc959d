@@ -116,3 +116,6 @@ verify_jwt = false
 
 [functions.send-live-session-reminder]
 verify_jwt = false
+
+[functions.generate-spectrogram-token]
+verify_jwt = true
