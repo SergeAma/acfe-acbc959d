@@ -11,7 +11,7 @@ interface CertificateEmailRequest {
   student_email: string;
   student_name: string;
   course_name: string;
-  mentor_name: string;
+  course_id: string;
   certificate_number: string;
   issued_at: string;
   spectrogram_token?: string;
@@ -32,6 +32,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -45,19 +47,46 @@ const handler = async (req: Request): Promise<Response> => {
       student_email,
       student_name,
       course_name,
-      mentor_name,
+      course_id,
       certificate_number,
       issued_at,
       spectrogram_token,
     }: CertificateEmailRequest = await req.json();
 
     console.log("Sending certificate email to:", student_email);
-    console.log("Mentor name received:", mentor_name);
+    console.log("Course ID:", course_id);
 
-    // Use the production domain for assets
-    const baseUrl = "https://acloudforeveryone.org";
-    const logoUrl = `${baseUrl}/acfe-logo.png`;
+    // Use service role to fetch mentor name bypassing RLS
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
     
+    // First get the course to find mentor_id
+    const { data: courseData, error: courseError } = await adminClient
+      .from('courses')
+      .select('mentor_id')
+      .eq('id', course_id)
+      .single();
+    
+    let mentorName = 'Instructor';
+    if (!courseError && courseData?.mentor_id) {
+      // Now get the mentor's name from profiles
+      const { data: mentorData } = await adminClient
+        .from('profiles')
+        .select('full_name')
+        .eq('id', courseData.mentor_id)
+        .single();
+      
+      if (mentorData?.full_name) {
+        mentorName = mentorData.full_name;
+      }
+    }
+
+    console.log("Fetched mentor name:", mentorName);
+
+    // Use a base64 encoded SVG logo that will always work in emails
+    const logoBase64 = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjYwIiB2aWV3Qm94PSIwIDAgMjAwIDYwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjYwIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMjAgMTVMMzUgNDVIMjBMMzAgMzBMMjAgMTVaIiBmaWxsPSIjMjU2MzNDIi8+CjxjaXJjbGUgY3g9IjM1IiBjeT0iMzAiIHI9IjE1IiBzdHJva2U9IiMyNTYzM0MiIHN0cm9rZS13aWR0aD0iMyIgZmlsbD0ibm9uZSIvPgo8dGV4dCB4PSI2MCIgeT0iMzgiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyNTYzM0MiPkFDRkU8L3RleHQ+CjwvZz4KPC9zdmc+";
+    
+    // Alternative: Use the Supabase storage URL or a reliable CDN
+    const baseUrl = "https://acloudforeveryone.org";
     const verificationUrl = `${baseUrl}/verify-certificate`;
     const certificateUrl = `${baseUrl}/certificate/${certificate_number}`;
     const formattedDate = new Date(issued_at).toLocaleDateString('en-US', {
@@ -98,7 +127,10 @@ const handler = async (req: Request): Promise<Response> => {
             <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
               <!-- ACFE Logo Header -->
               <div style="text-align: center; margin-bottom: 24px;">
-                <img src="${logoUrl}" alt="A Cloud for Everyone" style="height: 60px; width: auto;" />
+                <div style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #25633C 0%, #3d8c5a 100%); border-radius: 8px;">
+                  <span style="font-size: 24px; font-weight: bold; color: #ffffff; letter-spacing: 2px;">ACFE</span>
+                </div>
+                <p style="color: #6b7280; font-size: 12px; margin-top: 8px;">A Cloud for Everyone</p>
               </div>
               
               <!-- Header -->
@@ -128,7 +160,7 @@ const handler = async (req: Request): Promise<Response> => {
                     </tr>
                     <tr>
                       <td style="padding: 8px 0; color: #71717a; font-size: 14px;">Instructor:</td>
-                      <td style="padding: 8px 0; color: #18181b; font-size: 14px; font-weight: 600; text-align: right;">${mentor_name}</td>
+                      <td style="padding: 8px 0; color: #18181b; font-size: 14px; font-weight: 600; text-align: right;">${mentorName}</td>
                     </tr>
                     <tr>
                       <td style="padding: 8px 0; color: #71717a; font-size: 14px;">Issue Date:</td>
@@ -161,7 +193,9 @@ const handler = async (req: Request): Promise<Response> => {
 
               <!-- Footer -->
               <div style="text-align: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid #e4e4e7;">
-                <img src="${logoUrl}" alt="A Cloud for Everyone" style="height: 40px; width: auto; margin-bottom: 12px;" />
+                <div style="display: inline-block; padding: 8px 16px; background: #25633C; border-radius: 4px; margin-bottom: 12px;">
+                  <span style="font-size: 14px; font-weight: bold; color: #ffffff;">ACFE</span>
+                </div>
                 <p style="color: #71717a; font-size: 12px; margin: 0 0 8px 0;">
                   © ${new Date().getFullYear()} A Cloud for Everyone. All rights reserved.
                 </p>
@@ -180,9 +214,6 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Certificate email sent successfully:", emailResult);
 
     // Log the email
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
-    
     await adminClient.from("email_logs").insert({
       subject: `Certificate: ${course_name}`,
       status: "sent",
