@@ -78,6 +78,19 @@ serve(async (req: Request) => {
 
     logStep("Token generated successfully");
 
+    // Track that user has initiated Spectrogram profile creation
+    if (certificateId) {
+      await supabase
+        .from("course_certificates")
+        .update({
+          spectrogram_profile_created: true,
+          spectrogram_profile_created_at: new Date().toISOString(),
+        })
+        .eq("certificate_number", certificateId);
+      
+      logStep("Certificate updated with Spectrogram tracking");
+    }
+
     // Build the redirect URL
     const spectrogramUrl = `https://spectrogramconsulting.com/acfe-callback?token=${jwt}&email=${encodeURIComponent(user.email!)}`;
 
