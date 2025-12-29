@@ -65,7 +65,7 @@ export const MyCertificates = () => {
           course:courses(
             id,
             title,
-            profiles!courses_mentor_id_fkey(full_name)
+            mentor_id
           )
         `)
         .eq('student_id', user?.id)
@@ -73,16 +73,35 @@ export const MyCertificates = () => {
 
       if (error) throw error;
 
-      const formattedCerts = data?.map((cert: any) => ({
-        id: cert.id,
-        certificate_number: cert.certificate_number,
-        issued_at: cert.issued_at,
-        course: {
-          id: cert.course.id,
-          title: cert.course.title,
-          mentor_name: cert.course.profiles?.full_name || 'Instructor'
-        }
-      })) || [];
+      // Fetch mentor names separately using profiles_public view
+      const formattedCerts = await Promise.all(
+        (data || []).map(async (cert: any) => {
+          let mentorName = 'Instructor';
+          
+          if (cert.course?.mentor_id) {
+            const { data: mentorData } = await supabase
+              .from('profiles_public')
+              .select('full_name')
+              .eq('id', cert.course.mentor_id)
+              .single();
+            
+            if (mentorData?.full_name) {
+              mentorName = mentorData.full_name;
+            }
+          }
+          
+          return {
+            id: cert.id,
+            certificate_number: cert.certificate_number,
+            issued_at: cert.issued_at,
+            course: {
+              id: cert.course.id,
+              title: cert.course.title,
+              mentor_name: mentorName
+            }
+          };
+        })
+      );
 
       setCertificates(formattedCerts);
     } catch (error) {
