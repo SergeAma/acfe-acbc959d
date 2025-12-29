@@ -565,41 +565,87 @@ export const CourseLearn = () => {
           </Card>
         )}
 
-        {/* Text Content - Collapsible */}
-        {currentContent.text_content && (
-          <Card>
-            <CardHeader className="pb-2">
-              <button
-                onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                className="w-full flex items-center justify-between hover:opacity-80 transition-opacity"
-              >
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Lesson Description
-                </CardTitle>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    {calculateReadingTime(currentContent.text_content)} min read
-                  </span>
-                  {isDescriptionExpanded ? (
-                    <ChevronUp className="h-5 w-5" />
-                  ) : (
-                    <ChevronDown className="h-5 w-5" />
-                  )}
-                </div>
-              </button>
-            </CardHeader>
-            {isDescriptionExpanded && (
-              <CardContent>
-                <div 
-                  className="prose prose-sm md:prose-base lg:prose-lg max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground prose-ul:text-foreground prose-ol:text-foreground"
-                  dangerouslySetInnerHTML={{ __html: currentContent.text_content }}
-                />
-              </CardContent>
-            )}
-          </Card>
-        )}
+        {/* Lesson Description - Show text_content or section description */}
+        {(() => {
+          // First check if lesson has its own text_content
+          if (currentContent.text_content) {
+            return (
+              <Card>
+                <CardHeader className="pb-2">
+                  <button
+                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                    className="w-full flex items-center justify-between hover:opacity-80 transition-opacity"
+                  >
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Lesson Description
+                    </CardTitle>
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {calculateReadingTime(currentContent.text_content)} min read
+                      </span>
+                      {isDescriptionExpanded ? (
+                        <ChevronUp className="h-5 w-5" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5" />
+                      )}
+                    </div>
+                  </button>
+                </CardHeader>
+                {isDescriptionExpanded && (
+                  <CardContent>
+                    <div 
+                      className="prose prose-sm md:prose-base lg:prose-lg max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground prose-ul:text-foreground prose-ol:text-foreground"
+                      dangerouslySetInnerHTML={{ __html: currentContent.text_content }}
+                    />
+                  </CardContent>
+                )}
+              </Card>
+            );
+          }
+          
+          // Fall back to the section description if no text_content
+          const currentSection = sections.find(s => s.content.some(c => c.id === currentContent.id));
+          if (currentSection?.description) {
+            return (
+              <Card>
+                <CardHeader className="pb-2">
+                  <button
+                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                    className="w-full flex items-center justify-between hover:opacity-80 transition-opacity"
+                  >
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Lesson Description
+                    </CardTitle>
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {calculateReadingTime(currentSection.description)} min read
+                      </span>
+                      {isDescriptionExpanded ? (
+                        <ChevronUp className="h-5 w-5" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5" />
+                      )}
+                    </div>
+                  </button>
+                </CardHeader>
+                {isDescriptionExpanded && (
+                  <CardContent>
+                    <div 
+                      className="prose prose-sm md:prose-base lg:prose-lg max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground prose-ul:text-foreground prose-ol:text-foreground"
+                      dangerouslySetInnerHTML={{ __html: currentSection.description }}
+                    />
+                  </CardContent>
+                )}
+              </Card>
+            );
+          }
+          
+          return null;
+        })()}
 
         {/* Navigation */}
         <div className="flex justify-between pt-6">
