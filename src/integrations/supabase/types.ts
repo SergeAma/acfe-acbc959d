@@ -1145,6 +1145,7 @@ export type Database = {
           scheduled_deletion_at: string | null
           skills: string[] | null
           twitter_url: string | null
+          university: string | null
           updated_at: string | null
           website_url: string | null
         }
@@ -1166,6 +1167,7 @@ export type Database = {
           scheduled_deletion_at?: string | null
           skills?: string[] | null
           twitter_url?: string | null
+          university?: string | null
           updated_at?: string | null
           website_url?: string | null
         }
@@ -1187,6 +1189,7 @@ export type Database = {
           scheduled_deletion_at?: string | null
           skills?: string[] | null
           twitter_url?: string | null
+          university?: string | null
           updated_at?: string | null
           website_url?: string | null
         }
