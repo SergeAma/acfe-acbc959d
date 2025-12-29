@@ -50,20 +50,24 @@ serve(async (req: Request) => {
     // Get user profile
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name, skills")
+      .select("full_name, skills, country")
       .eq("id", user.id)
       .single();
 
     logStep("Profile fetched", { fullName: profile?.full_name });
 
-    // Create JWT payload
+    // Calculate expiration (7 days from now)
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    // Create JWT payload matching Spectrogram's expected format
     const payload = {
       email: user.email,
       full_name: profile?.full_name || user.user_metadata?.full_name || "",
       certificate_id: certificateId,
-      course_name: courseName,
-      skills: skills || profile?.skills || [],
+      skills: skills || [courseName] || profile?.skills || [],
+      university: profile?.country || "", // Using country as institution context
       issued_at: new Date().toISOString(),
+      expires_at: expiresAt,
     };
 
     // Create a secret key from the shared secret
