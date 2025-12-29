@@ -47,25 +47,49 @@ serve(async (req: Request) => {
     // Get request body for certificate details
     const { certificateId, courseName, skills } = await req.json();
 
-    // Get user profile
+    // Get user profile with ALL fields
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name, skills, university, country")
+      .select("full_name, skills, university, country, avatar_url, bio, linkedin_url, twitter_url, instagram_url, github_url, website_url, companies_worked_for")
       .eq("id", user.id)
       .single();
 
-    logStep("Profile fetched", { fullName: profile?.full_name, university: profile?.university });
+    logStep("Profile fetched", { 
+      fullName: profile?.full_name, 
+      university: profile?.university,
+      hasAvatar: !!profile?.avatar_url,
+      skillsCount: profile?.skills?.length || 0
+    });
 
     // Calculate expiration (7 days from now)
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    // Create JWT payload matching Spectrogram's expected format
+    // Create JWT payload with ALL profile data for Spectrogram
     const payload = {
+      // Core identity
       email: user.email,
       full_name: profile?.full_name || user.user_metadata?.full_name || "",
+      avatar_url: profile?.avatar_url || "",
+      bio: profile?.bio || "",
+      
+      // Professional info
+      university: profile?.university || "",
+      country: profile?.country || "",
+      skills: skills || profile?.skills || [courseName] || [],
+      companies_worked_for: profile?.companies_worked_for || [],
+      
+      // Social links
+      linkedin_url: profile?.linkedin_url || "",
+      twitter_url: profile?.twitter_url || "",
+      instagram_url: profile?.instagram_url || "",
+      github_url: profile?.github_url || "",
+      website_url: profile?.website_url || "",
+      
+      // Certificate details
       certificate_id: certificateId,
-      skills: skills || [courseName] || profile?.skills || [],
-      university: profile?.university || profile?.country || "",
+      course_name: courseName,
+      
+      // Timestamps
       issued_at: new Date().toISOString(),
       expires_at: expiresAt,
     };

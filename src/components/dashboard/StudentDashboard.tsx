@@ -291,10 +291,10 @@ export const StudentDashboard = () => {
       {/* My Startup Ideas Submissions */}
       <MySubmissions />
 
-      {/* My Courses */}
+      {/* In Progress Courses */}
       <div>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">My Courses</h2>
+          <h2 className="text-2xl font-bold">In Progress</h2>
           <Link to="/courses">
             <Button variant="outline">
               <Library className="h-4 w-4 mr-2" />
@@ -305,12 +305,12 @@ export const StudentDashboard = () => {
 
         {loading ? (
           <div className="text-center py-8 text-muted-foreground">Loading your courses...</div>
-        ) : enrollments.length === 0 ? (
+        ) : enrollments.filter(e => e.progress > 0 && e.progress < 100).length === 0 ? (
           <Card>
-            <CardContent className="py-12 text-center">
-              <Library className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-xl font-semibold mb-2">No courses yet</h3>
-              <p className="text-muted-foreground mb-4">Start your learning journey by enrolling in a course</p>
+            <CardContent className="py-8 text-center">
+              <BookOpen className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No courses in progress</h3>
+              <p className="text-muted-foreground mb-4">Start a course to see your progress here</p>
               <Link to="/courses">
                 <Button>Explore Courses</Button>
               </Link>
@@ -318,7 +318,7 @@ export const StudentDashboard = () => {
           </Card>
         ) : (
           <div className="grid md:grid-cols-2 gap-6">
-            {enrollments.map((enrollment) => {
+            {enrollments.filter(e => e.progress > 0 && e.progress < 100).map((enrollment) => {
               const isSubscribed = subscribedCourseIds.includes(enrollment.course.id);
               return (
               <Card key={enrollment.id} className={`hover:shadow-lg transition-shadow relative ${isSubscribed ? 'ring-2 ring-primary' : ''}`}>
@@ -354,7 +354,7 @@ export const StudentDashboard = () => {
                   </div>
                   <Link to={`/courses/${enrollment.course.id}/learn`}>
                     <Button className="w-full mt-4">
-                      {enrollment.progress === 0 ? 'Start Learning' : 'Continue Learning'}
+                      Continue Learning
                     </Button>
                   </Link>
                 </CardContent>
@@ -364,6 +364,116 @@ export const StudentDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Completed Courses */}
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">Completed Courses</h2>
+          <Link to="/certificates">
+            <Button variant="outline">
+              <Award className="h-4 w-4 mr-2" />
+              View Certificates
+            </Button>
+          </Link>
+        </div>
+
+        {enrollments.filter(e => e.progress === 100).length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center">
+              <Award className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No completed courses yet</h3>
+              <p className="text-muted-foreground">Complete a course to earn your certificate</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-6">
+            {enrollments.filter(e => e.progress === 100).map((enrollment) => (
+              <Card key={enrollment.id} className="hover:shadow-lg transition-shadow border-green-200 dark:border-green-800">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="line-clamp-1">{enrollment.course.title}</CardTitle>
+                    <Badge variant="default" className="bg-green-500">
+                      <Award className="h-3 w-3 mr-1" />
+                      Completed
+                    </Badge>
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                      {enrollment.course.category}
+                    </span>
+                    <span className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded">
+                      {enrollment.course.level}
+                    </span>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                    {stripHtml(enrollment.course.description)}
+                  </p>
+                  <div className="flex gap-2">
+                    <Link to={`/courses/${enrollment.course.id}/learn`} className="flex-1">
+                      <Button variant="outline" className="w-full">
+                        Review Course
+                      </Button>
+                    </Link>
+                    <Link to="/certificates">
+                      <Button>
+                        <Award className="h-4 w-4 mr-2" />
+                        Certificate
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Not Started Courses */}
+      {enrollments.filter(e => e.progress === 0).length > 0 && (
+        <div>
+          <h2 className="text-2xl font-bold mb-6">Not Started</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {enrollments.filter(e => e.progress === 0).map((enrollment) => {
+              const isSubscribed = subscribedCourseIds.includes(enrollment.course.id);
+              return (
+              <Card key={enrollment.id} className={`hover:shadow-lg transition-shadow relative ${isSubscribed ? 'ring-2 ring-primary' : ''}`}>
+                {isSubscribed && (
+                  <div className="absolute top-2 right-2 z-10">
+                    <Badge className="bg-primary text-primary-foreground">
+                      <CreditCard className="h-3 w-3 mr-1" />
+                      Subscribed
+                    </Badge>
+                  </div>
+                )}
+                <CardHeader>
+                  <CardTitle className="line-clamp-1">{enrollment.course.title}</CardTitle>
+                  <div className="flex gap-2 mt-2">
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                      {enrollment.course.category}
+                    </span>
+                    <span className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded">
+                      {enrollment.course.level}
+                    </span>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                    {stripHtml(enrollment.course.description)}
+                  </p>
+                  <Link to={`/courses/${enrollment.course.id}/learn`}>
+                    <Button className="w-full">
+                      Start Learning
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
