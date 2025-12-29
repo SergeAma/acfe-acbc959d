@@ -33,6 +33,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Textarea } from '@/components/ui/textarea';
 import { RichTextEditor } from '@/components/RichTextEditor';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Course {
   id: string;
@@ -987,7 +988,7 @@ export const AdminCourseBuilder = () => {
                 <Input
                   type="number"
                   min="1"
-                  max="52"
+                  max="999"
                   value={durationWeeks || ''}
                   onChange={(e) => {
                     const value = e.target.value ? parseInt(e.target.value) : null;
@@ -997,7 +998,17 @@ export const AdminCourseBuilder = () => {
                   placeholder="e.g., 4"
                   className="w-24"
                 />
-                <span className="text-sm text-muted-foreground">weeks</span>
+                <Select defaultValue="weeks">
+                  <SelectTrigger className="w-28">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mins">minutes</SelectItem>
+                    <SelectItem value="days">days</SelectItem>
+                    <SelectItem value="weeks">weeks</SelectItem>
+                    <SelectItem value="months">months</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
                 Leave blank if self-paced with no estimated time
