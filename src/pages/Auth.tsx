@@ -118,7 +118,8 @@ export const Auth = () => {
         formData.password,
         fullName,
         formData.linkedinUrl,
-        formData.wantsMentor
+        formData.wantsMentor,
+        formData.university
       );
       if (!error) {
         navigate(redirectUrl);

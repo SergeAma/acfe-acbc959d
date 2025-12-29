@@ -50,11 +50,11 @@ serve(async (req: Request) => {
     // Get user profile
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name, skills, country")
+      .select("full_name, skills, university, country")
       .eq("id", user.id)
       .single();
 
-    logStep("Profile fetched", { fullName: profile?.full_name });
+    logStep("Profile fetched", { fullName: profile?.full_name, university: profile?.university });
 
     // Calculate expiration (7 days from now)
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -65,7 +65,7 @@ serve(async (req: Request) => {
       full_name: profile?.full_name || user.user_metadata?.full_name || "",
       certificate_id: certificateId,
       skills: skills || [courseName] || profile?.skills || [],
-      university: profile?.country || "", // Using country as institution context
+      university: profile?.university || profile?.country || "",
       issued_at: new Date().toISOString(),
       expires_at: expiresAt,
     };

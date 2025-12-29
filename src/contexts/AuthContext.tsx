@@ -14,6 +14,7 @@ interface Profile {
   avatar_url: string | null;
   profile_frame: ProfileFrame;
   country: string | null;
+  university: string | null;
   linkedin_url: string | null;
   twitter_url: string | null;
   instagram_url: string | null;
@@ -27,7 +28,7 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, fullName: string, linkedinUrl?: string, wantsMentor?: boolean) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string, linkedinUrl?: string, wantsMentor?: boolean, university?: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
@@ -185,7 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
-  const signUp = async (email: string, password: string, fullName: string, linkedinUrl?: string, wantsMentor?: boolean) => {
+  const signUp = async (email: string, password: string, fullName: string, linkedinUrl?: string, wantsMentor?: boolean, university?: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -211,11 +212,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           : "Welcome to A Cloud for Everyone. All users start as learners.",
       });
       
-      // Update profile with LinkedIn URL if provided
-      if (linkedinUrl && data.user) {
+      // Update profile with LinkedIn URL and university if provided
+      if (data.user && (linkedinUrl || university)) {
+        const updateData: Record<string, string> = {};
+        if (linkedinUrl) updateData.linkedin_url = linkedinUrl;
+        if (university) updateData.university = university;
+        
         await supabase
           .from('profiles')
-          .update({ linkedin_url: linkedinUrl })
+          .update(updateData)
           .eq('id', data.user.id);
       }
 

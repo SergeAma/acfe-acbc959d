@@ -115,6 +115,7 @@ export const ProfileSettings = () => {
     full_name: '',
     bio: '',
     country: '',
+    university: '',
     avatar_url: '',
     profile_frame: 'none' as ProfileFrame,
     linkedin_url: '',
@@ -132,6 +133,7 @@ export const ProfileSettings = () => {
         full_name: profile.full_name || '',
         bio: profile.bio || '',
         country: profile.country || '',
+        university: profile.university || '',
         avatar_url: profile.avatar_url || '',
         profile_frame: profile.profile_frame || 'none',
         linkedin_url: profile.linkedin_url || '',
@@ -300,6 +302,7 @@ export const ProfileSettings = () => {
       full_name: formData.full_name,
       bio: formData.bio,
       country: formData.country,
+      university: formData.university,
       avatar_url: formData.avatar_url,
       profile_frame: formData.profile_frame,
       linkedin_url: formData.linkedin_url || null,
@@ -597,6 +600,17 @@ export const ProfileSettings = () => {
                     </Command>
                   </PopoverContent>
                 </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="university">University/Institution</Label>
+                <Input
+                  id="university"
+                  name="university"
+                  value={formData.university}
+                  onChange={handleChange}
+                  placeholder="Enter your university or institution"
+                />
               </div>
 
               <div className="space-y-2">
