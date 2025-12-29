@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
@@ -25,7 +25,8 @@ import {
   Clock,
   Maximize2,
   Minimize2,
-  X
+  X,
+  Eye
 } from 'lucide-react';
 import {
   Accordion,
@@ -94,8 +95,11 @@ const calculateReadingTime = (htmlContent: string): number => {
 export const CourseLearn = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  const isPreviewMode = searchParams.get('preview') === 'true';
   
   const [course, setCourse] = useState<Course | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
@@ -109,6 +113,7 @@ export const CourseLearn = () => {
   const [studentName, setStudentName] = useState('');
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(true);
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const [isMentorPreview, setIsMentorPreview] = useState(false);
 
   useEffect(() => {
     if (id && user) {
@@ -118,41 +123,7 @@ export const CourseLearn = () => {
 
   const fetchCourseData = async () => {
     try {
-      // Check enrollment
-      const { data: enrollmentData, error: enrollmentError } = await supabase
-        .from('enrollments')
-        .select('id, enrolled_at')
-        .eq('course_id', id)
-        .eq('student_id', user?.id)
-        .maybeSingle();
-
-      if (enrollmentError) throw enrollmentError;
-
-      if (!enrollmentData) {
-        toast({
-          title: 'Not enrolled',
-          description: 'You need to enroll in this course first',
-          variant: 'destructive',
-        });
-        navigate(`/courses/${id}/preview`);
-        return;
-      }
-
-      setEnrollmentId(enrollmentData.id);
-      setEnrolledAt(enrollmentData.enrolled_at);
-
-      // Fetch student profile for certificate
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', user?.id)
-        .single();
-      
-      if (profileData?.full_name) {
-        setStudentName(profileData.full_name);
-      }
-
-      // Fetch course details
+      // First fetch course to check if user is the mentor (for preview mode)
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
         .select(`
@@ -167,6 +138,61 @@ export const CourseLearn = () => {
         .single();
 
       if (courseError) throw courseError;
+      
+      const isCourseMentor = courseData.mentor_id === user?.id;
+      
+      // Allow preview mode only for course mentor
+      if (isPreviewMode && isCourseMentor) {
+        setIsMentorPreview(true);
+        // Create a mock enrollment for preview purposes
+        setEnrollmentId('preview-mode');
+        setEnrolledAt(new Date().toISOString());
+      } else {
+        // Check enrollment for regular users
+        const { data: enrollmentData, error: enrollmentError } = await supabase
+          .from('enrollments')
+          .select('id, enrolled_at')
+          .eq('course_id', id)
+          .eq('student_id', user?.id)
+          .maybeSingle();
+
+        if (enrollmentError) throw enrollmentError;
+
+        if (!enrollmentData) {
+          toast({
+            title: 'Not enrolled',
+            description: 'You need to enroll in this course first',
+            variant: 'destructive',
+          });
+          navigate(`/courses/${id}/preview`);
+          return;
+        }
+
+        setEnrollmentId(enrollmentData.id);
+        setEnrolledAt(enrollmentData.enrolled_at);
+        
+        // Check for existing certificate (only for actual enrollments)
+        const { data: certData } = await supabase
+          .from('course_certificates')
+          .select('id, certificate_number, issued_at')
+          .eq('enrollment_id', enrollmentData.id)
+          .maybeSingle();
+        
+        if (certData) {
+          setCertificate(certData);
+        }
+      }
+
+      // Fetch student profile for certificate
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user?.id)
+        .single();
+      
+      if (profileData?.full_name) {
+        setStudentName(profileData.full_name);
+      }
       
       // Fetch mentor name using public profiles view to bypass RLS
       let mentorName = 'Instructor';
@@ -186,17 +212,6 @@ export const CourseLearn = () => {
         ...courseData,
         mentor_name: mentorName
       });
-
-      // Check for existing certificate
-      const { data: certData } = await supabase
-        .from('course_certificates')
-        .select('id, certificate_number, issued_at')
-        .eq('enrollment_id', enrollmentData.id)
-        .maybeSingle();
-      
-      if (certData) {
-        setCertificate(certData);
-      }
 
       // Fetch sections and content
       const { data: sectionsData, error: sectionsError } = await supabase
@@ -224,27 +239,30 @@ export const CourseLearn = () => {
 
       if (sectionsError) throw sectionsError;
 
-      // Fetch lesson progress
-      const { data: progressData } = await supabase
-        .from('lesson_progress')
-        .select('content_id, completed')
-        .eq('enrollment_id', enrollmentData.id);
+      // Fetch lesson progress (skip for mentor preview mode)
+      let progressMap = new Map<string, boolean>();
+      if (enrollmentId && enrollmentId !== 'preview-mode') {
+        const { data: progressData } = await supabase
+          .from('lesson_progress')
+          .select('content_id, completed')
+          .eq('enrollment_id', enrollmentId);
+        progressMap = new Map(progressData?.map(p => [p.content_id, p.completed]) || []);
+      }
 
-      const progressMap = new Map(progressData?.map(p => [p.content_id, p.completed]) || []);
-
-      // Calculate drip availability
-      const daysSinceEnrollment = enrollmentData.enrolled_at 
-        ? Math.floor((Date.now() - new Date(enrollmentData.enrolled_at).getTime()) / (1000 * 60 * 60 * 24))
+      // Calculate drip availability - in preview mode, all content is available
+      const daysSinceEnrollment = enrolledAt 
+        ? Math.floor((Date.now() - new Date(enrolledAt).getTime()) / (1000 * 60 * 60 * 24))
         : 0;
 
       // Sort content and mark completion/availability
+      // In mentor preview mode, all content is available
       const sortedSections = sectionsData.map(section => ({
         ...section,
         content: (section.content as any[])
           .sort((a, b) => a.sort_order - b.sort_order)
           .map(item => {
             const dripDelay = item.drip_delay_days || 0;
-            const isAvailable = !courseData.drip_enabled || daysSinceEnrollment >= dripDelay;
+            const isAvailable = isPreviewMode || !courseData.drip_enabled || daysSinceEnrollment >= dripDelay;
             return {
               ...item,
               completed: progressMap.get(item.id) || false,
@@ -278,7 +296,7 @@ export const CourseLearn = () => {
   };
 
   const markAsComplete = async (contentId: string) => {
-    if (!enrollmentId) return;
+    if (!enrollmentId || isMentorPreview) return;
 
     const { error } = await supabase
       .from('lesson_progress')
@@ -783,10 +801,32 @@ export const CourseLearn = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+      
+      {/* Mentor Preview Mode Banner */}
+      {isMentorPreview && (
+        <div className="bg-amber-500 text-amber-950 py-2 px-4">
+          <div className="container mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Eye className="h-4 w-4" />
+              <span className="font-medium">Preview Mode</span>
+              <span className="text-sm">— You're viewing this course as a learner would see it</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(-1)}
+              className="text-amber-950 hover:bg-amber-600/20"
+            >
+              Exit Preview
+            </Button>
+          </div>
+        </div>
+      )}
+      
       <div className="container mx-auto px-4 py-6">
-        <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mb-4">
+        <Button variant="ghost" onClick={() => isMentorPreview ? navigate(-1) : navigate('/dashboard')} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
+          {isMentorPreview ? 'Back to Course Builder' : 'Back to Dashboard'}
         </Button>
 
         <div className="grid lg:grid-cols-4 gap-6">

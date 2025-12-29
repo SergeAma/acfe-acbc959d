@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye, Award, Info, DollarSign, Globe, EyeOff, Users, CheckCircle, BarChart3, Clock, Zap, Radio, Video, Link2, Calendar } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye, Award, Info, DollarSign, Globe, EyeOff, Users, CheckCircle, BarChart3, Clock, Zap, Radio, Video, Link2, Calendar, Play } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -671,6 +671,10 @@ export const AdminCourseBuilder = () => {
             <Button variant="outline" onClick={() => navigate(`/courses/${courseId}`)}>
               <Eye className="h-4 w-4 mr-2" />
               Preview Course
+            </Button>
+            <Button variant="outline" onClick={() => navigate(`/courses/${courseId}/learn?preview=true`)}>
+              <Play className="h-4 w-4 mr-2" />
+              Test as Learner
             </Button>
             <Button 
               variant={isPublished ? "outline" : "default"}
