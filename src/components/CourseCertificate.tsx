@@ -105,9 +105,12 @@ export const CourseCertificate = ({
   };
 
   const shareToLinkedIn = () => {
+    const text = encodeURIComponent(
+      `🎓 Excited to share that I've just earned my certificate in "${courseName}" from A Cloud for Everyone!\n\nThis course was taught by ${mentorName} and covered valuable skills that I'm excited to apply.\n\n#learning #certificate #ACFEcertified #professionaldevelopment`
+    );
     const url = encodeURIComponent(getShareUrl());
     window.open(
-      `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
+      `https://www.linkedin.com/sharing/share-offsite/?url=${url}&summary=${text}`,
       '_blank',
       'width=600,height=400'
     );
@@ -115,7 +118,7 @@ export const CourseCertificate = ({
 
   const shareToTwitter = () => {
     const text = encodeURIComponent(
-      `🎓 I just earned my certificate in "${courseName}" from A Cloud for Everyone! #learning #certificate #ACFEcertified`
+      `🎓 Just earned my certificate in "${courseName}" from @ACFEAfrica!\n\nTaught by ${mentorName}\n\n#learning #certificate #ACFEcertified #upskilling`
     );
     const url = encodeURIComponent(getShareUrl());
     window.open(

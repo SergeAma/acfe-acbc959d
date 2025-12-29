@@ -377,7 +377,7 @@ export const CourseLearn = () => {
                   student_email: profileData.email,
                   student_name: profileData.full_name || 'Student',
                   course_name: course.title,
-                  mentor_name: course.mentor_name,
+                  course_id: course.id,
                   certificate_number: certNumber,
                   issued_at: certData.issued_at,
                 },
@@ -593,7 +593,7 @@ export const CourseLearn = () => {
             {isDescriptionExpanded && (
               <CardContent>
                 <div 
-                  className="prose prose-sm max-w-none text-foreground"
+                  className="prose prose-sm md:prose-base lg:prose-lg max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground prose-ul:text-foreground prose-ol:text-foreground"
                   dangerouslySetInnerHTML={{ __html: currentContent.text_content }}
                 />
               </CardContent>
