@@ -82,10 +82,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Fetched mentor name:", mentorName);
 
-    // Use the production logo URL from the deployed website
-    const logoUrl = "https://acloudforeveryone.org/acfe-logo.png";
+    // ACFE Logo as base64 encoded SVG for reliable email rendering
+    // This is the Africa silhouette with cloud + ACFE text logo
+    const acfeLogoBase64 = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9Ijk1IiB2aWV3Qm94PSIwIDAgMzAwIDk1IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDwhLS0gQWZyaWNhIHNpbGhvdWV0dGUgd2l0aCBjbG91ZCAtLT4KICA8cGF0aCBkPSJNNDAgMjBDNDAgMjAgMzUgMTggMzAgMjBDMjUgMjIgMjAgMjggMjAgMzVDMjAgNDAgMjUgNDUgMzAgNDVDMzAgNDUgMzAgNDggMzMgNTBDMzUgNTIgNDAgNTIgNDUgNTBDNDggNDggNTAgNDUgNTAgNDVDNTUgNDUgNjAgNDAgNjAgMzVDNjAgMjggNTUgMjIgNTAgMjBDNDUgMTggNDAgMjAgNDAgMjBaIiBmaWxsPSJ3aGl0ZSIgc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjMiLz4KICA8cGF0aCBkPSJNNTUgMTBDNTUgMTAgNjAgNSA3MCA1Qzc1IDUgODAgOCA4MiAxNUM4NCAxMCA5MCA4IDk1IDEyQzEwMCAxNiAxMDIgMjUgOTggMzJDMTA1IDMwIDExMCAzNSAxMTAgNDVDMTEwIDU1IDEwMCA2MCA5MCA1OEM5MCA2NSA4NSA3NSA3NSA4MEM2NSA4NSA1NiA4NSA1MCA4MkM0NSA4NSA0MCA4OCAzMCA4NUMyMCA4MiAxNSA3NSAxMiA2NUMxMCA2MCA1IDU1IDggNDVDMTAgNDAgMTUgMzUgMjAgMzVDMTggMzAgMjAgMjIgMjggMThDMzUgMTUgNDUgMTggNTAgMjJDNTIgMTUgNTUgMTAgNTUgMTBaIiBmaWxsPSIjMzMzIi8+CiAgCiAgPCEtLSBBQ0ZFIFN0eWxpemVkIFRleHQgLS0+CiAgPCEtLSBBIC0tPgogIDxwYXRoIGQ9Ik0xNDUgNjBMMTU1IDIwTDE2NSA2MCIgc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjYiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIAogIDwhLS0gQyAtLT4KICA8cGF0aCBkPSJNMTkwIDI1QzE4MCAyNSAxNzUgMzUgMTc1IDQwQzE3NSA0NSAxODAgNTUgMTkwIDU1IiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iNiIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgCiAgPCEtLSBGIC0tPgogIDxwYXRoIGQ9Ik0yMDUgNTVMMjA1IDI1TDIyNSAyNSIgc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjYiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0yMDUgNDBMMjIwIDQwIiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iNiIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgCiAgPCEtLSBFIGFzIDMgaG9yaXpvbnRhbCBsaW5lcyAtLT4KICA8cmVjdCB4PSIyNDAiIHk9IjIyIiB3aWR0aD0iMjUiIGhlaWdodD0iNiIgZmlsbD0iIzMzMyIgcng9IjIiLz4KICA8cmVjdCB4PSIyNDAiIHk9IjM3IiB3aWR0aD0iMjUiIGhlaWdodD0iNiIgZmlsbD0iIzMzMyIgcng9IjIiLz4KICA8cmVjdCB4PSIyNDAiIHk9IjUyIiB3aWR0aD0iMjUiIGhlaWdodD0iNiIgZmlsbD0iIzMzMyIgcng9IjIiLz4KICAKICA8IS0tIFRhZ2xpbmUgLS0+CiAgPHRleHQgeD0iMTQ1IiB5PSI4MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMzMzIiBsZXR0ZXItc3BhY2luZz0iMiI+QSBDTE9VRCBGT1IgRVZFUllPTkU8L3RleHQ+Cjwvc3ZnPg==`;
     
-    // Alternative: Use the Supabase storage URL or a reliable CDN
     const baseUrl = "https://acloudforeveryone.org";
     const verificationUrl = `${baseUrl}/verify-certificate`;
     const certificateUrl = `${baseUrl}/certificate/${certificate_number}`;
@@ -127,7 +127,7 @@ const handler = async (req: Request): Promise<Response> => {
             <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
               <!-- ACFE Logo Header -->
               <div style="text-align: center; margin-bottom: 24px; background-color: #ffffff; padding: 20px; border-radius: 12px;">
-                <img src="${logoUrl}" alt="A Cloud for Everyone" style="max-width: 200px; height: auto;" />
+                <img src="${acfeLogoBase64}" alt="A Cloud for Everyone" style="max-width: 200px; height: auto;" />
               </div>
               
               <!-- Header -->
@@ -190,7 +190,7 @@ const handler = async (req: Request): Promise<Response> => {
 
               <!-- Footer -->
               <div style="text-align: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid #e4e4e7;">
-                <img src="${logoUrl}" alt="A Cloud for Everyone" style="max-width: 120px; height: auto; margin-bottom: 12px;" />
+                <img src="${acfeLogoBase64}" alt="A Cloud for Everyone" style="max-width: 120px; height: auto; margin-bottom: 12px;" />
                 <p style="color: #71717a; font-size: 12px; margin: 0 0 8px 0;">
                   © ${new Date().getFullYear()} A Cloud for Everyone. All rights reserved.
                 </p>
