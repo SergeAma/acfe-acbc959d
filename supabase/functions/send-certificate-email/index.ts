@@ -82,8 +82,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Fetched mentor name:", mentorName);
 
-    // ACFE Logo URL from public Supabase storage bucket for reliable email rendering
-    const logoUrl = "https://mefwbcbnctqjxrwldmjm.supabase.co/storage/v1/object/public/email-assets/acfe-logo.png";
+    // ACFE Logo URL from production website for reliable email rendering
+    const logoUrl = "https://acloudforeveryone.org/acfe-logo-email.png";
     
     const baseUrl = "https://acloudforeveryone.org";
     const verificationUrl = `${baseUrl}/verify-certificate`;
