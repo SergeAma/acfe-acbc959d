@@ -82,8 +82,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Fetched mentor name:", mentorName);
 
-    // Use a base64 encoded SVG logo that will always work in emails
-    const logoBase64 = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjYwIiB2aWV3Qm94PSIwIDAgMjAwIDYwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjYwIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMjAgMTVMMzUgNDVIMjBMMzAgMzBMMjAgMTVaIiBmaWxsPSIjMjU2MzNDIi8+CjxjaXJjbGUgY3g9IjM1IiBjeT0iMzAiIHI9IjE1IiBzdHJva2U9IiMyNTYzM0MiIHN0cm9rZS13aWR0aD0iMyIgZmlsbD0ibm9uZSIvPgo8dGV4dCB4PSI2MCIgeT0iMzgiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyNTYzM0MiPkFDRkU8L3RleHQ+CjwvZz4KPC9zdmc+";
+    // Use the production logo URL from the deployed website
+    const logoUrl = "https://acloudforeveryone.org/acfe-logo.png";
     
     // Alternative: Use the Supabase storage URL or a reliable CDN
     const baseUrl = "https://acloudforeveryone.org";
@@ -126,11 +126,8 @@ const handler = async (req: Request): Promise<Response> => {
           <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5;">
             <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
               <!-- ACFE Logo Header -->
-              <div style="text-align: center; margin-bottom: 24px;">
-                <div style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #25633C 0%, #3d8c5a 100%); border-radius: 8px;">
-                  <span style="font-size: 24px; font-weight: bold; color: #ffffff; letter-spacing: 2px;">ACFE</span>
-                </div>
-                <p style="color: #6b7280; font-size: 12px; margin-top: 8px;">A Cloud for Everyone</p>
+              <div style="text-align: center; margin-bottom: 24px; background-color: #ffffff; padding: 20px; border-radius: 12px;">
+                <img src="${logoUrl}" alt="A Cloud for Everyone" style="max-width: 200px; height: auto;" />
               </div>
               
               <!-- Header -->
@@ -193,9 +190,7 @@ const handler = async (req: Request): Promise<Response> => {
 
               <!-- Footer -->
               <div style="text-align: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid #e4e4e7;">
-                <div style="display: inline-block; padding: 8px 16px; background: #25633C; border-radius: 4px; margin-bottom: 12px;">
-                  <span style="font-size: 14px; font-weight: bold; color: #ffffff;">ACFE</span>
-                </div>
+                <img src="${logoUrl}" alt="A Cloud for Everyone" style="max-width: 120px; height: auto; margin-bottom: 12px;" />
                 <p style="color: #71717a; font-size: 12px; margin: 0 0 8px 0;">
                   © ${new Date().getFullYear()} A Cloud for Everyone. All rights reserved.
                 </p>
