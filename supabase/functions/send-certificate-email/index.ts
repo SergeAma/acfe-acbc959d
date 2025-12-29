@@ -14,6 +14,7 @@ interface CertificateEmailRequest {
   mentor_name: string;
   certificate_number: string;
   issued_at: string;
+  spectrogram_token?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -47,16 +48,23 @@ const handler = async (req: Request): Promise<Response> => {
       mentor_name,
       certificate_number,
       issued_at,
+      spectrogram_token,
     }: CertificateEmailRequest = await req.json();
 
     console.log("Sending certificate email to:", student_email);
 
     const verificationUrl = "https://acloudforeveryone.org/verify-certificate";
+    const certificateUrl = `https://acloudforeveryone.org/certificate/${certificate_number}`;
     const formattedDate = new Date(issued_at).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
+
+    // Build Spectrogram profile URL if token is provided
+    const spectrogramUrl = spectrogram_token 
+      ? `https://spectrogramconsulting.com/acfe-callback?token=${spectrogram_token}&email=${encodeURIComponent(student_email)}`
+      : null;
 
     // Send email using Resend API directly
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
@@ -119,9 +127,20 @@ const handler = async (req: Request): Promise<Response> => {
                   </table>
                 </div>
 
+                <!-- Spectrogram CTA -->
+                ${spectrogramUrl ? `
+                <div style="background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); border: 2px solid #a5b4fc; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+                  <h3 style="color: #3730a3; margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">🚀 Join the Talent Network</h3>
+                  <p style="color: #4338ca; font-size: 14px; line-height: 1.6; margin: 0 0 16px 0;">
+                    Create your talent profile on Spectrogram Consulting and get discovered by top recruiters. Your skills and certificate will be pre-filled!
+                  </p>
+                  <a href="${spectrogramUrl}" style="display: inline-block; background-color: #4f46e5; color: #ffffff; text-decoration: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; font-size: 14px;">Create My Talent Profile →</a>
+                </div>
+                ` : ''}
+
                 <!-- CTA Buttons -->
                 <div style="text-align: center; margin-bottom: 24px;">
-                  <a href="${verificationUrl}" style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-weight: 600; font-size: 14px;">View & Verify Certificate</a>
+                  <a href="${certificateUrl}" style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-weight: 600; font-size: 14px;">View & Download Certificate</a>
                 </div>
 
                 <p style="color: #71717a; font-size: 14px; line-height: 1.6; margin: 0; text-align: center;">

@@ -260,6 +260,8 @@ export type Database = {
           enrollment_id: string
           id: string
           issued_at: string
+          spectrogram_profile_created: boolean | null
+          spectrogram_profile_created_at: string | null
           student_id: string
         }
         Insert: {
@@ -268,6 +270,8 @@ export type Database = {
           enrollment_id: string
           id?: string
           issued_at?: string
+          spectrogram_profile_created?: boolean | null
+          spectrogram_profile_created_at?: string | null
           student_id: string
         }
         Update: {
@@ -276,6 +280,8 @@ export type Database = {
           enrollment_id?: string
           id?: string
           issued_at?: string
+          spectrogram_profile_created?: boolean | null
+          spectrogram_profile_created_at?: string | null
           student_id?: string
         }
         Relationships: [
