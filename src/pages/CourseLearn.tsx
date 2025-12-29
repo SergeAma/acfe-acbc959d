@@ -19,7 +19,10 @@ import {
   File,
   Download,
   Loader2,
-  Award
+  Award,
+  ChevronDown,
+  ChevronUp,
+  Clock
 } from 'lucide-react';
 import {
   Accordion,
@@ -78,6 +81,13 @@ interface Certificate {
   issued_at: string;
 }
 
+// Calculate reading time based on word count (average 200 words per minute)
+const calculateReadingTime = (htmlContent: string): number => {
+  const text = htmlContent.replace(/<[^>]*>/g, '').trim();
+  const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
+  return Math.max(1, Math.ceil(wordCount / 200));
+};
+
 export const CourseLearn = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -94,6 +104,7 @@ export const CourseLearn = () => {
   const [certificate, setCertificate] = useState<Certificate | null>(null);
   const [showCertificateDialog, setShowCertificateDialog] = useState(false);
   const [studentName, setStudentName] = useState('');
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(true);
 
   useEffect(() => {
     if (id && user) {
@@ -507,21 +518,39 @@ export const CourseLearn = () => {
           </Card>
         )}
 
-        {/* Text Content - Always show when available */}
+        {/* Text Content - Collapsible */}
         {currentContent.text_content && (
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Lesson Description
-              </CardTitle>
+              <button
+                onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                className="w-full flex items-center justify-between hover:opacity-80 transition-opacity"
+              >
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Lesson Description
+                </CardTitle>
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-4 w-4" />
+                    {calculateReadingTime(currentContent.text_content)} min read
+                  </span>
+                  {isDescriptionExpanded ? (
+                    <ChevronUp className="h-5 w-5" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5" />
+                  )}
+                </div>
+              </button>
             </CardHeader>
-            <CardContent>
-              <div 
-                className="prose prose-sm max-w-none text-foreground"
-                dangerouslySetInnerHTML={{ __html: currentContent.text_content }}
-              />
-            </CardContent>
+            {isDescriptionExpanded && (
+              <CardContent>
+                <div 
+                  className="prose prose-sm max-w-none text-foreground"
+                  dangerouslySetInnerHTML={{ __html: currentContent.text_content }}
+                />
+              </CardContent>
+            )}
           </Card>
         )}
 
