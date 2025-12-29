@@ -10,6 +10,7 @@ interface ExternalVideoPlayerProps {
   contentId?: string;
   enrollmentId?: string;
   onTimeUpdate?: (currentTime: number, duration: number) => void;
+  onVideoComplete?: () => void;
 }
 
 // Load YouTube IFrame API
@@ -47,14 +48,21 @@ export const ExternalVideoPlayer = ({
   videoUrl, 
   contentId, 
   enrollmentId,
-  onTimeUpdate 
+  onTimeUpdate,
+  onVideoComplete,
 }: ExternalVideoPlayerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
   const progressSaveInterval = useRef<NodeJS.Timeout | null>(null);
+  const hasTriggeredComplete = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasRestoredPosition, setHasRestoredPosition] = useState(false);
   const [savedProgress, setSavedProgress] = useState<number>(0);
+
+  // Reset completion trigger when content changes
+  useEffect(() => {
+    hasTriggeredComplete.current = false;
+  }, [contentId]);
 
   const embedInfo = getVideoEmbedInfo(videoUrl);
 
@@ -158,7 +166,7 @@ export const ExternalVideoPlayer = ({
             playerRef.current = ytPlayer;
           },
           onStateChange: (event: any) => {
-            // YT.PlayerState.PLAYING = 1
+            // YT.PlayerState.PLAYING = 1, YT.PlayerState.ENDED = 0
             if (event.data === 1) {
               // Start periodic progress saving
               if (progressSaveInterval.current) {
@@ -170,10 +178,28 @@ export const ExternalVideoPlayer = ({
                   const duration = ytPlayer.getDuration();
                   saveProgress(currentTime, duration);
                   onTimeUpdate?.(currentTime, duration);
+                  
+                  // Auto-complete at 95%
+                  if (duration > 0 && !hasTriggeredComplete.current) {
+                    const watchPercentage = (currentTime / duration) * 100;
+                    if (watchPercentage >= 95) {
+                      hasTriggeredComplete.current = true;
+                      onVideoComplete?.();
+                    }
+                  }
                 }
-              }, 10000);
+              }, 5000);
+            } else if (event.data === 0) {
+              // Video ended
+              if (progressSaveInterval.current) {
+                clearInterval(progressSaveInterval.current);
+              }
+              if (!hasTriggeredComplete.current) {
+                hasTriggeredComplete.current = true;
+                onVideoComplete?.();
+              }
             } else {
-              // Save on pause/end
+              // Save on pause
               if (progressSaveInterval.current) {
                 clearInterval(progressSaveInterval.current);
               }
@@ -246,8 +272,17 @@ export const ExternalVideoPlayer = ({
               const duration = await vimeoPlayer.getDuration();
               saveProgress(currentTime, duration);
               onTimeUpdate?.(currentTime, duration);
+              
+              // Auto-complete at 95%
+              if (duration > 0 && !hasTriggeredComplete.current) {
+                const watchPercentage = (currentTime / duration) * 100;
+                if (watchPercentage >= 95) {
+                  hasTriggeredComplete.current = true;
+                  onVideoComplete?.();
+                }
+              }
             }
-          }, 10000);
+          }, 5000);
         });
 
         vimeoPlayer.on('pause', async () => {
@@ -269,6 +304,10 @@ export const ExternalVideoPlayer = ({
             const duration = await vimeoPlayer.getDuration();
             saveProgress(duration, duration);
           }
+          if (!hasTriggeredComplete.current) {
+            hasTriggeredComplete.current = true;
+            onVideoComplete?.();
+          }
         });
       } catch (error) {
         console.error('Failed to initialize Vimeo player:', error);
@@ -287,7 +326,7 @@ export const ExternalVideoPlayer = ({
         vimeoPlayer.destroy();
       }
     };
-  }, [embedInfo.provider, embedInfo.embedUrl, savedProgress, hasRestoredPosition, saveProgress, onTimeUpdate]);
+  }, [embedInfo.provider, embedInfo.embedUrl, savedProgress, hasRestoredPosition, saveProgress, onTimeUpdate, onVideoComplete]);
 
   // Fallback for other providers (no tracking)
   useEffect(() => {

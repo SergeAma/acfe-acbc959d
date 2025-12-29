@@ -22,7 +22,10 @@ import {
   Award,
   ChevronDown,
   ChevronUp,
-  Clock
+  Clock,
+  Maximize2,
+  Minimize2,
+  X
 } from 'lucide-react';
 import {
   Accordion,
@@ -105,6 +108,7 @@ export const CourseLearn = () => {
   const [showCertificateDialog, setShowCertificateDialog] = useState(false);
   const [studentName, setStudentName] = useState('');
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(true);
+  const [isFocusMode, setIsFocusMode] = useState(false);
 
   useEffect(() => {
     if (id && user) {
@@ -404,6 +408,18 @@ export const CourseLearn = () => {
     }
   };
 
+  // Handle video completion - mark lesson complete and auto-advance
+  const handleVideoComplete = async () => {
+    if (!currentContent || currentContent.completed) return;
+    
+    await markAsComplete(currentContent.id);
+    
+    // Auto-advance to next lesson after a short delay
+    setTimeout(() => {
+      navigateNext();
+    }, 1500);
+  };
+
   const getContentIcon = (type: string, completed: boolean) => {
     const IconComponent = type === 'video' ? Video : type === 'file' ? File : FileText;
     return completed ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <Circle className="h-4 w-4" />;
@@ -440,8 +456,8 @@ export const CourseLearn = () => {
 
     return (
       <div className="space-y-6">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
             <h2 className="text-3xl font-bold mb-2">{currentContent.title}</h2>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="capitalize">{currentContent.content_type}</span>
@@ -453,12 +469,28 @@ export const CourseLearn = () => {
               )}
             </div>
           </div>
-          {!currentContent.completed && (
-            <Button onClick={() => markAsComplete(currentContent.id)}>
-              <CheckCircle2 className="h-4 w-4 mr-2" />
-              Mark Complete
-            </Button>
-          )}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {currentContent.content_type === 'video' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsFocusMode(!isFocusMode)}
+                title={isFocusMode ? 'Exit focus mode' : 'Enter focus mode'}
+              >
+                {isFocusMode ? (
+                  <Minimize2 className="h-4 w-4" />
+                ) : (
+                  <Maximize2 className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+            {!currentContent.completed && (
+              <Button onClick={() => markAsComplete(currentContent.id)}>
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Mark Complete
+              </Button>
+            )}
+          </div>
         </div>
 
         <Separator />
@@ -475,6 +507,7 @@ export const CourseLearn = () => {
                       videoUrl={currentContent.video_url} 
                       contentId={currentContent.id}
                       enrollmentId={enrollmentId}
+                      onVideoComplete={handleVideoComplete}
                     />
                   );
                 }
@@ -488,6 +521,7 @@ export const CourseLearn = () => {
                         (window as any).__addBookmark(timestamp);
                       }
                     }}
+                    onVideoComplete={handleVideoComplete}
                   />
                 );
               })()}
@@ -585,6 +619,103 @@ export const CourseLearn = () => {
         <Navbar />
         <div className="flex items-center justify-center min-h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  // Focus mode - fullscreen video experience
+  if (isFocusMode && currentContent?.content_type === 'video') {
+    return (
+      <div className="fixed inset-0 z-50 bg-black flex flex-col">
+        {/* Focus mode header */}
+        <div className="flex items-center justify-between p-4 bg-black/80">
+          <div className="text-white">
+            <h2 className="text-lg font-semibold">{currentContent.title}</h2>
+            <p className="text-sm text-white/60">{course?.title}</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsFocusMode(false)}
+            className="text-white hover:bg-white/20"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+        
+        {/* Video content */}
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="w-full max-w-6xl">
+            {enrollmentId && currentContent.video_url && (() => {
+              const embedInfo = getVideoEmbedInfo(currentContent.video_url);
+              if (embedInfo.isExternal) {
+                return (
+                  <ExternalVideoPlayer 
+                    videoUrl={currentContent.video_url} 
+                    contentId={currentContent.id}
+                    enrollmentId={enrollmentId}
+                    onVideoComplete={handleVideoComplete}
+                  />
+                );
+              }
+              return (
+                <SecureVideoPlayer
+                  videoUrl={currentContent.video_url}
+                  contentId={currentContent.id}
+                  enrollmentId={enrollmentId}
+                  onBookmark={(timestamp) => {
+                    if ((window as any).__addBookmark) {
+                      (window as any).__addBookmark(timestamp);
+                    }
+                  }}
+                  onVideoComplete={handleVideoComplete}
+                />
+              );
+            })()}
+          </div>
+        </div>
+
+        {/* Focus mode footer */}
+        <div className="flex items-center justify-between p-4 bg-black/80">
+          <Button
+            variant="ghost"
+            onClick={navigatePrevious}
+            disabled={sections.flatMap(s => s.content).findIndex(c => c.id === currentContent.id) === 0}
+            className="text-white hover:bg-white/20"
+          >
+            <ChevronLeft className="h-4 w-4 mr-2" />
+            Previous
+          </Button>
+          <div className="flex items-center gap-4">
+            {!currentContent.completed && (
+              <Button
+                variant="secondary"
+                onClick={() => markAsComplete(currentContent.id)}
+              >
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Mark Complete
+              </Button>
+            )}
+            {currentContent.completed && (
+              <span className="text-green-400 flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                Completed
+              </span>
+            )}
+          </div>
+          <Button
+            variant="ghost"
+            onClick={navigateNext}
+            disabled={
+              sections.flatMap(s => s.content).findIndex(c => c.id === currentContent.id) === 
+              sections.flatMap(s => s.content).length - 1
+            }
+            className="text-white hover:bg-white/20"
+          >
+            Next
+            <ChevronRight className="h-4 w-4 ml-2" />
+          </Button>
         </div>
       </div>
     );

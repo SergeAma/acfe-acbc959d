@@ -36,6 +36,7 @@ interface SecureVideoPlayerProps {
   enrollmentId: string;
   onTimeUpdate?: (currentTime: number, duration: number) => void;
   onBookmark?: (timestamp: number) => void;
+  onVideoComplete?: () => void;
 }
 
 const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
@@ -53,10 +54,12 @@ export const SecureVideoPlayer = ({
   enrollmentId,
   onTimeUpdate,
   onBookmark,
+  onVideoComplete,
 }: SecureVideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const progressSaveInterval = useRef<NodeJS.Timeout | null>(null);
+  const hasTriggeredComplete = useRef(false);
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -69,6 +72,11 @@ export const SecureVideoPlayer = ({
   const [isLoading, setIsLoading] = useState(true);
   const [hasRestoredPosition, setHasRestoredPosition] = useState(false);
   const [videoQuality, setVideoQuality] = useState('auto');
+
+  // Reset completion trigger when content changes
+  useEffect(() => {
+    hasTriggeredComplete.current = false;
+  }, [contentId]);
 
   // Load saved progress on mount
   useEffect(() => {
@@ -175,8 +183,18 @@ export const SecureVideoPlayer = ({
 
   const handleTimeUpdate = () => {
     if (videoRef.current) {
-      setCurrentTime(videoRef.current.currentTime);
-      onTimeUpdate?.(videoRef.current.currentTime, videoRef.current.duration);
+      const video = videoRef.current;
+      setCurrentTime(video.currentTime);
+      onTimeUpdate?.(video.currentTime, video.duration);
+      
+      // Auto-complete when video reaches 95%
+      if (video.duration > 0 && !hasTriggeredComplete.current) {
+        const watchPercentage = (video.currentTime / video.duration) * 100;
+        if (watchPercentage >= 95) {
+          hasTriggeredComplete.current = true;
+          onVideoComplete?.();
+        }
+      }
     }
   };
 
