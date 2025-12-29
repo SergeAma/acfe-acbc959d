@@ -481,11 +481,17 @@ export type Database = {
           drip_enabled: boolean | null
           duration_weeks: number | null
           id: string
+          is_live: boolean | null
           is_paid: boolean | null
           is_published: boolean | null
           level: string | null
+          live_date: string | null
+          live_platform: string | null
+          live_url: string | null
           mentor_id: string
           price_cents: number | null
+          recording_url: string | null
+          registration_deadline: string | null
           thumbnail_url: string | null
           title: string
           updated_at: string | null
@@ -498,11 +504,17 @@ export type Database = {
           drip_enabled?: boolean | null
           duration_weeks?: number | null
           id?: string
+          is_live?: boolean | null
           is_paid?: boolean | null
           is_published?: boolean | null
           level?: string | null
+          live_date?: string | null
+          live_platform?: string | null
+          live_url?: string | null
           mentor_id: string
           price_cents?: number | null
+          recording_url?: string | null
+          registration_deadline?: string | null
           thumbnail_url?: string | null
           title: string
           updated_at?: string | null
@@ -515,11 +527,17 @@ export type Database = {
           drip_enabled?: boolean | null
           duration_weeks?: number | null
           id?: string
+          is_live?: boolean | null
           is_paid?: boolean | null
           is_published?: boolean | null
           level?: string | null
+          live_date?: string | null
+          live_platform?: string | null
+          live_url?: string | null
           mentor_id?: string
           price_cents?: number | null
+          recording_url?: string | null
+          registration_deadline?: string | null
           thumbnail_url?: string | null
           title?: string
           updated_at?: string | null

@@ -21,7 +21,11 @@ import {
   Loader2,
   ArrowLeft,
   AlertCircle,
-  Link2
+  Link2,
+  Calendar,
+  ExternalLink,
+  LogOut,
+  Radio
 } from 'lucide-react';
 import {
   Accordion,
@@ -42,6 +46,12 @@ interface Course {
   is_published: boolean;
   mentor_id: string;
   thumbnail_url: string | null;
+  is_live: boolean;
+  live_date: string | null;
+  live_platform: string | null;
+  live_url: string | null;
+  registration_deadline: string | null;
+  recording_url: string | null;
   mentor?: {
     full_name: string;
     bio: string | null;
@@ -81,6 +91,7 @@ export const CoursePreview = () => {
   const [enrollmentProgress, setEnrollmentProgress] = useState(0);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
+  const [leavingCourse, setLeavingCourse] = useState(false);
   const [prerequisites, setPrerequisites] = useState<PrerequisiteCourse[]>([]);
   const [prerequisitesMet, setPrerequisitesMet] = useState(true);
 
@@ -260,6 +271,35 @@ export const CoursePreview = () => {
     setEnrolling(false);
   };
 
+  const handleLeaveCourse = async () => {
+    if (!user || !id) return;
+    
+    setLeavingCourse(true);
+    
+    const { error } = await supabase
+      .from('enrollments')
+      .delete()
+      .eq('course_id', id)
+      .eq('student_id', user.id);
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to leave course',
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Left course',
+        description: 'You have left this course. You can re-enroll anytime.',
+      });
+      setIsEnrolled(false);
+      setEnrollmentProgress(0);
+    }
+    
+    setLeavingCourse(false);
+  };
+
   const getContentIcon = (type: string) => {
     switch (type) {
       case 'text':
@@ -414,17 +454,98 @@ export const CoursePreview = () => {
             </Alert>
           )}
 
+          {/* Live Course Info */}
+          {course.is_live && (
+            <Alert className="mb-6 border-primary/30 bg-primary/5">
+              <Radio className="h-4 w-4 text-primary animate-pulse" />
+              <AlertTitle className="text-primary">Live Course</AlertTitle>
+              <AlertDescription>
+                <div className="space-y-2 mt-2">
+                  {course.live_date && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="h-4 w-4" />
+                      <span>
+                        {new Date(course.live_date).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                  )}
+                  {course.live_platform && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Video className="h-4 w-4" />
+                      <span className="capitalize">{course.live_platform.replace('_', ' ')}</span>
+                    </div>
+                  )}
+                  {course.registration_deadline && new Date(course.registration_deadline) > new Date() && (
+                    <p className="text-xs text-muted-foreground">
+                      Registration closes: {new Date(course.registration_deadline).toLocaleDateString()}
+                    </p>
+                  )}
+                  {isEnrolled && course.live_url && course.live_date && new Date(course.live_date) > new Date() && (
+                    <Button variant="outline" size="sm" asChild className="mt-2">
+                      <a href={course.live_url} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Join Meeting
+                      </a>
+                    </Button>
+                  )}
+                  {course.recording_url && (
+                    <Button variant="outline" size="sm" asChild className="mt-2">
+                      <a href={course.recording_url} target="_blank" rel="noopener noreferrer">
+                        <Video className="h-4 w-4 mr-2" />
+                        Watch Recording
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Enrollment Button */}
           {user ? (
             isEnrolled ? (
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
+                {course.is_live && course.live_date && new Date(course.live_date) > new Date() ? (
+                  <Button 
+                    size="lg" 
+                    disabled
+                    variant="secondary"
+                    className="flex-1"
+                  >
+                    <CheckCircle2 className="h-5 w-5 mr-2" />
+                    Registered for Live Session
+                  </Button>
+                ) : (
+                  <Button 
+                    size="lg" 
+                    onClick={() => navigate(`/courses/${id}/learn`)}
+                    className="flex-1"
+                  >
+                    <ChevronRight className="h-5 w-5 mr-2" />
+                    {enrollmentProgress === 0 ? 'Start Learning' : 'Continue Learning'}
+                  </Button>
+                )}
                 <Button 
                   size="lg" 
-                  onClick={() => navigate(`/courses/${id}/learn`)}
-                  className="flex-1"
+                  variant="outline"
+                  onClick={handleLeaveCourse}
+                  disabled={leavingCourse}
                 >
-                  <ChevronRight className="h-5 w-5 mr-2" />
-                  {enrollmentProgress === 0 ? 'Start Learning' : 'Continue Learning'}
+                  {leavingCourse ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <>
+                      <LogOut className="h-5 w-5 mr-2" />
+                      Leave Course
+                    </>
+                  )}
                 </Button>
               </div>
             ) : (
