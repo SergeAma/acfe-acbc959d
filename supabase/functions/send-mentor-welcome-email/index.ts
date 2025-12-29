@@ -48,41 +48,49 @@ const handler = async (req: Request): Promise<Response> => {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #4a7c59 0%, #2d4a35 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-    <h1 style="color: white; margin: 0; font-size: 28px;">Welcome to the Team! 🎉</h1>
-  </div>
-  
-  <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
-    <p style="font-size: 18px;">Hello ${displayName},</p>
-    
-    <p>Congratulations on becoming a mentor at <strong>A Cloud for Everyone</strong>! We're thrilled to have you join our mission to make tech education accessible across Africa.</p>
-    
-    <div style="background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4a7c59;">
-      <h3 style="margin-top: 0; color: #4a7c59;">Getting Started</h3>
-      <p>Here's what you can do now:</p>
-      <ul style="padding-left: 20px;">
-        <li><strong>Complete Your Profile</strong> - Add your bio, skills, and social links so students can learn about you</li>
-        <li><strong>Create Your First Course</strong> - Share your expertise by building a course</li>
-        <li><strong>Explore the Platform</strong> - Check out what other mentors are teaching</li>
-      </ul>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <!-- ACFE Text Header -->
+    <div style="text-align: center; margin-bottom: 0; background-color: #3f3f3f; padding: 24px; border-radius: 12px 12px 0 0;">
+      <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin-bottom: 4px;">ACFE</div>
+      <div style="font-size: 12px; color: #d4d4d4; letter-spacing: 2px; text-transform: uppercase;">A Cloud for Everyone</div>
     </div>
     
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="https://acloudforeveryone.org/profile" style="background: #4a7c59; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; margin: 5px;">Complete Your Profile</a>
-      <a href="https://acloudforeveryone.org/mentor/courses/new" style="background: #2d4a35; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; margin: 5px;">Create a Course</a>
+    <div style="background-color: #ffffff; padding: 32px; border-radius: 0 0 12px 12px;">
+      <h1 style="margin: 0 0 20px 0; font-size: 28px; color: #18181b; text-align: center;">Welcome to the Team! 🎉</h1>
+      
+      <p style="font-size: 18px; color: #3f3f46;">Hello ${displayName},</p>
+      
+      <p style="color: #3f3f46; line-height: 1.6;">Congratulations on becoming a mentor at <strong>A Cloud for Everyone</strong>! We're thrilled to have you join our mission to make tech education accessible across Africa.</p>
+      
+      <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4a5d4a;">
+        <h3 style="margin-top: 0; color: #166534;">Getting Started</h3>
+        <p style="color: #3f3f46; margin-bottom: 12px;">Here's what you can do now:</p>
+        <ul style="padding-left: 20px; color: #3f3f46; line-height: 1.8;">
+          <li><strong>Complete Your Profile</strong> - Add your bio, skills, and social links so students can learn about you</li>
+          <li><strong>Create Your First Course</strong> - Share your expertise by building a course</li>
+          <li><strong>Explore the Platform</strong> - Check out what other mentors are teaching</li>
+        </ul>
+      </div>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="https://acloudforeveryone.org/profile" style="background: #4a5d4a; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px;">Complete Your Profile</a>
+        <a href="https://acloudforeveryone.org/mentor/courses/new" style="background: #2d4a35; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px;">Create a Course</a>
+      </div>
+      
+      <p style="color: #3f3f46; line-height: 1.6;">If you have any questions or need assistance, don't hesitate to reach out to our team.</p>
+      
+      <p style="color: #3f3f46; margin-top: 24px;">Welcome aboard!<br><strong>The ACFE Team</strong></p>
     </div>
     
-    <p>If you have any questions or need assistance, don't hesitate to reach out to our team.</p>
-    
-    <p>Welcome aboard!<br><strong>The A Cloud for Everyone Team</strong></p>
-    
-    <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
-    
-    <p style="font-size: 12px; color: #999; text-align: center;">
-      © ${currentYear} A Cloud for Everyone. All rights reserved.<br>
-      <a href="mailto:contact@acloudforeveryone.org" style="color: #4a7c59;">contact@acloudforeveryone.org</a>
-    </p>
+    <!-- Footer -->
+    <div style="text-align: center; padding: 24px;">
+      <div style="font-size: 18px; font-weight: 700; color: #3f3f3f; letter-spacing: 2px; margin-bottom: 8px;">ACFE</div>
+      <p style="font-size: 12px; color: #71717a; margin: 0 0 8px 0;">
+        © ${currentYear} A Cloud for Everyone. All rights reserved.
+      </p>
+      <a href="mailto:contact@acloudforeveryone.org" style="color: #4a5d4a; font-size: 12px;">contact@acloudforeveryone.org</a>
+    </div>
   </div>
 </body>
 </html>
@@ -129,39 +137,47 @@ const handler = async (req: Request): Promise<Response> => {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #4a7c59 0%, #2d4a35 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-    <h1 style="color: white; margin: 0; font-size: 24px;">New Mentor Joined! 🎉</h1>
-  </div>
-  
-  <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
-    <p>Hello Admin,</p>
-    
-    <p>Great news! A new mentor has accepted their invitation and joined <strong>A Cloud for Everyone</strong>.</p>
-    
-    <div style="background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4a7c59;">
-      <h3 style="margin-top: 0; color: #4a7c59;">New Mentor Details</h3>
-      <p><strong>Name:</strong> ${displayName}</p>
-      <p><strong>Email:</strong> ${email}</p>
-      <p><strong>Joined:</strong> ${new Date().toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })}</p>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <!-- ACFE Text Header -->
+    <div style="text-align: center; margin-bottom: 0; background-color: #3f3f3f; padding: 24px; border-radius: 12px 12px 0 0;">
+      <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin-bottom: 4px;">ACFE</div>
+      <div style="font-size: 12px; color: #d4d4d4; letter-spacing: 2px; text-transform: uppercase;">Admin Notification</div>
     </div>
     
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="https://acloudforeveryone.org/admin/users" style="background: #4a7c59; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">View All Users</a>
+    <div style="background-color: #ffffff; padding: 32px; border-radius: 0 0 12px 12px;">
+      <h1 style="margin: 0 0 20px 0; font-size: 24px; color: #18181b;">New Mentor Joined! 🎉</h1>
+      
+      <p style="color: #3f3f46;">Hello Admin,</p>
+      
+      <p style="color: #3f3f46; line-height: 1.6;">Great news! A new mentor has accepted their invitation and joined <strong>A Cloud for Everyone</strong>.</p>
+      
+      <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4a5d4a;">
+        <h3 style="margin-top: 0; color: #18181b;">New Mentor Details</h3>
+        <p style="color: #3f3f46; margin: 5px 0;"><strong>Name:</strong> ${displayName}</p>
+        <p style="color: #3f3f46; margin: 5px 0;"><strong>Email:</strong> ${email}</p>
+        <p style="color: #3f3f46; margin: 5px 0;"><strong>Joined:</strong> ${new Date().toLocaleDateString('en-US', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })}</p>
+      </div>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="https://acloudforeveryone.org/admin/users" style="background: #4a5d4a; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">View All Users</a>
+      </div>
     </div>
     
-    <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
-    
-    <p style="font-size: 12px; color: #999; text-align: center;">
-      © ${currentYear} A Cloud for Everyone. All rights reserved.
-    </p>
+    <!-- Footer -->
+    <div style="text-align: center; padding: 24px;">
+      <div style="font-size: 18px; font-weight: 700; color: #3f3f3f; letter-spacing: 2px; margin-bottom: 8px;">ACFE</div>
+      <p style="font-size: 12px; color: #71717a; margin: 0;">
+        © ${currentYear} A Cloud for Everyone. All rights reserved.
+      </p>
+    </div>
   </div>
 </body>
 </html>

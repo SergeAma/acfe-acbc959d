@@ -17,6 +17,23 @@ interface WelcomeEmailRequest {
   user_id?: string;
 }
 
+// Text-based ACFE header for reliable email rendering
+const getAcfeHeader = () => `
+  <div style="text-align: center; margin-bottom: 24px; background-color: #3f3f3f; padding: 24px; border-radius: 12px 12px 0 0;">
+    <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin-bottom: 4px;">ACFE</div>
+    <div style="font-size: 12px; color: #d4d4d4; letter-spacing: 2px; text-transform: uppercase;">A Cloud for Everyone</div>
+  </div>
+`;
+
+const getAcfeFooter = (currentYear: number) => `
+  <div style="text-align: center; margin-top: 32px; padding: 24px; background-color: #f8f9fa; border-top: 1px solid #e4e4e7;">
+    <div style="font-size: 18px; font-weight: 700; color: #3f3f3f; letter-spacing: 2px; margin-bottom: 8px;">ACFE</div>
+    <p style="color: #71717a; font-size: 12px; margin: 0 0 8px 0;">
+      © ${currentYear} A Cloud for Everyone. All rights reserved.
+    </p>
+  </div>
+`;
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("Welcome email function called");
   
@@ -49,57 +66,51 @@ const handler = async (req: Request): Promise<Response> => {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
-  <div style="max-width: 600px; margin: 0 auto; background-color: #4a5d4a; color: #ffffff;">
-    <!-- Header -->
-    <div style="padding: 40px 40px 20px 40px;">
-      <h1 style="margin: 0; font-size: 28px; font-weight: normal;">Hello and welcome <strong>${firstName}</strong>,</h1>
-    </div>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    ${getAcfeHeader()}
     
     <!-- Main content -->
-    <div style="padding: 20px 40px;">
-      <p style="margin: 0 0 20px 0; line-height: 1.6;">
+    <div style="background-color: #ffffff; padding: 32px; border-radius: 0 0 12px 12px;">
+      <h1 style="margin: 0 0 20px 0; font-size: 24px; color: #18181b;">Hello and welcome <strong>${firstName}</strong>,</h1>
+      
+      <p style="margin: 0 0 20px 0; line-height: 1.6; color: #3f3f46;">
         Welcome to A Cloud for Everyone (ACFE)! We're thrilled to have you join our community and excited to see that you're interested in becoming a mentor.
       </p>
       
-      <div style="background-color: rgba(255,255,255,0.1); border-radius: 8px; padding: 20px; margin: 25px 0;">
-        <h3 style="margin: 0 0 10px 0; font-size: 16px;">📋 About Your Mentor Application</h3>
-        <p style="margin: 0; line-height: 1.6; font-size: 14px;">
+      <div style="background-color: #f0fdf4; border-radius: 8px; padding: 20px; margin: 25px 0; border-left: 4px solid #4a5d4a;">
+        <h3 style="margin: 0 0 10px 0; font-size: 16px; color: #166534;">📋 About Your Mentor Application</h3>
+        <p style="margin: 0; line-height: 1.6; font-size: 14px; color: #3f3f46;">
           All accounts start as learner accounts to ensure everyone understands our platform. We've received your interest in becoming a mentor, and our team will review your application shortly.
         </p>
       </div>
       
-      <h2 style="margin: 30px 0 15px 0; font-size: 20px;">🎯 What happens next?</h2>
-      <ul style="margin: 0 0 20px 0; padding-left: 0; list-style: none;">
+      <h2 style="margin: 30px 0 15px 0; font-size: 20px; color: #18181b;">🎯 What happens next?</h2>
+      <ul style="margin: 0 0 20px 0; padding-left: 0; list-style: none; color: #3f3f46;">
         <li style="margin-bottom: 8px;">✔️ Our team will review your application within <strong>3-5 business days</strong></li>
         <li style="margin-bottom: 8px;">✔️ You'll receive an email notification with our decision</li>
         <li style="margin-bottom: 8px;">✔️ Once approved, you'll get access to create courses and mentor students</li>
         <li style="margin-bottom: 8px;">✔️ In the meantime, explore our platform as a learner!</li>
       </ul>
       
-      <p style="margin: 20px 0; line-height: 1.6;">
+      <p style="margin: 20px 0; line-height: 1.6; color: #3f3f46;">
         🚀 Thank you for stepping forward to mentor the next generation of tech talent. Your knowledge and experience can help shape futures across Africa.
       </p>
       
       <div style="text-align: center; margin: 30px 0;">
-        <a href="https://www.acloudforeveryone.org/courses" style="display: inline-block; background-color: #ffffff; color: #4a5d4a; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 6px;">Explore Courses</a>
+        <a href="https://www.acloudforeveryone.org/courses" style="display: inline-block; background-color: #4a5d4a; color: #ffffff; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 6px;">Explore Courses</a>
       </div>
       
-      <p style="margin: 30px 0 10px 0; font-weight: bold; font-size: 18px;">There's a cloud for everyone!</p>
+      <p style="margin: 30px 0 10px 0; font-weight: bold; font-size: 18px; color: #18181b;">There's a cloud for everyone!</p>
       
-      <p style="margin: 20px 0;">
+      <p style="margin: 20px 0; color: #3f3f46;">
         With gratitude,<br>
         <strong>The ACFE Team</strong><br>
         📧 contact@acloudforeveryone.org
       </p>
     </div>
     
-    <!-- Footer -->
-    <div style="padding: 20px 40px; border-top: 1px solid rgba(255,255,255,0.2); text-align: center;">
-      <p style="margin: 0; font-size: 12px; color: rgba(255,255,255,0.7);">
-        © ${currentYear} A Cloud for Everyone. All rights reserved.
-      </p>
-    </div>
+    ${getAcfeFooter(currentYear)}
   </div>
 </body>
 </html>
@@ -147,15 +158,14 @@ const handler = async (req: Request): Promise<Response> => {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
-  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-    <!-- Header -->
-    <div style="background-color: #4a5d4a; padding: 30px 40px;">
-      <h1 style="margin: 0; font-size: 22px; color: #ffffff;">New Mentor Application</h1>
-    </div>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    ${getAcfeHeader()}
     
     <!-- Main content -->
-    <div style="padding: 40px;">
+    <div style="background-color: #ffffff; padding: 32px; border-radius: 0 0 12px 12px;">
+      <h1 style="margin: 0 0 20px 0; font-size: 22px; color: #18181b;">New Mentor Application</h1>
+      
       <p style="margin: 0 0 20px 0; line-height: 1.6; color: #333333;">
         Hello ${admin.full_name?.split(' ')[0] || 'Admin'},
       </p>
@@ -194,12 +204,7 @@ const handler = async (req: Request): Promise<Response> => {
       </p>
     </div>
     
-    <!-- Footer -->
-    <div style="background-color: #f8f9fa; padding: 20px 40px; text-align: center; border-top: 1px solid #e5e5e5;">
-      <p style="margin: 0; font-size: 12px; color: #999999;">
-        © ${currentYear} A Cloud for Everyone. All rights reserved.
-      </p>
-    </div>
+    ${getAcfeFooter(currentYear)}
   </div>
 </body>
 </html>
@@ -237,25 +242,24 @@ const handler = async (req: Request): Promise<Response> => {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
-  <div style="max-width: 600px; margin: 0 auto; background-color: #4a5d4a; color: #ffffff;">
-    <!-- Header with image placeholder -->
-    <div style="padding: 40px 40px 20px 40px;">
-      <h1 style="margin: 0; font-size: 28px; font-weight: normal;">Hello and welcome <strong>${firstName}</strong>,</h1>
-    </div>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    ${getAcfeHeader()}
     
     <!-- Main content -->
-    <div style="padding: 20px 40px;">
-      <p style="margin: 0 0 20px 0; line-height: 1.6;">
+    <div style="background-color: #ffffff; padding: 32px; border-radius: 0 0 12px 12px;">
+      <h1 style="margin: 0 0 20px 0; font-size: 24px; color: #18181b;">Hello and welcome <strong>${firstName}</strong>,</h1>
+      
+      <p style="margin: 0 0 20px 0; line-height: 1.6; color: #3f3f46;">
         Thank you for stepping forward to mentor the next generation of tech talent. At A Cloud for Everyone (ACFE), we believe that real change happens when knowledge is shared—and your support plays a vital role in making this possible.
       </p>
       
-      <p style="margin: 0 0 20px 0; line-height: 1.6;">
+      <p style="margin: 0 0 20px 0; line-height: 1.6; color: #3f3f46;">
         By joining our mentor community, you're helping learners across Africa not only build digital skills in cloud, cybersecurity, data, AI, and more—but also gain the confidence and career readiness they need to thrive.
       </p>
       
-      <h2 style="margin: 30px 0 15px 0; font-size: 20px;">🌍 What to Expect:</h2>
-      <ul style="margin: 0 0 20px 0; padding-left: 0; list-style: none;">
+      <h2 style="margin: 30px 0 15px 0; font-size: 20px; color: #18181b;">🌍 What to Expect:</h2>
+      <ul style="margin: 0 0 20px 0; padding-left: 0; list-style: none; color: #3f3f46;">
         <li style="margin-bottom: 8px;">✔️ Flexible, scalable mentorship opportunities</li>
         <li style="margin-bottom: 8px;">✔️ Support materials to guide your sessions</li>
         <li style="margin-bottom: 8px;">✔️ Regular updates on training cohorts & learner progress</li>
@@ -263,29 +267,24 @@ const handler = async (req: Request): Promise<Response> => {
         <li style="margin-bottom: 8px;">✔️ The chance to shape real futures through real guidance</li>
       </ul>
       
-      <p style="margin: 20px 0; line-height: 1.6;">
+      <p style="margin: 20px 0; line-height: 1.6; color: #3f3f46;">
         🚀 The digital future is here—and your mentorship makes it more accessible and inclusive. We'll be in touch soon with next steps, available cohorts, and resources to help you get started.
       </p>
       
-      <p style="margin: 20px 0; line-height: 1.6;">
-        In the meantime, connect with us at <a href="https://www.acloudforeveryone.org" style="color: #ffffff; text-decoration: underline;">www.acloudforeveryone.org</a> and keep an eye on your inbox!
+      <p style="margin: 20px 0; line-height: 1.6; color: #3f3f46;">
+        In the meantime, connect with us at <a href="https://www.acloudforeveryone.org" style="color: #4a5d4a; text-decoration: underline;">www.acloudforeveryone.org</a> and keep an eye on your inbox!
       </p>
       
-      <p style="margin: 30px 0 10px 0; font-weight: bold; font-size: 18px;">There's a cloud for everyone!</p>
+      <p style="margin: 30px 0 10px 0; font-weight: bold; font-size: 18px; color: #18181b;">There's a cloud for everyone!</p>
       
-      <p style="margin: 20px 0;">
+      <p style="margin: 20px 0; color: #3f3f46;">
         With gratitude,<br>
         <strong>The ACFE Team</strong><br>
         📧 contact@acloudforeveryone.org
       </p>
     </div>
     
-    <!-- Footer -->
-    <div style="padding: 20px 40px; border-top: 1px solid rgba(255,255,255,0.2); text-align: center;">
-      <p style="margin: 0; font-size: 12px; color: rgba(255,255,255,0.7);">
-        © ${currentYear} A Cloud for Everyone. All rights reserved.
-      </p>
-    </div>
+    ${getAcfeFooter(currentYear)}
   </div>
 </body>
 </html>
@@ -300,54 +299,48 @@ const handler = async (req: Request): Promise<Response> => {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
-  <div style="max-width: 600px; margin: 0 auto; background-color: #4a5d4a; color: #ffffff;">
-    <!-- Header -->
-    <div style="padding: 40px 40px 20px 40px;">
-      <h1 style="margin: 0; font-size: 28px; font-weight: normal;">Hello and welcome <strong>${firstName}</strong>,</h1>
-    </div>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    ${getAcfeHeader()}
     
     <!-- Main content -->
-    <div style="padding: 20px 40px;">
-      <p style="margin: 0 0 20px 0; line-height: 1.6;">
+    <div style="background-color: #ffffff; padding: 32px; border-radius: 0 0 12px 12px;">
+      <h1 style="margin: 0 0 20px 0; font-size: 24px; color: #18181b;">Hello and welcome <strong>${firstName}</strong>,</h1>
+      
+      <p style="margin: 0 0 20px 0; line-height: 1.6; color: #3f3f46;">
         Welcome to A Cloud for Everyone (ACFE)! We're thrilled to have you join our community of learners building the digital skills needed to thrive in today's tech-driven world.
       </p>
       
-      <p style="margin: 0 0 20px 0; line-height: 1.6;">
+      <p style="margin: 0 0 20px 0; line-height: 1.6; color: #3f3f46;">
         Your journey to becoming job-ready in cloud, data, AI, cybersecurity and more starts now. Our platform connects you with experienced mentors and practical courses designed specifically for African youth.
       </p>
       
-      <h2 style="margin: 30px 0 15px 0; font-size: 20px;">🎯 Getting Started:</h2>
-      <ul style="margin: 0 0 20px 0; padding-left: 0; list-style: none;">
+      <h2 style="margin: 30px 0 15px 0; font-size: 20px; color: #18181b;">🎯 Getting Started:</h2>
+      <ul style="margin: 0 0 20px 0; padding-left: 0; list-style: none; color: #3f3f46;">
         <li style="margin-bottom: 8px;">✔️ Browse our course catalog and enroll in courses that match your goals</li>
         <li style="margin-bottom: 8px;">✔️ Connect with mentors who can guide your learning journey</li>
         <li style="margin-bottom: 8px;">✔️ Complete your profile to help mentors understand your background</li>
         <li style="margin-bottom: 8px;">✔️ Have a startup idea? Submit it through our Innovator Incubator for mentorship and up to $500 funding!</li>
       </ul>
       
-      <p style="margin: 20px 0; line-height: 1.6;">
+      <p style="margin: 20px 0; line-height: 1.6; color: #3f3f46;">
         🚀 The digital future is here—and you're now part of the movement making it more accessible across Africa.
       </p>
       
       <div style="text-align: center; margin: 30px 0;">
-        <a href="https://www.acloudforeveryone.org/courses" style="display: inline-block; background-color: #ffffff; color: #4a5d4a; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 6px;">Explore Courses</a>
+        <a href="https://www.acloudforeveryone.org/courses" style="display: inline-block; background-color: #4a5d4a; color: #ffffff; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 6px;">Explore Courses</a>
       </div>
       
-      <p style="margin: 30px 0 10px 0; font-weight: bold; font-size: 18px;">There's a cloud for everyone!</p>
+      <p style="margin: 30px 0 10px 0; font-weight: bold; font-size: 18px; color: #18181b;">There's a cloud for everyone!</p>
       
-      <p style="margin: 20px 0;">
+      <p style="margin: 20px 0; color: #3f3f46;">
         With gratitude,<br>
         <strong>The ACFE Team</strong><br>
         📧 contact@acloudforeveryone.org
       </p>
     </div>
     
-    <!-- Footer -->
-    <div style="padding: 20px 40px; border-top: 1px solid rgba(255,255,255,0.2); text-align: center;">
-      <p style="margin: 0; font-size: 12px; color: rgba(255,255,255,0.7);">
-        © ${currentYear} A Cloud for Everyone. All rights reserved.
-      </p>
-    </div>
+    ${getAcfeFooter(currentYear)}
   </div>
 </body>
 </html>

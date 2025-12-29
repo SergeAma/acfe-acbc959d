@@ -24,48 +24,53 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("[SEND-SUBSCRIPTION-CANCELLED] Sending to:", email);
 
+    const currentYear = new Date().getFullYear();
+
     const emailResponse = await resend.emails.send({
-      from: "Learn Project <notifications@resend.dev>",
+      from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
       to: [email],
       subject: "Your Subscription Has Been Cancelled",
       html: `
         <!DOCTYPE html>
         <html>
         <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-            .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
-            .info-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea; }
-            .button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 20px; }
-            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
-          </style>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
         </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>Subscription Cancelled</h1>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5;">
+          <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+            <!-- ACFE Text Header -->
+            <div style="text-align: center; margin-bottom: 0; background-color: #3f3f3f; padding: 24px; border-radius: 12px 12px 0 0;">
+              <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin-bottom: 4px;">ACFE</div>
+              <div style="font-size: 12px; color: #d4d4d4; letter-spacing: 2px; text-transform: uppercase;">A Cloud for Everyone</div>
             </div>
-            <div class="content">
-              <p>Hi ${name},</p>
-              <p>We're sorry to see you go. Your subscription has been cancelled.</p>
+            
+            <div style="background-color: #ffffff; padding: 32px; border-radius: 0 0 12px 12px;">
+              <h1 style="margin: 0 0 20px 0; font-size: 24px; color: #18181b;">Subscription Cancelled</h1>
               
-              <div class="info-box">
-                <p><strong>Access Until:</strong> ${subscription_end}</p>
-                <p>You'll continue to have access to your courses until this date.</p>
+              <p style="color: #3f3f46;">Hi ${name},</p>
+              <p style="color: #3f3f46; line-height: 1.6;">We're sorry to see you go. Your subscription has been cancelled.</p>
+              
+              <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+                <p style="margin: 0; color: #92400e;"><strong>Access Until:</strong> ${subscription_end}</p>
+                <p style="margin: 10px 0 0 0; color: #92400e;">You'll continue to have access to your courses until this date.</p>
               </div>
               
-              <p>If you change your mind, you can always resubscribe to regain access to all our courses and features.</p>
+              <p style="color: #3f3f46; line-height: 1.6;">If you change your mind, you can always resubscribe to regain access to all our courses and features.</p>
               
-              <p>We'd love to hear your feedback on how we can improve. Feel free to reply to this email with any suggestions.</p>
+              <p style="color: #3f3f46; line-height: 1.6;">We'd love to hear your feedback on how we can improve. Feel free to reply to this email with any suggestions.</p>
               
-              <p>Thank you for being part of our learning community!</p>
+              <p style="color: #3f3f46; line-height: 1.6;">Thank you for being part of our learning community!</p>
               
-              <p>Best regards,<br>The Learn Project Team</p>
+              <p style="color: #3f3f46; margin-top: 24px;">Best regards,<br><strong>The ACFE Team</strong></p>
             </div>
-            <div class="footer">
-              <p>© ${new Date().getFullYear()} Learn Project. All rights reserved.</p>
+            
+            <!-- Footer -->
+            <div style="text-align: center; padding: 24px;">
+              <div style="font-size: 18px; font-weight: 700; color: #3f3f3f; letter-spacing: 2px; margin-bottom: 8px;">ACFE</div>
+              <p style="font-size: 12px; color: #71717a; margin: 0;">
+                © ${currentYear} A Cloud for Everyone. All rights reserved.
+              </p>
             </div>
           </div>
         </body>

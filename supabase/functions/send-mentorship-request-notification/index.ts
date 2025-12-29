@@ -57,33 +57,41 @@ const handler = async (req: Request): Promise<Response> => {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #4a7c59 0%, #2d4a35 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-    <h1 style="color: white; margin: 0; font-size: 24px;">New Mentorship Request! 🎯</h1>
-  </div>
-  
-  <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
-    <p>Hello ${mentorProfile.full_name || 'Mentor'},</p>
-    
-    <p>Great news! <strong>${studentName}</strong> has requested to join your mentorship cohort.</p>
-    
-    <div style="background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4a7c59;">
-      <h3 style="margin-top: 0; color: #4a7c59;">About the Student</h3>
-      <p><strong>Bio:</strong> ${studentBio}</p>
-      <p><strong>Career Ambitions:</strong> ${careerAmbitions}</p>
-      <p><strong>Why They Chose You:</strong> ${reason}</p>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <!-- ACFE Text Header -->
+    <div style="text-align: center; margin-bottom: 0; background-color: #3f3f3f; padding: 24px; border-radius: 12px 12px 0 0;">
+      <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin-bottom: 4px;">ACFE</div>
+      <div style="font-size: 12px; color: #d4d4d4; letter-spacing: 2px; text-transform: uppercase;">A Cloud for Everyone</div>
     </div>
     
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="https://acloudforeveryone.org/mentor/cohort" style="background: #4a7c59; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">View Request</a>
+    <div style="background-color: #ffffff; padding: 32px; border-radius: 0 0 12px 12px;">
+      <h1 style="margin: 0 0 20px 0; font-size: 24px; color: #18181b;">New Mentorship Request! 🎯</h1>
+      
+      <p style="color: #3f3f46;">Hello ${mentorProfile.full_name || 'Mentor'},</p>
+      
+      <p style="color: #3f3f46; line-height: 1.6;">Great news! <strong>${studentName}</strong> has requested to join your mentorship cohort.</p>
+      
+      <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4a5d4a;">
+        <h3 style="margin-top: 0; color: #166534;">About the Student</h3>
+        <p style="color: #3f3f46; margin: 8px 0;"><strong>Bio:</strong> ${studentBio}</p>
+        <p style="color: #3f3f46; margin: 8px 0;"><strong>Career Ambitions:</strong> ${careerAmbitions}</p>
+        <p style="color: #3f3f46; margin: 8px 0;"><strong>Why They Chose You:</strong> ${reason}</p>
+      </div>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="https://acloudforeveryone.org/mentor/cohort" style="background: #4a5d4a; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">View Request</a>
+      </div>
     </div>
     
-    <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
-    
-    <p style="font-size: 12px; color: #999; text-align: center;">
-      © ${currentYear} A Cloud for Everyone. All rights reserved.<br>
-      <a href="mailto:contact@acloudforeveryone.org" style="color: #4a7c59;">contact@acloudforeveryone.org</a>
-    </p>
+    <!-- Footer -->
+    <div style="text-align: center; padding: 24px;">
+      <div style="font-size: 18px; font-weight: 700; color: #3f3f3f; letter-spacing: 2px; margin-bottom: 8px;">ACFE</div>
+      <p style="font-size: 12px; color: #71717a; margin: 0 0 8px 0;">
+        © ${currentYear} A Cloud for Everyone. All rights reserved.
+      </p>
+      <a href="mailto:contact@acloudforeveryone.org" style="color: #4a5d4a; font-size: 12px;">contact@acloudforeveryone.org</a>
+    </div>
   </div>
 </body>
 </html>

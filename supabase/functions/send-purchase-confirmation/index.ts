@@ -26,6 +26,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`[SEND-PURCHASE-CONFIRMATION] Sending to ${email} for course: ${courseTitle}`);
 
+    const currentYear = new Date().getFullYear();
+
     const subscriptionNote = isSubscription 
       ? `<p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
            This is a monthly subscription at $${amount.toFixed(2)}/month. You can cancel anytime from your dashboard.
@@ -33,7 +35,7 @@ const handler = async (req: Request): Promise<Response> => {
       : '';
 
     const emailResponse = await resend.emails.send({
-      from: "ACFE <noreply@resend.dev>",
+      from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
       to: [email],
       subject: `Welcome to ${courseTitle}! 🎉`,
       html: `
@@ -43,15 +45,18 @@ const handler = async (req: Request): Promise<Response> => {
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
         </head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f9fafb; margin: 0; padding: 40px 20px;">
-          <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-            
-            <div style="background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); padding: 40px 30px; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">Payment Confirmed! ✅</h1>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5;">
+          <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+            <!-- ACFE Text Header -->
+            <div style="text-align: center; margin-bottom: 0; background-color: #3f3f3f; padding: 24px; border-radius: 12px 12px 0 0;">
+              <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin-bottom: 4px;">ACFE</div>
+              <div style="font-size: 12px; color: #d4d4d4; letter-spacing: 2px; text-transform: uppercase;">A Cloud for Everyone</div>
             </div>
             
-            <div style="padding: 40px 30px;">
-              <p style="font-size: 18px; color: #111827; margin-bottom: 24px;">
+            <div style="background-color: #ffffff; padding: 40px 30px; border-radius: 0 0 12px 12px;">
+              <h1 style="margin: 0 0 24px 0; font-size: 24px; color: #18181b; text-align: center;">Payment Confirmed! ✅</h1>
+              
+              <p style="font-size: 18px; color: #3f3f46; margin-bottom: 24px;">
                 Hi ${firstName},
               </p>
               
@@ -69,8 +74,8 @@ const handler = async (req: Request): Promise<Response> => {
               </div>
               
               <div style="text-align: center; margin: 32px 0;">
-                <a href="https://acfe.lovable.app/dashboard" 
-                   style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                <a href="https://acloudforeveryone.org/dashboard" 
+                   style="display: inline-block; background-color: #4a5d4a; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
                   Start Learning Now →
                 </a>
               </div>
@@ -87,9 +92,11 @@ const handler = async (req: Request): Promise<Response> => {
               </p>
             </div>
             
-            <div style="background-color: #f9fafb; padding: 24px 30px; text-align: center; border-top: 1px solid #e5e7eb;">
-              <p style="font-size: 12px; color: #9ca3af; margin: 0;">
-                © ${new Date().getFullYear()} Africa Centre for Future Entrepreneurs. All rights reserved.
+            <!-- Footer -->
+            <div style="text-align: center; padding: 24px;">
+              <div style="font-size: 18px; font-weight: 700; color: #3f3f3f; letter-spacing: 2px; margin-bottom: 8px;">ACFE</div>
+              <p style="font-size: 12px; color: #71717a; margin: 0;">
+                © ${currentYear} A Cloud for Everyone. All rights reserved.
               </p>
             </div>
           </div>

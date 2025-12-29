@@ -71,52 +71,60 @@ const handler = async (req: Request): Promise<Response> => {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #4a7c59 0%, #2d4a35 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-    <h1 style="color: white; margin: 0; font-size: 24px;">${isAccepted ? 'Welcome to the Cohort! 🎉' : 'Update on Your Mentorship Request'}</h1>
-  </div>
-  
-  <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
-    <p>Hello ${studentName},</p>
-    
-    ${isAccepted ? `
-    <p>Great news! <strong>${mentorName}</strong> has accepted your mentorship request. You are now part of their cohort!</p>
-    
-    <div style="background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4a7c59;">
-      <h3 style="margin-top: 0; color: #4a7c59;">What's Next?</h3>
-      <ul style="padding-left: 20px;">
-        <li>Access the cohort community board to connect with your mentor and fellow mentees</li>
-        <li>Introduce yourself to the community</li>
-        <li>Start your learning journey!</li>
-      </ul>
-      ${message ? `<p style="margin-top: 15px;"><strong>Message from ${mentorName}:</strong> "${message}"</p>` : ''}
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <!-- ACFE Text Header -->
+    <div style="text-align: center; margin-bottom: 0; background-color: #3f3f3f; padding: 24px; border-radius: 12px 12px 0 0;">
+      <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin-bottom: 4px;">ACFE</div>
+      <div style="font-size: 12px; color: #d4d4d4; letter-spacing: 2px; text-transform: uppercase;">A Cloud for Everyone</div>
     </div>
     
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="https://acloudforeveryone.org/cohort/community" style="background: #4a7c59; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Join the Community</a>
+    <div style="background-color: #ffffff; padding: 32px; border-radius: 0 0 12px 12px;">
+      <h1 style="margin: 0 0 20px 0; font-size: 24px; color: #18181b;">${isAccepted ? 'Welcome to the Cohort! 🎉' : 'Update on Your Mentorship Request'}</h1>
+      
+      <p style="color: #3f3f46;">Hello ${studentName},</p>
+      
+      ${isAccepted ? `
+      <p style="color: #3f3f46; line-height: 1.6;">Great news! <strong>${mentorName}</strong> has accepted your mentorship request. You are now part of their cohort!</p>
+      
+      <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4a5d4a;">
+        <h3 style="margin-top: 0; color: #166534;">What's Next?</h3>
+        <ul style="padding-left: 20px; color: #3f3f46; line-height: 1.8;">
+          <li>Access the cohort community board to connect with your mentor and fellow mentees</li>
+          <li>Introduce yourself to the community</li>
+          <li>Start your learning journey!</li>
+        </ul>
+        ${message ? `<p style="margin-top: 15px; color: #3f3f46;"><strong>Message from ${mentorName}:</strong> "${message}"</p>` : ''}
+      </div>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="https://acloudforeveryone.org/cohort/community" style="background: #4a5d4a; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Join the Community</a>
+      </div>
+      ` : `
+      <p style="color: #3f3f46; line-height: 1.6;"><strong>${mentorName}</strong> has reviewed your mentorship request and recommends that you complete a course first to prepare for the mentorship program.</p>
+      
+      <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+        <h3 style="margin-top: 0; color: #92400e;">Recommended Course</h3>
+        <p style="color: #3f3f46;">Please complete: <strong>${courseTitle}</strong></p>
+        ${message ? `<p style="margin-top: 15px; color: #3f3f46;"><strong>Message from ${mentorName}:</strong> "${message}"</p>` : ''}
+      </div>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="https://acloudforeveryone.org/courses/${courseId}" style="background: #4a5d4a; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">View Course</a>
+      </div>
+      
+      <p style="color: #3f3f46; line-height: 1.6;">Once you complete the course, ${mentorName} will add you to their cohort!</p>
+      `}
     </div>
-    ` : `
-    <p><strong>${mentorName}</strong> has reviewed your mentorship request and recommends that you complete a course first to prepare for the mentorship program.</p>
     
-    <div style="background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4a7c59;">
-      <h3 style="margin-top: 0; color: #4a7c59;">Recommended Course</h3>
-      <p>Please complete: <strong>${courseTitle}</strong></p>
-      ${message ? `<p style="margin-top: 15px;"><strong>Message from ${mentorName}:</strong> "${message}"</p>` : ''}
+    <!-- Footer -->
+    <div style="text-align: center; padding: 24px;">
+      <div style="font-size: 18px; font-weight: 700; color: #3f3f3f; letter-spacing: 2px; margin-bottom: 8px;">ACFE</div>
+      <p style="font-size: 12px; color: #71717a; margin: 0 0 8px 0;">
+        © ${currentYear} A Cloud for Everyone. All rights reserved.
+      </p>
+      <a href="mailto:contact@acloudforeveryone.org" style="color: #4a5d4a; font-size: 12px;">contact@acloudforeveryone.org</a>
     </div>
-    
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="https://acloudforeveryone.org/courses/${courseId}" style="background: #4a7c59; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">View Course</a>
-    </div>
-    
-    <p>Once you complete the course, ${mentorName} will add you to their cohort!</p>
-    `}
-    
-    <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
-    
-    <p style="font-size: 12px; color: #999; text-align: center;">
-      © ${currentYear} A Cloud for Everyone. All rights reserved.<br>
-      <a href="mailto:contact@acloudforeveryone.org" style="color: #4a7c59;">contact@acloudforeveryone.org</a>
-    </p>
   </div>
 </body>
 </html>
