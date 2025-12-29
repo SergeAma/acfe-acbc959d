@@ -120,3 +120,6 @@ verify_jwt = false
 [functions.generate-spectrogram-token]
 verify_jwt = true
 
+[functions.test-acfe-sync]
+verify_jwt = false
+
