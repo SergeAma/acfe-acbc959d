@@ -52,9 +52,14 @@ const handler = async (req: Request): Promise<Response> => {
     }: CertificateEmailRequest = await req.json();
 
     console.log("Sending certificate email to:", student_email);
+    console.log("Mentor name received:", mentor_name);
 
-    const verificationUrl = "https://acloudforeveryone.org/verify-certificate";
-    const certificateUrl = `https://acloudforeveryone.org/certificate/${certificate_number}`;
+    // Use the production domain for assets
+    const baseUrl = "https://acloudforeveryone.org";
+    const logoUrl = `${baseUrl}/acfe-logo.png`;
+    
+    const verificationUrl = `${baseUrl}/verify-certificate`;
+    const certificateUrl = `${baseUrl}/certificate/${certificate_number}`;
     const formattedDate = new Date(issued_at).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -93,7 +98,7 @@ const handler = async (req: Request): Promise<Response> => {
             <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
               <!-- ACFE Logo Header -->
               <div style="text-align: center; margin-bottom: 24px;">
-                <img src="https://acloudforeveryone.org/acfe-logo.png" alt="A Cloud for Everyone" style="height: 60px; width: auto;" />
+                <img src="${logoUrl}" alt="A Cloud for Everyone" style="height: 60px; width: auto;" />
               </div>
               
               <!-- Header -->
@@ -156,7 +161,7 @@ const handler = async (req: Request): Promise<Response> => {
 
               <!-- Footer -->
               <div style="text-align: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid #e4e4e7;">
-                <img src="https://acloudforeveryone.org/acfe-logo.png" alt="A Cloud for Everyone" style="height: 40px; width: auto; margin-bottom: 12px;" />
+                <img src="${logoUrl}" alt="A Cloud for Everyone" style="height: 40px; width: auto; margin-bottom: 12px;" />
                 <p style="color: #71717a; font-size: 12px; margin: 0 0 8px 0;">
                   © ${new Date().getFullYear()} A Cloud for Everyone. All rights reserved.
                 </p>
