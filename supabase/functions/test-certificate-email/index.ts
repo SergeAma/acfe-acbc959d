@@ -48,8 +48,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Mentor name:", mentorName);
 
-    // ACFE Logo URL from production website for reliable email rendering
-    const logoUrl = "https://acloudforeveryone.org/acfe-logo-email.png";
+    // Text-based ACFE branding for reliable email rendering
     
     const baseUrl = "https://acloudforeveryone.org";
     const verificationUrl = `${baseUrl}/verify-certificate`;
@@ -84,9 +83,10 @@ const handler = async (req: Request): Promise<Response> => {
           </head>
           <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5;">
             <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-              <!-- ACFE Logo Header -->
-              <div style="text-align: center; margin-bottom: 24px; background-color: #ffffff; padding: 20px; border-radius: 12px;">
-                <img src="${logoUrl}" alt="A Cloud for Everyone" style="max-width: 200px; height: auto;" />
+              <!-- ACFE Text Header -->
+              <div style="text-align: center; margin-bottom: 24px; background-color: #3f3f3f; padding: 24px; border-radius: 12px;">
+                <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin-bottom: 4px;">ACFE</div>
+                <div style="font-size: 12px; color: #d4d4d4; letter-spacing: 2px; text-transform: uppercase;">A Cloud for Everyone</div>
               </div>
               
               <!-- Header -->
@@ -138,7 +138,7 @@ const handler = async (req: Request): Promise<Response> => {
 
               <!-- Footer -->
               <div style="text-align: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid #e4e4e7;">
-                <img src="${logoUrl}" alt="A Cloud for Everyone" style="max-width: 120px; height: auto; margin-bottom: 12px;" />
+                <div style="font-size: 18px; font-weight: 700; color: #3f3f3f; letter-spacing: 2px; margin-bottom: 8px;">ACFE</div>
                 <p style="color: #71717a; font-size: 12px; margin: 0 0 8px 0;">
                   © ${new Date().getFullYear()} A Cloud for Everyone. All rights reserved.
                 </p>
