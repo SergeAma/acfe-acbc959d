@@ -91,6 +91,11 @@ const handler = async (req: Request): Promise<Response> => {
           </head>
           <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5;">
             <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+              <!-- ACFE Logo Header -->
+              <div style="text-align: center; margin-bottom: 24px;">
+                <img src="https://acloudforeveryone.org/acfe-logo.png" alt="A Cloud for Everyone" style="height: 60px; width: auto;" />
+              </div>
+              
               <!-- Header -->
               <div style="text-align: center; margin-bottom: 32px;">
                 <h1 style="color: #18181b; margin: 0; font-size: 28px; font-weight: 700;">Congratulations, ${student_name}! 🎓</h1>
@@ -151,6 +156,7 @@ const handler = async (req: Request): Promise<Response> => {
 
               <!-- Footer -->
               <div style="text-align: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid #e4e4e7;">
+                <img src="https://acloudforeveryone.org/acfe-logo.png" alt="A Cloud for Everyone" style="height: 40px; width: auto; margin-bottom: 12px;" />
                 <p style="color: #71717a; font-size: 12px; margin: 0 0 8px 0;">
                   © ${new Date().getFullYear()} A Cloud for Everyone. All rights reserved.
                 </p>

@@ -46,9 +46,10 @@ export const VerifyCertificate = () => {
         .select(`
           certificate_number,
           issued_at,
+          course_id,
           courses!course_certificates_course_id_fkey(
             title,
-            profiles!courses_mentor_id_fkey(full_name)
+            mentor_id
           )
         `)
         .eq('certificate_number', certificateId.trim())
@@ -57,6 +58,22 @@ export const VerifyCertificate = () => {
       if (error) throw error;
 
       if (data) {
+        const course = data.courses as any;
+        
+        // Fetch mentor name using the public profiles view
+        let mentorName = 'Instructor';
+        if (course?.mentor_id) {
+          const { data: mentorData } = await supabase
+            .from('profiles_public')
+            .select('full_name')
+            .eq('id', course.mentor_id)
+            .single();
+          
+          if (mentorData?.full_name) {
+            mentorName = mentorData.full_name;
+          }
+        }
+
         // Fetch student name separately using student_id
         const { data: certWithStudent } = await supabase
           .from('course_certificates')
@@ -75,12 +92,11 @@ export const VerifyCertificate = () => {
           }
         }
 
-        const course = data.courses as any;
         setCertificateDetails({
           certificate_number: data.certificate_number,
           issued_at: data.issued_at,
           course_title: course?.title || 'Unknown Course',
-          mentor_name: course?.profiles?.full_name || 'Instructor',
+          mentor_name: mentorName,
           student_name: studentName,
         });
         setVerified(true);
