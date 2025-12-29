@@ -11,28 +11,22 @@ import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png
 import johannesburgLogo from '@/assets/johannesburg-logo.png';
 import spectrogramLogo from '@/assets/spectrogram-logo.png';
 import learnProjectLogo from '@/assets/learn-project-logo.png';
-
-const heroVideos = [
-  '/videos/hero-background.mp4',
-  '/videos/cape-town.mp4',
-  '/videos/lagos.mp4',
-  '/videos/johannesburg.mp4',
-];
-
+const heroVideos = ['/videos/hero-background.mp4', '/videos/cape-town.mp4', '/videos/lagos.mp4', '/videos/johannesburg.mp4'];
 export const Landing = () => {
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [nextVideoIndex, setNextVideoIndex] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const currentVideoRef = useRef<HTMLVideoElement>(null);
   const nextVideoRef = useRef<HTMLVideoElement>(null);
-
   const handleVideoEnded = useCallback(() => {
     setIsTransitioning(true);
-    
+
     // Start playing the next video
     nextVideoRef.current?.play();
-    
+
     // After transition, swap the videos
     setTimeout(() => {
       setCurrentVideoIndex(nextVideoIndex);
@@ -47,36 +41,17 @@ export const Landing = () => {
       nextVideoRef.current.load();
     }
   }, [nextVideoIndex]);
-
   return <div className="min-h-screen">
       <Navbar />
       
       {/* Hero Section */}
       <section className="relative overflow-hidden min-h-screen flex items-end pb-28">
         {/* Video Background - Current */}
-        <video
-          ref={currentVideoRef}
-          key={`current-${currentVideoIndex}`}
-          autoPlay
-          muted
-          playsInline
-          onEnded={handleVideoEnded}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
-            isTransitioning ? 'opacity-0' : 'opacity-100'
-          }`}
-        >
+        <video ref={currentVideoRef} key={`current-${currentVideoIndex}`} autoPlay muted playsInline onEnded={handleVideoEnded} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
           <source src={heroVideos[currentVideoIndex]} type="video/mp4" />
         </video>
         {/* Video Background - Next (preloaded) */}
-        <video
-          ref={nextVideoRef}
-          key={`next-${nextVideoIndex}`}
-          muted
-          playsInline
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
-            isTransitioning ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
+        <video ref={nextVideoRef} key={`next-${nextVideoIndex}`} muted playsInline className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${isTransitioning ? 'opacity-100' : 'opacity-0'}`}>
           <source src={heroVideos[nextVideoIndex]} type="video/mp4" />
         </video>
         {/* Dark Overlay */}
@@ -143,7 +118,7 @@ export const Landing = () => {
                   </div>
                   <h3 className="text-xl font-bold mb-3 group-hover:text-secondary transition-colors">Explore Courses</h3>
                   <p className="text-muted-foreground flex-1">
-                    Outcome-focused training designed to get you job-ready, not just traditional learning—practical skills that lead to real career opportunities
+                    Outcome-focused training designed to get you job-ready, not just traditional learning but practical skills that lead to real career opportunities
                   </p>
                 </CardContent>
               </Card>
