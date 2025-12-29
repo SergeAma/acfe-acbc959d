@@ -50,7 +50,7 @@ export const AdminSettings = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Access the backend database to view tables, manage data, and configure database settings.
               </p>
-              <Button variant="outline" onClick={() => window.open('https://lovable.dev', '_blank')}>
+              <Button variant="outline" disabled>
                 Open Backend
               </Button>
             </CardContent>
@@ -130,7 +130,7 @@ export const AdminSettings = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Backend</span>
-                  <span className="text-sm font-medium">Lovable Cloud</span>
+                  <span className="text-sm font-medium">ACFE Cloud</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Environment</span>
