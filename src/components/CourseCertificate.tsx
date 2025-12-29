@@ -1,6 +1,6 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, Share2, Linkedin, Twitter, Facebook, Link as LinkIcon } from 'lucide-react';
+import { Download, Share2, Linkedin, Twitter, Facebook, Link as LinkIcon, ExternalLink, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -10,6 +10,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import acfeLogo from '@/assets/acfe-logo.png';
+import spectrogramLogo from '@/assets/spectrogram-logo.png';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CourseCertificateProps {
   studentName: string;
@@ -17,6 +19,7 @@ interface CourseCertificateProps {
   mentorName: string;
   completionDate: string;
   certificateNumber: string;
+  skills?: string[];
 }
 
 export const CourseCertificate = ({
@@ -25,9 +28,43 @@ export const CourseCertificate = ({
   mentorName,
   completionDate,
   certificateNumber,
+  skills,
 }: CourseCertificateProps) => {
   const certificateRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const [isCreatingProfile, setIsCreatingProfile] = useState(false);
+
+  const handleCreateSpectrogramProfile = async () => {
+    setIsCreatingProfile(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-spectrogram-token', {
+        body: {
+          certificateId: certificateNumber,
+          courseName: courseName,
+          skills: skills,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.redirectUrl) {
+        window.open(data.redirectUrl, '_blank');
+        toast({
+          title: 'Redirecting to Spectrogram',
+          description: 'Complete your talent profile on our partner platform.',
+        });
+      }
+    } catch (error: any) {
+      console.error('Error creating Spectrogram profile:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate profile link. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCreatingProfile(false);
+    }
+  };
 
   const handleDownload = () => {
     if (!certificateRef.current) return;
@@ -175,6 +212,31 @@ export const CourseCertificate = ({
               <p className="text-xs">Certificate ID</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Spectrogram Profile CTA */}
+      <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-lg border border-primary/20">
+        <div className="flex flex-col md:flex-row items-center gap-4">
+          <img src={spectrogramLogo} alt="Spectrogram Consulting" className="h-12 w-auto" />
+          <div className="flex-1 text-center md:text-left">
+            <h3 className="font-semibold text-foreground">Join the Talent Network</h3>
+            <p className="text-sm text-muted-foreground">
+              Create your talent profile on Spectrogram Consulting and get discovered by top recruiters
+            </p>
+          </div>
+          <Button 
+            onClick={handleCreateSpectrogramProfile}
+            disabled={isCreatingProfile}
+            className="gap-2 bg-primary hover:bg-primary/90"
+          >
+            {isCreatingProfile ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ExternalLink className="h-4 w-4" />
+            )}
+            Create Profile
+          </Button>
         </div>
       </div>
 
