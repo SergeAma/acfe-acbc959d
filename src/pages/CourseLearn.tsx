@@ -452,19 +452,7 @@ export const CourseLearn = () => {
 
         <Separator />
 
-        {/* Content Display */}
-        {currentContent.content_type === 'text' && currentContent.text_content && (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="prose max-w-none">
-                {currentContent.text_content.split('\n').map((paragraph, idx) => (
-                  <p key={idx} className="mb-4">{paragraph}</p>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
+        {/* Video Content */}
         {currentContent.content_type === 'video' && currentContent.video_url && enrollmentId && (
           <Card>
             <CardContent className="pt-6">
@@ -496,6 +484,7 @@ export const CourseLearn = () => {
           </Card>
         )}
 
+        {/* File Content */}
         {currentContent.content_type === 'file' && currentContent.file_url && (
           <Card>
             <CardContent className="pt-6">
@@ -514,6 +503,24 @@ export const CourseLearn = () => {
                   </a>
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Text Content - Always show when available */}
+        {currentContent.text_content && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Lesson Description
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div 
+                className="prose prose-sm max-w-none text-foreground"
+                dangerouslySetInnerHTML={{ __html: currentContent.text_content }}
+              />
             </CardContent>
           </Card>
         )}
