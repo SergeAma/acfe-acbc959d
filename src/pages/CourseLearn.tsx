@@ -152,7 +152,7 @@ export const CourseLearn = () => {
         setStudentName(profileData.full_name);
       }
 
-      // Fetch course details with mentor name
+      // Fetch course details
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
         .select(`
@@ -161,17 +161,30 @@ export const CourseLearn = () => {
           description, 
           drip_enabled, 
           certificate_enabled,
-          profiles!courses_mentor_id_fkey(full_name)
+          mentor_id
         `)
         .eq('id', id)
         .single();
 
       if (courseError) throw courseError;
       
-      const mentorProfile = courseData.profiles as any;
+      // Fetch mentor name using public profiles view to bypass RLS
+      let mentorName = 'Instructor';
+      if (courseData.mentor_id) {
+        const { data: mentorData } = await supabase
+          .from('profiles_public')
+          .select('full_name')
+          .eq('id', courseData.mentor_id)
+          .single();
+        
+        if (mentorData?.full_name) {
+          mentorName = mentorData.full_name;
+        }
+      }
+      
       setCourse({
         ...courseData,
-        mentor_name: mentorProfile?.full_name || 'Instructor'
+        mentor_name: mentorName
       });
 
       // Check for existing certificate
