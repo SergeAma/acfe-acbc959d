@@ -118,7 +118,7 @@ export const CourseCertificate = ({
 
   const shareToTwitter = () => {
     const text = encodeURIComponent(
-      `🎓 Just earned my certificate in "${courseName}" from @ACFEAfrica!\n\nTaught by ${mentorName}\n\n#learning #certificate #ACFEcertified #upskilling`
+      `🎓 Just earned my certificate in "${courseName}" from @ACFEAfrica!\n\nTaught by ${mentorName}\n\n#learning #certificate #ACFEcertified #digitalskills`
     );
     const url = encodeURIComponent(getShareUrl());
     window.open(
