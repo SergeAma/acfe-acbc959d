@@ -48,6 +48,8 @@ import { CohortCommunity } from "./pages/CohortCommunity";
 import { PaymentSuccess } from "./pages/PaymentSuccess";
 import { AdminPricing } from "./pages/AdminPricing";
 import { AdminRevenue } from "./pages/AdminRevenue";
+import { PrivacyPolicy } from "./pages/PrivacyPolicy";
+import { TermsOfService } from "./pages/TermsOfService";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -69,6 +71,8 @@ const App = () => (
             <Route path="/verify-certificate" element={<VerifyCertificate />} />
             <Route path="/certificate/:certificateId" element={<CertificatePublic />} />
             <Route path="/startups" element={<SubmitIdea />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/accept-mentor-invite" element={<AcceptMentorInvite />} />
             <Route path="/courses" element={<Courses />} />

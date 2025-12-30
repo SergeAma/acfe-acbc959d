@@ -66,6 +66,23 @@ export const Footer = () => {
             </ul>
           </div>
 
+          {/* Legal */}
+          <div className="lg:hidden">
+            <h4 className="font-semibold text-foreground mb-4">Legal</h4>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link to="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Terms of Service
+                </Link>
+              </li>
+            </ul>
+          </div>
+
           {/* Contact */}
           <div>
             <h4 className="font-semibold text-foreground mb-4">Contact Us</h4>
@@ -102,10 +119,18 @@ export const Footer = () => {
         </div>
 
         {/* Copyright */}
-        <div className="border-t border-border mt-8 pt-8 text-center">
+        <div className="border-t border-border mt-8 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
             © {currentYear} A Cloud for Everyone. All rights reserved.
           </p>
+          <div className="hidden lg:flex items-center gap-6">
+            <Link to="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              Privacy Policy
+            </Link>
+            <Link to="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              Terms of Service
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

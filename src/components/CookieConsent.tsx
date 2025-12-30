@@ -38,10 +38,8 @@ export const CookieConsent = () => {
               We use cookies to enhance your experience and analyze site traffic. 
               By clicking "Accept", you consent to our use of cookies as described in our{" "}
               <a 
-                href="/privacy-policy" 
+                href="/privacy" 
                 className="text-primary hover:underline"
-                target="_blank"
-                rel="noopener noreferrer"
               >
                 Privacy Policy
               </a>.
