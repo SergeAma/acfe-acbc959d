@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { CookieConsent } from "@/components/CookieConsent";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Landing } from "./pages/Landing";
 import { Auth } from "./pages/Auth";
@@ -112,6 +113,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <CookieConsent />
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
