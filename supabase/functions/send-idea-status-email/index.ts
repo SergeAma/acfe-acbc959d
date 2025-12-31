@@ -133,6 +133,41 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { email, first_name, idea_title, new_status }: IdeaStatusEmailRequest = await req.json();
 
+    // Input validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || typeof email !== 'string' || !emailRegex.test(email) || email.length > 254) {
+      console.error("Invalid email provided:", email);
+      return new Response(
+        JSON.stringify({ error: "Invalid email address" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    
+    if (first_name && (typeof first_name !== 'string' || first_name.length > 100)) {
+      console.error("Invalid first_name provided");
+      return new Response(
+        JSON.stringify({ error: "Invalid name - must be under 100 characters" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    
+    if (idea_title && (typeof idea_title !== 'string' || idea_title.length > 500)) {
+      console.error("Invalid idea_title provided");
+      return new Response(
+        JSON.stringify({ error: "Invalid idea title - must be under 500 characters" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    
+    const validStatuses = ['pending', 'under_review', 'approved', 'rejected'];
+    if (!new_status || typeof new_status !== 'string' || !validStatuses.includes(new_status)) {
+      console.error("Invalid status provided:", new_status);
+      return new Response(
+        JSON.stringify({ error: "Invalid status" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     console.log("Sending idea status email to:", email, "Status:", new_status);
 
     const { html, subject } = getStatusEmailContent(first_name, idea_title, new_status);
