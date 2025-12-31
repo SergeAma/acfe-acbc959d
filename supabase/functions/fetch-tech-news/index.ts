@@ -14,16 +14,29 @@ interface NewsArticle {
 
 // RSS feeds focused on African digital skills, education, and tech innovation
 const RSS_FEEDS = [
+  // Tech News Sources
   { url: 'https://techcrunch.com/tag/africa/feed/', source: 'TechCrunch Africa', category: 'INNOVATION' },
   { url: 'https://disrupt-africa.com/feed/', source: 'Disrupt Africa', category: 'INNOVATION' },
-  { url: 'https://www.itnewsafrica.com/feed/', source: 'IT News Africa', category: 'DIGITAL SKILLS' },
   { url: 'https://techcabal.com/feed/', source: 'TechCabal', category: 'INNOVATION' },
   { url: 'https://ventureburn.com/feed/', source: 'Ventureburn', category: 'INNOVATION' },
+  { url: 'https://www.techinafrica.com/feed/', source: 'Tech in Africa', category: 'INNOVATION' },
+  { url: 'https://www.itnewsafrica.com/feed/', source: 'IT News Africa', category: 'DIGITAL SKILLS' },
   { url: 'https://techpoint.africa/feed/', source: 'TechPoint Africa', category: 'DIGITAL SKILLS' },
   { url: 'https://it-online.co.za/feed/', source: 'IT-Online Africa', category: 'DIGITAL SKILLS' },
+  
+  // Business & Economy
+  { url: 'https://african.business/feed/', source: 'African Business', category: 'PARTNERSHIPS' },
   { url: 'https://www.economist.com/middle-east-and-africa/rss.xml', source: 'The Economist', category: 'PARTNERSHIPS' },
   { url: 'https://www.jeuneafrique.com/feed/', source: 'Jeune Afrique', category: 'PARTNERSHIPS' },
-  { url: 'https://www.techinafrica.com/feed/', source: 'Tech in Africa', category: 'INNOVATION' },
+  
+  // Development & Funding Organizations
+  { url: 'https://mastercardfdn.org/feed/', source: 'Mastercard Foundation', category: 'PARTNERSHIPS' },
+  { url: 'https://blogs.worldbank.org/digital-development/rss.xml', source: 'World Bank Digital', category: 'DIGITAL SKILLS' },
+  { url: 'https://www.afdb.org/en/rss-feeds', source: 'African Development Bank', category: 'PARTNERSHIPS' },
+  
+  // Digital Africa & UNESCO
+  { url: 'https://digital-africa.co/feed/', source: 'Digital Africa', category: 'INNOVATION' },
+  { url: 'https://en.unesco.org/news/rss.xml', source: 'UNESCO', category: 'DIGITAL SKILLS' },
 ];
 
 // Decode HTML entities
