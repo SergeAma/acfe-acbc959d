@@ -18,31 +18,36 @@ interface NewsArticle {
 
 const NEWS_CATEGORIES = ['ALL NEWS', 'DIGITAL SKILLS', 'INNOVATION', 'PARTNERSHIPS'] as const;
 
-// Generate placeholder image based on article title
-const getPlaceholderImage = (title: string, index: number) => {
-  const colors = [
-    '3d4f3d', // sage
-    '4a5568', // slate
-    '5c4033', // brown
-    '2d3748', // dark slate
-    '4a3728', // coffee
-    '3d5a3d', // olive
-  ];
-  const color = colors[index % colors.length];
-  return `https://images.unsplash.com/photo-${1500000000000 + (title.length * 1000000)}?w=600&h=400&fit=crop&auto=format`;
+// Curated Unsplash images for tech/Africa news
+const CATEGORY_IMAGES = {
+  'DIGITAL SKILLS': [
+    'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&h=600&fit=crop', // coding classroom
+    'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=600&fit=crop', // team collaboration
+    'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&h=600&fit=crop', // laptop coding
+    'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=600&fit=crop', // digital workspace
+    'https://images.unsplash.com/photo-1573164713988-8665fc963095?w=800&h=600&fit=crop', // women in tech
+  ],
+  'INNOVATION': [
+    'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&h=600&fit=crop', // robot hand
+    'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=600&fit=crop', // circuit board
+    'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&h=600&fit=crop', // digital globe
+    'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&h=600&fit=crop', // startup office
+    'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800&h=600&fit=crop', // tech city
+  ],
+  'PARTNERSHIPS': [
+    'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=800&h=600&fit=crop', // handshake meeting
+    'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&h=600&fit=crop', // team meeting
+    'https://images.unsplash.com/photo-1560472355-536de3962603?w=800&h=600&fit=crop', // business collaboration
+    'https://images.unsplash.com/photo-1573167243872-43c6433b9d40?w=800&h=600&fit=crop', // conference
+    'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&h=600&fit=crop', // board meeting
+  ],
 };
 
-// Fallback gradient backgrounds
-const getGradientBg = (index: number) => {
-  const gradients = [
-    'from-sage-800/90 to-sage-900/95',
-    'from-stone-700/90 to-stone-800/95',
-    'from-olive-800/90 to-olive-900/95',
-    'from-neutral-700/90 to-neutral-800/95',
-    'from-zinc-700/90 to-zinc-800/95',
-    'from-slate-700/90 to-slate-800/95',
-  ];
-  return gradients[index % gradients.length];
+// Get image for article based on category and index
+const getArticleImage = (category: string, index: number) => {
+  const categoryKey = category as keyof typeof CATEGORY_IMAGES;
+  const images = CATEGORY_IMAGES[categoryKey] || CATEGORY_IMAGES['INNOVATION'];
+  return images[index % images.length];
 };
 
 export const TechNewsSection = () => {
@@ -188,14 +193,20 @@ export const TechNewsSection = () => {
       target="_blank"
       rel="noopener noreferrer"
       className={`group relative overflow-hidden rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-xl ${
-        isFeatured ? 'col-span-2 row-span-2' : ''
+        isFeatured ? 'col-span-1 md:col-span-2 row-span-1 md:row-span-2' : ''
       }`}
     >
-      {/* Background gradient overlay */}
-      <div className={`absolute inset-0 bg-gradient-to-t ${getGradientBg(index)}`} />
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
+        style={{ backgroundImage: `url(${getArticleImage(article.category || 'INNOVATION', index)})` }}
+      />
+      
+      {/* Dark gradient overlay for text readability */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
       
       {/* Decorative pattern overlay */}
-      <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[length:20px_20px]" />
+      <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.2)_1px,transparent_1px)] bg-[length:20px_20px]" />
       
       {/* Content */}
       <div className={`relative h-full flex flex-col justify-end ${isFeatured ? 'p-6 sm:p-8 min-h-[320px] sm:min-h-[400px]' : 'p-4 sm:p-5 min-h-[180px] sm:min-h-[200px]'}`}>
