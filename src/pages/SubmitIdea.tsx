@@ -222,13 +222,13 @@ export function SubmitIdea() {
       
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="relative py-16 bg-gradient-to-br from-primary/10 via-background to-secondary/10">
+        <section className="relative py-10 md:py-16 bg-gradient-to-br from-primary/10 via-background to-secondary/10">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center">
-              <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3 md:mb-4">
                 Submit Your Startup Idea
               </h1>
-              <p className="text-lg text-muted-foreground">
+              <p className="text-base sm:text-lg text-muted-foreground px-2">
                 Got a vision that could transform Africa? We want to hear from you.
               </p>
             </div>
@@ -236,23 +236,23 @@ export function SubmitIdea() {
         </section>
 
         {/* Main Content */}
-        <section className="py-16 relative">
-          {/* Auth Gate Overlay for non-authenticated users */}
-          {!user && <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/60 backdrop-blur-sm">
-              <Card className="max-w-md mx-4 border border-border shadow-lg">
-                <CardContent className="p-8 text-center space-y-4">
-                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                    <Rocket className="h-8 w-8 text-primary" />
+        <section className="py-8 md:py-16 relative">
+          {/* Auth Gate Overlay for non-authenticated users - fixed to viewport center */}
+          {!user && <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+              <Card className="max-w-md mx-4 w-full border border-border shadow-lg">
+                <CardContent className="p-6 sm:p-8 text-center space-y-4">
+                  <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                    <Rocket className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
                   </div>
-                  <h2 className="text-xl font-bold text-foreground">Ready to Submit Your Idea?</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-foreground">Ready to Submit Your Idea?</h2>
                   <p className="text-muted-foreground text-sm">
                     Create an account or sign in to submit your startup idea and get access to mentorship and funding opportunities.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-                    <Button asChild className="rounded-full">
+                    <Button asChild className="rounded-full w-full sm:w-auto">
                       <Link to="/auth">Sign Up</Link>
                     </Button>
-                    <Button variant="outline" asChild className="rounded-full">
+                    <Button variant="outline" asChild className="rounded-full w-full sm:w-auto">
                       <Link to="/auth">Sign In</Link>
                     </Button>
                   </div>
@@ -263,15 +263,15 @@ export function SubmitIdea() {
           {/* Blurred content for non-authenticated users */}
           <div className={!user ? 'blur-sm pointer-events-none select-none' : ''}>
           <div className="container mx-auto px-4">
-            <div className="grid lg:grid-cols-5 gap-12 max-w-6xl mx-auto">
+            <div className="grid lg:grid-cols-5 gap-8 lg:gap-12 max-w-6xl mx-auto">
               
               {/* Left Column - Info */}
-              <div className="lg:col-span-2">
-                <div className="bg-foreground text-background rounded-2xl p-8 sticky top-24">
-                  <h2 className="text-2xl font-bold mb-4">
+              <div className="lg:col-span-2 order-2 lg:order-1">
+                <div className="bg-foreground text-background rounded-2xl p-6 sm:p-8 lg:sticky lg:top-24">
+                  <h2 className="text-xl sm:text-2xl font-bold mb-4">
                     Innovator Incubator
                   </h2>
-                  <p className="text-background/80 mb-6">
+                  <p className="text-background/80 mb-6 text-sm sm:text-base">
                     We believe in Africa's next generation of tech leaders. If you have an idea that could 
                     make a difference, we want to support you on your journey.
                   </p>
@@ -322,9 +322,9 @@ export function SubmitIdea() {
               </div>
 
               {/* Right Column - Form */}
-              <div className="lg:col-span-3">
-                <div className="bg-card rounded-2xl p-8 shadow-sm border border-border">
-                  <h2 className="text-2xl font-bold text-foreground mb-6">
+              <div className="lg:col-span-3 order-1 lg:order-2">
+                <div className="bg-card rounded-2xl p-5 sm:p-8 shadow-sm border border-border">
+                  <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-4 sm:mb-6">
                     Tell Us About Your Idea
                   </h2>
                   
