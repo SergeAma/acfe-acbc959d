@@ -10,31 +10,62 @@ import {
 import { cn } from "@/lib/utils";
 
 const COUNTRY_CODES = [
-  { code: "+234", country: "NG", name: "Nigeria" },
-  { code: "+27", country: "ZA", name: "South Africa" },
-  { code: "+254", country: "KE", name: "Kenya" },
-  { code: "+233", country: "GH", name: "Ghana" },
-  { code: "+20", country: "EG", name: "Egypt" },
-  { code: "+212", country: "MA", name: "Morocco" },
-  { code: "+256", country: "UG", name: "Uganda" },
-  { code: "+255", country: "TZ", name: "Tanzania" },
-  { code: "+251", country: "ET", name: "Ethiopia" },
-  { code: "+237", country: "CM", name: "Cameroon" },
-  { code: "+225", country: "CI", name: "Côte d'Ivoire" },
-  { code: "+221", country: "SN", name: "Senegal" },
-  { code: "+263", country: "ZW", name: "Zimbabwe" },
-  { code: "+260", country: "ZM", name: "Zambia" },
-  { code: "+250", country: "RW", name: "Rwanda" },
-  { code: "+267", country: "BW", name: "Botswana" },
-  { code: "+264", country: "NA", name: "Namibia" },
-  { code: "+265", country: "MW", name: "Malawi" },
-  { code: "+258", country: "MZ", name: "Mozambique" },
-  { code: "+226", country: "BF", name: "Burkina Faso" },
-  { code: "+223", country: "ML", name: "Mali" },
-  { code: "+227", country: "NE", name: "Niger" },
+  // African Countries (alphabetical by name)
+  { code: "+213", country: "DZ", name: "Algeria" },
+  { code: "+244", country: "AO", name: "Angola" },
   { code: "+229", country: "BJ", name: "Benin" },
-  { code: "+228", country: "TG", name: "Togo" },
+  { code: "+267", country: "BW", name: "Botswana" },
+  { code: "+226", country: "BF", name: "Burkina Faso" },
+  { code: "+257", country: "BI", name: "Burundi" },
+  { code: "+238", country: "CV", name: "Cabo Verde" },
+  { code: "+237", country: "CM", name: "Cameroon" },
+  { code: "+236", country: "CF", name: "Central African Republic" },
+  { code: "+235", country: "TD", name: "Chad" },
+  { code: "+269", country: "KM", name: "Comoros" },
+  { code: "+243", country: "CD", name: "Congo (DRC)" },
+  { code: "+242", country: "CG", name: "Congo (Republic)" },
+  { code: "+225", country: "CI", name: "Côte d'Ivoire" },
+  { code: "+253", country: "DJ", name: "Djibouti" },
+  { code: "+20", country: "EG", name: "Egypt" },
+  { code: "+240", country: "GQ", name: "Equatorial Guinea" },
+  { code: "+291", country: "ER", name: "Eritrea" },
+  { code: "+268", country: "SZ", name: "Eswatini" },
+  { code: "+251", country: "ET", name: "Ethiopia" },
+  { code: "+241", country: "GA", name: "Gabon" },
+  { code: "+220", country: "GM", name: "Gambia" },
+  { code: "+233", country: "GH", name: "Ghana" },
+  { code: "+224", country: "GN", name: "Guinea" },
+  { code: "+245", country: "GW", name: "Guinea-Bissau" },
+  { code: "+254", country: "KE", name: "Kenya" },
+  { code: "+266", country: "LS", name: "Lesotho" },
+  { code: "+231", country: "LR", name: "Liberia" },
+  { code: "+218", country: "LY", name: "Libya" },
+  { code: "+261", country: "MG", name: "Madagascar" },
+  { code: "+265", country: "MW", name: "Malawi" },
+  { code: "+223", country: "ML", name: "Mali" },
+  { code: "+222", country: "MR", name: "Mauritania" },
   { code: "+230", country: "MU", name: "Mauritius" },
+  { code: "+212", country: "MA", name: "Morocco" },
+  { code: "+258", country: "MZ", name: "Mozambique" },
+  { code: "+264", country: "NA", name: "Namibia" },
+  { code: "+227", country: "NE", name: "Niger" },
+  { code: "+234", country: "NG", name: "Nigeria" },
+  { code: "+250", country: "RW", name: "Rwanda" },
+  { code: "+239", country: "ST", name: "São Tomé and Príncipe" },
+  { code: "+221", country: "SN", name: "Senegal" },
+  { code: "+248", country: "SC", name: "Seychelles" },
+  { code: "+232", country: "SL", name: "Sierra Leone" },
+  { code: "+252", country: "SO", name: "Somalia" },
+  { code: "+27", country: "ZA", name: "South Africa" },
+  { code: "+211", country: "SS", name: "South Sudan" },
+  { code: "+249", country: "SD", name: "Sudan" },
+  { code: "+255", country: "TZ", name: "Tanzania" },
+  { code: "+228", country: "TG", name: "Togo" },
+  { code: "+216", country: "TN", name: "Tunisia" },
+  { code: "+256", country: "UG", name: "Uganda" },
+  { code: "+260", country: "ZM", name: "Zambia" },
+  { code: "+263", country: "ZW", name: "Zimbabwe" },
+  // International
   { code: "+1", country: "US", name: "United States" },
   { code: "+44", country: "GB", name: "United Kingdom" },
   { code: "+49", country: "DE", name: "Germany" },
@@ -69,7 +100,7 @@ export function PhoneInput({ value, onChange, className, id, required }: PhoneIn
         return { countryCode: c.code, number: phone.slice(c.code.length) };
       }
     }
-    return { countryCode: "+234", number: phone.replace(/^\+/, "") };
+    return { countryCode: "+254", number: phone.replace(/^\+/, "") }; // Default to Kenya
   };
 
   const { countryCode, number } = parsePhone(value);
@@ -96,15 +127,15 @@ export function PhoneInput({ value, onChange, className, id, required }: PhoneIn
   return (
     <div className={cn("flex gap-2", className)}>
       <Select value={selectedCode} onValueChange={handleCodeChange}>
-        <SelectTrigger className="w-[110px] shrink-0">
+        <SelectTrigger className="w-[180px] shrink-0">
           <SelectValue>
-            {COUNTRY_CODES.find(c => c.code === selectedCode)?.country || "NG"} {selectedCode}
+            {COUNTRY_CODES.find(c => c.code === selectedCode)?.name || "Kenya"} ({selectedCode})
           </SelectValue>
         </SelectTrigger>
         <SelectContent className="bg-card max-h-[300px]">
           {COUNTRY_CODES.map((c) => (
             <SelectItem key={c.code} value={c.code}>
-              {c.country} {c.code}
+              {c.name} ({c.code})
             </SelectItem>
           ))}
         </SelectContent>
