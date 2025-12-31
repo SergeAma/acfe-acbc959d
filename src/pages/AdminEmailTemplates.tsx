@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { Loader2, Plus, Trash2, Edit, Mail, Eye, Send } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
+import { sanitizeHtml } from '@/lib/sanitize-html';
 
 interface EmailTemplate {
   id: string;
@@ -356,7 +357,7 @@ export const AdminEmailTemplates = () => {
                 <div className="bg-muted px-4 py-2 text-sm font-medium border-b">Email Preview (with sample data)</div>
                 <div 
                   className="p-4 bg-white overflow-auto max-h-[60vh]"
-                  dangerouslySetInnerHTML={{ __html: previewTemplate ? getPreviewContent(previewTemplate) : '' }}
+                  dangerouslySetInnerHTML={{ __html: previewTemplate ? sanitizeHtml(getPreviewContent(previewTemplate)) : '' }}
                 />
               </div>
             </div>
