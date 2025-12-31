@@ -11,12 +11,24 @@ import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 
 interface NewsArticle {
   title: string;
-  link: string;
-  pubDate: string;
+  url: string;
+  publishedAt: string;
   description: string;
   source: string;
-  category?: string;
+  imageUrl: string | null;
+  category: 'digital_skills' | 'innovation' | 'partnerships' | 'general';
+  priority: number;
 }
+
+const getCategoryLabel = (category: string): string => {
+  const labels: Record<string, string> = {
+    digital_skills: 'DIGITAL SKILLS',
+    innovation: 'INNOVATION',
+    partnerships: 'PARTNERSHIPS',
+    general: 'GENERAL',
+  };
+  return labels[category] || 'GENERAL';
+};
 
 interface CuratedNews {
   id: string;
@@ -124,17 +136,17 @@ export default function AdminNewsCuration() {
 
   // Sort articles: pinned first, then by date
   const sortedArticles = [...articles].sort((a, b) => {
-    const aStatus = getCuratedStatus(a.link);
-    const bStatus = getCuratedStatus(b.link);
+    const aStatus = getCuratedStatus(a.url);
+    const bStatus = getCuratedStatus(b.url);
     
     if (aStatus?.is_pinned && !bStatus?.is_pinned) return -1;
     if (!aStatus?.is_pinned && bStatus?.is_pinned) return 1;
     
-    return new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime();
+    return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
   });
 
   // Filter out hidden for display count
-  const visibleCount = sortedArticles.filter(a => !getCuratedStatus(a.link)?.is_hidden).length;
+  const visibleCount = sortedArticles.filter(a => !getCuratedStatus(a.url)?.is_hidden).length;
   const pinnedCount = curatedData?.filter(c => c.is_pinned).length || 0;
   const hiddenCount = curatedData?.filter(c => c.is_hidden).length || 0;
 
@@ -204,7 +216,7 @@ export default function AdminNewsCuration() {
             ) : (
               <div className="space-y-3">
                 {sortedArticles.map((article, index) => {
-                  const status = getCuratedStatus(article.link);
+                  const status = getCuratedStatus(article.url);
                   const isPinned = status?.is_pinned || false;
                   const isHidden = status?.is_hidden || false;
 
@@ -230,7 +242,7 @@ export default function AdminNewsCuration() {
                             </Badge>
                           )}
                           <Badge variant="outline" className="text-xs">
-                            {article.category || 'DIGITAL SKILLS'}
+                            {getCategoryLabel(article.category)}
                           </Badge>
                           <span className="text-xs text-muted-foreground">
                             {article.source}
@@ -248,7 +260,7 @@ export default function AdminNewsCuration() {
                           size="sm"
                           variant={isPinned ? 'default' : 'outline'}
                           onClick={() => toggleMutation.mutate({
-                            articleUrl: article.link,
+                            articleUrl: article.url,
                             articleTitle: article.title,
                             action: isPinned ? 'unpin' : 'pin',
                           })}
@@ -260,7 +272,7 @@ export default function AdminNewsCuration() {
                           size="sm"
                           variant={isHidden ? 'destructive' : 'outline'}
                           onClick={() => toggleMutation.mutate({
-                            articleUrl: article.link,
+                            articleUrl: article.url,
                             articleTitle: article.title,
                             action: isHidden ? 'unhide' : 'hide',
                           })}
@@ -269,7 +281,7 @@ export default function AdminNewsCuration() {
                           {isHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                         </Button>
                         <a
-                          href={article.link}
+                          href={article.url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-2 text-muted-foreground hover:text-foreground"
