@@ -23,6 +23,7 @@ const RSS_FEEDS = [
   { url: 'https://www.itnewsafrica.com/feed/', source: 'IT News Africa', category: 'DIGITAL SKILLS' },
   { url: 'https://techpoint.africa/feed/', source: 'TechPoint Africa', category: 'DIGITAL SKILLS' },
   { url: 'https://it-online.co.za/feed/', source: 'IT-Online Africa', category: 'DIGITAL SKILLS' },
+  { url: 'https://techafricanews.com/feed/', source: 'Tech Africa News', category: 'DIGITAL SKILLS' },
   
   // Business & Economy
   { url: 'https://african.business/feed/', source: 'African Business', category: 'PARTNERSHIPS' },
