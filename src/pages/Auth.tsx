@@ -32,7 +32,27 @@ const baseAuthSchema = z.object({
 });
 
 const mentorAuthSchema = baseAuthSchema.extend({
-  mentorBio: z.string().min(50, 'Please provide at least 50 characters describing your experience').max(2000),
+  mentorBio: z.string()
+    .min(50, 'Please provide at least 50 characters describing your experience')
+    .max(2000, 'Bio must be less than 2000 characters')
+    .refine((val) => {
+      const lowerVal = val.toLowerCase();
+      const hasRelevantContent = 
+        lowerVal.includes('experience') || 
+        lowerVal.includes('work') || 
+        lowerVal.includes('mentor') || 
+        lowerVal.includes('teach') || 
+        lowerVal.includes('year') ||
+        lowerVal.includes('skill') ||
+        lowerVal.includes('help') ||
+        lowerVal.includes('guide') ||
+        lowerVal.includes('career') ||
+        lowerVal.includes('professional') ||
+        lowerVal.includes('industry') ||
+        lowerVal.includes('student') ||
+        lowerVal.includes('learn');
+      return hasRelevantContent;
+    }, { message: 'Please include details about your experience, skills, or mentoring goals' }),
   portfolioLinks: z.string().max(1000).optional(),
 });
 
