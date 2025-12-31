@@ -24,6 +24,24 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { email, first_name }: MentorRequestConfirmationRequest = await req.json();
     
+    // Input validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || typeof email !== 'string' || !emailRegex.test(email) || email.length > 254) {
+      console.error("Invalid email provided:", email);
+      return new Response(
+        JSON.stringify({ error: "Invalid email address" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    
+    if (first_name && (typeof first_name !== 'string' || first_name.length > 100)) {
+      console.error("Invalid first_name provided");
+      return new Response(
+        JSON.stringify({ error: "Invalid name - must be under 100 characters" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    
     console.log(`Sending mentor request confirmation email to ${email}`);
 
     const currentYear = new Date().getFullYear();

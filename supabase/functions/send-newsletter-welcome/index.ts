@@ -23,6 +23,16 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { email }: NewsletterWelcomeRequest = await req.json();
     
+    // Input validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || typeof email !== 'string' || !emailRegex.test(email) || email.length > 254) {
+      console.error("Invalid email provided:", email);
+      return new Response(
+        JSON.stringify({ error: "Invalid email address" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    
     console.log(`Sending newsletter welcome email to ${email}`);
 
     const currentYear = new Date().getFullYear();

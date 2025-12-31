@@ -44,6 +44,42 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { email, first_name, role, wants_mentor, user_id }: WelcomeEmailRequest = await req.json();
     
+    // Input validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || typeof email !== 'string' || !emailRegex.test(email) || email.length > 254) {
+      console.error("Invalid email provided:", email);
+      return new Response(
+        JSON.stringify({ error: "Invalid email address" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    
+    if (first_name && (typeof first_name !== 'string' || first_name.length > 100)) {
+      console.error("Invalid first_name provided");
+      return new Response(
+        JSON.stringify({ error: "Invalid name - must be under 100 characters" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    
+    const validRoles = ['student', 'mentor'];
+    if (!role || typeof role !== 'string' || !validRoles.includes(role)) {
+      console.error("Invalid role provided:", role);
+      return new Response(
+        JSON.stringify({ error: "Invalid role" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    
+    // Validate user_id format if provided (UUID format)
+    if (user_id && (typeof user_id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user_id))) {
+      console.error("Invalid user_id provided:", user_id);
+      return new Response(
+        JSON.stringify({ error: "Invalid user ID format" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    
     console.log(`Sending welcome email to ${email} (${role}, wants_mentor: ${wants_mentor})`);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
