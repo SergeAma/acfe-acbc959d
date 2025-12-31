@@ -8,31 +8,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 interface NewsArticle {
   title: string;
-  url: string;
-  publishedAt: string;
+  link: string;
+  pubDate: string;
   description: string;
   source: string;
-  imageUrl: string | null;
-  category: 'digital_skills' | 'innovation' | 'partnerships' | 'general';
-  priority: number;
+  category?: string;
 }
-
-const NEWS_CATEGORIES = [
-  { key: 'ALL NEWS', value: null },
-  { key: 'DIGITAL SKILLS', value: 'digital_skills' },
-  { key: 'INNOVATION', value: 'innovation' },
-  { key: 'PARTNERSHIPS', value: 'partnerships' },
-] as const;
-
-const getCategoryLabel = (category: string): string => {
-  const labels: Record<string, string> = {
-    digital_skills: 'DIGITAL SKILLS',
-    innovation: 'INNOVATION',
-    partnerships: 'PARTNERSHIPS',
-    general: 'GENERAL',
-  };
-  return labels[category] || 'GENERAL';
-};
+const NEWS_CATEGORIES = ['ALL NEWS', 'DIGITAL SKILLS', 'INNOVATION', 'PARTNERSHIPS'] as const;
 export const TechNewsSection = () => {
   const [activeCategory, setActiveCategory] = useState<string>('ALL NEWS');
   const [email, setEmail] = useState('');
@@ -140,28 +122,25 @@ export const TechNewsSection = () => {
     return curatedData?.find(c => c.article_url === articleUrl);
   };
 
-  // Get active category value for filtering
-  const activeCategoryValue = NEWS_CATEGORIES.find(c => c.key === activeCategory)?.value;
-
   // Filter articles based on active category and curated settings (hide hidden articles)
   const filteredArticles = useMemo(() => {
-    let filtered = allArticles.filter(article => !getCuratedStatus(article.url)?.is_hidden);
+    let filtered = allArticles.filter(article => !getCuratedStatus(article.link)?.is_hidden);
     
-    if (activeCategoryValue !== null) {
-      filtered = filtered.filter(article => article.category === activeCategoryValue);
+    if (activeCategory !== 'ALL NEWS') {
+      filtered = filtered.filter(article => article.category === activeCategory);
     }
     
     // Sort: pinned articles first, then by date
     return filtered.sort((a, b) => {
-      const aStatus = getCuratedStatus(a.url);
-      const bStatus = getCuratedStatus(b.url);
+      const aStatus = getCuratedStatus(a.link);
+      const bStatus = getCuratedStatus(b.link);
       
       if (aStatus?.is_pinned && !bStatus?.is_pinned) return -1;
       if (!aStatus?.is_pinned && bStatus?.is_pinned) return 1;
       
-      return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+      return new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime();
     });
-  }, [allArticles, activeCategoryValue, curatedData]);
+  }, [allArticles, activeCategory, curatedData]);
   const featuredArticle = filteredArticles[0];
   const listArticles = filteredArticles.slice(1);
   return <section className="py-12 sm:py-20 bg-background">
@@ -169,11 +148,11 @@ export const TechNewsSection = () => {
         {/* Header */}
         <div className="mb-6 sm:mb-8">
           <span className="text-xs font-semibold tracking-wider text-primary uppercase mb-2 block">
-            Africa Digital Skills News
+            Latest Insights
           </span>
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 sm:gap-4">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground leading-tight">
-              Digital Skills & Innovation<br className="hidden md:block" /> Across Africa
+              Africa Digital News<br className="hidden md:block" /> & Innovation
             </h2>
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <RefreshCw className="h-4 w-4" />
@@ -184,8 +163,8 @@ export const TechNewsSection = () => {
 
         {/* Category Tabs */}
         <div className="flex flex-wrap gap-2 mb-6 sm:mb-8">
-          {NEWS_CATEGORIES.map(category => <button key={category.key} onClick={() => setActiveCategory(category.key)} className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors ${activeCategory === category.key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-              {category.key}
+          {NEWS_CATEGORIES.map(category => <button key={category} onClick={() => setActiveCategory(category)} className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors ${activeCategory === category ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+              {category}
             </button>)}
         </div>
 
@@ -214,10 +193,10 @@ export const TechNewsSection = () => {
             {featuredArticle && <div className="bg-card rounded-lg p-4 sm:p-6 flex flex-col h-full border border-border">
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                   <span className="bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-md">
-                    {getCategoryLabel(featuredArticle.category)}
+                    {featuredArticle.category || 'DIGITAL SKILLS'}
                   </span>
                   <span className="text-muted-foreground text-sm">
-                    {formatDate(featuredArticle.publishedAt)}
+                    {formatDate(featuredArticle.pubDate)}
                   </span>
                 </div>
                 
@@ -233,7 +212,7 @@ export const TechNewsSection = () => {
                   <span className="text-sm font-medium text-muted-foreground">
                     {featuredArticle.source}
                   </span>
-                  <a href={featuredArticle.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 font-medium text-sm flex items-center gap-2 transition-colors">
+                  <a href={featuredArticle.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 font-medium text-sm flex items-center gap-2 transition-colors">
                     Read More
                     <ExternalLink className="h-4 w-4" />
                   </a>
@@ -242,18 +221,18 @@ export const TechNewsSection = () => {
 
             {/* Article List */}
             <div className="space-y-3">
-              {listArticles.map((article, index) => <a key={index} href={article.url} target="_blank" rel="noopener noreferrer" className="bg-card rounded-lg p-4 flex gap-4 items-start hover:bg-muted/50 transition-colors group border border-border block">
+              {listArticles.map((article, index) => <a key={index} href={article.link} target="_blank" rel="noopener noreferrer" className="bg-card rounded-lg p-4 flex gap-4 items-start hover:bg-muted/50 transition-colors group border border-border block">
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <Globe className="h-5 w-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-semibold text-primary uppercase">
-                        {getCategoryLabel(article.category)}
+                        {article.category || 'DIGITAL SKILLS'}
                       </span>
                       <span className="text-muted-foreground text-xs">•</span>
                       <span className="text-muted-foreground text-xs">
-                        {formatDate(article.publishedAt)}
+                        {formatDate(article.pubDate)}
                       </span>
                     </div>
                     <h4 className="text-sm font-semibold text-card-foreground group-hover:text-primary transition-colors line-clamp-2">
