@@ -14,30 +14,46 @@ interface NewsArticle {
 
 // RSS feeds focused on African digital skills, education, and tech innovation
 const RSS_FEEDS = [
-  // Tech News Sources
+  // African Tech News & Innovation
   { url: 'https://techcrunch.com/tag/africa/feed/', source: 'TechCrunch Africa', category: 'INNOVATION' },
   { url: 'https://disrupt-africa.com/feed/', source: 'Disrupt Africa', category: 'INNOVATION' },
   { url: 'https://techcabal.com/feed/', source: 'TechCabal', category: 'INNOVATION' },
   { url: 'https://ventureburn.com/feed/', source: 'Ventureburn', category: 'INNOVATION' },
   { url: 'https://www.techinafrica.com/feed/', source: 'Tech in Africa', category: 'INNOVATION' },
-  { url: 'https://www.itnewsafrica.com/feed/', source: 'IT News Africa', category: 'DIGITAL SKILLS' },
-  { url: 'https://techpoint.africa/feed/', source: 'TechPoint Africa', category: 'DIGITAL SKILLS' },
-  { url: 'https://it-online.co.za/feed/', source: 'IT-Online Africa', category: 'DIGITAL SKILLS' },
   { url: 'https://techafricanews.com/feed/', source: 'Tech Africa News', category: 'DIGITAL SKILLS' },
+  { url: 'https://techpoint.africa/feed/', source: 'TechPoint Africa', category: 'DIGITAL SKILLS' },
+  { url: 'https://www.itnewsafrica.com/feed/', source: 'IT News Africa', category: 'DIGITAL SKILLS' },
+  { url: 'https://it-online.co.za/feed/', source: 'IT-Online Africa', category: 'DIGITAL SKILLS' },
+  { url: 'https://africanews.space/feed/', source: 'African News Space', category: 'INNOVATION' },
+  { url: 'https://www.techeconomy.ng/feed/', source: 'TechEconomy Nigeria', category: 'INNOVATION' },
+  { url: 'https://restofworld.org/region/africa/feed/', source: 'Rest of World Africa', category: 'INNOVATION' },
+  { url: 'https://qz.com/africa/feed/', source: 'Quartz Africa', category: 'INNOVATION' },
   
-  // Business & Economy
+  // Digital Skills & Education
+  { url: 'https://blogs.worldbank.org/digital-development/rss.xml', source: 'World Bank Digital', category: 'DIGITAL SKILLS' },
+  { url: 'https://en.unesco.org/news/rss.xml', source: 'UNESCO', category: 'DIGITAL SKILLS' },
+  { url: 'https://www.weforum.org/agenda/feed', source: 'World Economic Forum', category: 'DIGITAL SKILLS' },
+  { url: 'https://www.brookings.edu/topic/africa/feed/', source: 'Brookings Africa', category: 'DIGITAL SKILLS' },
+  { url: 'https://www.cgdev.org/topics/africa/feed', source: 'Center for Global Development', category: 'DIGITAL SKILLS' },
+  
+  // Business, Partnerships & Investment
   { url: 'https://african.business/feed/', source: 'African Business', category: 'PARTNERSHIPS' },
   { url: 'https://www.economist.com/middle-east-and-africa/rss.xml', source: 'The Economist', category: 'PARTNERSHIPS' },
   { url: 'https://www.jeuneafrique.com/feed/', source: 'Jeune Afrique', category: 'PARTNERSHIPS' },
+  { url: 'https://www.howwemadeitinafrica.com/feed/', source: 'How We Made It In Africa', category: 'PARTNERSHIPS' },
+  { url: 'https://www.theafricareport.com/feed/', source: 'The Africa Report', category: 'PARTNERSHIPS' },
+  { url: 'https://www.businessdailyafrica.com/bd/rss', source: 'Business Daily Africa', category: 'PARTNERSHIPS' },
   
-  // Development & Funding Organizations
+  // Development Banks & Foundations
   { url: 'https://mastercardfdn.org/feed/', source: 'Mastercard Foundation', category: 'PARTNERSHIPS' },
-  { url: 'https://blogs.worldbank.org/digital-development/rss.xml', source: 'World Bank Digital', category: 'DIGITAL SKILLS' },
   { url: 'https://www.afdb.org/en/rss-feeds', source: 'African Development Bank', category: 'PARTNERSHIPS' },
-  
-  // Digital Africa & UNESCO
   { url: 'https://digital-africa.co/feed/', source: 'Digital Africa', category: 'INNOVATION' },
-  { url: 'https://en.unesco.org/news/rss.xml', source: 'UNESCO', category: 'DIGITAL SKILLS' },
+  { url: 'https://www.ifc.org/en/insights-reports/rss', source: 'IFC Insights', category: 'PARTNERSHIPS' },
+  { url: 'https://www.gsma.com/mobilefordevelopment/feed/', source: 'GSMA Mobile for Development', category: 'DIGITAL SKILLS' },
+  
+  // Research & Reports
+  { url: 'https://www.mckinsey.com/industries/technology-media-and-telecommunications/our-insights/rss.xml', source: 'McKinsey Tech', category: 'INNOVATION' },
+  { url: 'https://a]au.int/rss.xml', source: 'African Union', category: 'PARTNERSHIPS' },
 ];
 
 // Decode HTML entities
