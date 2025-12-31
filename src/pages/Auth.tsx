@@ -13,7 +13,10 @@ import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import acfeIcon from '@/assets/acfe-icon.png';
 import { Navbar } from '@/components/Navbar';
-
+import { PhoneInput } from '@/components/ui/phone-input';
+import { AutocompleteInput } from '@/components/ui/autocomplete-input';
+import { AFRICAN_UNIVERSITIES } from '@/data/universities';
+import { AFRICAN_CITIES } from '@/data/cities';
 const authSchema = z.object({
   email: z.string().email('Invalid email address').max(255),
   password: z.string().min(6, 'Password must be at least 6 characters').max(100),
@@ -269,12 +272,10 @@ export const Auth = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="signup-phone">Phone</Label>
-                  <Input
+                  <PhoneInput
                     id="signup-phone"
-                    type="tel"
-                    placeholder="+1234567890"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={(value) => setFormData({ ...formData, phone: value })}
                     required
                   />
                   {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
@@ -300,12 +301,12 @@ export const Auth = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="signup-university">Which university or college do you attend?</Label>
-                  <Input
+                  <AutocompleteInput
                     id="signup-university"
-                    type="text"
-                    placeholder="Your university or college"
+                    placeholder="Start typing to see suggestions..."
                     value={formData.university}
-                    onChange={(e) => setFormData({ ...formData, university: e.target.value })}
+                    onChange={(value) => setFormData({ ...formData, university: value })}
+                    suggestions={AFRICAN_UNIVERSITIES}
                     required
                   />
                   {errors.university && <p className="text-sm text-destructive">{errors.university}</p>}
@@ -313,12 +314,12 @@ export const Auth = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="signup-city">Which city are you based in?</Label>
-                  <Input
+                  <AutocompleteInput
                     id="signup-city"
-                    type="text"
-                    placeholder="Your city"
+                    placeholder="Start typing to see suggestions..."
                     value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    onChange={(value) => setFormData({ ...formData, city: value })}
+                    suggestions={AFRICAN_CITIES}
                     required
                   />
                   {errors.city && <p className="text-sm text-destructive">{errors.city}</p>}
