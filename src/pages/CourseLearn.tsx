@@ -16,8 +16,6 @@ import {
   Circle,
   FileText,
   Video,
-  File,
-  Download,
   Loader2,
   Award,
   ChevronDown,
@@ -41,11 +39,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { CourseCertificate } from '@/components/CourseCertificate';
-import { SecureVideoPlayer } from '@/components/learning/SecureVideoPlayer';
-import { ExternalVideoPlayer } from '@/components/learning/ExternalVideoPlayer';
+import { SecureVideoContent, SecureFileContent } from '@/components/learning/SecureContent';
 import { NotesPanel } from '@/components/learning/NotesPanel';
 import { BookmarksPanel, useBookmarks } from '@/components/learning/BookmarksPanel';
-import { getVideoEmbedInfo } from '@/lib/video-utils';
 import { createSafeHtml } from '@/lib/sanitize-html';
 
 interface ContentItem {
@@ -531,32 +527,17 @@ export const CourseLearn = () => {
         {currentContent.content_type === 'video' && currentContent.video_url && enrollmentId && (
           <Card>
             <CardContent className="pt-6">
-              {(() => {
-                const embedInfo = getVideoEmbedInfo(currentContent.video_url);
-                if (embedInfo.isExternal) {
-                  return (
-                    <ExternalVideoPlayer 
-                      videoUrl={currentContent.video_url} 
-                      contentId={currentContent.id}
-                      enrollmentId={enrollmentId}
-                      onVideoComplete={handleVideoComplete}
-                    />
-                  );
-                }
-                return (
-                  <SecureVideoPlayer
-                    videoUrl={currentContent.video_url}
-                    contentId={currentContent.id}
-                    enrollmentId={enrollmentId}
-                    onBookmark={(timestamp) => {
-                      if ((window as any).__addBookmark) {
-                        (window as any).__addBookmark(timestamp);
-                      }
-                    }}
-                    onVideoComplete={handleVideoComplete}
-                  />
-                );
-              })()}
+              <SecureVideoContent
+                contentId={currentContent.id}
+                videoUrl={currentContent.video_url}
+                enrollmentId={enrollmentId}
+                onBookmark={(timestamp) => {
+                  if ((window as any).__addBookmark) {
+                    (window as any).__addBookmark(timestamp);
+                  }
+                }}
+                onVideoComplete={handleVideoComplete}
+              />
             </CardContent>
           </Card>
         )}
@@ -565,21 +546,11 @@ export const CourseLearn = () => {
         {currentContent.content_type === 'file' && currentContent.file_url && (
           <Card>
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                <div className="flex items-center gap-3">
-                  <File className="h-8 w-8 text-primary" />
-                  <div>
-                    <p className="font-medium">{currentContent.file_name}</p>
-                    <p className="text-sm text-muted-foreground">Downloadable file</p>
-                  </div>
-                </div>
-                <Button asChild>
-                  <a href={currentContent.file_url} download target="_blank" rel="noopener noreferrer">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download
-                  </a>
-                </Button>
-              </div>
+              <SecureFileContent
+                contentId={currentContent.id}
+                fileUrl={currentContent.file_url}
+                fileName={currentContent.file_name}
+              />
             </CardContent>
           </Card>
         )}
@@ -725,32 +696,19 @@ export const CourseLearn = () => {
         {/* Video content */}
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="w-full max-w-6xl">
-            {enrollmentId && currentContent.video_url && (() => {
-              const embedInfo = getVideoEmbedInfo(currentContent.video_url);
-              if (embedInfo.isExternal) {
-                return (
-                  <ExternalVideoPlayer 
-                    videoUrl={currentContent.video_url} 
-                    contentId={currentContent.id}
-                    enrollmentId={enrollmentId}
-                    onVideoComplete={handleVideoComplete}
-                  />
-                );
-              }
-              return (
-                <SecureVideoPlayer
-                  videoUrl={currentContent.video_url}
-                  contentId={currentContent.id}
-                  enrollmentId={enrollmentId}
-                  onBookmark={(timestamp) => {
-                    if ((window as any).__addBookmark) {
-                      (window as any).__addBookmark(timestamp);
-                    }
-                  }}
-                  onVideoComplete={handleVideoComplete}
-                />
-              );
-            })()}
+            {enrollmentId && currentContent.video_url && (
+              <SecureVideoContent
+                contentId={currentContent.id}
+                videoUrl={currentContent.video_url}
+                enrollmentId={enrollmentId}
+                onBookmark={(timestamp) => {
+                  if ((window as any).__addBookmark) {
+                    (window as any).__addBookmark(timestamp);
+                  }
+                }}
+                onVideoComplete={handleVideoComplete}
+              />
+            )}
           </div>
         </div>
 

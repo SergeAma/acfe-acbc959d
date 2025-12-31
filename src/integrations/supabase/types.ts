@@ -1510,6 +1510,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_course_mentor_for_content: {
+        Args: { file_name: string }
+        Returns: boolean
+      }
+      is_enrolled_in_course_content: {
+        Args: { file_name: string }
+        Returns: boolean
+      }
       reinstate_mentor: {
         Args: { _admin_id: string; _user_id: string }
         Returns: boolean
