@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -11,8 +11,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, CheckCircle, Video, Lightbulb, DollarSign, Users, Rocket } from "lucide-react";
+import { Upload, CheckCircle, Video, Lightbulb, DollarSign, Users, Rocket, Save } from "lucide-react";
 import { FormProgressStepper } from "@/components/FormProgressStepper";
+import { Confetti } from "@/components/Confetti";
+
+const STORAGE_KEY = "acfe-idea-submission-draft";
 
 // Minimum time (in seconds) user must spend on form before submitting
 const MIN_FORM_TIME_SECONDS = 15;
@@ -21,8 +24,10 @@ const MIN_DESCRIPTION_LENGTH = 50;
 export function SubmitIdea() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formLoadTime = useRef<number>(Date.now());
   const {
@@ -35,13 +40,64 @@ export function SubmitIdea() {
 
   // Honeypot field - bots will fill this, humans won't see it
   const [honeypot, setHoneypot] = useState("");
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    ideaTitle: "",
-    ideaDescription: ""
+  const [formData, setFormData] = useState(() => {
+    // Load saved draft from localStorage on initial render
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          return {
+            fullName: parsed.fullName || "",
+            email: parsed.email || "",
+            phone: parsed.phone || "",
+            ideaTitle: parsed.ideaTitle || "",
+            ideaDescription: parsed.ideaDescription || ""
+          };
+        } catch {
+          // Invalid JSON, use defaults
+        }
+      }
+    }
+    return {
+      fullName: "",
+      email: "",
+      phone: "",
+      ideaTitle: "",
+      ideaDescription: ""
+    };
   });
+
+  // Auto-save form data to localStorage
+  const saveToStorage = useCallback(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+      setLastSaved(new Date());
+    } catch (error) {
+      console.error("Failed to save draft:", error);
+    }
+  }, [formData]);
+
+  // Debounced auto-save effect
+  useEffect(() => {
+    const hasContent = Object.values(formData).some(v => v.trim().length > 0);
+    if (!hasContent) return;
+
+    const timer = setTimeout(() => {
+      saveToStorage();
+    }, 1000); // Save 1 second after user stops typing
+
+    return () => clearTimeout(timer);
+  }, [formData, saveToStorage]);
+
+  // Clear saved draft on successful submission
+  const clearSavedDraft = useCallback(() => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (error) {
+      console.error("Failed to clear draft:", error);
+    }
+  }, []);
 
   // Reset form load time when component mounts
   useEffect(() => {
@@ -187,6 +243,10 @@ export function SubmitIdea() {
         // Don't fail the whole submission if email fails
       }
       setUploadProgress(100);
+      
+      // Clear saved draft and trigger confetti
+      clearSavedDraft();
+      setShowConfetti(true);
       setIsSubmitted(true);
     } catch (error: any) {
       console.error("Submission error:", error);
@@ -201,11 +261,12 @@ export function SubmitIdea() {
   };
   if (isSubmitted) {
     return <div className="min-h-screen flex flex-col bg-background">
+        <Confetti isActive={showConfetti} duration={4000} />
         <Navbar />
         <main className="flex-grow flex items-center justify-center py-20">
           <div className="max-w-xl mx-auto px-4 text-center">
-            <div className="bg-card rounded-2xl p-10 shadow-lg border border-border">
-              <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+            <div className="bg-card rounded-2xl p-10 shadow-lg border border-border animate-fade-in">
+              <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6 animate-bounce-scale">
                 <CheckCircle className="h-10 w-10 text-primary" />
               </div>
               <h1 className="text-3xl font-bold text-foreground mb-4">
@@ -431,9 +492,17 @@ export function SubmitIdea() {
                       {isSubmitting ? "Submitting..." : "Submit Your Idea"}
                     </Button>
                     
-                    <p className="text-xs text-muted-foreground text-center">
-                      By submitting, you agree to our terms of service and privacy policy.
-                    </p>
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
+                      <p className="text-center sm:text-left">
+                        By submitting, you agree to our terms of service and privacy policy.
+                      </p>
+                      {lastSaved && (
+                        <p className="flex items-center gap-1 text-primary/70 shrink-0">
+                          <Save className="h-3 w-3" />
+                          Draft saved
+                        </p>
+                      )}
+                    </div>
                   </form>
                 </div>
               </div>
