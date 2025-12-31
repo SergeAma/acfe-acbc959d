@@ -50,6 +50,7 @@ import { AdminPricing } from "./pages/AdminPricing";
 import { AdminRevenue } from "./pages/AdminRevenue";
 import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import { TermsOfService } from "./pages/TermsOfService";
+import { MentorApplicationStatus } from "./pages/MentorApplicationStatus";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -114,6 +115,7 @@ const App = () => (
             <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
             <Route path="/certificates" element={<ProtectedRoute><MyCertificates /></ProtectedRoute>} />
             <Route path="/subscriptions" element={<ProtectedRoute><MySubscriptions /></ProtectedRoute>} />
+            <Route path="/mentor-application-status" element={<ProtectedRoute><MentorApplicationStatus /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

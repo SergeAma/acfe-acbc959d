@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, GraduationCap } from 'lucide-react';
+import { Loader2, GraduationCap, ExternalLink } from 'lucide-react';
 
 export const RequestMentorRole = () => {
   const { user, profile } = useAuth();
@@ -99,14 +100,14 @@ export const RequestMentorRole = () => {
             Your request status: <span className="font-semibold capitalize">{requestStatus}</span>
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           {requestStatus === 'pending' && (
             <p className="text-sm text-muted-foreground">
               Your mentor role request is being reviewed by an administrator.
             </p>
           )}
           {requestStatus === 'approved' && (
-            <p className="text-sm text-success">
+            <p className="text-sm text-green-600">
               Congratulations! Your mentor role has been approved. Refresh the page to see your new permissions.
             </p>
           )}
@@ -115,6 +116,12 @@ export const RequestMentorRole = () => {
               Your mentor role request was not approved. Please contact support if you have questions.
             </p>
           )}
+          <Link to="/mentor-application-status">
+            <Button variant="outline" size="sm">
+              <ExternalLink className="h-4 w-4 mr-2" />
+              View Full Application Status
+            </Button>
+          </Link>
         </CardContent>
       </Card>
     );
