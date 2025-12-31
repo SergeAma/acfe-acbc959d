@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, CheckCircle, Video, Lightbulb, DollarSign, Users, Rocket } from "lucide-react";
+import { FormProgressStepper } from "@/components/FormProgressStepper";
 
 // Minimum time (in seconds) user must spend on form before submitting
 const MIN_FORM_TIME_SECONDS = 15;
@@ -46,6 +47,18 @@ export function SubmitIdea() {
   useEffect(() => {
     formLoadTime.current = Date.now();
   }, []);
+
+  // Calculate form progress steps
+  const formSteps = useMemo(() => {
+    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
+    return [
+      { id: 'fullName', label: 'Full Name', isComplete: formData.fullName.trim().length > 0 },
+      { id: 'email', label: 'Email', isComplete: isValidEmail },
+      { id: 'ideaTitle', label: 'Idea Name', isComplete: formData.ideaTitle.trim().length > 0 },
+      { id: 'ideaDescription', label: 'Description', isComplete: formData.ideaDescription.trim().length >= MIN_DESCRIPTION_LENGTH },
+      { id: 'video', label: 'Video', isComplete: videoFile !== null },
+    ];
+  }, [formData, videoFile]);
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const {
       name,
@@ -327,6 +340,9 @@ export function SubmitIdea() {
                   <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-4 sm:mb-6">
                     Tell Us About Your Idea
                   </h2>
+
+                  {/* Progress Stepper */}
+                  <FormProgressStepper steps={formSteps} className="mb-6" />
                   
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid sm:grid-cols-2 gap-4">
