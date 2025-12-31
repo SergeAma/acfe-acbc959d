@@ -73,35 +73,41 @@ export const MyCertificates = () => {
 
       if (error) throw error;
 
-      // Fetch mentor names separately using profiles_public view
-      const formattedCerts = await Promise.all(
-        (data || []).map(async (cert: any) => {
-          let mentorName = 'Instructor';
-          
-          if (cert.course?.mentor_id) {
-            const { data: mentorData } = await supabase
-              .from('profiles_public')
-              .select('full_name')
-              .eq('id', cert.course.mentor_id)
-              .single();
-            
-            if (mentorData?.full_name) {
-              mentorName = mentorData.full_name;
+      // Get unique mentor IDs
+      const mentorIds = [...new Set(
+        (data || [])
+          .filter((cert: any) => cert.course?.mentor_id)
+          .map((cert: any) => cert.course.mentor_id)
+      )];
+
+      // Fetch all mentor names in one query
+      let mentorMap: Record<string, string> = {};
+      if (mentorIds.length > 0) {
+        const { data: mentorData } = await supabase
+          .from('profiles_public')
+          .select('id, full_name')
+          .in('id', mentorIds);
+        
+        if (mentorData) {
+          mentorMap = mentorData.reduce((acc: Record<string, string>, mentor: any) => {
+            if (mentor.id && mentor.full_name) {
+              acc[mentor.id] = mentor.full_name;
             }
-          }
-          
-          return {
-            id: cert.id,
-            certificate_number: cert.certificate_number,
-            issued_at: cert.issued_at,
-            course: {
-              id: cert.course.id,
-              title: cert.course.title,
-              mentor_name: mentorName
-            }
-          };
-        })
-      );
+            return acc;
+          }, {});
+        }
+      }
+
+      const formattedCerts = (data || []).map((cert: any) => ({
+        id: cert.id,
+        certificate_number: cert.certificate_number,
+        issued_at: cert.issued_at,
+        course: {
+          id: cert.course.id,
+          title: cert.course.title,
+          mentor_name: mentorMap[cert.course.mentor_id] || 'Instructor'
+        }
+      }));
 
       setCertificates(formattedCerts);
     } catch (error) {
