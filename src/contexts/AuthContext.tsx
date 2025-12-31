@@ -28,7 +28,7 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, fullName: string, linkedinUrl?: string, wantsMentor?: boolean, university?: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string, linkedinUrl?: string, wantsMentor?: boolean, university?: string, mentorBio?: string, portfolioLinks?: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
@@ -186,7 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
-  const signUp = async (email: string, password: string, fullName: string, linkedinUrl?: string, wantsMentor?: boolean, university?: string) => {
+  const signUp = async (email: string, password: string, fullName: string, linkedinUrl?: string, wantsMentor?: boolean, university?: string, mentorBio?: string, portfolioLinks?: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -224,14 +224,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .eq('id', data.user.id);
       }
 
-      // If user wants to become a mentor, create a mentor request
+      // If user wants to become a mentor, create a mentor request with bio and portfolio
       if (wantsMentor && data.user) {
         try {
+          const reasonParts = [];
+          if (mentorBio) reasonParts.push(`Bio: ${mentorBio}`);
+          if (portfolioLinks) reasonParts.push(`Portfolio/Links: ${portfolioLinks}`);
+          
           await supabase
             .from('mentor_role_requests')
             .insert({
               user_id: data.user.id,
-              reason: 'Applied during registration',
+              reason: reasonParts.length > 0 ? reasonParts.join('\n\n') : 'Applied during registration',
               status: 'pending'
             });
         } catch (mentorRequestError) {

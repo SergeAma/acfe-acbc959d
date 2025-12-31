@@ -17,7 +17,7 @@ import { PhoneInput } from '@/components/ui/phone-input';
 import { AutocompleteInput } from '@/components/ui/autocomplete-input';
 import { AFRICAN_UNIVERSITIES } from '@/data/universities';
 import { AFRICAN_CITIES } from '@/data/cities';
-const authSchema = z.object({
+const baseAuthSchema = z.object({
   email: z.string().email('Invalid email address').max(255),
   password: z.string().min(6, 'Password must be at least 6 characters').max(100),
   firstName: z.string().min(2, 'First name must be at least 2 characters').max(100),
@@ -31,6 +31,11 @@ const authSchema = z.object({
   emailConsent: z.boolean().optional(),
 });
 
+const mentorAuthSchema = baseAuthSchema.extend({
+  mentorBio: z.string().min(50, 'Please provide at least 50 characters describing your experience').max(2000),
+  portfolioLinks: z.string().max(1000).optional(),
+});
+
 export const Auth = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -41,6 +46,9 @@ export const Auth = () => {
     searchParams.get('mode') === 'forgot' ? 'forgot' :
     searchParams.get('mode') === 'reset' ? 'reset' : 'signin'
   );
+  
+  // Check if this is a mentor signup path
+  const isMentorSignup = searchParams.get('role') === 'mentor';
   
   // Get redirect URL from query params, default to dashboard
   const redirectUrl = searchParams.get('redirect') || '/dashboard';
@@ -63,6 +71,9 @@ export const Auth = () => {
     emailConsent: false,
     termsAccepted: false,
     wantsMentor: false,
+    mentorBio: '',
+    portfolioLinks: '',
+    mentorPledge: false,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -76,9 +87,13 @@ export const Auth = () => {
   const validateForm = () => {
     try {
       if (mode === 'signup') {
-        authSchema.parse(formData);
+        if (isMentorSignup) {
+          mentorAuthSchema.parse(formData);
+        } else {
+          baseAuthSchema.parse(formData);
+        }
       } else {
-        authSchema.pick({ email: true, password: true }).parse(formData);
+        baseAuthSchema.pick({ email: true, password: true }).parse(formData);
       }
       setErrors({});
       return true;
@@ -107,6 +122,12 @@ export const Auth = () => {
       return;
     }
 
+    // Check mentor pledge for mentor signup
+    if (mode === 'signup' && isMentorSignup && !formData.mentorPledge) {
+      setErrors(prev => ({ ...prev, mentorPledge: 'You must confirm your intent to become a mentor and accept the terms' }));
+      return;
+    }
+
     setLoading(true);
 
     if (mode === 'signin') {
@@ -116,13 +137,16 @@ export const Auth = () => {
       }
     } else {
       const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+      // Only set wantsMentor to true if on the mentor signup path
       const { error } = await signUp(
         formData.email,
         formData.password,
         fullName,
         formData.linkedinUrl,
-        formData.wantsMentor,
-        formData.university
+        isMentorSignup, // Use the path-based flag instead of checkbox
+        formData.university,
+        isMentorSignup ? formData.mentorBio : undefined,
+        isMentorSignup ? formData.portfolioLinks : undefined
       );
       if (!error) {
         navigate(redirectUrl);
@@ -174,7 +198,7 @@ export const Auth = () => {
           <CardTitle className="text-2xl">Welcome to A Cloud for Everyone</CardTitle>
           <CardDescription>
             {mode === 'signin' ? 'Sign in to your account' : 
-             mode === 'signup' ? 'Create your account to get started' :
+             mode === 'signup' ? (isMentorSignup ? 'Apply to become a mentor at ACFE' : 'Create your account to start learning') :
              mode === 'forgot' ? 'Enter your email to reset your password' :
              'Enter your new password'}
           </CardDescription>
@@ -421,31 +445,91 @@ export const Auth = () => {
                 </div>
                 {errors.termsAccepted && <p className="text-sm text-destructive">{errors.termsAccepted}</p>}
 
-                <div className="flex items-start space-x-2 p-4 bg-muted/50 rounded-lg border">
-                  <Checkbox
-                    id="wants-mentor"
-                    checked={formData.wantsMentor}
-                    onCheckedChange={(checked) => setFormData({ ...formData, wantsMentor: checked as boolean })}
-                  />
-                  <div>
-                    <label 
-                      htmlFor="wants-mentor"
-                      className="text-sm font-medium cursor-pointer"
-                    >
-                      I want to become a mentor
-                    </label>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Check this if you'd like to teach courses and mentor students. Your application will be reviewed by our team.
-                    </p>
-                  </div>
-                </div>
+                {/* Mentor-specific fields - only show on mentor signup path */}
+                {isMentorSignup && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="mentor-bio">
+                        Tell us about yourself <span className="text-destructive">*</span>
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Share your career journey, why you want to mentor, and why you'd be a great fit for ACFE (minimum 50 characters)
+                      </p>
+                      <textarea
+                        id="mentor-bio"
+                        className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="I am a software engineer with 5+ years of experience in cloud technologies. I want to mentor because..."
+                        value={formData.mentorBio}
+                        onChange={(e) => setFormData({ ...formData, mentorBio: e.target.value })}
+                        required
+                      />
+                      {errors.mentorBio && <p className="text-sm text-destructive">{errors.mentorBio}</p>}
+                    </div>
 
-                <p className="text-sm text-muted-foreground text-center">
-                  All accounts start as learner accounts. {!formData.wantsMentor && 'You can also request mentor access after signing up.'}
-                </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="portfolio-links">
+                        Portfolio, Works, Awards or Achievements
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Share links to your portfolio, published works, certifications, awards, or any achievements for our team to review
+                      </p>
+                      <textarea
+                        id="portfolio-links"
+                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="https://github.com/yourprofile&#10;https://medium.com/@yourname&#10;AWS Solutions Architect Certified"
+                        value={formData.portfolioLinks}
+                        onChange={(e) => setFormData({ ...formData, portfolioLinks: e.target.value })}
+                      />
+                      {errors.portfolioLinks && <p className="text-sm text-destructive">{errors.portfolioLinks}</p>}
+                    </div>
 
-                <Button type="submit" className="w-full bg-foreground text-background hover:bg-foreground/90 font-semibold" disabled={loading || !formData.termsAccepted}>
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'REGISTER'}
+                    <div className="flex items-start space-x-2 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                      <Checkbox
+                        id="mentor-pledge"
+                        checked={formData.mentorPledge}
+                        onCheckedChange={(checked) => {
+                          setFormData({ ...formData, mentorPledge: checked as boolean });
+                          if (checked) {
+                            setErrors(prev => {
+                              const { mentorPledge, ...rest } = prev;
+                              return rest;
+                            });
+                          }
+                        }}
+                        className={errors.mentorPledge ? 'border-destructive' : ''}
+                      />
+                      <div>
+                        <label 
+                          htmlFor="mentor-pledge"
+                          className={`text-sm font-medium cursor-pointer ${errors.mentorPledge ? 'text-destructive' : ''}`}
+                        >
+                          I confirm I want to become a mentor <span className="text-destructive">*</span>
+                        </label>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          I pledge to abide by ACFE's{' '}
+                          <a href="/terms" target="_blank" className="text-primary hover:underline">Terms of Use</a>
+                          {' '}and{' '}
+                          <a href="/privacy" target="_blank" className="text-primary hover:underline">Privacy Policy</a>.
+                          I understand my application will be reviewed by the ACFE team.
+                        </p>
+                      </div>
+                    </div>
+                    {errors.mentorPledge && <p className="text-sm text-destructive">{errors.mentorPledge}</p>}
+                  </>
+                )}
+
+                {!isMentorSignup && (
+                  <p className="text-sm text-muted-foreground text-center">
+                    All accounts start as learner accounts. You can request mentor access after signing up.
+                  </p>
+                )}
+
+                <Button 
+                  type="submit" 
+                  className="w-full bg-foreground text-background hover:bg-foreground/90 font-semibold" 
+                  disabled={loading || !formData.termsAccepted || (isMentorSignup && !formData.mentorPledge)}
+                >
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (isMentorSignup ? 'SUBMIT MENTOR APPLICATION' : 'REGISTER')}
                 </Button>
               </form>
             </TabsContent>
