@@ -9,6 +9,30 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Convert ArrayBuffer to base64 string
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+// Generate HMAC signature for secure token verification
+async function generateSignature(data: string, secret: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(data));
+  return arrayBufferToBase64(signature);
+}
+
 interface WelcomeEmailRequest {
   email: string;
   first_name: string;
@@ -178,15 +202,36 @@ const handler = async (req: Request): Promise<Response> => {
         const adminUserIds = adminRoles.map((r: { user_id: string }) => r.user_id);
         const { data: adminProfiles } = await supabase
           .from('profiles')
-          .select('email, full_name')
+          .select('id, email, full_name')
           .in('id', adminUserIds);
 
         if (adminProfiles && adminProfiles.length > 0) {
-          const baseUrl = "https://www.acloudforeveryone.org";
-          const approveUrl = requestId ? `${baseUrl}/api/mentor-action?action=approve&request_id=${requestId}` : '';
-          const declineUrl = requestId ? `${baseUrl}/api/mentor-action?action=decline&request_id=${requestId}` : '';
-
+          const sharedSecret = Deno.env.get("ACFE_SHARED_SECRET");
+          
           for (const admin of adminProfiles) {
+            // Generate signed URLs for this specific admin
+            let approveUrl = '';
+            let declineUrl = '';
+            
+            if (requestId && sharedSecret) {
+              const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+              const functionBaseUrl = `${supabaseUrl}/functions/v1/handle-mentor-action`;
+              
+              // Generate HMAC signatures for each action
+              const approveData = `approve:${requestId}:${admin.id}`;
+              const declineData = `decline:${requestId}:${admin.id}`;
+              
+              const approveToken = await generateSignature(approveData, sharedSecret);
+              const declineToken = await generateSignature(declineData, sharedSecret);
+              
+              // URL-encode the tokens
+              const encodedApproveToken = encodeURIComponent(approveToken);
+              const encodedDeclineToken = encodeURIComponent(declineToken);
+              
+              approveUrl = `${functionBaseUrl}?action=approve&request_id=${requestId}&admin_id=${admin.id}&token=${encodedApproveToken}`;
+              declineUrl = `${functionBaseUrl}?action=decline&request_id=${requestId}&admin_id=${admin.id}&token=${encodedDeclineToken}`;
+            }
+            
             const adminHtmlContent = `
 <!DOCTYPE html>
 <html>
@@ -228,11 +273,14 @@ const handler = async (req: Request): Promise<Response> => {
         </table>
       </div>
       
-      ${requestId ? `
+      ${approveUrl && declineUrl ? `
       <div style="text-align: center; margin: 30px 0;">
         <a href="${approveUrl}" style="display: inline-block; background-color: #16a34a; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 6px; margin-right: 10px;">✓ Approve</a>
         <a href="${declineUrl}" style="display: inline-block; background-color: #dc2626; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 6px;">✗ Decline</a>
       </div>
+      <p style="margin: 10px 0 20px 0; line-height: 1.4; color: #999999; font-size: 11px; text-align: center;">
+        ⚠️ These action links are unique to you and cannot be shared.
+      </p>
       ` : ''}
       
       <p style="margin: 20px 0; line-height: 1.6; color: #666666; font-size: 14px;">

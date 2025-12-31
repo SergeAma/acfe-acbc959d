@@ -4,14 +4,46 @@ import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
+// Convert ArrayBuffer to base64 string
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+// Generate HMAC signature for secure token verification
+async function generateSignature(data: string, secret: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(data));
+  return arrayBufferToBase64(signature);
+}
+
+// Verify HMAC signature
+async function verifySignature(data: string, signature: string, secret: string): Promise<boolean> {
+  const expectedSignature = await generateSignature(data, secret);
+  return signature === expectedSignature;
+}
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("Handle mentor action function called");
   
   const url = new URL(req.url);
   const action = url.searchParams.get('action');
   const requestId = url.searchParams.get('request_id');
+  const token = url.searchParams.get('token');
+  const adminId = url.searchParams.get('admin_id');
 
-  console.log(`Action: ${action}, Request ID: ${requestId}`);
+  console.log(`Action: ${action}, Request ID: ${requestId}, Admin ID: ${adminId}`);
 
   if (!action || !requestId) {
     return new Response(generateHtmlResponse('error', 'Missing required parameters'), {
@@ -27,10 +59,56 @@ const handler = async (req: Request): Promise<Response> => {
     });
   }
 
+  // Security: Verify token signature
+  const sharedSecret = Deno.env.get("ACFE_SHARED_SECRET");
+  if (!sharedSecret) {
+    console.error("ACFE_SHARED_SECRET not configured");
+    return new Response(generateHtmlResponse('error', 'Server configuration error'), {
+      status: 500,
+      headers: { 'Content-Type': 'text/html' },
+    });
+  }
+
+  if (!token || !adminId) {
+    console.error("Missing authentication token or admin_id");
+    return new Response(generateHtmlResponse('error', 'Unauthorized: Missing authentication credentials'), {
+      status: 401,
+      headers: { 'Content-Type': 'text/html' },
+    });
+  }
+
+  // Verify the token signature (token = HMAC(action:request_id:admin_id, secret))
+  const expectedData = `${action}:${requestId}:${adminId}`;
+  const isValidToken = await verifySignature(expectedData, token, sharedSecret);
+  
+  if (!isValidToken) {
+    console.error("Invalid token signature");
+    return new Response(generateHtmlResponse('error', 'Unauthorized: Invalid or expired link'), {
+      status: 401,
+      headers: { 'Content-Type': 'text/html' },
+    });
+  }
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Verify the admin_id is actually an admin
+    const { data: adminRole, error: adminError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', adminId)
+      .eq('role', 'admin')
+      .single();
+
+    if (adminError || !adminRole) {
+      console.error("Admin verification failed:", adminError);
+      return new Response(generateHtmlResponse('error', 'Unauthorized: Admin privileges required'), {
+        status: 403,
+        headers: { 'Content-Type': 'text/html' },
+      });
+    }
 
     // Get the mentor request
     const { data: request, error: requestError } = await supabase
@@ -62,12 +140,13 @@ const handler = async (req: Request): Promise<Response> => {
     const currentYear = new Date().getFullYear();
 
     if (action === 'approve') {
-      // Update request status
+      // Update request status with reviewer info
       await supabase
         .from('mentor_role_requests')
         .update({
           status: 'approved',
           reviewed_at: new Date().toISOString(),
+          reviewed_by: adminId,
         })
         .eq('id', requestId);
 
@@ -78,6 +157,7 @@ const handler = async (req: Request): Promise<Response> => {
           user_id: request.user_id,
           role: 'mentor',
           approved_at: new Date().toISOString(),
+          approved_by: adminId,
         });
 
       // Update profile role for backward compatibility
@@ -155,7 +235,7 @@ const handler = async (req: Request): Promise<Response> => {
         });
       }
 
-      console.log(`Mentor request ${requestId} approved`);
+      console.log(`Mentor request ${requestId} approved by admin ${adminId}`);
       return new Response(generateHtmlResponse('success', `${userName}'s mentor application has been approved! They have been notified via email.`), {
         status: 200,
         headers: { 'Content-Type': 'text/html' },
@@ -168,6 +248,7 @@ const handler = async (req: Request): Promise<Response> => {
         .update({
           status: 'rejected',
           reviewed_at: new Date().toISOString(),
+          reviewed_by: adminId,
         })
         .eq('id', requestId);
 
@@ -237,7 +318,7 @@ const handler = async (req: Request): Promise<Response> => {
         });
       }
 
-      console.log(`Mentor request ${requestId} declined`);
+      console.log(`Mentor request ${requestId} declined by admin ${adminId}`);
       return new Response(generateHtmlResponse('declined', `${userName}'s mentor application has been declined. They have been notified via email.`), {
         status: 200,
         headers: { 'Content-Type': 'text/html' },
@@ -299,5 +380,8 @@ function generateHtmlResponse(type: 'success' | 'declined' | 'error' | 'info', m
 </html>
   `;
 }
+
+// Export the signature generator for use in notification emails
+export { generateSignature };
 
 serve(handler);
