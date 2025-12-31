@@ -34,6 +34,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RichTextEditor } from '@/components/RichTextEditor';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { createSafeHtml } from '@/lib/sanitize-html';
 
 interface Course {
   id: string;
@@ -803,7 +804,7 @@ export const AdminCourseBuilder = () => {
             <div className="group relative">
               <div 
                 className="rich-text-content max-w-none text-muted-foreground"
-                dangerouslySetInnerHTML={{ __html: course?.description || '<p>No description</p>' }}
+                dangerouslySetInnerHTML={createSafeHtml(course?.description || '<p>No description</p>')}
               />
               <Button 
                 variant="ghost" 

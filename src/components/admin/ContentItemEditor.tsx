@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { RichTextEditor } from '@/components/RichTextEditor';
+import { createSafeHtml } from '@/lib/sanitize-html';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -493,7 +494,7 @@ export const ContentItemEditor = ({
                       <div 
                         className="text-sm text-muted-foreground prose prose-sm max-w-none cursor-pointer hover:bg-muted/50 rounded-md p-2 -m-2"
                         onClick={() => setEditingContent(true)}
-                        dangerouslySetInnerHTML={{ __html: item.text_content }}
+                        dangerouslySetInnerHTML={createSafeHtml(item.text_content)}
                       />
                     ) : (
                       <Button

@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { sanitizeHtml } from '@/lib/sanitize-html';
 
 interface Contact {
   id: string;
@@ -629,7 +630,7 @@ export const AdminNewsletter = () => {
               {/* Preview Content */}
               <div 
                 className="bg-white p-0 overflow-auto max-h-[500px]"
-                dangerouslySetInnerHTML={{ __html: generatePreviewHtml() }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(generatePreviewHtml()) }}
               />
             </div>
           </div>

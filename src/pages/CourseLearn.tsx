@@ -46,6 +46,7 @@ import { ExternalVideoPlayer } from '@/components/learning/ExternalVideoPlayer';
 import { NotesPanel } from '@/components/learning/NotesPanel';
 import { BookmarksPanel, useBookmarks } from '@/components/learning/BookmarksPanel';
 import { getVideoEmbedInfo } from '@/lib/video-utils';
+import { createSafeHtml } from '@/lib/sanitize-html';
 
 interface ContentItem {
   id: string;
@@ -615,7 +616,7 @@ export const CourseLearn = () => {
                   <CardContent>
                     <div 
                       className="prose prose-sm md:prose-base lg:prose-lg max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground prose-ul:text-foreground prose-ol:text-foreground"
-                      dangerouslySetInnerHTML={{ __html: currentContent.text_content }}
+                      dangerouslySetInnerHTML={createSafeHtml(currentContent.text_content)}
                     />
                   </CardContent>
                 )}
@@ -654,7 +655,7 @@ export const CourseLearn = () => {
                   <CardContent>
                     <div 
                       className="prose prose-sm md:prose-base lg:prose-lg max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground prose-ul:text-foreground prose-ol:text-foreground"
-                      dangerouslySetInnerHTML={{ __html: currentSection.description }}
+                      dangerouslySetInnerHTML={createSafeHtml(currentSection.description)}
                     />
                   </CardContent>
                 )}
