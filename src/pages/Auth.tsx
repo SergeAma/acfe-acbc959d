@@ -33,7 +33,7 @@ const baseAuthSchema = z.object({
 
 const mentorAuthSchema = baseAuthSchema.extend({
   mentorBio: z.string()
-    .min(50, 'Please provide at least 50 characters describing your experience')
+    .min(100, 'Please provide at least 100 characters describing your experience')
     .max(2000, 'Bio must be less than 2000 characters')
     .refine((val) => {
       const lowerVal = val.toLowerCase();
@@ -473,7 +473,7 @@ export const Auth = () => {
                         Tell us about yourself <span className="text-destructive">*</span>
                       </Label>
                       <p className="text-xs text-muted-foreground">
-                        Share your career journey, why you want to mentor, and why you'd be a great fit for ACFE (minimum 50 characters)
+                        Share your career journey, why you want to mentor, and why you'd be a great fit for ACFE (minimum 100 characters)
                       </p>
                       <textarea
                         id="mentor-bio"
@@ -481,8 +481,17 @@ export const Auth = () => {
                         placeholder="I am a software engineer with 5+ years of experience in cloud technologies. I want to mentor because..."
                         value={formData.mentorBio}
                         onChange={(e) => setFormData({ ...formData, mentorBio: e.target.value })}
+                        maxLength={2000}
                         required
                       />
+                      <div className="flex justify-between items-center">
+                        <span className={`text-xs ${formData.mentorBio.length < 100 ? 'text-muted-foreground' : 'text-green-600'}`}>
+                          {formData.mentorBio.length}/100 minimum
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {formData.mentorBio.length}/2000
+                        </span>
+                      </div>
                       {errors.mentorBio && <p className="text-sm text-destructive">{errors.mentorBio}</p>}
                     </div>
 
