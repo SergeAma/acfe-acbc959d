@@ -51,6 +51,7 @@ import { AdminRevenue } from "./pages/AdminRevenue";
 import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import { TermsOfService } from "./pages/TermsOfService";
 import { MentorApplicationStatus } from "./pages/MentorApplicationStatus";
+import { SpectrogramConnect } from "./pages/SpectrogramConnect";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -75,6 +76,8 @@ const App = () => (
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/connect-acfe" element={<SpectrogramConnect />} />
+            <Route path="/spectrogram-connect" element={<SpectrogramConnect />} />
             <Route path="/accept-mentor-invite" element={<AcceptMentorInvite />} />
             <Route path="/courses" element={<Courses />} />
             <Route path="/courses/:id" element={<CourseDetail />} />
