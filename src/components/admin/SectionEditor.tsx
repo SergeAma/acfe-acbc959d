@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
-import { GripVertical, Plus, Trash2, ChevronDown, ChevronUp, Pencil, Save, X, Copy, MoveRight } from 'lucide-react';
+import { GripVertical, Plus, Trash2, ChevronDown, ChevronUp, Pencil, Save, X, Copy, MoveRight, Loader2 } from 'lucide-react';
+import { RichTextEditor } from '@/components/RichTextEditor';
+import { createSafeHtml } from '@/lib/sanitize-html';
 import { ContentItemEditor } from './ContentItemEditor';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -455,38 +456,60 @@ export const SectionEditor = ({ section, onDelete, onUpdate, onDuplicate, allSec
             )}
             {!editingTitle && (
               editingDescription ? (
-                <div className="flex items-start gap-2 mt-1">
-                  <Textarea
-                    value={editedDescription}
-                    onChange={(e) => setEditedDescription(e.target.value)}
-                    className="text-sm min-h-[60px]"
+                <div className="space-y-3 mt-2">
+                  <RichTextEditor
+                    content={editedDescription}
+                    onChange={setEditedDescription}
                     placeholder="Add a section description..."
-                    autoFocus
                   />
-                  <Button onClick={handleSaveDescription} disabled={savingDescription} size="sm" variant="ghost">
-                    <Save className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => {
-                      setEditingDescription(false);
-                      setEditedDescription(section.description || '');
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      onClick={handleSaveDescription} 
+                      disabled={savingDescription} 
+                      size="sm"
+                      className="gap-2"
+                    >
+                      {savingDescription ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4" />
+                          Save Description
+                        </>
+                      )}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setEditingDescription(false);
+                        setEditedDescription(section.description || '');
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div 
-                  className="flex items-center gap-2 mt-1 cursor-pointer group hover:bg-muted/50 rounded-md px-2 py-1 -mx-2 transition-all"
+                  className="group mt-2 cursor-pointer hover:bg-muted/50 rounded-md px-2 py-1 -mx-2 transition-all"
                   onClick={() => setEditingDescription(true)}
                   title="Click to edit description"
                 >
-                  <p className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-                    {section.description || 'Click to add description...'}
-                  </p>
-                  <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  {section.description ? (
+                    <div 
+                      className="prose prose-sm max-w-none text-muted-foreground group-hover:text-foreground transition-colors"
+                      dangerouslySetInnerHTML={createSafeHtml(section.description)}
+                    />
+                  ) : (
+                    <p className="text-sm text-muted-foreground group-hover:text-foreground transition-colors flex items-center gap-2">
+                      <Pencil className="h-3 w-3" />
+                      Click to add description...
+                    </p>
+                  )}
                 </div>
               )
             )}
