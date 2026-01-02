@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, Upload, Video, FileText, CheckCircle, Clock, AlertCircle, Send, ExternalLink } from 'lucide-react';
+import { Briefcase, Upload, Video, FileText, CheckCircle, Clock, AlertCircle, Send, ExternalLink, Square, CheckSquare } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { createSafeHtml } from '@/lib/sanitize-html';
 
 interface CourseAssignmentProps {
@@ -54,6 +55,7 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
   const [file, setFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState('');
   const [fileName, setFileName] = useState('');
+  const [spectrogramConsent, setSpectrogramConsent] = useState(false);
 
   useEffect(() => {
     fetchAssignment();
@@ -136,6 +138,16 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
       toast({ 
         title: 'Error', 
         description: 'Please provide at least one type of submission (text, video, or file)', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    // Validate Spectrogram consent
+    if (!spectrogramConsent) {
+      toast({ 
+        title: 'Consent Required', 
+        description: 'You must agree to share your submission with Spectrogram Consulting to complete this course.', 
         variant: 'destructive' 
       });
       return;
@@ -296,10 +308,13 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
 
         {/* Instructions */}
         {assignment.instructions && (
-          <div 
-            className="prose prose-sm max-w-none p-4 bg-muted/50 rounded-lg"
-            dangerouslySetInnerHTML={createSafeHtml(assignment.instructions)}
-          />
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Assignment Instructions</Label>
+            <div 
+              className="prose prose-sm max-w-none p-4 bg-muted/50 rounded-lg [&>h2]:text-base [&>h2]:font-semibold [&>h2]:mt-4 [&>h2]:mb-2 [&>h3]:text-sm [&>h3]:font-medium [&>h3]:mt-3 [&>h3]:mb-1 [&>p]:text-sm [&>p]:mb-2 [&>ol]:pl-4 [&>ol]:space-y-1 [&>ul]:pl-4 [&>ul]:space-y-1 [&>li]:text-sm"
+              dangerouslySetInnerHTML={createSafeHtml(assignment.instructions)}
+            />
+          </div>
         )}
 
         {/* Text submission */}
@@ -381,32 +396,53 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
           </div>
         )}
 
-        {/* Spectrogram note */}
-        <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+        {/* Spectrogram consent - mandatory */}
+        <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
           <div className="flex items-start gap-3">
             <img 
               src="/src/assets/spectrogram-logo.png" 
-              alt="Spectrogram" 
-              className="w-8 h-8 object-contain"
+              alt="Spectrogram Consulting" 
+              className="w-8 h-8 object-contain flex-shrink-0"
             />
-            <div>
-              <p className="text-sm font-medium">Shared with Spectrogram Consulting</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Your submission will be shared with Spectrogram's talent network for job opportunities.
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Spectrogram Consulting Partnership</p>
+              <p className="text-xs text-muted-foreground">
+                Your submission will be shared with Spectrogram Consulting&apos;s talent network, 
+                giving you access to potential job opportunities with their partner companies.
               </p>
             </div>
           </div>
+          <div className="flex items-start gap-3 pt-2 border-t border-primary/10">
+            <Checkbox 
+              id="spectrogram-consent"
+              checked={spectrogramConsent}
+              onCheckedChange={(checked) => setSpectrogramConsent(checked === true)}
+              className="mt-0.5"
+            />
+            <label 
+              htmlFor="spectrogram-consent" 
+              className="text-sm cursor-pointer select-none"
+            >
+              <span className="font-medium">I agree</span> to share my submission with Spectrogram Consulting for recruitment and job matching purposes.
+              <span className="text-destructive ml-1">*</span>
+            </label>
+          </div>
         </div>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex-col gap-2">
         <Button 
           onClick={submitAssignment} 
           className="w-full" 
-          disabled={submitting || uploading}
+          disabled={submitting || uploading || !spectrogramConsent}
         >
           <Send className="h-4 w-4 mr-2" />
           {submitting ? 'Submitting...' : submission ? 'Resubmit Assignment' : 'Submit Assignment'}
         </Button>
+        {!spectrogramConsent && (
+          <p className="text-xs text-muted-foreground text-center">
+            You must agree to share with Spectrogram Consulting to complete this course
+          </p>
+        )}
       </CardFooter>
     </Card>
   );
