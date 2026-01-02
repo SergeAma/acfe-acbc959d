@@ -50,7 +50,7 @@ serve(async (req) => {
     if (courseError || !course) {
       throw new Error("Course not found");
     }
-    logStep("Course found", { title: course.title, isPaid: course.is_paid });
+    logStep("Course found", { title: course.title, isPaid: course.is_paid, priceCents: course.price_cents });
 
     // Check platform override settings
     const { data: pricingOverride } = await supabaseClient
@@ -71,7 +71,7 @@ serve(async (req) => {
     );
 
     // Helper function for free enrollment
-    const enrollFree = async (message: string, sponsored = false) => {
+    const enrollFree = async (message: string) => {
       // Check if already enrolled
       const { data: existingEnrollment } = await serviceClient
         .from("enrollments")
@@ -145,6 +145,7 @@ serve(async (req) => {
     logStep("Customer lookup", { customerId: customerId || "new customer" });
 
     const origin = req.headers.get("origin") || "https://lovable.dev";
+    const coursePriceCents = course.price_cents || 1000;
     
     // Build checkout session options
     const sessionOptions: Stripe.Checkout.SessionCreateParams = {
@@ -157,8 +158,11 @@ serve(async (req) => {
             product_data: {
               name: course.title,
               description: "Monthly subscription for course access",
+              metadata: {
+                course_id: courseId,
+              },
             },
-            unit_amount: course.price_cents || 1000,
+            unit_amount: coursePriceCents,
             recurring: {
               interval: "month",
             },
@@ -178,12 +182,11 @@ serve(async (req) => {
           course_id: courseId,
           student_id: user.id,
         },
-        trial_period_days: undefined,
       },
-      allow_promotion_codes: true,
+      allow_promotion_codes: true, // Allow Stripe's built-in promo code input
     };
 
-    // If promo code provided, look it up and apply trial
+    // If promo code provided, look it up and handle accordingly
     if (promoCode) {
       try {
         const promoCodes = await stripe.promotionCodes.list({
@@ -194,32 +197,49 @@ serve(async (req) => {
         
         if (promoCodes.data.length > 0) {
           const promo = promoCodes.data[0];
-          // Get trial days from metadata (default to 7 if not set)
+          const coupon = typeof promo.coupon === 'object' ? promo.coupon : null;
+          
+          logStep("Found promo code", { 
+            code: promo.code, 
+            percentOff: coupon?.percent_off,
+            amountOff: coupon?.amount_off,
+            metadata: promo.metadata 
+          });
+          
+          // Get trial days from promo or coupon metadata
           const trialDays = parseInt(
             promo.metadata?.trial_days || 
-            (typeof promo.coupon === 'object' && promo.coupon.metadata?.trial_days) || 
-            '7'
+            coupon?.metadata?.trial_days || 
+            '0'
           );
           
-          // Apply trial for 100% off coupons
-          if (typeof promo.coupon === 'object' && promo.coupon.percent_off === 100) {
+          // For 100% off coupons with trial days, apply trial period
+          if (coupon?.percent_off === 100 && trialDays > 0) {
             sessionOptions.subscription_data!.trial_period_days = trialDays;
-            logStep("Applied trial from promo code", { code: promoCode, trialDays });
+            // Don't apply discount since we're using trial
+            logStep("Applied trial period from promo code", { code: promoCode, trialDays });
+          } else {
+            // Apply the promo code as a discount
+            sessionOptions.discounts = [{ promotion_code: promo.id }];
+            logStep("Applied discount from promo code", { code: promoCode });
           }
-          // Apply promo code to session
-          sessionOptions.discounts = [{ promotion_code: promo.id }];
+          
+          // Disable allow_promotion_codes since we're pre-applying
+          sessionOptions.allow_promotion_codes = false;
         } else {
           logStep("Promo code not found or inactive", { code: promoCode });
+          // Keep allow_promotion_codes true so user can try again in Stripe
         }
       } catch (promoError) {
         logStep("Error looking up promo code", { error: String(promoError) });
+        // Continue without the promo code
       }
     }
 
     // Create subscription checkout session
     const session = await stripe.checkout.sessions.create(sessionOptions);
 
-    logStep("Subscription checkout session created", { sessionId: session.id });
+    logStep("Subscription checkout session created", { sessionId: session.id, url: session.url });
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -56,11 +56,18 @@ serve(async (req) => {
       metadata: session.metadata 
     });
 
-    // For subscriptions, check if subscription is active
+    // For subscriptions, check if subscription is active OR trialing
     if (session.mode === 'subscription') {
       const subscription = session.subscription as Stripe.Subscription;
-      if (!subscription || subscription.status !== 'active') {
-        throw new Error("Subscription not active");
+      if (!subscription) {
+        throw new Error("Subscription not found");
+      }
+      
+      // Accept both 'active' and 'trialing' as valid states
+      const validStatuses = ['active', 'trialing'];
+      if (!validStatuses.includes(subscription.status)) {
+        logStep("Subscription not in valid state", { status: subscription.status });
+        throw new Error(`Subscription status is ${subscription.status}, expected active or trialing`);
       }
       logStep("Subscription verified", { subscriptionId: subscription.id, status: subscription.status });
     } else if (session.payment_status !== "paid") {
@@ -69,6 +76,12 @@ serve(async (req) => {
 
     // Verify the session belongs to this user and course
     if (session.metadata?.student_id !== user.id || session.metadata?.course_id !== courseId) {
+      logStep("Metadata mismatch", { 
+        sessionStudentId: session.metadata?.student_id, 
+        userId: user.id,
+        sessionCourseId: session.metadata?.course_id,
+        courseId 
+      });
       throw new Error("Payment verification failed - metadata mismatch");
     }
 
@@ -106,6 +119,10 @@ serve(async (req) => {
       ? (session.subscription as Stripe.Subscription)?.id 
       : null;
 
+    // Determine status based on subscription state
+    const subscription = session.subscription as Stripe.Subscription | null;
+    const purchaseStatus = subscription?.status === 'trialing' ? 'trialing' : 'active';
+
     // Record purchase
     const { error: purchaseError } = await serviceClient
       .from("course_purchases")
@@ -116,14 +133,14 @@ serve(async (req) => {
         stripe_payment_intent_id: session.payment_intent as string || null,
         stripe_subscription_id: subscriptionId,
         amount_cents: session.amount_total || 0,
-        status: "active",
+        status: purchaseStatus,
         purchased_at: new Date().toISOString(),
       }, { onConflict: "student_id,course_id" });
 
     if (purchaseError) {
       logStep("Purchase record error", { error: purchaseError });
     } else {
-      logStep("Purchase recorded");
+      logStep("Purchase recorded", { status: purchaseStatus });
     }
 
     // Get course and user details for email
@@ -154,6 +171,7 @@ serve(async (req) => {
             courseTitle: course.title,
             amount: (session.amount_total || 0) / 100,
             isSubscription: session.mode === 'subscription',
+            isTrial: subscription?.status === 'trialing',
           }),
         });
         logStep("Purchase confirmation email triggered");
@@ -165,7 +183,10 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       success: true,
       enrolled: true,
-      message: "Payment verified and enrollment complete"
+      isTrial: subscription?.status === 'trialing',
+      message: subscription?.status === 'trialing' 
+        ? "Trial started! You're now enrolled." 
+        : "Payment verified and enrollment complete"
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
