@@ -8,8 +8,24 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, GripVertical, CheckCircle, HelpCircle, FileText, Save, ArrowUp, ArrowDown } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Trash2, GripVertical, CheckCircle, HelpCircle, FileText, Save } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface QuizBuilderProps {
   courseId: string;
@@ -43,6 +59,240 @@ interface QuizOption {
   sort_order: number;
 }
 
+// Sortable Option Component
+const SortableOption = ({
+  option,
+  optIndex,
+  questionId,
+  optionsLength,
+  onSetCorrect,
+  onUpdateText,
+  onBlur,
+  onDelete,
+}: {
+  option: QuizOption;
+  optIndex: number;
+  questionId: string;
+  optionsLength: number;
+  onSetCorrect: () => void;
+  onUpdateText: (text: string) => void;
+  onBlur: () => void;
+  onDelete: () => void;
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: option.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2">
+      <button
+        type="button"
+        className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={onSetCorrect}
+        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+          option.is_correct
+            ? 'bg-green-500 border-green-500 text-white'
+            : 'border-muted-foreground/50 hover:border-green-500'
+        }`}
+      >
+        {option.is_correct && <CheckCircle className="h-4 w-4" />}
+      </button>
+      <Input
+        value={option.option_text}
+        onChange={(e) => onUpdateText(e.target.value)}
+        onBlur={onBlur}
+        placeholder={`Option ${optIndex + 1}`}
+        className="flex-1"
+      />
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onDelete}
+        disabled={optionsLength <= 2}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+};
+
+// Sortable Question Component
+const SortableQuestion = ({
+  question,
+  index,
+  questionsLength,
+  onUpdateQuestionText,
+  onBlurQuestion,
+  onUpdatePoints,
+  onBlurPoints,
+  onDeleteQuestion,
+  onSetCorrectOption,
+  onUpdateOptionText,
+  onBlurOption,
+  onDeleteOption,
+  onAddOption,
+  onReorderOptions,
+}: {
+  question: QuizQuestion;
+  index: number;
+  questionsLength: number;
+  onUpdateQuestionText: (text: string) => void;
+  onBlurQuestion: () => void;
+  onUpdatePoints: (points: number) => void;
+  onBlurPoints: () => void;
+  onDeleteQuestion: () => void;
+  onSetCorrectOption: (optionId: string) => void;
+  onUpdateOptionText: (optionId: string, text: string) => void;
+  onBlurOption: (optionId: string) => void;
+  onDeleteOption: (optionId: string) => void;
+  onAddOption: () => void;
+  onReorderOptions: (activeId: string, overId: string) => void;
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: question.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleOptionDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      onReorderOptions(active.id as string, over.id as string);
+    }
+  };
+
+  return (
+    <Card ref={setNodeRef} style={style} className="border-l-4 border-l-primary">
+      <CardContent className="pt-4 space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="flex flex-col items-center gap-1">
+            <button
+              type="button"
+              className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground"
+              {...attributes}
+              {...listeners}
+            >
+              <GripVertical className="h-5 w-5" />
+            </button>
+            <span className="font-bold text-muted-foreground">Q{index + 1}</span>
+          </div>
+          <Badge variant="secondary" className="text-xs mt-1">
+            {question.question_type === 'multiple_choice' ? 'MCQ' : 'Short Answer'}
+          </Badge>
+          <div className="flex-1 space-y-3">
+            <Textarea
+              value={question.question_text}
+              onChange={(e) => onUpdateQuestionText(e.target.value)}
+              onBlur={onBlurQuestion}
+              placeholder="Enter your question..."
+              rows={2}
+            />
+
+            {/* Options for MCQ */}
+            {question.question_type === 'multiple_choice' && (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleOptionDragEnd}
+              >
+                <SortableContext
+                  items={question.options?.map((o) => o.id) || []}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-2">
+                    {question.options?.map((option, optIndex) => (
+                      <SortableOption
+                        key={option.id}
+                        option={option}
+                        optIndex={optIndex}
+                        questionId={question.id}
+                        optionsLength={question.options?.length || 0}
+                        onSetCorrect={() => onSetCorrectOption(option.id)}
+                        onUpdateText={(text) => onUpdateOptionText(option.id, text)}
+                        onBlur={() => onBlurOption(option.id)}
+                        onDelete={() => onDeleteOption(option.id)}
+                      />
+                    ))}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={onAddOption}
+                      className="text-muted-foreground"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Option
+                    </Button>
+                  </div>
+                </SortableContext>
+              </DndContext>
+            )}
+
+            {question.question_type === 'short_answer' && (
+              <div className="p-3 bg-muted/50 rounded text-sm text-muted-foreground">
+                <FileText className="h-4 w-4 inline mr-1" />
+                Students will write a text response. You'll need to grade manually.
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              min="1"
+              value={question.points}
+              onChange={(e) => onUpdatePoints(parseInt(e.target.value) || 1)}
+              onBlur={onBlurPoints}
+              className="w-16"
+            />
+            <span className="text-sm text-muted-foreground">pts</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onDeleteQuestion}
+              className="text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
   const { toast } = useToast();
   const [quiz, setQuiz] = useState<Quiz | null>(null);
@@ -50,13 +300,20 @@ export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   useEffect(() => {
     fetchQuiz();
   }, [courseId]);
 
   const fetchQuiz = async () => {
     setLoading(true);
-    
+
     const { data: quizData, error: quizError } = await supabase
       .from('course_quizzes')
       .select('*')
@@ -71,7 +328,7 @@ export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
 
     if (quizData) {
       setQuiz(quizData);
-      
+
       // Fetch questions
       const { data: questionsData } = await supabase
         .from('quiz_questions')
@@ -88,19 +345,23 @@ export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
               .select('*')
               .eq('question_id', q.id)
               .order('sort_order', { ascending: true });
-            return { ...q, question_type: q.question_type as 'multiple_choice' | 'short_answer', options: optionsData || [] };
+            return {
+              ...q,
+              question_type: q.question_type as 'multiple_choice' | 'short_answer',
+              options: optionsData || [],
+            };
           })
         );
         setQuestions(questionsWithOptions);
       }
     }
-    
+
     setLoading(false);
   };
 
   const createQuiz = async () => {
     setSaving(true);
-    
+
     const { data, error } = await supabase
       .from('course_quizzes')
       .insert({
@@ -118,13 +379,13 @@ export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
       setQuiz(data);
       toast({ title: 'Success', description: 'Quiz created' });
     }
-    
+
     setSaving(false);
   };
 
   const updateQuiz = async (updates: Partial<Quiz>) => {
     if (!quiz) return;
-    
+
     const { error } = await supabase
       .from('course_quizzes')
       .update(updates)
@@ -134,12 +395,13 @@ export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
       toast({ title: 'Error', description: 'Failed to update quiz', variant: 'destructive' });
     } else {
       setQuiz({ ...quiz, ...updates });
+      toast({ title: 'Success', description: 'Quiz settings saved' });
     }
   };
 
   const addQuestion = async (type: 'multiple_choice' | 'short_answer') => {
     if (!quiz) return;
-    
+
     const { data, error } = await supabase
       .from('quiz_questions')
       .insert({
@@ -162,12 +424,12 @@ export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
           { question_id: data.id, option_text: '', is_correct: true, sort_order: 0 },
           { question_id: data.id, option_text: '', is_correct: false, sort_order: 1 },
         ];
-        
+
         const { data: optionsData } = await supabase
           .from('quiz_options')
           .insert(defaultOptions)
           .select();
-        
+
         setQuestions([...questions, { ...newQuestion, options: optionsData || [] }]);
       } else {
         setQuestions([...questions, newQuestion]);
@@ -182,29 +444,24 @@ export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
       .eq('id', questionId);
 
     if (!error) {
-      setQuestions(questions.map(q => 
-        q.id === questionId ? { ...q, ...updates } : q
-      ));
+      setQuestions(questions.map((q) => (q.id === questionId ? { ...q, ...updates } : q)));
     }
   };
 
   const deleteQuestion = async (questionId: string) => {
-    const { error } = await supabase
-      .from('quiz_questions')
-      .delete()
-      .eq('id', questionId);
+    const { error } = await supabase.from('quiz_questions').delete().eq('id', questionId);
 
     if (error) {
       toast({ title: 'Error', description: 'Failed to delete question', variant: 'destructive' });
     } else {
-      setQuestions(questions.filter(q => q.id !== questionId));
+      setQuestions(questions.filter((q) => q.id !== questionId));
     }
   };
 
   const addOption = async (questionId: string) => {
-    const question = questions.find(q => q.id === questionId);
+    const question = questions.find((q) => q.id === questionId);
     if (!question) return;
-    
+
     const { data, error } = await supabase
       .from('quiz_options')
       .insert({
@@ -217,31 +474,34 @@ export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
       .single();
 
     if (!error && data) {
-      setQuestions(questions.map(q => 
-        q.id === questionId 
-          ? { ...q, options: [...(q.options || []), data] }
-          : q
-      ));
+      setQuestions(
+        questions.map((q) =>
+          q.id === questionId ? { ...q, options: [...(q.options || []), data] } : q
+        )
+      );
     }
   };
 
-  const updateOption = async (optionId: string, questionId: string, updates: Partial<QuizOption>) => {
-    const { error } = await supabase
-      .from('quiz_options')
-      .update(updates)
-      .eq('id', optionId);
+  const updateOption = async (
+    optionId: string,
+    questionId: string,
+    updates: Partial<QuizOption>
+  ) => {
+    const { error } = await supabase.from('quiz_options').update(updates).eq('id', optionId);
 
     if (!error) {
-      setQuestions(questions.map(q => 
-        q.id === questionId 
-          ? { ...q, options: q.options?.map(o => o.id === optionId ? { ...o, ...updates } : o) }
-          : q
-      ));
+      setQuestions(
+        questions.map((q) =>
+          q.id === questionId
+            ? { ...q, options: q.options?.map((o) => (o.id === optionId ? { ...o, ...updates } : o)) }
+            : q
+        )
+      );
     }
   };
 
   const setCorrectOption = async (optionId: string, questionId: string) => {
-    const question = questions.find(q => q.id === questionId);
+    const question = questions.find((q) => q.id === questionId);
     if (!question?.options) return;
 
     // Update all options - set the selected one as correct, others as incorrect
@@ -252,73 +512,60 @@ export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
         .eq('id', option.id);
     }
 
-    setQuestions(questions.map(q => 
-      q.id === questionId 
-        ? { ...q, options: q.options?.map(o => ({ ...o, is_correct: o.id === optionId })) }
-        : q
-    ));
+    setQuestions(
+      questions.map((q) =>
+        q.id === questionId
+          ? { ...q, options: q.options?.map((o) => ({ ...o, is_correct: o.id === optionId })) }
+          : q
+      )
+    );
   };
 
   const deleteOption = async (optionId: string, questionId: string) => {
-    const { error } = await supabase
-      .from('quiz_options')
-      .delete()
-      .eq('id', optionId);
+    const { error } = await supabase.from('quiz_options').delete().eq('id', optionId);
 
     if (!error) {
-      setQuestions(questions.map(q => 
-        q.id === questionId 
-          ? { ...q, options: q.options?.filter(o => o.id !== optionId) }
-          : q
-      ));
+      setQuestions(
+        questions.map((q) =>
+          q.id === questionId ? { ...q, options: q.options?.filter((o) => o.id !== optionId) } : q
+        )
+      );
     }
   };
 
-  const moveOption = async (questionId: string, optionIndex: number, direction: 'up' | 'down') => {
-    const question = questions.find(q => q.id === questionId);
+  const handleQuestionDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = questions.findIndex((q) => q.id === active.id);
+      const newIndex = questions.findIndex((q) => q.id === over.id);
+
+      const reordered = arrayMove(questions, oldIndex, newIndex);
+      const updated = reordered.map((q, i) => ({ ...q, sort_order: i }));
+      setQuestions(updated);
+
+      // Save to database
+      for (const q of updated) {
+        await supabase.from('quiz_questions').update({ sort_order: q.sort_order }).eq('id', q.id);
+      }
+    }
+  };
+
+  const handleOptionReorder = async (questionId: string, activeId: string, overId: string) => {
+    const question = questions.find((q) => q.id === questionId);
     if (!question?.options) return;
 
-    const newIndex = direction === 'up' ? optionIndex - 1 : optionIndex + 1;
-    if (newIndex < 0 || newIndex >= question.options.length) return;
+    const oldIndex = question.options.findIndex((o) => o.id === activeId);
+    const newIndex = question.options.findIndex((o) => o.id === overId);
 
-    const reorderedOptions = [...question.options];
-    const [movedOption] = reorderedOptions.splice(optionIndex, 1);
-    reorderedOptions.splice(newIndex, 0, movedOption);
+    const reordered = arrayMove(question.options, oldIndex, newIndex);
+    const updated = reordered.map((o, i) => ({ ...o, sort_order: i }));
 
-    // Update sort_order for affected options
-    const updatedOptions = reorderedOptions.map((o, i) => ({ ...o, sort_order: i }));
-    
-    setQuestions(questions.map(q => 
-      q.id === questionId ? { ...q, options: updatedOptions } : q
-    ));
+    setQuestions(questions.map((q) => (q.id === questionId ? { ...q, options: updated } : q)));
 
     // Save to database
-    for (const o of updatedOptions) {
-      await supabase
-        .from('quiz_options')
-        .update({ sort_order: o.sort_order })
-        .eq('id', o.id);
-    }
-  };
-
-  const moveQuestion = async (index: number, direction: 'up' | 'down') => {
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
-    if (newIndex < 0 || newIndex >= questions.length) return;
-
-    const reorderedQuestions = [...questions];
-    const [movedQuestion] = reorderedQuestions.splice(index, 1);
-    reorderedQuestions.splice(newIndex, 0, movedQuestion);
-
-    // Update sort_order for affected questions
-    const updatedQuestions = reorderedQuestions.map((q, i) => ({ ...q, sort_order: i }));
-    setQuestions(updatedQuestions);
-
-    // Save to database
-    for (const q of updatedQuestions) {
-      await supabase
-        .from('quiz_questions')
-        .update({ sort_order: q.sort_order })
-        .eq('id', q.id);
+    for (const o of updated) {
+      await supabase.from('quiz_options').update({ sort_order: o.sort_order }).eq('id', o.id);
     }
   };
 
@@ -362,7 +609,7 @@ export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
           Course Quiz
         </CardTitle>
         <CardDescription>
-          Students must pass this quiz to complete the course
+          Students must pass this quiz to complete the course. Drag items to reorder.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -384,7 +631,9 @@ export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
                 min="0"
                 max="100"
                 value={quiz.passing_percentage}
-                onChange={(e) => setQuiz({ ...quiz, passing_percentage: parseInt(e.target.value) || 0 })}
+                onChange={(e) =>
+                  setQuiz({ ...quiz, passing_percentage: parseInt(e.target.value) || 0 })
+                }
               />
             </div>
             <div className="space-y-2">
@@ -393,7 +642,12 @@ export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
                 type="number"
                 min="1"
                 value={quiz.time_limit_minutes || ''}
-                onChange={(e) => setQuiz({ ...quiz, time_limit_minutes: e.target.value ? parseInt(e.target.value) : null })}
+                onChange={(e) =>
+                  setQuiz({
+                    ...quiz,
+                    time_limit_minutes: e.target.value ? parseInt(e.target.value) : null,
+                  })
+                }
                 placeholder="No limit"
               />
             </div>
@@ -406,13 +660,15 @@ export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
             </div>
           </div>
           <div className="flex justify-end">
-            <Button 
-              onClick={() => updateQuiz({ 
-                title: quiz.title, 
-                passing_percentage: quiz.passing_percentage,
-                time_limit_minutes: quiz.time_limit_minutes,
-                is_required: quiz.is_required
-              })}
+            <Button
+              onClick={() =>
+                updateQuiz({
+                  title: quiz.title,
+                  passing_percentage: quiz.passing_percentage,
+                  time_limit_minutes: quiz.time_limit_minutes,
+                  is_required: quiz.is_required,
+                })
+              }
               disabled={saving}
               size="sm"
             >
@@ -444,146 +700,70 @@ export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
               <p>No questions yet. Add your first question above.</p>
             </div>
           ) : (
-            questions.map((question, index) => (
-              <Card key={question.id} className="border-l-4 border-l-primary">
-                <CardContent className="pt-4 space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex flex-col items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => moveQuestion(index, 'up')}
-                        disabled={index === 0}
-                      >
-                        <ArrowUp className="h-4 w-4" />
-                      </Button>
-                      <span className="font-bold text-muted-foreground">Q{index + 1}</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => moveQuestion(index, 'down')}
-                        disabled={index === questions.length - 1}
-                      >
-                        <ArrowDown className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <Badge variant="secondary" className="text-xs mt-1">
-                      {question.question_type === 'multiple_choice' ? 'MCQ' : 'Short Answer'}
-                    </Badge>
-                    <div className="flex-1 space-y-3">
-                      <Textarea
-                        value={question.question_text}
-                        onChange={(e) => setQuestions(questions.map(q => 
-                          q.id === question.id ? { ...q, question_text: e.target.value } : q
-                        ))}
-                        onBlur={() => updateQuestion(question.id, { question_text: question.question_text })}
-                        placeholder="Enter your question..."
-                        rows={2}
-                      />
-                      
-                      {/* Options for MCQ */}
-                      {question.question_type === 'multiple_choice' && (
-                        <div className="space-y-2">
-                          {question.options?.map((option, optIndex) => (
-                            <div key={option.id} className="flex items-center gap-2">
-                              <div className="flex flex-col">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-5 w-5"
-                                  onClick={() => moveOption(question.id, optIndex, 'up')}
-                                  disabled={optIndex === 0}
-                                >
-                                  <ArrowUp className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-5 w-5"
-                                  onClick={() => moveOption(question.id, optIndex, 'down')}
-                                  disabled={optIndex === (question.options?.length || 0) - 1}
-                                >
-                                  <ArrowDown className="h-3 w-3" />
-                                </Button>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => setCorrectOption(option.id, question.id)}
-                                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                  option.is_correct 
-                                    ? 'bg-green-500 border-green-500 text-white' 
-                                    : 'border-muted-foreground/50 hover:border-green-500'
-                                }`}
-                              >
-                                {option.is_correct && <CheckCircle className="h-4 w-4" />}
-                              </button>
-                              <Input
-                                value={option.option_text}
-                                onChange={(e) => setQuestions(questions.map(q => 
-                                  q.id === question.id 
-                                    ? { ...q, options: q.options?.map(o => o.id === option.id ? { ...o, option_text: e.target.value } : o) }
-                                    : q
-                                ))}
-                                onBlur={() => updateOption(option.id, question.id, { option_text: option.option_text })}
-                                placeholder={`Option ${optIndex + 1}`}
-                                className="flex-1"
-                              />
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => deleteOption(option.id, question.id)}
-                                disabled={question.options?.length === 2}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => addOption(question.id)}
-                            className="text-muted-foreground"
-                          >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Add Option
-                          </Button>
-                        </div>
-                      )}
-
-                      {question.question_type === 'short_answer' && (
-                        <div className="p-3 bg-muted/50 rounded text-sm text-muted-foreground">
-                          <FileText className="h-4 w-4 inline mr-1" />
-                          Students will write a text response. You'll need to grade manually.
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        min="1"
-                        value={question.points}
-                        onChange={(e) => setQuestions(questions.map(q => 
-                          q.id === question.id ? { ...q, points: parseInt(e.target.value) || 1 } : q
-                        ))}
-                        onBlur={() => updateQuestion(question.id, { points: question.points })}
-                        className="w-16"
-                      />
-                      <span className="text-sm text-muted-foreground">pts</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteQuestion(question.id)}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleQuestionDragEnd}
+            >
+              <SortableContext
+                items={questions.map((q) => q.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-4">
+                  {questions.map((question, index) => (
+                    <SortableQuestion
+                      key={question.id}
+                      question={question}
+                      index={index}
+                      questionsLength={questions.length}
+                      onUpdateQuestionText={(text) =>
+                        setQuestions(
+                          questions.map((q) =>
+                            q.id === question.id ? { ...q, question_text: text } : q
+                          )
+                        )
+                      }
+                      onBlurQuestion={() =>
+                        updateQuestion(question.id, { question_text: question.question_text })
+                      }
+                      onUpdatePoints={(points) =>
+                        setQuestions(
+                          questions.map((q) => (q.id === question.id ? { ...q, points } : q))
+                        )
+                      }
+                      onBlurPoints={() => updateQuestion(question.id, { points: question.points })}
+                      onDeleteQuestion={() => deleteQuestion(question.id)}
+                      onSetCorrectOption={(optionId) => setCorrectOption(optionId, question.id)}
+                      onUpdateOptionText={(optionId, text) =>
+                        setQuestions(
+                          questions.map((q) =>
+                            q.id === question.id
+                              ? {
+                                  ...q,
+                                  options: q.options?.map((o) =>
+                                    o.id === optionId ? { ...o, option_text: text } : o
+                                  ),
+                                }
+                              : q
+                          )
+                        )
+                      }
+                      onBlurOption={(optionId) => {
+                        const option = question.options?.find((o) => o.id === optionId);
+                        if (option) {
+                          updateOption(optionId, question.id, { option_text: option.option_text });
+                        }
+                      }}
+                      onDeleteOption={(optionId) => deleteOption(optionId, question.id)}
+                      onAddOption={() => addOption(question.id)}
+                      onReorderOptions={(activeId, overId) =>
+                        handleOptionReorder(question.id, activeId, overId)
+                      }
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           )}
         </div>
 
@@ -593,7 +773,7 @@ export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
               Total: {questions.reduce((sum, q) => sum + q.points, 0)} points
             </span>
             <span className="text-sm">
-              Passing: {Math.ceil(questions.reduce((sum, q) => sum + q.points, 0) * quiz.passing_percentage / 100)} points needed
+              Passing: {Math.ceil((questions.reduce((sum, q) => sum + q.points, 0) * quiz.passing_percentage) / 100)} points needed
             </span>
           </div>
         )}
