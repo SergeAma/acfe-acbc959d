@@ -263,13 +263,13 @@ This assignment will be reviewed by your mentor and shared with Spectrogram Cons
           <div className="flex items-start gap-3">
             <img 
               src="/src/assets/spectrogram-logo.png" 
-              alt="Spectrogram" 
-              className="w-10 h-10 object-contain"
+              alt="Spectrogram Consulting" 
+              className="w-10 h-10 object-contain flex-shrink-0"
             />
-            <div>
+            <div className="space-y-1">
               <p className="font-medium text-sm">Shared with Spectrogram Consulting</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Assignment submissions are automatically shared with Spectrogram Consulting's talent network.
+              <p className="text-xs text-muted-foreground">
+                Assignment submissions are automatically shared with Spectrogram Consulting&apos;s talent network. 
                 Students can use these submissions when applying for jobs through the Spectrogram platform.
               </p>
             </div>

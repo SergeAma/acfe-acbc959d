@@ -319,47 +319,58 @@ export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Quiz Settings */}
-        <div className="grid md:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
-          <div className="space-y-2">
-            <Label>Quiz Title</Label>
-            <Input
-              value={quiz.title}
-              onChange={(e) => setQuiz({ ...quiz, title: e.target.value })}
-              onBlur={() => updateQuiz({ title: quiz.title })}
-              placeholder="Quiz title"
-            />
+        <div className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+            <div className="space-y-2">
+              <Label>Quiz Title</Label>
+              <Input
+                value={quiz.title}
+                onChange={(e) => setQuiz({ ...quiz, title: e.target.value })}
+                placeholder="Quiz title"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Passing Score (%)</Label>
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                value={quiz.passing_percentage}
+                onChange={(e) => setQuiz({ ...quiz, passing_percentage: parseInt(e.target.value) || 0 })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Time Limit (minutes, optional)</Label>
+              <Input
+                type="number"
+                min="1"
+                value={quiz.time_limit_minutes || ''}
+                onChange={(e) => setQuiz({ ...quiz, time_limit_minutes: e.target.value ? parseInt(e.target.value) : null })}
+                placeholder="No limit"
+              />
+            </div>
+            <div className="flex items-center gap-3 pt-6">
+              <Switch
+                checked={quiz.is_required}
+                onCheckedChange={(checked) => setQuiz({ ...quiz, is_required: checked })}
+              />
+              <Label>Required for certificate</Label>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label>Passing Score (%)</Label>
-            <Input
-              type="number"
-              min="0"
-              max="100"
-              value={quiz.passing_percentage}
-              onChange={(e) => setQuiz({ ...quiz, passing_percentage: parseInt(e.target.value) || 0 })}
-              onBlur={() => updateQuiz({ passing_percentage: quiz.passing_percentage })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Time Limit (minutes, optional)</Label>
-            <Input
-              type="number"
-              min="1"
-              value={quiz.time_limit_minutes || ''}
-              onChange={(e) => setQuiz({ ...quiz, time_limit_minutes: e.target.value ? parseInt(e.target.value) : null })}
-              onBlur={() => updateQuiz({ time_limit_minutes: quiz.time_limit_minutes })}
-              placeholder="No limit"
-            />
-          </div>
-          <div className="flex items-center gap-3 pt-6">
-            <Switch
-              checked={quiz.is_required}
-              onCheckedChange={(checked) => {
-                setQuiz({ ...quiz, is_required: checked });
-                updateQuiz({ is_required: checked });
-              }}
-            />
-            <Label>Required for certificate</Label>
+          <div className="flex justify-end">
+            <Button 
+              onClick={() => updateQuiz({ 
+                title: quiz.title, 
+                passing_percentage: quiz.passing_percentage,
+                time_limit_minutes: quiz.time_limit_minutes,
+                is_required: quiz.is_required
+              })}
+              disabled={saving}
+              size="sm"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save Quiz Settings
+            </Button>
           </div>
         </div>
 
