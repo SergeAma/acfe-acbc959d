@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Plus, FileUp, Video, FileText, Briefcase } from 'lucide-react';
+import { Plus, FileUp, Video, FileText, Briefcase, Save, Loader2 } from 'lucide-react';
 import { RichTextEditor } from '@/components/RichTextEditor';
 
 interface AssignmentBuilderProps {
@@ -30,6 +30,9 @@ export const AssignmentBuilder = ({ courseId }: AssignmentBuilderProps) => {
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [localInstructions, setLocalInstructions] = useState<string>('');
+  const [instructionsDirty, setInstructionsDirty] = useState(false);
+  const [savingInstructions, setSavingInstructions] = useState(false);
 
   useEffect(() => {
     fetchAssignment();
@@ -48,6 +51,7 @@ export const AssignmentBuilder = ({ courseId }: AssignmentBuilderProps) => {
       console.error('Error fetching assignment:', error);
     } else {
       setAssignment(data);
+      setLocalInstructions(data?.instructions || '');
     }
     
     setLoading(false);
@@ -107,6 +111,27 @@ This assignment will be reviewed by your mentor and shared with Spectrogram Cons
     } else {
       setAssignment({ ...assignment, ...updates });
     }
+  };
+
+  const saveInstructions = async () => {
+    if (!assignment) return;
+    
+    setSavingInstructions(true);
+    
+    const { error } = await supabase
+      .from('course_assignments')
+      .update({ instructions: localInstructions })
+      .eq('id', assignment.id);
+
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to save instructions', variant: 'destructive' });
+    } else {
+      setAssignment({ ...assignment, instructions: localInstructions });
+      setInstructionsDirty(false);
+      toast({ title: 'Saved', description: 'Instructions saved successfully' });
+    }
+    
+    setSavingInstructions(false);
   };
 
   if (loading) {
@@ -178,16 +203,39 @@ This assignment will be reviewed by your mentor and shared with Spectrogram Cons
         </div>
 
         {/* Instructions Editor */}
-        <div className="space-y-2">
-          <Label>Detailed Instructions</Label>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label>Detailed Instructions</Label>
+            <Button 
+              onClick={saveInstructions} 
+              disabled={!instructionsDirty || savingInstructions}
+              size="sm"
+              className="gap-2"
+            >
+              {savingInstructions ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Save Instructions
+                </>
+              )}
+            </Button>
+          </div>
           <RichTextEditor
-            content={assignment.instructions || ''}
+            content={localInstructions}
             onChange={(content) => {
-              setAssignment({ ...assignment, instructions: content });
-              updateAssignment({ instructions: content });
+              setLocalInstructions(content);
+              setInstructionsDirty(true);
             }}
             placeholder="Write detailed instructions for the assignment..."
           />
+          {instructionsDirty && (
+            <p className="text-xs text-amber-600">You have unsaved changes</p>
+          )}
         </div>
 
         {/* Submission Types */}
