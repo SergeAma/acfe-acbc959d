@@ -583,57 +583,48 @@ export const ContentItemEditor = ({
               </div>
             </div>
 
-            {/* Text Content - Rich Text Editing (for text content type) */}
+            {/* Text Content - Rich Text Editing with full toolbar always visible */}
             {item.content_type === 'text' && (
-              <div className="space-y-2">
-                {editingContent ? (
-                  <>
-                    <RichTextEditor
-                      content={editedContent}
-                      onChange={setEditedContent}
-                      placeholder="Enter your lesson content here..."
-                    />
-                    <div className="flex gap-2">
-                      <Button 
-                        onClick={handleSaveContent} 
-                        disabled={savingContent} 
-                        size="sm"
-                      >
-                        {savingContent ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                        Save
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          setEditingContent(false);
-                          setEditedContent(item.text_content || '');
-                        }}
-                      >
-                        <X className="h-4 w-4 mr-2" />
-                        Cancel
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="group">
-                    {item.text_content ? (
-                      <div 
-                        className="text-sm text-muted-foreground prose prose-sm max-w-none cursor-pointer hover:bg-muted/50 rounded-md p-2 -m-2"
-                        onClick={() => setEditingContent(true)}
-                        dangerouslySetInnerHTML={createSafeHtml(item.text_content)}
-                      />
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setEditingContent(true)}
-                        className="text-muted-foreground"
-                      >
-                        <Pencil className="h-3 w-3 mr-2" />
-                        Add content
-                      </Button>
-                    )}
+              <div className="space-y-3">
+                <RichTextEditor
+                  content={editedContent}
+                  onChange={(content) => {
+                    setEditedContent(content);
+                    setEditingContent(true);
+                  }}
+                  placeholder="Enter your lesson content here..."
+                />
+                {editingContent && (
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      onClick={handleSaveContent} 
+                      disabled={savingContent} 
+                      size="sm"
+                      className="gap-2"
+                    >
+                      {savingContent ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4" />
+                          Save Content
+                        </>
+                      )}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setEditingContent(false);
+                        setEditedContent(item.text_content || '');
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <span className="text-xs text-amber-600 ml-2">You have unsaved changes</span>
                   </div>
                 )}
               </div>
