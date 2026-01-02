@@ -14,6 +14,8 @@ import { Switch } from '@/components/ui/switch';
 import { SectionEditor } from '@/components/admin/SectionEditor';
 import { ThumbnailDropzone } from '@/components/admin/ThumbnailDropzone';
 import { CoursePrerequisites } from '@/components/admin/CoursePrerequisites';
+import { QuizBuilder } from '@/components/admin/QuizBuilder';
+import { AssignmentBuilder } from '@/components/admin/AssignmentBuilder';
 import {
   DndContext,
   closestCenter,
@@ -1124,6 +1126,12 @@ export const AdminCourseBuilder = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Quiz & Assignment Section */}
+          <div className="md:col-span-2 space-y-6">
+            <QuizBuilder courseId={courseId!} />
+            <AssignmentBuilder courseId={courseId!} />
+          </div>
         </div>
 
         <div className="flex justify-between items-center mb-6">
