@@ -34,7 +34,7 @@ export const Landing = () => {
               Zero experience required | Any background | Learn Anytime
             </p>
             <p className="text-sm sm:text-base text-white mb-6 sm:mb-8 inline-block bg-black/40 backdrop-blur-sm px-4 py-2 rounded-lg">
-              Training delivered ONLY by tech experts who understand the African context.
+              Training delivered by tech experts who understand the African context.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
               {user ? <Link to="/dashboard" className="w-full sm:w-auto">
