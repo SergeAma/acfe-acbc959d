@@ -25,7 +25,9 @@ import {
   Minimize2,
   X,
   Eye,
-  Music
+  Music,
+  ClipboardCheck,
+  Briefcase
 } from 'lucide-react';
 import {
   Accordion,
@@ -45,6 +47,8 @@ import { SecureAudioContent } from '@/components/learning/SecureAudioContent';
 import { NotesPanel } from '@/components/learning/NotesPanel';
 import { BookmarksPanel, useBookmarks } from '@/components/learning/BookmarksPanel';
 import { createSafeHtml } from '@/lib/sanitize-html';
+import { CourseQuiz } from '@/components/learning/CourseQuiz';
+import { CourseAssignment } from '@/components/learning/CourseAssignment';
 
 interface ContentItem {
   id: string;
@@ -114,6 +118,11 @@ export const CourseLearn = () => {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(true);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isMentorPreview, setIsMentorPreview] = useState(false);
+  const [showAssessments, setShowAssessments] = useState(false);
+  const [quizPassed, setQuizPassed] = useState(false);
+  const [assignmentApproved, setAssignmentApproved] = useState(false);
+  const [hasQuiz, setHasQuiz] = useState(false);
+  const [hasAssignment, setHasAssignment] = useState(false);
 
   useEffect(() => {
     if (id && user) {
@@ -121,7 +130,21 @@ export const CourseLearn = () => {
     }
   }, [id, user]);
 
+  // Auto-check certificate when quiz/assignment status changes
+  useEffect(() => {
+    if (overallProgress === 100 && (quizPassed || assignmentApproved)) {
+      const quizComplete = !hasQuiz || quizPassed;
+      const assignmentComplete = !hasAssignment || assignmentApproved;
+      
+      if (quizComplete && assignmentComplete && !certificate) {
+        checkAndIssueCertificate();
+      }
+    }
+  }, [quizPassed, assignmentApproved]);
+
   const fetchCourseData = async () => {
+    let currentEnrollmentId: string | null = null;
+    
     try {
       // First fetch course to check if user is the mentor (for preview mode)
       const { data: courseData, error: courseError } = await supabase
@@ -168,6 +191,7 @@ export const CourseLearn = () => {
           return;
         }
 
+        currentEnrollmentId = enrollmentData.id;
         setEnrollmentId(enrollmentData.id);
         setEnrolledAt(enrollmentData.enrolled_at);
         
@@ -280,6 +304,54 @@ export const CourseLearn = () => {
       const progress = allContent.length > 0 ? Math.round((completedCount / allContent.length) * 100) : 0;
       setOverallProgress(progress);
 
+      // Check if course has quiz and assignment (only for non-preview mode)
+      if (!isPreviewMode) {
+        const { data: quizData } = await supabase
+          .from('course_quizzes')
+          .select('id')
+          .eq('course_id', id)
+          .maybeSingle();
+        
+        const { data: assignmentData } = await supabase
+          .from('course_assignments')
+          .select('id')
+          .eq('course_id', id)
+          .maybeSingle();
+
+        setHasQuiz(!!quizData);
+        setHasAssignment(!!assignmentData);
+
+        // Check quiz and assignment status
+        if (quizData && currentEnrollmentId) {
+          const { data: attemptData } = await supabase
+            .from('quiz_attempts')
+            .select('passed')
+            .eq('enrollment_id', currentEnrollmentId)
+            .maybeSingle();
+          
+          if (attemptData?.passed) {
+            setQuizPassed(true);
+          }
+        }
+
+        if (assignmentData && currentEnrollmentId) {
+          const { data: submissionData } = await supabase
+            .from('assignment_submissions')
+            .select('status')
+            .eq('enrollment_id', currentEnrollmentId)
+            .maybeSingle();
+          
+          if (submissionData?.status === 'approved') {
+            setAssignmentApproved(true);
+          }
+        }
+
+        // If all lessons are complete but assessments pending, show assessments
+        if (progress === 100 && (quizData || assignmentData)) {
+          setShowAssessments(true);
+        }
+      }
+
       // Set first incomplete available lesson or first available lesson
       const firstIncomplete = allContent.find(c => !c.completed && c.available);
       const firstAvailable = allContent.find(c => c.available);
@@ -346,64 +418,74 @@ export const CourseLearn = () => {
 
     // Check if course is now 100% complete
     if (newProgress === 100 && user && course) {
-      // Notify mentors about course completion for pending mentorship requests
-      try {
-        await supabase.functions.invoke('send-course-completion-notification', {
-          body: {
-            studentId: user.id,
-            courseId: course.id,
-            courseTitle: course.title,
-          },
+      // If course has assessments (quiz or assignment), show assessments section
+      if (hasQuiz || hasAssignment) {
+        setShowAssessments(true);
+        toast({
+          title: 'Lessons Complete!',
+          description: 'Complete the assessments to earn your certificate.',
         });
-      } catch (notifyError) {
-        console.error('Failed to send course completion notification:', notifyError);
-      }
-
-      // Issue certificate if enabled
-      if (course.certificate_enabled && !certificate) {
-        const certNumber = `ACFE-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-        
-        const { data: certData, error: certError } = await supabase
-          .from('course_certificates')
-          .insert({
-            enrollment_id: enrollmentId,
-            student_id: user.id,
-            course_id: course.id,
-            certificate_number: certNumber,
-          })
-          .select()
-          .single();
-
-        if (!certError && certData) {
-          setCertificate(certData);
-          setShowCertificateDialog(true);
-          toast({
-            title: 'Congratulations!',
-            description: 'You earned a certificate!',
+      } else {
+        // No assessments required - issue certificate directly
+        // Notify mentors about course completion for pending mentorship requests
+        try {
+          await supabase.functions.invoke('send-course-completion-notification', {
+            body: {
+              studentId: user.id,
+              courseId: course.id,
+              courseTitle: course.title,
+            },
           });
+        } catch (notifyError) {
+          console.error('Failed to send course completion notification:', notifyError);
+        }
 
-          // Send certificate email notification
-          try {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('email, full_name')
-              .eq('id', user.id)
-              .single();
+        // Issue certificate if enabled
+        if (course.certificate_enabled && !certificate) {
+          const certNumber = `ACFE-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+          
+          const { data: certData, error: certError } = await supabase
+            .from('course_certificates')
+            .insert({
+              enrollment_id: enrollmentId,
+              student_id: user.id,
+              course_id: course.id,
+              certificate_number: certNumber,
+            })
+            .select()
+            .single();
 
-            if (profileData?.email) {
-              await supabase.functions.invoke('send-certificate-email', {
-                body: {
-                  student_email: profileData.email,
-                  student_name: profileData.full_name || 'Student',
-                  course_name: course.title,
-                  course_id: course.id,
-                  certificate_number: certNumber,
-                  issued_at: certData.issued_at,
-                },
-              });
+          if (!certError && certData) {
+            setCertificate(certData);
+            setShowCertificateDialog(true);
+            toast({
+              title: 'Congratulations!',
+              description: 'You earned a certificate!',
+            });
+
+            // Send certificate email notification
+            try {
+              const { data: profileData } = await supabase
+                .from('profiles')
+                .select('email, full_name')
+                .eq('id', user.id)
+                .single();
+
+              if (profileData?.email) {
+                await supabase.functions.invoke('send-certificate-email', {
+                  body: {
+                    student_email: profileData.email,
+                    student_name: profileData.full_name || 'Student',
+                    course_name: course.title,
+                    course_id: course.id,
+                    certificate_number: certNumber,
+                    issued_at: certData.issued_at,
+                  },
+                });
+              }
+            } catch (emailError) {
+              console.error('Failed to send certificate email:', emailError);
             }
-          } catch (emailError) {
-            console.error('Failed to send certificate email:', emailError);
           }
         }
       }
@@ -455,6 +537,79 @@ export const CourseLearn = () => {
   const getContentIcon = (type: string, completed: boolean) => {
     const IconComponent = type === 'video' ? Video : type === 'file' ? File : FileText;
     return completed ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <Circle className="h-4 w-4" />;
+  };
+
+  // Check and issue certificate after assessments are complete
+  const checkAndIssueCertificate = async () => {
+    if (!user || !course || !enrollmentId || certificate) return;
+    
+    // Check if all required assessments are complete
+    const quizComplete = !hasQuiz || quizPassed;
+    const assignmentComplete = !hasAssignment || assignmentApproved;
+    
+    if (!quizComplete || !assignmentComplete) return;
+    
+    // All assessments complete - issue certificate
+    if (course.certificate_enabled) {
+      const certNumber = `ACFE-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      
+      const { data: certData, error: certError } = await supabase
+        .from('course_certificates')
+        .insert({
+          enrollment_id: enrollmentId,
+          student_id: user.id,
+          course_id: course.id,
+          certificate_number: certNumber,
+        })
+        .select()
+        .single();
+
+      if (!certError && certData) {
+        setCertificate(certData);
+        setShowCertificateDialog(true);
+        toast({
+          title: 'Congratulations!',
+          description: 'You earned a certificate!',
+        });
+
+        // Send certificate email notification
+        try {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('email, full_name')
+            .eq('id', user.id)
+            .single();
+
+          if (profileData?.email) {
+            await supabase.functions.invoke('send-certificate-email', {
+              body: {
+                student_email: profileData.email,
+                student_name: profileData.full_name || 'Student',
+                course_name: course.title,
+                course_id: course.id,
+                certificate_number: certNumber,
+                issued_at: certData.issued_at,
+              },
+            });
+          }
+        } catch (emailError) {
+          console.error('Failed to send certificate email:', emailError);
+        }
+
+        // Notify mentors about course completion
+        try {
+          await supabase.functions.invoke('send-course-completion-notification', {
+            body: {
+              studentId: user.id,
+              courseId: course.id,
+              courseTitle: course.title,
+            },
+          });
+        } catch (notifyError) {
+          console.error('Failed to send course completion notification:', notifyError);
+        }
+      }
+    }
   };
 
   const renderContent = () => {
@@ -871,6 +1026,17 @@ export const CourseLearn = () => {
                       View Certificate
                     </Button>
                   )}
+                  {overallProgress === 100 && !certificate && (hasQuiz || hasAssignment) && (
+                    <Button 
+                      variant={showAssessments ? "default" : "outline"}
+                      size="sm" 
+                      className="w-full mt-2"
+                      onClick={() => setShowAssessments(true)}
+                    >
+                      <ClipboardCheck className="h-4 w-4 mr-2" />
+                      Complete Assessments
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="p-0">
@@ -913,23 +1079,84 @@ export const CourseLearn = () => {
 
           {/* Main Content Area */}
           <div className="lg:col-span-3 space-y-4">
-            <Card>
-              <CardContent className="pt-6">
-                {renderContent()}
-              </CardContent>
-            </Card>
-            
-            {/* Notes and Bookmarks Panels */}
-            {currentContent && (
-              <div className="grid md:grid-cols-2 gap-4">
-                <NotesPanel 
-                  contentId={currentContent.id} 
-                  currentTime={0}
-                />
-                <BookmarksPanel 
-                  contentId={currentContent.id}
-                />
+            {showAssessments && enrollmentId && enrollmentId !== 'preview-mode' ? (
+              // Assessments Section
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold">Course Assessments</h2>
+                    <p className="text-muted-foreground">Complete these assessments to earn your certificate</p>
+                  </div>
+                  <Button variant="ghost" onClick={() => setShowAssessments(false)}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back to Lessons
+                  </Button>
+                </div>
+
+                {/* Quiz Section */}
+                {hasQuiz && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <ClipboardCheck className="h-5 w-5" />
+                      <h3 className="text-lg font-semibold">Quiz</h3>
+                      {quizPassed && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                    </div>
+                    <CourseQuiz 
+                      courseId={id!}
+                      enrollmentId={enrollmentId}
+                      onComplete={(passed) => {
+                        setQuizPassed(passed);
+                        if (passed) {
+                          checkAndIssueCertificate();
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Assignment Section */}
+                {hasAssignment && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Briefcase className="h-5 w-5" />
+                      <h3 className="text-lg font-semibold">Assignment</h3>
+                      {assignmentApproved && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                    </div>
+                    <CourseAssignment
+                      courseId={id!}
+                      enrollmentId={enrollmentId}
+                      onComplete={(approved) => {
+                        setAssignmentApproved(approved);
+                        if (approved) {
+                          checkAndIssueCertificate();
+                        }
+                      }}
+                    />
+                  </div>
+                )}
               </div>
+            ) : (
+              // Regular lesson content
+              <>
+                <Card>
+                  <CardContent className="pt-6">
+                    {renderContent()}
+                  </CardContent>
+                </Card>
+                
+                {/* Notes and Bookmarks Panels */}
+                {currentContent && (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <NotesPanel 
+                      contentId={currentContent.id} 
+                      currentTime={0}
+                    />
+                    <BookmarksPanel 
+                      contentId={currentContent.id}
+                    />
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
