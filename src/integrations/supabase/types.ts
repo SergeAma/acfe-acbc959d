@@ -303,6 +303,7 @@ export type Database = {
       }
       course_content: {
         Row: {
+          audio_url: string | null
           content_type: string
           created_at: string | null
           drip_delay_days: number | null
@@ -318,6 +319,7 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          audio_url?: string | null
           content_type: string
           created_at?: string | null
           drip_delay_days?: number | null
@@ -333,6 +335,7 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          audio_url?: string | null
           content_type?: string
           created_at?: string | null
           drip_delay_days?: number | null

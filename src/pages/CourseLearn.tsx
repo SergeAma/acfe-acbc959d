@@ -24,7 +24,8 @@ import {
   Maximize2,
   Minimize2,
   X,
-  Eye
+  Eye,
+  Music
 } from 'lucide-react';
 import {
   Accordion,
@@ -40,6 +41,7 @@ import {
 } from '@/components/ui/dialog';
 import { CourseCertificate } from '@/components/CourseCertificate';
 import { SecureVideoContent, SecureFileContent } from '@/components/learning/SecureContent';
+import { SecureAudioContent } from '@/components/learning/SecureAudioContent';
 import { NotesPanel } from '@/components/learning/NotesPanel';
 import { BookmarksPanel, useBookmarks } from '@/components/learning/BookmarksPanel';
 import { createSafeHtml } from '@/lib/sanitize-html';
@@ -50,6 +52,7 @@ interface ContentItem {
   content_type: string;
   text_content: string | null;
   video_url: string | null;
+  audio_url: string | null;
   file_url: string | null;
   file_name: string | null;
   duration_minutes: number | null;
@@ -224,6 +227,7 @@ export const CourseLearn = () => {
             content_type,
             text_content,
             video_url,
+            audio_url,
             file_url,
             file_name,
             duration_minutes,
@@ -484,6 +488,7 @@ export const CourseLearn = () => {
 
     return (
       <div className="space-y-6">
+        {/* Title and Metadata - Always at Top */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <h2 className="text-3xl font-bold mb-2">{currentContent.title}</h2>
@@ -498,7 +503,7 @@ export const CourseLearn = () => {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            {currentContent.content_type === 'video' && (
+            {(currentContent.content_type === 'video' || currentContent.content_type === 'audio') && (
               <Button
                 variant="outline"
                 size="sm"
@@ -523,39 +528,7 @@ export const CourseLearn = () => {
 
         <Separator />
 
-        {/* Video Content */}
-        {currentContent.content_type === 'video' && currentContent.video_url && enrollmentId && (
-          <Card>
-            <CardContent className="pt-6">
-              <SecureVideoContent
-                contentId={currentContent.id}
-                videoUrl={currentContent.video_url}
-                enrollmentId={enrollmentId}
-                onBookmark={(timestamp) => {
-                  if ((window as any).__addBookmark) {
-                    (window as any).__addBookmark(timestamp);
-                  }
-                }}
-                onVideoComplete={handleVideoComplete}
-              />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* File Content */}
-        {currentContent.content_type === 'file' && currentContent.file_url && (
-          <Card>
-            <CardContent className="pt-6">
-              <SecureFileContent
-                contentId={currentContent.id}
-                fileUrl={currentContent.file_url}
-                fileName={currentContent.file_name}
-              />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Lesson Description - Show text_content or section description */}
+        {/* Lesson Description - Show BEFORE media content */}
         {(() => {
           // First check if lesson has its own text_content
           if (currentContent.text_content) {
@@ -636,6 +609,49 @@ export const CourseLearn = () => {
           
           return null;
         })()}
+
+        {/* Video Content - Now Below Description */}
+        {currentContent.content_type === 'video' && currentContent.video_url && enrollmentId && (
+          <Card>
+            <CardContent className="pt-6">
+              <SecureVideoContent
+                contentId={currentContent.id}
+                videoUrl={currentContent.video_url}
+                enrollmentId={enrollmentId}
+                onBookmark={(timestamp) => {
+                  if ((window as any).__addBookmark) {
+                    (window as any).__addBookmark(timestamp);
+                  }
+                }}
+                onVideoComplete={handleVideoComplete}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Audio Content */}
+        {currentContent.content_type === 'audio' && currentContent.audio_url && (
+          <Card>
+            <CardContent className="pt-6">
+              <SecureAudioContent
+                audioUrl={currentContent.audio_url}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* File Content */}
+        {currentContent.content_type === 'file' && currentContent.file_url && (
+          <Card>
+            <CardContent className="pt-6">
+              <SecureFileContent
+                contentId={currentContent.id}
+                fileUrl={currentContent.file_url}
+                fileName={currentContent.file_name}
+              />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Navigation */}
         <div className="flex justify-between pt-6">

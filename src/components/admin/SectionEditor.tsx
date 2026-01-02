@@ -62,9 +62,10 @@ interface Section {
 interface ContentItem {
   id: string;
   title: string;
-  content_type: 'text' | 'video' | 'file';
+  content_type: 'text' | 'video' | 'file' | 'audio';
   text_content: string | null;
   video_url: string | null;
+  audio_url: string | null;
   file_url: string | null;
   file_name: string | null;
   sort_order: number;
@@ -211,7 +212,7 @@ export const SectionEditor = ({ section, onDelete, onUpdate, onDuplicate, allSec
     setLoading(false);
   };
 
-  const handleCreateContent = async (type: 'text' | 'video' | 'file') => {
+  const handleCreateContent = async (type: 'text' | 'video' | 'file' | 'audio') => {
     const { data, error } = await supabase
       .from('course_content')
       .insert({
@@ -267,6 +268,7 @@ export const SectionEditor = ({ section, onDelete, onUpdate, onDuplicate, allSec
         content_type: itemToDuplicate.content_type,
         text_content: itemToDuplicate.text_content,
         video_url: itemToDuplicate.video_url,
+        audio_url: (itemToDuplicate as any).audio_url,
         file_url: itemToDuplicate.file_url,
         file_name: itemToDuplicate.file_name,
         duration_minutes: itemToDuplicate.duration_minutes,
@@ -346,6 +348,7 @@ export const SectionEditor = ({ section, onDelete, onUpdate, onDuplicate, allSec
       content_type: item.content_type,
       text_content: item.text_content,
       video_url: item.video_url,
+      audio_url: (item as any).audio_url,
       file_url: item.file_url,
       file_name: item.file_name,
       duration_minutes: item.duration_minutes,
@@ -627,7 +630,7 @@ export const SectionEditor = ({ section, onDelete, onUpdate, onDuplicate, allSec
                     </DndContext>
                   </>
                 )}
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button variant="outline" size="sm" onClick={() => handleCreateContent('text')}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Text
@@ -635,6 +638,10 @@ export const SectionEditor = ({ section, onDelete, onUpdate, onDuplicate, allSec
                   <Button variant="outline" size="sm" onClick={() => handleCreateContent('video')}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Video
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleCreateContent('audio')}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Audio
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => handleCreateContent('file')}>
                     <Plus className="h-4 w-4 mr-2" />
