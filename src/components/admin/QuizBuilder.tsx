@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, GripVertical, CheckCircle, HelpCircle, FileText, Save } from 'lucide-react';
+import { Plus, Trash2, GripVertical, CheckCircle, HelpCircle, FileText, Save, ArrowUp, ArrowDown } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface QuizBuilderProps {
@@ -274,6 +274,27 @@ export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
     }
   };
 
+  const moveQuestion = async (index: number, direction: 'up' | 'down') => {
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= questions.length) return;
+
+    const reorderedQuestions = [...questions];
+    const [movedQuestion] = reorderedQuestions.splice(index, 1);
+    reorderedQuestions.splice(newIndex, 0, movedQuestion);
+
+    // Update sort_order for affected questions
+    const updatedQuestions = reorderedQuestions.map((q, i) => ({ ...q, sort_order: i }));
+    setQuestions(updatedQuestions);
+
+    // Save to database
+    for (const q of updatedQuestions) {
+      await supabase
+        .from('quiz_questions')
+        .update({ sort_order: q.sort_order })
+        .eq('id', q.id);
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -400,12 +421,30 @@ export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
               <Card key={question.id} className="border-l-4 border-l-primary">
                 <CardContent className="pt-4 space-y-4">
                   <div className="flex items-start gap-3">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <span className="font-bold">Q{index + 1}</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {question.question_type === 'multiple_choice' ? 'MCQ' : 'Short Answer'}
-                      </Badge>
+                    <div className="flex flex-col items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => moveQuestion(index, 'up')}
+                        disabled={index === 0}
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                      </Button>
+                      <span className="font-bold text-muted-foreground">Q{index + 1}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => moveQuestion(index, 'down')}
+                        disabled={index === questions.length - 1}
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </Button>
                     </div>
+                    <Badge variant="secondary" className="text-xs mt-1">
+                      {question.question_type === 'multiple_choice' ? 'MCQ' : 'Short Answer'}
+                    </Badge>
                     <div className="flex-1 space-y-3">
                       <Textarea
                         value={question.question_text}
