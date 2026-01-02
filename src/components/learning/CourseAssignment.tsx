@@ -193,6 +193,35 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
     } else {
       setSubmission(result.data);
       toast({ title: 'Success', description: 'Assignment submitted for review' });
+      
+      // Send email notification to mentor
+      try {
+        const { data: courseData } = await supabase
+          .from('courses')
+          .select('mentor_id, title')
+          .eq('id', courseId)
+          .single();
+        
+        const { data: studentProfile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+        
+        if (courseData) {
+          await supabase.functions.invoke('send-assignment-submission-notification', {
+            body: {
+              mentorId: courseData.mentor_id,
+              studentName: studentProfile?.full_name || 'A student',
+              courseTitle: courseData.title,
+              assignmentTitle: assignment.title,
+            }
+          });
+        }
+      } catch (emailError) {
+        console.error('Failed to send notification email:', emailError);
+        // Don't show error to user as submission was successful
+      }
     }
 
     setSubmitting(false);
