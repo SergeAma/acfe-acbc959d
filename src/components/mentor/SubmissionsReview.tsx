@@ -153,6 +153,23 @@ export const SubmissionsReview = () => {
       toast.error('Failed to submit review');
     } else {
       toast.success(`Assignment ${status === 'approved' ? 'approved' : 'sent back for revision'}`);
+      
+      // Send notification email to student
+      try {
+        await supabase.functions.invoke('send-assignment-graded-notification', {
+          body: {
+            studentId: selectedAssignment.student_id,
+            mentorName: profile.full_name || 'Your Mentor',
+            courseTitle: selectedAssignment.assignment?.course?.title || 'Course',
+            assignmentTitle: selectedAssignment.assignment?.title || 'Assignment',
+            status: status === 'revision_needed' ? 'revision_requested' : status,
+            feedback: feedback || null,
+          }
+        });
+      } catch (emailError) {
+        console.error('Failed to send notification email:', emailError);
+      }
+      
       setSelectedAssignment(null);
       setFeedback('');
       fetchSubmissions();
