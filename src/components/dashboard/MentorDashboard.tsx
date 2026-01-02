@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MySubmissions } from '@/components/dashboard/MySubmissions';
 import { MentorOnboardingChecklist } from '@/components/dashboard/MentorOnboardingChecklist';
+import { SubmissionsReview } from '@/components/mentor/SubmissionsReview';
 import { BookOpen, Users, PlusCircle, TrendingUp, UsersRound } from 'lucide-react';
 import { stripHtml } from '@/lib/html-utils';
 
@@ -135,6 +136,9 @@ export const MentorDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Student Submissions Review */}
+      <SubmissionsReview />
 
       {/* My Startup Ideas Submissions */}
       <MySubmissions />
