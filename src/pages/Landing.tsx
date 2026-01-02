@@ -11,12 +11,11 @@ import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png
 import johannesburgLogo from '@/assets/johannesburg-logo.png';
 import spectrogramLogo from '@/assets/spectrogram-logo.png';
 import learnProjectLogo from '@/assets/learn-project-logo.png';
-
 export const Landing = () => {
-  const { user } = useAuth();
-
-  return (
-    <div className="min-h-screen">
+  const {
+    user
+  } = useAuth();
+  return <div className="min-h-screen">
       <Navbar />
       
       {/* Hero Section */}
@@ -35,17 +34,14 @@ export const Landing = () => {
               Zero experience required | Any background | Learn Anytime
             </p>
             <p className="text-sm sm:text-base text-white/80 mb-6 sm:mb-8">
-              Training delivered by African tech experts.
+              Training delivered ONLY by tech experts who understan the African context.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
-              {user ? (
-                <Link to="/dashboard" className="w-full sm:w-auto">
+              {user ? <Link to="/dashboard" className="w-full sm:w-auto">
                   <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
                     Go to Dashboard
                   </Button>
-                </Link>
-              ) : (
-                <>
+                </Link> : <>
                   <Link to="/auth?mode=signup&role=student" className="w-full sm:w-auto">
                     <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
                       START LEARNING
@@ -56,8 +52,7 @@ export const Landing = () => {
                       BECOME A MENTOR
                     </Button>
                   </Link>
-                </>
-              )}
+                </>}
             </div>
           </div>
         </div>
@@ -199,6 +194,5 @@ export const Landing = () => {
       </section>
 
       <Footer />
-    </div>
-  );
+    </div>;
 };
