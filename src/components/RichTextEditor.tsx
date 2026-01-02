@@ -46,16 +46,11 @@ export const RichTextEditor = ({ content, onChange, placeholder }: RichTextEdito
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm max-w-none min-h-[300px] p-4 focus:outline-none',
+        class: 'prose prose-sm max-w-none min-h-[300px] p-4 focus:outline-none [&_*]:outline-none',
       },
     },
+    editable: true,
   });
-
-  useEffect(() => {
-    if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content);
-    }
-  }, [content, editor]);
 
   const setLink = useCallback(() => {
     if (!editor) return;
@@ -186,7 +181,10 @@ export const RichTextEditor = ({ content, onChange, placeholder }: RichTextEdito
       </div>
       
       {/* Editor Content */}
-      <EditorContent editor={editor} className="bg-muted/30" />
+      <EditorContent 
+        editor={editor} 
+        className="bg-muted/30 cursor-text [&_.ProseMirror]:min-h-[300px] [&_.ProseMirror]:p-4 [&_.ProseMirror]:focus:outline-none"
+      />
     </div>
   );
 };
