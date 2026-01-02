@@ -100,7 +100,7 @@ export const CourseQuiz = ({ courseId, enrollmentId, onComplete }: CourseQuizPro
       return;
     }
 
-    // Fetch questions
+  // Fetch questions
     const { data: questionsData } = await supabase
       .from('quiz_questions')
       .select('*')
@@ -108,6 +108,16 @@ export const CourseQuiz = ({ courseId, enrollmentId, onComplete }: CourseQuizPro
       .order('sort_order', { ascending: true });
 
     if (questionsData) {
+      // Shuffle array helper
+      const shuffleArray = <T,>(array: T[]): T[] => {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+      };
+
       // Fetch options for each question
       const questionsWithOptions = await Promise.all(
         questionsData.map(async (q) => {
@@ -118,7 +128,9 @@ export const CourseQuiz = ({ courseId, enrollmentId, onComplete }: CourseQuizPro
               .select('id, option_text, is_correct')
               .eq('question_id', q.id)
               .order('sort_order', { ascending: true });
-            return { ...q, question_type: questionType, options: optionsData || [] };
+            // Shuffle options so correct answer isn't always first
+            const shuffledOptions = shuffleArray(optionsData || []);
+            return { ...q, question_type: questionType, options: shuffledOptions };
           }
           return { ...q, question_type: questionType, options: [] };
         })
