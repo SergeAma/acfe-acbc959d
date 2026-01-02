@@ -26,7 +26,7 @@ export const Landing = () => {
         <div className="absolute inset-0 bg-black/50" />
         
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
+          <div className="max-w-4xl mx-auto text-center bg-black/40 backdrop-blur-sm rounded-2xl p-6 sm:p-10">
             <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 text-white leading-tight">
               Join 300+ Learners and Master a Career-Boosting Digital Skill!
             </h1>
