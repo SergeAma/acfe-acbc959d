@@ -583,7 +583,7 @@ export const ContentItemEditor = ({
               </div>
             </div>
 
-            {/* Text Content - Rich Text Editing */}
+            {/* Text Content - Rich Text Editing (for text content type) */}
             {item.content_type === 'text' && (
               <div className="space-y-2">
                 {editingContent ? (
@@ -881,6 +881,70 @@ export const ContentItemEditor = ({
                     </div>
                   </TabsContent>
                 </Tabs>
+
+                {/* Transcript Section for Audio (Podcast-style) */}
+                <div className="border-t pt-4 mt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <Label className="text-sm font-medium">Transcript / Show Notes</Label>
+                    <Badge variant="outline" className="text-xs">Optional</Badge>
+                  </div>
+                  {editingContent ? (
+                    <div className="space-y-2">
+                      <RichTextEditor
+                        content={editedContent}
+                        onChange={setEditedContent}
+                        placeholder="Add transcript, show notes, or episode description..."
+                      />
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={handleSaveContent} 
+                          disabled={savingContent} 
+                          size="sm"
+                        >
+                          {savingContent ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                          Save Transcript
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setEditingContent(false);
+                            setEditedContent(item.text_content || '');
+                          }}
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="group">
+                      {item.text_content ? (
+                        <div 
+                          className="text-sm text-muted-foreground prose prose-sm max-w-none cursor-pointer hover:bg-muted/50 rounded-md p-3 border border-dashed"
+                          onClick={() => setEditingContent(true)}
+                        >
+                          <div dangerouslySetInnerHTML={createSafeHtml(item.text_content)} />
+                          <div className="flex items-center gap-1 mt-2 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Pencil className="h-3 w-3" />
+                            Click to edit transcript
+                          </div>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingContent(true)}
+                          className="text-muted-foreground w-full justify-start"
+                        >
+                          <Pencil className="h-3 w-3 mr-2" />
+                          Add transcript or show notes...
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

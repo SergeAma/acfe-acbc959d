@@ -528,9 +528,52 @@ export const CourseLearn = () => {
 
         <Separator />
 
-        {/* Lesson Description - Show BEFORE media content */}
+        {/* Lesson Description - Show BEFORE media content (skip for audio as it has its own transcript section) */}
         {(() => {
-          // First check if lesson has its own text_content
+          // Skip showing text_content here for audio - it's displayed as transcript with the audio player
+          if (currentContent.content_type === 'audio') {
+            // For audio, only show section description as a fallback
+            const currentSection = sections.find(s => s.content.some(c => c.id === currentContent.id));
+            if (currentSection?.description) {
+              return (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <button
+                      onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                      className="w-full flex items-center justify-between hover:opacity-80 transition-opacity"
+                    >
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <FileText className="h-5 w-5" />
+                        Module Description
+                      </CardTitle>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          {calculateReadingTime(currentSection.description)} min read
+                        </span>
+                        {isDescriptionExpanded ? (
+                          <ChevronUp className="h-5 w-5" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5" />
+                        )}
+                      </div>
+                    </button>
+                  </CardHeader>
+                  {isDescriptionExpanded && (
+                    <CardContent>
+                      <div 
+                        className="prose prose-sm md:prose-base lg:prose-lg max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground prose-ul:text-foreground prose-ol:text-foreground"
+                        dangerouslySetInnerHTML={createSafeHtml(currentSection.description)}
+                      />
+                    </CardContent>
+                  )}
+                </Card>
+              );
+            }
+            return null;
+          }
+          
+          // For non-audio content, check if lesson has its own text_content
           if (currentContent.text_content) {
             return (
               <Card>
@@ -629,12 +672,13 @@ export const CourseLearn = () => {
           </Card>
         )}
 
-        {/* Audio Content */}
+        {/* Audio Content - With Transcript Support */}
         {currentContent.content_type === 'audio' && currentContent.audio_url && (
           <Card>
             <CardContent className="pt-6">
               <SecureAudioContent
                 audioUrl={currentContent.audio_url}
+                transcript={currentContent.text_content}
               />
             </CardContent>
           </Card>
