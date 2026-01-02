@@ -1,4 +1,3 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,59 +6,31 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { TechNewsSection } from '@/components/TechNewsSection';
+import { HeroVideoBackground } from '@/components/HeroVideoBackground';
 import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png';
 import johannesburgLogo from '@/assets/johannesburg-logo.png';
 import spectrogramLogo from '@/assets/spectrogram-logo.png';
 import learnProjectLogo from '@/assets/learn-project-logo.png';
-const heroVideos = ['/videos/hero-background.mp4', '/videos/cape-town.mp4', '/videos/lagos.mp4', '/videos/johannesburg.mp4'];
+
 export const Landing = () => {
-  const {
-    user
-  } = useAuth();
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const [nextVideoIndex, setNextVideoIndex] = useState(1);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const currentVideoRef = useRef<HTMLVideoElement>(null);
-  const nextVideoRef = useRef<HTMLVideoElement>(null);
-  const handleVideoEnded = useCallback(() => {
-    setIsTransitioning(true);
+  const { user } = useAuth();
 
-    // Start playing the next video
-    nextVideoRef.current?.play();
-
-    // After transition, swap the videos
-    setTimeout(() => {
-      setCurrentVideoIndex(nextVideoIndex);
-      setNextVideoIndex((nextVideoIndex + 1) % heroVideos.length);
-      setIsTransitioning(false);
-    }, 1000); // Match the CSS transition duration
-  }, [nextVideoIndex]);
-
-  // Preload the next video
-  useEffect(() => {
-    if (nextVideoRef.current) {
-      nextVideoRef.current.load();
-    }
-  }, [nextVideoIndex]);
-  return <div className="min-h-screen">
+  return (
+    <div className="min-h-screen">
       <Navbar />
       
       {/* Hero Section */}
       <section className="relative overflow-hidden min-h-screen flex items-end pb-28">
-        {/* Video Background - Current */}
-        <video ref={currentVideoRef} key={`current-${currentVideoIndex}`} autoPlay muted playsInline onEnded={handleVideoEnded} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
-          <source src={heroVideos[currentVideoIndex]} type="video/mp4" />
-        </video>
-        {/* Video Background - Next (preloaded) */}
-        <video ref={nextVideoRef} key={`next-${nextVideoIndex}`} muted playsInline className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${isTransitioning ? 'opacity-100' : 'opacity-0'}`}>
-          <source src={heroVideos[nextVideoIndex]} type="video/mp4" />
-        </video>
+        {/* Video Background */}
+        <HeroVideoBackground />
         {/* Dark Overlay */}
         <div className="absolute inset-0 bg-black/50" />
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 text-white leading-tight">Join 300+ Learners and Master a Career-Boosting Digital Skill!</h1>
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 text-white leading-tight">
+              Join 300+ Learners and Master a Career-Boosting Digital Skill!
+            </h1>
             <p className="text-base sm:text-lg md:text-xl text-white/90 mb-3 sm:mb-4 leading-relaxed">
               Zero experience required | Any background | Learn Anytime
             </p>
@@ -67,11 +38,14 @@ export const Landing = () => {
               Training delivered by African tech experts.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
-              {user ? <Link to="/dashboard" className="w-full sm:w-auto">
+              {user ? (
+                <Link to="/dashboard" className="w-full sm:w-auto">
                   <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
                     Go to Dashboard
                   </Button>
-                </Link> : <>
+                </Link>
+              ) : (
+                <>
                   <Link to="/auth?mode=signup&role=student" className="w-full sm:w-auto">
                     <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
                       START LEARNING
@@ -82,7 +56,8 @@ export const Landing = () => {
                       BECOME A MENTOR
                     </Button>
                   </Link>
-                </>}
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -224,5 +199,6 @@ export const Landing = () => {
       </section>
 
       <Footer />
-    </div>;
+    </div>
+  );
 };
