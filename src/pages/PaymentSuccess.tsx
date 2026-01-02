@@ -4,13 +4,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle, Loader2, XCircle } from 'lucide-react';
+import { CheckCircle, Loader2, XCircle, Gift } from 'lucide-react';
 
 export const PaymentSuccess = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [message, setMessage] = useState('Verifying your payment...');
+  const [isTrial, setIsTrial] = useState(false);
 
   useEffect(() => {
     const verifyPayment = async () => {
@@ -32,11 +33,13 @@ export const PaymentSuccess = () => {
 
         if (data.success) {
           setStatus('success');
-          setMessage('Payment successful! You are now enrolled.');
+          setIsTrial(data.isTrial || false);
+          setMessage(data.message || 'Payment successful! You are now enrolled.');
         } else {
           throw new Error(data.error || 'Verification failed');
         }
       } catch (error: any) {
+        console.error('Payment verification error:', error);
         setStatus('error');
         setMessage(error.message || 'Failed to verify payment');
       }
@@ -61,11 +64,22 @@ export const PaymentSuccess = () => {
 
             {status === 'success' && (
               <>
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="h-10 w-10 text-green-600" />
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${isTrial ? 'bg-purple-100' : 'bg-green-100'}`}>
+                  {isTrial ? (
+                    <Gift className="h-10 w-10 text-purple-600" />
+                  ) : (
+                    <CheckCircle className="h-10 w-10 text-green-600" />
+                  )}
                 </div>
-                <h1 className="text-2xl font-bold mb-2 text-green-600">Payment Successful!</h1>
+                <h1 className={`text-2xl font-bold mb-2 ${isTrial ? 'text-purple-600' : 'text-green-600'}`}>
+                  {isTrial ? 'Trial Started!' : 'Payment Successful!'}
+                </h1>
                 <p className="text-muted-foreground mb-6">{message}</p>
+                {isTrial && (
+                  <p className="text-sm text-muted-foreground mb-4 bg-purple-50 p-3 rounded-lg">
+                    Your free trial has started. You'll be charged after the trial period ends unless you cancel.
+                  </p>
+                )}
                 <div className="space-y-3">
                   <Button onClick={() => navigate('/dashboard')} className="w-full">
                     Go to Dashboard
