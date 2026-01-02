@@ -274,6 +274,33 @@ export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
     }
   };
 
+  const moveOption = async (questionId: string, optionIndex: number, direction: 'up' | 'down') => {
+    const question = questions.find(q => q.id === questionId);
+    if (!question?.options) return;
+
+    const newIndex = direction === 'up' ? optionIndex - 1 : optionIndex + 1;
+    if (newIndex < 0 || newIndex >= question.options.length) return;
+
+    const reorderedOptions = [...question.options];
+    const [movedOption] = reorderedOptions.splice(optionIndex, 1);
+    reorderedOptions.splice(newIndex, 0, movedOption);
+
+    // Update sort_order for affected options
+    const updatedOptions = reorderedOptions.map((o, i) => ({ ...o, sort_order: i }));
+    
+    setQuestions(questions.map(q => 
+      q.id === questionId ? { ...q, options: updatedOptions } : q
+    ));
+
+    // Save to database
+    for (const o of updatedOptions) {
+      await supabase
+        .from('quiz_options')
+        .update({ sort_order: o.sort_order })
+        .eq('id', o.id);
+    }
+  };
+
   const moveQuestion = async (index: number, direction: 'up' | 'down') => {
     const newIndex = direction === 'up' ? index - 1 : index + 1;
     if (newIndex < 0 || newIndex >= questions.length) return;
@@ -461,6 +488,26 @@ export const QuizBuilder = ({ courseId }: QuizBuilderProps) => {
                         <div className="space-y-2">
                           {question.options?.map((option, optIndex) => (
                             <div key={option.id} className="flex items-center gap-2">
+                              <div className="flex flex-col">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-5 w-5"
+                                  onClick={() => moveOption(question.id, optIndex, 'up')}
+                                  disabled={optIndex === 0}
+                                >
+                                  <ArrowUp className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-5 w-5"
+                                  onClick={() => moveOption(question.id, optIndex, 'down')}
+                                  disabled={optIndex === (question.options?.length || 0) - 1}
+                                >
+                                  <ArrowDown className="h-3 w-3" />
+                                </Button>
+                              </div>
                               <button
                                 type="button"
                                 onClick={() => setCorrectOption(option.id, question.id)}
