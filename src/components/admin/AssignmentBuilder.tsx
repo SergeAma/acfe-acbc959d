@@ -308,17 +308,14 @@ This assignment will be reviewed by your mentor and shared with Spectrogram Cons
 
         {/* Spectrogram Info */}
         <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-          <div className="flex items-start gap-3">
-            <img 
-              src="/src/assets/spectrogram-logo.png" 
-              alt="Spectrogram Consulting" 
-              className="w-10 h-10 object-contain flex-shrink-0"
-            />
-            <div className="space-y-1">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-background flex items-center justify-center border">
+              <Briefcase className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
               <p className="font-medium text-sm">Shared with Spectrogram Consulting</p>
-              <p className="text-xs text-muted-foreground">
-                Assignment submissions are automatically shared with Spectrogram Consulting&apos;s talent network. 
-                Students can use these submissions when applying for jobs through the Spectrogram platform.
+              <p className="text-xs text-muted-foreground mt-1">
+                Assignment submissions are automatically shared with Spectrogram Consulting's talent network. Students can use these submissions when applying for jobs through the Spectrogram platform.
               </p>
             </div>
           </div>

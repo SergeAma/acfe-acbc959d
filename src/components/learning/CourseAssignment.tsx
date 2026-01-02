@@ -426,22 +426,19 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
         )}
 
         {/* Spectrogram consent - mandatory */}
-        <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
-          <div className="flex items-start gap-3">
-            <img 
-              src="/src/assets/spectrogram-logo.png" 
-              alt="Spectrogram Consulting" 
-              className="w-8 h-8 object-contain flex-shrink-0"
-            />
-            <div className="space-y-1">
+        <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+          <div className="flex items-start gap-4 mb-4">
+            <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-background flex items-center justify-center border">
+              <Briefcase className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
               <p className="text-sm font-medium">Spectrogram Consulting Partnership</p>
-              <p className="text-xs text-muted-foreground">
-                Your submission will be shared with Spectrogram Consulting&apos;s talent network, 
-                giving you access to potential job opportunities with their partner companies.
+              <p className="text-xs text-muted-foreground mt-1">
+                Your submission will be shared with Spectrogram Consulting's talent network, giving you access to potential job opportunities with their partner companies.
               </p>
             </div>
           </div>
-          <div className="flex items-start gap-3 pt-2 border-t border-primary/10">
+          <div className="flex items-start gap-3 pt-3 border-t border-primary/10">
             <Checkbox 
               id="spectrogram-consent"
               checked={spectrogramConsent}
@@ -450,7 +447,7 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
             />
             <label 
               htmlFor="spectrogram-consent" 
-              className="text-sm cursor-pointer select-none"
+              className="text-sm cursor-pointer select-none leading-relaxed"
             >
               <span className="font-medium">I agree</span> to share my submission with Spectrogram Consulting for recruitment and job matching purposes.
               <span className="text-destructive ml-1">*</span>
