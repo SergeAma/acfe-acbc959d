@@ -26,15 +26,15 @@ export const Landing = () => {
         <div className="absolute inset-0 bg-black/50" />
         
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center bg-black/40 backdrop-blur-sm rounded-2xl p-6 sm:p-10">
+          <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 text-white leading-tight">
               Join 300+ Learners and Master a Career-Boosting Digital Skill!
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-white/90 mb-3 sm:mb-4 leading-relaxed">
               Zero experience required | Any background | Learn Anytime
             </p>
-            <p className="text-sm sm:text-base text-white/80 mb-6 sm:mb-8">
-              Training delivered ONLY by tech experts who understan the African context.
+            <p className="text-sm sm:text-base text-white mb-6 sm:mb-8 inline-block bg-black/40 backdrop-blur-sm px-4 py-2 rounded-lg">
+              Training delivered ONLY by tech experts who understand the African context.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
               {user ? <Link to="/dashboard" className="w-full sm:w-auto">
