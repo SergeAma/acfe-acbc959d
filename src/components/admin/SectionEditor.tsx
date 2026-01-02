@@ -501,7 +501,7 @@ export const SectionEditor = ({ section, onDelete, onUpdate, onDuplicate, allSec
                 >
                   {section.description ? (
                     <div 
-                      className="prose prose-sm max-w-none text-muted-foreground group-hover:text-foreground transition-colors"
+                      className="rich-text-content max-w-none text-muted-foreground group-hover:text-foreground transition-colors"
                       dangerouslySetInnerHTML={createSafeHtml(section.description)}
                     />
                   ) : (
