@@ -130,11 +130,20 @@ export const Jobs = () => {
   });
 
   const handleCreatePost = () => {
-    if (!newPostContent.trim()) {
+    const trimmedContent = newPostContent.trim();
+    
+    if (!trimmedContent) {
       toast.error('Please enter some content for your post.');
       return;
     }
-    createPostMutation.mutate({ content: newPostContent.trim(), type: newPostType });
+    
+    // Validate content length to prevent abuse
+    if (trimmedContent.length > 2000) {
+      toast.error('Post content must be less than 2000 characters.');
+      return;
+    }
+    
+    createPostMutation.mutate({ content: trimmedContent, type: newPostType });
   };
 
   const filteredPosts = postFilter 
@@ -343,7 +352,8 @@ export const Jobs = () => {
                               {postTypeLabels[post.type as keyof typeof postTypeLabels]}
                             </Badge>
                           </div>
-                          <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                          <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap break-words">
+                            {/* Render as plain text to prevent XSS - HTML tags are escaped by React */}
                             {post.content}
                           </p>
                         </CardContent>
