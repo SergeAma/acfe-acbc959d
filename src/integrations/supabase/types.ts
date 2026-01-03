@@ -644,6 +644,8 @@ export type Database = {
           certificate_enabled: boolean | null
           created_at: string | null
           description: string | null
+          description_audio_url: string | null
+          description_video_url: string | null
           drip_enabled: boolean | null
           duration_weeks: number | null
           id: string
@@ -667,6 +669,8 @@ export type Database = {
           certificate_enabled?: boolean | null
           created_at?: string | null
           description?: string | null
+          description_audio_url?: string | null
+          description_video_url?: string | null
           drip_enabled?: boolean | null
           duration_weeks?: number | null
           id?: string
@@ -690,6 +694,8 @@ export type Database = {
           certificate_enabled?: boolean | null
           created_at?: string | null
           description?: string | null
+          description_audio_url?: string | null
+          description_video_url?: string | null
           drip_enabled?: boolean | null
           duration_weeks?: number | null
           id?: string

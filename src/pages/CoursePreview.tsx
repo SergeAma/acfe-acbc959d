@@ -35,11 +35,14 @@ import {
 } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { stripHtml } from '@/lib/html-utils';
+import { CourseDescriptionPlayer } from '@/components/learning/CourseDescriptionPlayer';
 
 interface Course {
   id: string;
   title: string;
   description: string;
+  description_video_url: string | null;
+  description_audio_url: string | null;
   category: string;
   level: string;
   duration_weeks: number;
@@ -372,7 +375,12 @@ export const CoursePreview = () => {
             <div className="flex-1">
               <Badge className="mb-3">{course.category}</Badge>
               <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
-              <p className="text-lg text-muted-foreground mb-6">{stripHtml(course.description)}</p>
+              <CourseDescriptionPlayer
+                description={course.description}
+                descriptionVideoUrl={course.description_video_url}
+                descriptionAudioUrl={course.description_audio_url}
+                className="mb-6"
+              />
             </div>
           </div>
 

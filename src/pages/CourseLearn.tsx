@@ -78,6 +78,8 @@ interface Course {
   id: string;
   title: string;
   description: string;
+  description_video_url: string | null;
+  description_audio_url: string | null;
   drip_enabled: boolean;
   certificate_enabled: boolean;
   mentor_name: string;
@@ -152,7 +154,9 @@ export const CourseLearn = () => {
         .select(`
           id, 
           title, 
-          description, 
+          description,
+          description_video_url,
+          description_audio_url,
           drip_enabled, 
           certificate_enabled,
           mentor_id
