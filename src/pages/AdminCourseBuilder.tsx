@@ -16,6 +16,7 @@ import { ThumbnailDropzone } from '@/components/admin/ThumbnailDropzone';
 import { CoursePrerequisites } from '@/components/admin/CoursePrerequisites';
 import { QuizBuilder } from '@/components/admin/QuizBuilder';
 import { AssignmentBuilder } from '@/components/admin/AssignmentBuilder';
+import { CourseDescriptionMedia } from '@/components/admin/CourseDescriptionMedia';
 import {
   DndContext,
   closestCenter,
@@ -42,6 +43,8 @@ interface Course {
   id: string;
   title: string;
   description: string;
+  description_video_url: string | null;
+  description_audio_url: string | null;
   thumbnail_url: string | null;
   mentor_id: string;
   certificate_enabled: boolean;
@@ -818,6 +821,22 @@ export const AdminCourseBuilder = () => {
                 Edit Description
               </Button>
             </div>
+          )}
+
+          {/* Course Description Media (Video/Audio) */}
+          {course && (
+            <CourseDescriptionMedia
+              courseId={course.id}
+              videoUrl={course.description_video_url}
+              audioUrl={course.description_audio_url}
+              onUpdate={(videoUrl, audioUrl) => {
+                setCourse(prev => prev ? { 
+                  ...prev, 
+                  description_video_url: videoUrl,
+                  description_audio_url: audioUrl 
+                } : null);
+              }}
+            />
           )}
 
           {/* Quick Analytics Stats */}
