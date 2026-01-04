@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { MySubmissions } from '@/components/dashboard/MySubmissions';
 import { MentorOnboardingChecklist } from '@/components/dashboard/MentorOnboardingChecklist';
 import { SubmissionsReview } from '@/components/mentor/SubmissionsReview';
-import { BookOpen, Users, PlusCircle, TrendingUp, UsersRound } from 'lucide-react';
+import { BookOpen, Users, PlusCircle, TrendingUp, UsersRound, Video } from 'lucide-react';
 import { stripHtml } from '@/lib/html-utils';
 
 interface Course {
@@ -74,6 +74,12 @@ export const MentorDashboard = () => {
           <p className="text-muted-foreground text-lg">Manage your courses and students</p>
         </div>
         <div className="flex gap-3">
+          <Link to="/mentor/sessions">
+            <Button size="lg" variant="outline">
+              <Video className="h-5 w-5 mr-2" />
+              1:1 Sessions
+            </Button>
+          </Link>
           <Link to="/mentor/cohort">
             <Button size="lg" variant="outline" className="relative">
               <UsersRound className="h-5 w-5 mr-2" />
