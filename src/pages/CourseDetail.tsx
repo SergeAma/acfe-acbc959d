@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { ArrowLeft, Clock, BarChart, Loader2, CheckCircle, DollarSign, Gift, Ticket } from 'lucide-react';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
+import { createSafeHtml } from '@/lib/sanitize-html';
 
 interface Course {
   id: string;
@@ -211,7 +212,10 @@ export const CourseDetail = () => {
                 </span>
               </div>
               <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
-              <p className="text-lg text-muted-foreground">{course.description}</p>
+              <div 
+                className="text-lg text-muted-foreground rich-text-content"
+                dangerouslySetInnerHTML={createSafeHtml(course.description)}
+              />
             </div>
 
             <Card>
