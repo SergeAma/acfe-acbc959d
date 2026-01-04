@@ -1,12 +1,21 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, Settings, Calendar, AlertCircle, Loader2, Pause, Play } from 'lucide-react';
+import { CreditCard, Settings, Calendar, AlertCircle, Loader2, Pause, Play, XCircle, Shield } from 'lucide-react';
 import { toast } from 'sonner';
-
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 interface Subscription {
   id: string;
   status: string;
@@ -34,6 +43,8 @@ export const SubscriptionStatus = () => {
   const [loading, setLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [subscriptionToCancel, setSubscriptionToCancel] = useState<Subscription | null>(null);
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(null);
 
   const fetchSubscription = async () => {
@@ -158,6 +169,46 @@ export const SubscriptionStatus = () => {
     }
   };
 
+  const handleCancelSubscription = async () => {
+    if (!session?.access_token || !subscriptionToCancel) {
+      toast.error('Please log in to cancel your subscription');
+      return;
+    }
+
+    setActionLoading(subscriptionToCancel.id);
+    setCancelDialogOpen(false);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-subscription', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: {
+          action: 'cancel',
+          subscriptionId: subscriptionToCancel.id,
+        },
+      });
+
+      if (error) {
+        toast.error(error.message || 'Failed to cancel subscription');
+        return;
+      }
+
+      toast.success('Subscription will cancel at end of billing period');
+      await fetchSubscription();
+    } catch (err) {
+      toast.error('Failed to cancel subscription');
+    } finally {
+      setActionLoading(null);
+      setSubscriptionToCancel(null);
+    }
+  };
+
+  const openCancelDialog = (subscription: Subscription) => {
+    setSubscriptionToCancel(subscription);
+    setCancelDialogOpen(true);
+  };
+
   const getStatusBadge = (subscription: Subscription) => {
     if (subscription.status === 'paused') {
       return <Badge variant="secondary">Paused</Badge>;
@@ -207,10 +258,22 @@ export const SubscriptionStatus = () => {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold flex items-center gap-2">
-        <CreditCard className="h-6 w-6" />
-        My Subscriptions
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <CreditCard className="h-6 w-6" />
+          My Subscriptions
+        </h2>
+      </div>
+
+      {/* Cancellation Info Banner */}
+      <Card className="bg-muted/30 border-dashed">
+        <CardContent className="py-4 flex items-center gap-3">
+          <Shield className="h-5 w-5 text-primary flex-shrink-0" />
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Cancel anytime.</span> You're in full control of your subscription. Cancel, pause, or manage your billing with just one click.
+          </p>
+        </CardContent>
+      </Card>
       
       <div className="grid gap-4 md:grid-cols-2">
         {subscriptionData.subscriptions.map((subscription) => (
@@ -250,57 +313,100 @@ export const SubscriptionStatus = () => {
                 </span>
               </div>
 
-              <div className="flex gap-2">
-                {subscription.status === 'active' && !subscription.cancel_at_period_end && (
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  {subscription.status === 'active' && !subscription.cancel_at_period_end && (
+                    <Button 
+                      onClick={() => handlePauseSubscription(subscription.id)} 
+                      variant="outline" 
+                      className="flex-1"
+                      disabled={actionLoading === subscription.id}
+                    >
+                      {actionLoading === subscription.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Pause className="h-4 w-4 mr-2" />
+                      )}
+                      Pause
+                    </Button>
+                  )}
+                  
+                  {subscription.status === 'paused' && (
+                    <Button 
+                      onClick={() => handleResumeSubscription(subscription.id)} 
+                      variant="default" 
+                      className="flex-1"
+                      disabled={actionLoading === subscription.id}
+                    >
+                      {actionLoading === subscription.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Play className="h-4 w-4 mr-2" />
+                      )}
+                      Resume
+                    </Button>
+                  )}
+                  
                   <Button 
-                    onClick={() => handlePauseSubscription(subscription.id)} 
+                    onClick={handleManageSubscription} 
                     variant="outline" 
                     className="flex-1"
-                    disabled={actionLoading === subscription.id}
+                    disabled={portalLoading}
                   >
-                    {actionLoading === subscription.id ? (
+                    {portalLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     ) : (
-                      <Pause className="h-4 w-4 mr-2" />
+                      <Settings className="h-4 w-4 mr-2" />
                     )}
-                    Pause
+                    Manage
                   </Button>
-                )}
-                
-                {subscription.status === 'paused' && (
+                </div>
+
+                {/* Cancel button - only show for active subscriptions not already canceling */}
+                {subscription.status === 'active' && !subscription.cancel_at_period_end && (
                   <Button 
-                    onClick={() => handleResumeSubscription(subscription.id)} 
-                    variant="default" 
-                    className="flex-1"
+                    onClick={() => openCancelDialog(subscription)} 
+                    variant="ghost" 
+                    size="sm"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
                     disabled={actionLoading === subscription.id}
                   >
-                    {actionLoading === subscription.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <Play className="h-4 w-4 mr-2" />
-                    )}
-                    Resume
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Cancel Subscription
                   </Button>
                 )}
-                
-                <Button 
-                  onClick={handleManageSubscription} 
-                  variant="outline" 
-                  className="flex-1"
-                  disabled={portalLoading}
-                >
-                  {portalLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Settings className="h-4 w-4 mr-2" />
-                  )}
-                  Manage
-                </Button>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* Cancel Confirmation Dialog */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Your subscription will remain active until the end of your current billing period on{' '}
+                <strong>{subscriptionToCancel ? new Date(subscriptionToCancel.current_period_end).toLocaleDateString() : ''}</strong>.
+              </p>
+              <p>
+                After that date, you'll lose access to premium content. You can resubscribe anytime.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleCancelSubscription}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Yes, Cancel
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

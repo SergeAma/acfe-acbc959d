@@ -81,8 +81,16 @@ serve(async (req) => {
         logStep("Subscription resumed successfully");
         break;
 
+      case 'cancel':
+        logStep("Canceling subscription at period end");
+        updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
+          cancel_at_period_end: true,
+        });
+        logStep("Subscription set to cancel at period end");
+        break;
+
       default:
-        throw new Error(`Invalid action: ${action}. Supported actions: pause, resume`);
+        throw new Error(`Invalid action: ${action}. Supported actions: pause, resume, cancel`);
     }
 
     return new Response(JSON.stringify({ 
