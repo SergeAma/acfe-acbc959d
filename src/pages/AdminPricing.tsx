@@ -108,21 +108,16 @@ export const AdminPricing = () => {
   }, [authLoading, profile]);
 
   const fetchCoupons = async () => {
-    setLoadingCoupons(true);
+    // Only show loading on initial fetch, not on refetches
+    if (coupons.length === 0) {
+      setLoadingCoupons(true);
+    }
     try {
-      // First try to refresh the session to ensure we have a valid token
-      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-      
-      let accessToken = refreshData.session?.access_token;
-      
-      // If refresh failed, try getting existing session
-      if (refreshError || !accessToken) {
-        const { data: sessionData } = await supabase.auth.getSession();
-        accessToken = sessionData.session?.access_token;
-      }
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
       
       if (!accessToken) {
-        console.error('No access token available after refresh attempt');
+        console.error('No access token available');
         setLoadingCoupons(false);
         return;
       }
