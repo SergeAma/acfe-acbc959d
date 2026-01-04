@@ -53,6 +53,7 @@ import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import { TermsOfService } from "./pages/TermsOfService";
 import { MentorApplicationStatus } from "./pages/MentorApplicationStatus";
 import { SpectrogramConnect } from "./pages/SpectrogramConnect";
+import { Pricing } from "./pages/Pricing";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -69,6 +70,7 @@ const App = () => (
             <Route path="/mentors" element={<Mentors />} />
             <Route path="/mentors/:id" element={<MentorProfile />} />
             <Route path="/partners" element={<Partners />} />
+            <Route path="/pricing" element={<Pricing />} />
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/submit-idea" element={<SubmitIdea />} />
             <Route path="/verify-certificate" element={<VerifyCertificate />} />
