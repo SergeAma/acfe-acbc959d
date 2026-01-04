@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, DollarSign, Gift, Loader2, Save, Ticket, Plus, Copy, Check, Trash2, BarChart3, TrendingUp, Edit2 } from 'lucide-react';
+import { ArrowLeft, DollarSign, Gift, Loader2, Save, Ticket, Plus, Copy, Check, BarChart3, TrendingUp, Edit2, Power } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { RichTextEditor } from '@/components/RichTextEditor';
 import {
@@ -512,17 +512,18 @@ export const AdminPricing = () => {
                             )}
                           </Button>
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-amber-600 border-amber-300 hover:bg-amber-50 hover:text-amber-700"
                             onClick={() => setCouponToDeactivate({ id: coupon.id, code: coupon.code })}
                             disabled={deactivatingId === coupon.id}
                           >
                             {deactivatingId === coupon.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <Loader2 className="h-4 w-4 animate-spin mr-1" />
                             ) : (
-                              <Trash2 className="h-4 w-4" />
+                              <Power className="h-4 w-4 mr-1" />
                             )}
+                            Deactivate
                           </Button>
                         </div>
                       </div>
