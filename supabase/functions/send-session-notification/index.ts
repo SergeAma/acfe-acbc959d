@@ -19,6 +19,51 @@ interface SessionNotificationRequest {
   notificationType: 'booking_confirmed' | 'session_reminder' | 'session_cancelled';
 }
 
+// Generate calendar link URLs
+const generateGoogleCalendarUrl = (
+  title: string,
+  description: string,
+  date: string,
+  startTime: string,
+  endTime: string,
+  timezone: string
+): string => {
+  const startDateTime = `${date.replace(/-/g, '')}T${startTime.replace(/:/g, '')}00`;
+  const endDateTime = `${date.replace(/-/g, '')}T${endTime.replace(/:/g, '')}00`;
+  
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: title,
+    dates: `${startDateTime}/${endDateTime}`,
+    details: description,
+    ctz: timezone,
+  });
+  
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+};
+
+const generateOutlookCalendarUrl = (
+  title: string,
+  description: string,
+  date: string,
+  startTime: string,
+  endTime: string
+): string => {
+  const startDateTime = `${date}T${startTime}:00`;
+  const endDateTime = `${date}T${endTime}:00`;
+  
+  const params = new URLSearchParams({
+    path: '/calendar/action/compose',
+    rru: 'addevent',
+    subject: title,
+    body: description,
+    startdt: startDateTime,
+    enddt: endDateTime,
+  });
+  
+  return `https://outlook.live.com/calendar/0/deeplink/compose?${params.toString()}`;
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -70,6 +115,43 @@ serve(async (req) => {
     const startTime = session.start_time.substring(0, 5);
     const endTime = session.end_time.substring(0, 5);
 
+    // Generate calendar links
+    const studentCalendarTitle = `1:1 Mentorship Session with ${mentorName}`;
+    const mentorCalendarTitle = `1:1 Mentorship Session with ${studentName}`;
+    const studentCalendarDesc = `Your mentorship session with ${mentorName}.\n\nPrepare your questions and topics to discuss.`;
+    const mentorCalendarDesc = `Your mentorship session with ${studentName}.\n\nContact: ${studentEmail}`;
+    
+    const studentGoogleCalUrl = generateGoogleCalendarUrl(
+      studentCalendarTitle,
+      studentCalendarDesc,
+      session.scheduled_date,
+      startTime,
+      endTime,
+      session.timezone
+    );
+    const studentOutlookCalUrl = generateOutlookCalendarUrl(
+      studentCalendarTitle,
+      studentCalendarDesc,
+      session.scheduled_date,
+      startTime,
+      endTime
+    );
+    const mentorGoogleCalUrl = generateGoogleCalendarUrl(
+      mentorCalendarTitle,
+      mentorCalendarDesc,
+      session.scheduled_date,
+      startTime,
+      endTime,
+      session.timezone
+    );
+    const mentorOutlookCalUrl = generateOutlookCalendarUrl(
+      mentorCalendarTitle,
+      mentorCalendarDesc,
+      session.scheduled_date,
+      startTime,
+      endTime
+    );
+
     const emailPromises = [];
 
     if (notificationType === 'booking_confirmed') {
@@ -100,6 +182,12 @@ serve(async (req) => {
                   <p style="margin: 8px 0; color: #555;"><strong>📅 Date:</strong> ${sessionDate}</p>
                   <p style="margin: 8px 0; color: #555;"><strong>🕐 Time:</strong> ${startTime} - ${endTime} (${session.timezone})</p>
                   <p style="margin: 8px 0; color: #555;"><strong>👤 Mentor:</strong> ${mentorName}</p>
+                </div>
+                
+                <div style="text-align: center; margin: 24px 0;">
+                  <p style="color: #333; font-size: 14px; margin-bottom: 12px;"><strong>Add to your calendar:</strong></p>
+                  <a href="${studentGoogleCalUrl}" style="display: inline-block; background: #4285f4; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; margin: 4px; font-size: 14px;">Google Calendar</a>
+                  <a href="${studentOutlookCalUrl}" style="display: inline-block; background: #0078d4; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; margin: 4px; font-size: 14px;">Outlook Calendar</a>
                 </div>
                 
                 <p style="color: #333; font-size: 16px;">Your mentor will reach out with meeting details shortly. In the meantime, you might want to prepare any questions or topics you'd like to discuss.</p>
@@ -146,6 +234,12 @@ serve(async (req) => {
                   <p style="margin: 8px 0; color: #555;"><strong>🕐 Time:</strong> ${startTime} - ${endTime} (${session.timezone})</p>
                   <p style="margin: 8px 0; color: #555;"><strong>👤 Learner:</strong> ${studentName}</p>
                   <p style="margin: 8px 0; color: #555;"><strong>📧 Email:</strong> ${studentEmail}</p>
+                </div>
+                
+                <div style="text-align: center; margin: 24px 0;">
+                  <p style="color: #333; font-size: 14px; margin-bottom: 12px;"><strong>Add to your calendar:</strong></p>
+                  <a href="${mentorGoogleCalUrl}" style="display: inline-block; background: #4285f4; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; margin: 4px; font-size: 14px;">Google Calendar</a>
+                  <a href="${mentorOutlookCalUrl}" style="display: inline-block; background: #0078d4; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; margin: 4px; font-size: 14px;">Outlook Calendar</a>
                 </div>
                 
                 <p style="color: #333; font-size: 16px;"><strong>Next Steps:</strong></p>
