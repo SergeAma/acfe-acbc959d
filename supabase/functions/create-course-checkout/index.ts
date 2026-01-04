@@ -156,8 +156,8 @@ serve(async (req) => {
           price_data: {
             currency: "usd",
             product_data: {
-              name: course.title,
-              description: "Monthly subscription for course access",
+              name: "ACFE Membership",
+              description: "Unlimited access to all courses, mentorship, and learning resources on A Cloud For Everyone",
               metadata: {
                 course_id: courseId,
               },
