@@ -91,6 +91,8 @@ export const AdminCourseBuilder = () => {
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const [certificateEnabled, setCertificateEnabled] = useState(true);
   const [isPaid, setIsPaid] = useState(false);
+  const [priceCents, setPriceCents] = useState<number>(1000);
+  const [savingPrice, setSavingPrice] = useState(false);
   const [dripEnabled, setDripEnabled] = useState(false);
   const [durationWeeks, setDurationWeeks] = useState<number | null>(null);
   const [savingDuration, setSavingDuration] = useState(false);
@@ -208,6 +210,7 @@ export const AdminCourseBuilder = () => {
     setEditedTitle(courseData?.title || '');
     setCertificateEnabled(courseData?.certificate_enabled ?? true);
     setIsPaid(courseData?.is_paid ?? false);
+    setPriceCents(courseData?.price_cents ?? 1000);
     setDripEnabled(courseData?.drip_enabled ?? false);
     setDurationWeeks(courseData?.duration_weeks ?? null);
     setCategory(courseData?.category || '');
@@ -306,9 +309,34 @@ export const AdminCourseBuilder = () => {
       setCourse(prev => prev ? { ...prev, is_paid: paid } : null);
       toast({
         title: 'Success',
-        description: paid ? 'Course set to $10' : 'Course set to free',
+        description: paid ? `Course set to $${(priceCents / 100).toFixed(0)}` : 'Course set to free',
       });
     }
+  };
+
+  const handleSavePrice = async () => {
+    if (!courseId) return;
+    
+    setSavingPrice(true);
+    const { error } = await supabase
+      .from('courses')
+      .update({ price_cents: priceCents })
+      .eq('id', courseId);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update price',
+        variant: 'destructive',
+      });
+    } else {
+      setCourse(prev => prev ? { ...prev, price_cents: priceCents } : null);
+      toast({
+        title: 'Success',
+        description: `Course price updated to $${(priceCents / 100).toFixed(0)}`,
+      });
+    }
+    setSavingPrice(false);
   };
 
   const handleDripToggle = async (enabled: boolean) => {
@@ -1006,15 +1034,15 @@ export const AdminCourseBuilder = () => {
                 Course Pricing
               </CardTitle>
               <CardDescription>
-                Set whether this course is free or paid ($10)
+                Set whether this course is free or paid
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="pricing-toggle">Paid course ($10)</Label>
+                  <Label htmlFor="pricing-toggle">Paid course</Label>
                   <p className="text-sm text-muted-foreground">
-                    {isPaid ? 'Students pay $10 for access' : 'Students can enroll for free'}
+                    {isPaid ? `Students pay $${(priceCents / 100).toFixed(0)} for access` : 'Students can enroll for free'}
                   </p>
                 </div>
                 <Switch
@@ -1023,6 +1051,44 @@ export const AdminCourseBuilder = () => {
                   onCheckedChange={handlePricingToggle}
                 />
               </div>
+              
+              {isPaid && (
+                <div className="pt-3 border-t">
+                  <Label htmlFor="price-input" className="text-sm">Price (USD)</Label>
+                  <div className="flex items-center gap-3 mt-2">
+                    <div className="relative flex-1">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                      <Input
+                        id="price-input"
+                        type="number"
+                        min="1"
+                        max="9999"
+                        value={priceCents / 100}
+                        onChange={(e) => {
+                          const value = e.target.value ? Math.round(parseFloat(e.target.value) * 100) : 1000;
+                          setPriceCents(value);
+                        }}
+                        className="pl-7"
+                        placeholder="10"
+                      />
+                    </div>
+                    <Button 
+                      size="sm" 
+                      onClick={handleSavePrice}
+                      disabled={savingPrice || priceCents === course?.price_cents}
+                    >
+                      {savingPrice ? (
+                        <span className="animate-spin">⏳</span>
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Monthly subscription price for this course
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
