@@ -257,6 +257,15 @@ export const Courses = () => {
                     </Badge>
                   </div>
                 )}
+                {course.thumbnail_url && (
+                  <div className="relative h-40 overflow-hidden rounded-t-lg">
+                    <img
+                      src={course.thumbnail_url}
+                      alt={course.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
                 <CardHeader>
                   <CardTitle className="line-clamp-2">{course.title}</CardTitle>
                   <div className="flex gap-2 mt-2">
