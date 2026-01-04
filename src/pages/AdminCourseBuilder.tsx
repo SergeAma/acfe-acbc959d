@@ -91,6 +91,7 @@ export const AdminCourseBuilder = () => {
   const [isPaid, setIsPaid] = useState(false);
   const [dripEnabled, setDripEnabled] = useState(false);
   const [durationWeeks, setDurationWeeks] = useState<number | null>(null);
+  const [savingDuration, setSavingDuration] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   const [togglingPublish, setTogglingPublish] = useState(false);
   const [enrolledCount, setEnrolledCount] = useState(0);
@@ -327,13 +328,13 @@ export const AdminCourseBuilder = () => {
     }
   };
 
-  const handleDurationChange = async (weeks: number | null) => {
+  const handleDurationChange = async () => {
     if (!courseId) return;
     
-    setDurationWeeks(weeks);
+    setSavingDuration(true);
     const { error } = await supabase
       .from('courses')
-      .update({ duration_weeks: weeks })
+      .update({ duration_weeks: durationWeeks })
       .eq('id', courseId);
 
     if (error) {
@@ -343,12 +344,13 @@ export const AdminCourseBuilder = () => {
         variant: 'destructive',
       });
     } else {
-      setCourse(prev => prev ? { ...prev, duration_weeks: weeks } : null);
+      setCourse(prev => prev ? { ...prev, duration_weeks: durationWeeks } : null);
       toast({
         title: 'Success',
         description: 'Course duration updated',
       });
     }
+    setSavingDuration(false);
   };
 
   const handleSaveTitle = async () => {
@@ -1016,7 +1018,6 @@ export const AdminCourseBuilder = () => {
                     const value = e.target.value ? parseInt(e.target.value) : null;
                     setDurationWeeks(value);
                   }}
-                  onBlur={() => handleDurationChange(durationWeeks)}
                   placeholder="e.g., 4"
                   className="w-24"
                 />
@@ -1031,6 +1032,17 @@ export const AdminCourseBuilder = () => {
                     <SelectItem value="months">months</SelectItem>
                   </SelectContent>
                 </Select>
+                <Button 
+                  size="sm" 
+                  onClick={handleDurationChange}
+                  disabled={savingDuration || durationWeeks === course?.duration_weeks}
+                >
+                  {savingDuration ? (
+                    <span className="animate-spin">⏳</span>
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                </Button>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
                 Leave blank if self-paced with no estimated time
