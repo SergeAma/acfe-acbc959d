@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { MentorAvailabilitySettings } from '@/components/mentor/MentorAvailabilitySettings';
+import { AddToCalendarButton } from '@/components/AddToCalendarButton';
 import { ArrowLeft, Calendar, Clock, Video, User, Loader2, Mail, CheckCircle, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -152,16 +153,28 @@ export const MentorSessions = () => {
               {session.student?.email}
             </a>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {session.status === 'confirmed' && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => updateSessionStatus(session.id, 'completed')}
-              >
-                <CheckCircle className="h-4 w-4 mr-1" />
-                Mark Complete
-              </Button>
+              <>
+                <AddToCalendarButton
+                  event={{
+                    title: `1:1 Session with ${session.student?.full_name || 'Learner'}`,
+                    description: `Mentorship session with ${session.student?.full_name || 'Learner'}\n\nContact: ${session.student?.email || ''}`,
+                    startDate: session.scheduled_date,
+                    startTime: session.start_time.substring(0, 5),
+                    endTime: session.end_time.substring(0, 5),
+                    timezone: session.timezone,
+                  }}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => updateSessionStatus(session.id, 'completed')}
+                >
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  Mark Complete
+                </Button>
+              </>
             )}
             {(session.status === 'confirmed' || session.status === 'pending') && (
               <Button
