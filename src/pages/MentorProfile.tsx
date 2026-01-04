@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { CompanyLogos } from '@/components/CompanyLogos';
 import { MentorshipRequestDialog } from '@/components/mentorship/MentorshipRequestDialog';
+import { MentorSessionBooking } from '@/components/mentorship/MentorSessionBooking';
 import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe, ArrowLeft, Clock, BarChart, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { stripHtml } from '@/lib/html-utils';
@@ -332,6 +333,13 @@ export const MentorProfile = () => {
               )}
             </div>
           </div>
+
+          {/* 1:1 Session Booking */}
+          {user && id && (
+            <div className="mb-8">
+              <MentorSessionBooking mentorId={id} mentorName={mentor.full_name || 'Mentor'} />
+            </div>
+          )}
 
           {/* Courses Section */}
           <div>

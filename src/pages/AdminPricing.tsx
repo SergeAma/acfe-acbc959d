@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, DollarSign, Gift, Loader2, Save, Ticket, Plus, Copy, Check, BarChart3, TrendingUp, Edit2, Power, RotateCcw } from 'lucide-react';
+import { ArrowLeft, DollarSign, Gift, Loader2, Save, Ticket, Plus, Copy, Check, BarChart3, TrendingUp, Edit2, Power, RotateCcw, Video } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { RichTextEditor } from '@/components/RichTextEditor';
 import {
@@ -87,6 +87,14 @@ export const AdminPricing = () => {
   const [tempPriceValue, setTempPriceValue] = useState('10');
   const [savingPrice, setSavingPrice] = useState(false);
   const [loadingPrice, setLoadingPrice] = useState(true);
+
+  // 1:1 Session pricing state
+  const [sessionPriceCents, setSessionPriceCents] = useState<number>(5000);
+  const [sessionEnabled, setSessionEnabled] = useState<boolean>(true);
+  const [editingSessionPrice, setEditingSessionPrice] = useState(false);
+  const [tempSessionPriceValue, setTempSessionPriceValue] = useState('50');
+  const [savingSessionPrice, setSavingSessionPrice] = useState(false);
+  const [loadingSessionPrice, setLoadingSessionPrice] = useState(true);
   
   const [pricingOverride, setPricingOverride] = useState<PricingOverride>({
     enabled: false,
@@ -141,8 +149,25 @@ export const AdminPricing = () => {
       setLoadingPrice(false);
     };
 
+    const fetchSessionPrice = async () => {
+      setLoadingSessionPrice(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('get-session-price');
+        if (error) throw error;
+        if (data) {
+          setSessionPriceCents(data.priceCents || 5000);
+          setSessionEnabled(data.enabled !== false);
+          setTempSessionPriceValue(((data.priceCents || 5000) / 100).toString());
+        }
+      } catch (error) {
+        console.error('Error fetching session price:', error);
+      }
+      setLoadingSessionPrice(false);
+    };
+
     fetchSettings();
     fetchSubscriptionPrice();
+    fetchSessionPrice();
     if (!couponsInitialized) {
       fetchCoupons(true);
     }
@@ -234,6 +259,81 @@ export const AdminPricing = () => {
   const handleCancelPriceEdit = () => {
     setTempPriceValue((subscriptionPriceCents / 100).toString());
     setEditingPrice(false);
+  };
+
+  const handleSaveSessionPrice = async () => {
+    const priceValue = parseFloat(tempSessionPriceValue);
+    if (isNaN(priceValue) || priceValue < 1) {
+      toast({
+        title: "Invalid price",
+        description: "Please enter a valid price (minimum $1.00)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const priceCents = Math.round(priceValue * 100);
+    setSavingSessionPrice(true);
+    
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const { error } = await supabase.functions.invoke('update-session-price', {
+        body: { priceCents, enabled: sessionEnabled },
+        headers: {
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+      
+      setSessionPriceCents(priceCents);
+      setEditingSessionPrice(false);
+      toast({
+        title: "Session price updated",
+        description: `1:1 session price set to $${priceValue.toFixed(2)}`,
+      });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to update session price";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+    
+    setSavingSessionPrice(false);
+  };
+
+  const handleToggleSessionEnabled = async (enabled: boolean) => {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const { error } = await supabase.functions.invoke('update-session-price', {
+        body: { enabled },
+        headers: {
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+      
+      setSessionEnabled(enabled);
+      toast({
+        title: enabled ? "Sessions enabled" : "Sessions disabled",
+        description: enabled ? "Learners can now book 1:1 sessions" : "1:1 sessions are now disabled",
+      });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to update settings";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelSessionPriceEdit = () => {
+    setTempSessionPriceValue((sessionPriceCents / 100).toString());
+    setEditingSessionPrice(false);
   };
 
   const handleSave = async () => {
@@ -681,6 +781,98 @@ export const AdminPricing = () => {
                     <Edit2 className="h-4 w-4" />
                   </Button>
                 </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 1:1 Session Pricing */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Video className="h-5 w-5" />
+                1:1 Mentor Sessions
+              </CardTitle>
+              <CardDescription>
+                Set the price for one-on-one mentorship sessions. This price applies to all mentors.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Enable 1:1 Sessions</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Allow learners to purchase sessions with mentors
+                  </p>
+                </div>
+                <Switch
+                  checked={sessionEnabled}
+                  onCheckedChange={handleToggleSessionEnabled}
+                />
+              </div>
+
+              {sessionEnabled && (
+                <>
+                  {loadingSessionPrice ? (
+                    <div className="bg-muted/50 rounded-lg p-4 flex justify-center">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : editingSessionPrice ? (
+                    <div className="space-y-4 pt-4 border-t">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl font-bold">$</span>
+                        <Input
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={tempSessionPriceValue}
+                          onChange={(e) => setTempSessionPriceValue(e.target.value)}
+                          className="text-2xl font-bold w-32 text-center"
+                        />
+                        <span className="text-muted-foreground">/session</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={handleSaveSessionPrice} 
+                          disabled={savingSessionPrice}
+                          className="flex-1"
+                        >
+                          {savingSessionPrice ? (
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          ) : (
+                            <Save className="h-4 w-4 mr-2" />
+                          )}
+                          Save Price
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={handleCancelSessionPriceEdit}
+                          disabled={savingSessionPrice}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div 
+                      className="bg-muted/50 rounded-lg p-4 text-center cursor-pointer hover:bg-muted/70 transition-colors group relative"
+                      onClick={() => setEditingSessionPrice(true)}
+                    >
+                      <span className="text-4xl font-bold">${(sessionPriceCents / 100).toFixed(0)}</span>
+                      <p className="text-sm text-muted-foreground mt-1">per 1:1 session</p>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingSessionPrice(true);
+                        }}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
