@@ -62,7 +62,8 @@ export const AdminPricing = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [creatingCoupon, setCreatingCoupon] = useState(false);
-  const [loadingCoupons, setLoadingCoupons] = useState(false);
+  const [loadingCoupons, setLoadingCoupons] = useState(true); // Start true for initial load
+  const [couponsInitialized, setCouponsInitialized] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
   
@@ -79,14 +80,16 @@ export const AdminPricing = () => {
   const [newCouponName, setNewCouponName] = useState('');
   const [newCouponTrialDays, setNewCouponTrialDays] = useState('7');
 
+  // Only redirect if auth is fully loaded AND profile explicitly has non-admin role
   useEffect(() => {
-    if (!authLoading && profile?.role !== 'admin') {
+    if (!authLoading && profile && profile.role !== 'admin') {
       navigate('/dashboard');
     }
   }, [profile, authLoading, navigate]);
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || !profile) return;
+    if (profile.role !== 'admin') return;
     
     const fetchSettings = async () => {
       const { data } = await supabase
@@ -102,14 +105,14 @@ export const AdminPricing = () => {
     };
 
     fetchSettings();
-    if (profile?.role === 'admin') {
-      fetchCoupons();
+    if (!couponsInitialized) {
+      fetchCoupons(true);
     }
-  }, [authLoading, profile]);
+  }, [authLoading, profile, couponsInitialized]);
 
-  const fetchCoupons = async () => {
-    // Only show loading on initial fetch, not on refetches
-    if (coupons.length === 0) {
+  const fetchCoupons = async (isInitialLoad = false) => {
+    // Only show loading spinner on initial load
+    if (isInitialLoad) {
       setLoadingCoupons(true);
     }
     try {
@@ -118,7 +121,7 @@ export const AdminPricing = () => {
       
       if (!accessToken) {
         console.error('No access token available');
-        setLoadingCoupons(false);
+        if (isInitialLoad) setLoadingCoupons(false);
         return;
       }
 
@@ -135,6 +138,7 @@ export const AdminPricing = () => {
       if (data?.analytics) {
         setAnalytics(data.analytics);
       }
+      setCouponsInitialized(true);
     } catch (error) {
       console.error('Error fetching coupons:', error);
       toast({
@@ -143,7 +147,7 @@ export const AdminPricing = () => {
         variant: "destructive",
       });
     }
-    setLoadingCoupons(false);
+    if (isInitialLoad) setLoadingCoupons(false);
   };
 
   const handleSave = async () => {
@@ -207,7 +211,7 @@ export const AdminPricing = () => {
       setNewCouponCode('');
       setNewCouponName('');
       setNewCouponTrialDays('7');
-      fetchCoupons();
+      fetchCoupons(false);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -236,7 +240,7 @@ export const AdminPricing = () => {
         description: `"${code}" has been deactivated`,
       });
       
-      fetchCoupons();
+      fetchCoupons(false);
     } catch (error: any) {
       toast({
         title: "Error",
