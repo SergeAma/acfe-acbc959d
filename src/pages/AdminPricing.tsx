@@ -10,8 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, DollarSign, Gift, Loader2, Save, Ticket, Plus, Copy, Check, Trash2, BarChart3, TrendingUp } from 'lucide-react';
+import { ArrowLeft, DollarSign, Gift, Loader2, Save, Ticket, Plus, Copy, Check, Trash2, BarChart3, TrendingUp, Edit2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { RichTextEditor } from '@/components/RichTextEditor';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -77,6 +78,13 @@ export const AdminPricing = () => {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
   
+  // Subscription pricing state
+  const [subscriptionPriceCents, setSubscriptionPriceCents] = useState<number>(1000);
+  const [editingPrice, setEditingPrice] = useState(false);
+  const [tempPriceValue, setTempPriceValue] = useState('10');
+  const [savingPrice, setSavingPrice] = useState(false);
+  const [loadingPrice, setLoadingPrice] = useState(true);
+  
   const [pricingOverride, setPricingOverride] = useState<PricingOverride>({
     enabled: false,
     force_free: false,
@@ -115,7 +123,23 @@ export const AdminPricing = () => {
       setLoading(false);
     };
 
+    const fetchSubscriptionPrice = async () => {
+      setLoadingPrice(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('get-subscription-price');
+        if (error) throw error;
+        if (data?.priceCents) {
+          setSubscriptionPriceCents(data.priceCents);
+          setTempPriceValue((data.priceCents / 100).toString());
+        }
+      } catch (error) {
+        console.error('Error fetching subscription price:', error);
+      }
+      setLoadingPrice(false);
+    };
+
     fetchSettings();
+    fetchSubscriptionPrice();
     if (!couponsInitialized) {
       fetchCoupons(true);
     }
@@ -159,6 +183,54 @@ export const AdminPricing = () => {
       });
     }
     if (isInitialLoad) setLoadingCoupons(false);
+  };
+
+  const handleSavePrice = async () => {
+    const priceValue = parseFloat(tempPriceValue);
+    if (isNaN(priceValue) || priceValue < 1) {
+      toast({
+        title: "Invalid price",
+        description: "Please enter a valid price (minimum $1.00)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const priceCents = Math.round(priceValue * 100);
+    setSavingPrice(true);
+    
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke('update-subscription-price', {
+        body: { priceCents },
+        headers: {
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+      
+      setSubscriptionPriceCents(priceCents);
+      setEditingPrice(false);
+      toast({
+        title: "Price updated",
+        description: `Subscription price set to $${priceValue.toFixed(2)}/month`,
+      });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to update price";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+    
+    setSavingPrice(false);
+  };
+
+  const handleCancelPriceEdit = () => {
+    setTempPriceValue((subscriptionPriceCents / 100).toString());
+    setEditingPrice(false);
   };
 
   const handleSave = async () => {
@@ -493,14 +565,70 @@ export const AdminPricing = () => {
                 Default Pricing
               </CardTitle>
               <CardDescription>
-                All paid courses are priced at $10/month. Mentors can set their courses as free or paid.
+                Set the monthly subscription price for all paid courses. Mentors can set their courses as free or paid.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="bg-muted/50 rounded-lg p-4 text-center">
-                <span className="text-4xl font-bold">$10</span>
-                <p className="text-sm text-muted-foreground mt-1">per month subscription</p>
-              </div>
+              {loadingPrice ? (
+                <div className="bg-muted/50 rounded-lg p-4 flex justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : editingPrice ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold">$</span>
+                    <Input
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      value={tempPriceValue}
+                      onChange={(e) => setTempPriceValue(e.target.value)}
+                      className="text-2xl font-bold w-32 text-center"
+                    />
+                    <span className="text-muted-foreground">/month</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleSavePrice} 
+                      disabled={savingPrice}
+                      className="flex-1"
+                    >
+                      {savingPrice ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Save className="h-4 w-4 mr-2" />
+                      )}
+                      Save Price
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleCancelPriceEdit}
+                      disabled={savingPrice}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div 
+                  className="bg-muted/50 rounded-lg p-4 text-center cursor-pointer hover:bg-muted/70 transition-colors group relative"
+                  onClick={() => setEditingPrice(true)}
+                >
+                  <span className="text-4xl font-bold">${(subscriptionPriceCents / 100).toFixed(0)}</span>
+                  <p className="text-sm text-muted-foreground mt-1">per month subscription</p>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingPrice(true);
+                    }}
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -552,24 +680,26 @@ export const AdminPricing = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="sponsor_message">Sponsor Message (optional)</Label>
-                    <Input
-                      id="sponsor_message"
-                      placeholder="e.g., Free during our launch period!"
-                      value={pricingOverride.sponsor_message || ''}
-                      onChange={(e) => 
+                    <Label>Sponsor Message (optional)</Label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Use the editor below to create a rich message with formatting, links, and more.
+                    </p>
+                    <RichTextEditor
+                      content={pricingOverride.sponsor_message || ''}
+                      onChange={(html) => 
                         setPricingOverride(prev => ({
                           ...prev,
-                          sponsor_message: e.target.value || null
+                          sponsor_message: html || null
                         }))
                       }
+                      placeholder="e.g., Free during our launch period! Thanks to our sponsors..."
                     />
                   </div>
 
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                     <p className="text-sm text-green-700">
                       <strong>Preview:</strong> Users will see "Sponsored by {pricingOverride.sponsor_name || 'Our Partners'}" 
-                      with the original $10 price crossed out.
+                      with the original ${(subscriptionPriceCents / 100).toFixed(0)} price crossed out.
                     </p>
                   </div>
                 </div>
