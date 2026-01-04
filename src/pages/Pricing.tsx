@@ -138,10 +138,58 @@ export const Pricing = () => {
           </div>
         </section>
 
-        {/* Pricing Card */}
+        {/* Pricing Cards */}
         <section className="py-12 md:py-16">
           <div className="container mx-auto px-4">
-            <div className="max-w-lg mx-auto">
+            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              {/* Free Tier */}
+              <Card className="relative overflow-hidden border border-border">
+                <CardHeader className="text-center pt-10 pb-6">
+                  <CardTitle className="text-2xl mb-2">Free Access</CardTitle>
+                  <CardDescription className="text-base">
+                    Get started with basic features
+                  </CardDescription>
+                  <div className="mt-6">
+                    <span className="text-5xl font-bold">$0</span>
+                    <span className="text-muted-foreground text-lg">/month</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    No credit card required
+                  </p>
+                </CardHeader>
+                <CardContent className="pb-8">
+                  <Button 
+                    size="lg" 
+                    variant="outline"
+                    className="w-full mb-6 text-lg h-14"
+                    onClick={() => navigate('/auth')}
+                  >
+                    Create Free Account
+                  </Button>
+                  
+                  <div className="space-y-3">
+                    <p className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                      What's included:
+                    </p>
+                    {[
+                      "Limited access to courses",
+                      "Community & job opportunities",
+                      "Verified completion certificates",
+                      "Notes & bookmarks features",
+                      "Mobile-friendly learning"
+                    ].map((feature, index) => (
+                      <div key={index} className="flex items-center gap-3">
+                        <div className="flex-shrink-0 h-5 w-5 rounded-full bg-muted flex items-center justify-center">
+                          <Check className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                        <span className="text-sm">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Premium Tier */}
               <Card className="relative overflow-hidden border-2 border-primary shadow-xl">
                 <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-4 py-1 text-sm font-medium rounded-bl-lg">
                   Most Popular
@@ -181,17 +229,14 @@ export const Pricing = () => {
                   
                   <div className="space-y-3">
                     <p className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                      What's included:
+                      Everything in Free, plus:
                     </p>
                     {[
                       "Unlimited access to all courses",
                       "Monthly live Q&A mentoring sessions",
                       "Book 1:1 time with tech experts",
                       "Continuous new crash courses",
-                      "Community & job opportunities",
-                      "Verified completion certificates",
-                      "Notes & bookmarks features",
-                      "Mobile-friendly learning"
+                      "Priority community support"
                     ].map((feature, index) => (
                       <div key={index} className="flex items-center gap-3">
                         <div className="flex-shrink-0 h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center">
