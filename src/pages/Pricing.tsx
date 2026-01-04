@@ -8,41 +8,23 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { 
-  Check, 
-  Sparkles, 
-  BookOpen, 
-  Video, 
-  Users, 
-  Award, 
-  Calendar,
-  Briefcase,
-  MessageSquare,
-  BookMarked,
-  Loader2,
-  Zap,
-  Globe
-} from 'lucide-react';
-
+import { Check, Sparkles, BookOpen, Video, Users, Award, Calendar, Briefcase, MessageSquare, BookMarked, Loader2, Zap, Globe } from 'lucide-react';
 export const Pricing = () => {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const {
+    user,
+    profile
+  } = useAuth();
   const [loading, setLoading] = useState(false);
   const [pricePerMonth, setPricePerMonth] = useState(10);
-
   useEffect(() => {
     // Fetch subscription price from platform settings
     const fetchPrice = async () => {
-      const { data } = await supabase
-        .from('platform_settings')
-        .select('setting_value')
-        .eq('setting_key', 'subscription_price')
-        .single();
-      
+      const {
+        data
+      } = await supabase.from('platform_settings').select('setting_value').eq('setting_key', 'subscription_price').single();
       if (data?.setting_value) {
-        const priceCents = typeof data.setting_value === 'object' 
-          ? (data.setting_value as any).price_cents 
-          : data.setting_value;
+        const priceCents = typeof data.setting_value === 'object' ? (data.setting_value as any).price_cents : data.setting_value;
         if (priceCents) {
           setPricePerMonth(priceCents / 100);
         }
@@ -50,13 +32,11 @@ export const Pricing = () => {
     };
     fetchPrice();
   }, []);
-
   const handleSubscribe = async () => {
     if (!user) {
       navigate('/auth?redirect=/pricing');
       return;
     }
-
     setLoading(true);
     try {
       // Use courses page to select a course to enroll
@@ -67,67 +47,51 @@ export const Pricing = () => {
       setLoading(false);
     }
   };
-
-  const benefits = [
-    {
-      icon: BookOpen,
-      title: "Unlimited Course Access",
-      description: "Access all crash courses and learning materials uploaded by seasoned mentors across various tech domains"
-    },
-    {
-      icon: Video,
-      title: "Monthly Live Q&A Sessions",
-      description: "Join exclusive monthly live mentoring sessions with industry experts to get your questions answered in real-time"
-    },
-    {
-      icon: Users,
-      title: "1:1 Expert Sessions",
-      description: "Book personalized one-on-one time with world-leading tech experts for career guidance and skill development"
-    },
-    {
-      icon: Briefcase,
-      title: "Job Opportunities",
-      description: "Access exclusive job postings and career opportunities through our founding partner, Spectrogram Consulting"
-    },
-    {
-      icon: MessageSquare,
-      title: "Community Access",
-      description: "Connect with fellow learners, mentors, and industry professionals in our vibrant community forums"
-    },
-    {
-      icon: Award,
-      title: "Verified Certificates",
-      description: "Earn industry-recognized certificates upon course completion to showcase your skills to employers"
-    },
-    {
-      icon: Calendar,
-      title: "Continuous New Content",
-      description: "New crash courses and learning materials are continuously added by our network of seasoned mentors"
-    },
-    {
-      icon: BookMarked,
-      title: "Notes & Bookmarks",
-      description: "Take notes and bookmark important lessons to create your personalized learning reference library"
-    },
-    {
-      icon: Globe,
-      title: "Africa-Focused Training",
-      description: "Content designed specifically for African youth with locally relevant examples and career paths"
-    },
-  ];
-
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
+  const benefits = [{
+    icon: BookOpen,
+    title: "Unlimited Course Access",
+    description: "Access all crash courses and learning materials uploaded by seasoned mentors across various tech domains"
+  }, {
+    icon: Video,
+    title: "Monthly Live Q&A Sessions",
+    description: "Join exclusive monthly live mentoring sessions with industry experts to get your questions answered in real-time"
+  }, {
+    icon: Users,
+    title: "1:1 Expert Sessions",
+    description: "Book personalized one-on-one time with world-leading tech experts for career guidance and skill development"
+  }, {
+    icon: Briefcase,
+    title: "Job Opportunities",
+    description: "Access exclusive job postings and career opportunities through our founding partner, Spectrogram Consulting"
+  }, {
+    icon: MessageSquare,
+    title: "Community Access",
+    description: "Connect with fellow learners, mentors, and industry professionals in our vibrant community forums"
+  }, {
+    icon: Award,
+    title: "Verified Certificates",
+    description: "Earn industry-recognized certificates upon course completion to showcase your skills to employers"
+  }, {
+    icon: Calendar,
+    title: "Continuous New Content",
+    description: "New crash courses and learning materials are continuously added by our network of seasoned mentors"
+  }, {
+    icon: BookMarked,
+    title: "Notes & Bookmarks",
+    description: "Take notes and bookmark important lessons to create your personalized learning reference library"
+  }, {
+    icon: Globe,
+    title: "Africa-Focused Training",
+    description: "Content designed specifically for African youth with locally relevant examples and career paths"
+  }];
+  return <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
       
       <main className="flex-1">
         {/* Hero Section */}
         <section className="py-16 md:py-24 bg-gradient-to-b from-primary/5 to-background">
           <div className="container mx-auto px-4 text-center">
-            <Badge variant="secondary" className="mb-4">
-              <Sparkles className="h-3 w-3 mr-1" />
-              Simple, Transparent Pricing
-            </Badge>
+            
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
               Invest in Your <span className="text-primary">Tech Future</span>
             </h1>
@@ -158,12 +122,7 @@ export const Pricing = () => {
                   </p>
                 </CardHeader>
                 <CardContent className="pb-8">
-                  <Button 
-                    size="lg" 
-                    variant="outline"
-                    className="w-full mb-6 text-lg h-14"
-                    onClick={() => navigate('/auth')}
-                  >
+                  <Button size="lg" variant="outline" className="w-full mb-6 text-lg h-14" onClick={() => navigate('/auth')}>
                     Create Free Account
                   </Button>
                   
@@ -171,20 +130,12 @@ export const Pricing = () => {
                     <p className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
                       What's included:
                     </p>
-                    {[
-                      "Limited access to courses",
-                      "Community & job opportunities",
-                      "Verified completion certificates",
-                      "Notes & bookmarks features",
-                      "Mobile-friendly learning"
-                    ].map((feature, index) => (
-                      <div key={index} className="flex items-center gap-3">
+                    {["Limited access to courses", "Community & job opportunities", "Verified completion certificates", "Notes & bookmarks features", "Mobile-friendly learning"].map((feature, index) => <div key={index} className="flex items-center gap-3">
                         <div className="flex-shrink-0 h-5 w-5 rounded-full bg-gray-200 flex items-center justify-center">
                           <Check className="h-3 w-3 text-gray-400" />
                         </div>
                         <span className="text-sm text-muted-foreground">{feature}</span>
-                      </div>
-                    ))}
+                      </div>)}
                   </div>
                 </CardContent>
               </Card>
@@ -208,43 +159,26 @@ export const Pricing = () => {
                   </p>
                 </CardHeader>
                 <CardContent className="pb-8">
-                  <Button 
-                    size="lg" 
-                    className="w-full mb-6 text-lg h-14"
-                    onClick={handleSubscribe}
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
+                  <Button size="lg" className="w-full mb-6 text-lg h-14" onClick={handleSubscribe} disabled={loading}>
+                    {loading ? <>
                         <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                         Processing...
-                      </>
-                    ) : (
-                      <>
+                      </> : <>
                         <Zap className="h-5 w-5 mr-2" />
                         Get Started Now
-                      </>
-                    )}
+                      </>}
                   </Button>
                   
                   <div className="space-y-3">
                     <p className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
                       Everything in Free, plus:
                     </p>
-                    {[
-                      "Unlimited access to all courses",
-                      "Monthly live Q&A mentoring sessions",
-                      "Book 1:1 time with tech experts",
-                      "Continuous new crash courses",
-                      "Priority community support"
-                    ].map((feature, index) => (
-                      <div key={index} className="flex items-center gap-3">
+                    {["Unlimited access to all courses", "Monthly live Q&A mentoring sessions", "Book 1:1 time with tech experts", "Continuous new crash courses", "Priority community support"].map((feature, index) => <div key={index} className="flex items-center gap-3">
                         <div className="flex-shrink-0 h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
                           <Check className="h-3 w-3 text-green-700" />
                         </div>
                         <span className="text-sm">{feature}</span>
-                      </div>
-                    ))}
+                      </div>)}
                   </div>
                 </CardContent>
               </Card>
@@ -265,8 +199,7 @@ export const Pricing = () => {
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {benefits.map((benefit, index) => (
-                <Card key={index} className="border-border/50 hover:border-primary/50 transition-colors">
+              {benefits.map((benefit, index) => <Card key={index} className="border-border/50 hover:border-primary/50 transition-colors">
                   <CardContent className="pt-6">
                     <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                       <benefit.icon className="h-6 w-6 text-primary" />
@@ -274,8 +207,7 @@ export const Pricing = () => {
                     <h3 className="font-semibold text-lg mb-2">{benefit.title}</h3>
                     <p className="text-muted-foreground text-sm">{benefit.description}</p>
                   </CardContent>
-                </Card>
-              ))}
+                </Card>)}
             </div>
           </div>
         </section>
@@ -316,33 +248,25 @@ export const Pricing = () => {
               </h2>
               
               <div className="space-y-6">
-                {[
-                  {
-                    q: "Can I cancel anytime?",
-                    a: "Yes! You can cancel your subscription at any time from your dashboard. You'll continue to have access until the end of your current billing period."
-                  },
-                  {
-                    q: "Do I get access to all courses?",
-                    a: "Absolutely. Your ACFE membership gives you unlimited access to every course on the platform, including all new courses added in the future."
-                  },
-                  {
-                    q: "How do 1:1 sessions with experts work?",
-                    a: "Mentors set their availability, and you can book time slots directly from their profile. Session pricing is standardized across the platform for transparency."
-                  },
-                  {
-                    q: "Are the certificates recognized?",
-                    a: "Yes, each certificate includes a unique verification code that employers can use to verify your achievement on our public verification page."
-                  },
-                  {
-                    q: "Is this designed for African learners?",
-                    a: "Yes! ACFE was built specifically for African youth. Our courses, examples, and career paths are tailored to the African tech ecosystem and job market."
-                  }
-                ].map((faq, index) => (
-                  <div key={index} className="bg-background rounded-lg p-6 border border-border">
+                {[{
+                q: "Can I cancel anytime?",
+                a: "Yes! You can cancel your subscription at any time from your dashboard. You'll continue to have access until the end of your current billing period."
+              }, {
+                q: "Do I get access to all courses?",
+                a: "Absolutely. Your ACFE membership gives you unlimited access to every course on the platform, including all new courses added in the future."
+              }, {
+                q: "How do 1:1 sessions with experts work?",
+                a: "Mentors set their availability, and you can book time slots directly from their profile. Session pricing is standardized across the platform for transparency."
+              }, {
+                q: "Are the certificates recognized?",
+                a: "Yes, each certificate includes a unique verification code that employers can use to verify your achievement on our public verification page."
+              }, {
+                q: "Is this designed for African learners?",
+                a: "Yes! ACFE was built specifically for African youth. Our courses, examples, and career paths are tailored to the African tech ecosystem and job market."
+              }].map((faq, index) => <div key={index} className="bg-background rounded-lg p-6 border border-border">
                     <h3 className="font-semibold text-lg mb-2">{faq.q}</h3>
                     <p className="text-muted-foreground">{faq.a}</p>
-                  </div>
-                ))}
+                  </div>)}
               </div>
             </div>
           </div>
@@ -366,6 +290,5 @@ export const Pricing = () => {
       </main>
 
       <Footer />
-    </div>
-  );
+    </div>;
 };
