@@ -42,9 +42,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const { toast } = useToast();
+  
+  // Track last profile fetch to prevent rapid re-fetches
+  const lastProfileFetchRef = React.useRef<{ userId: string; timestamp: number } | null>(null);
+  const profileFetchInProgressRef = React.useRef<string | null>(null);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, force = false) => {
+    // Prevent duplicate/rapid fetches for the same user
+    const now = Date.now();
+    const lastFetch = lastProfileFetchRef.current;
+    
+    if (!force && lastFetch && lastFetch.userId === userId && (now - lastFetch.timestamp) < 5000) {
+      console.log('Skipping profile fetch - recently fetched');
+      return profile; // Return existing profile
+    }
+    
+    // Prevent concurrent fetches for the same user
+    if (profileFetchInProgressRef.current === userId) {
+      console.log('Skipping profile fetch - already in progress');
+      return null;
+    }
+    
+    profileFetchInProgressRef.current = userId;
+    
     try {
       console.log('Fetching profile for user:', userId);
       
@@ -80,6 +102,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Use role from user_roles if available, fallback to profile role
       const role = roleData?.role || profileData.role;
 
+      lastProfileFetchRef.current = { userId, timestamp: Date.now() };
+
       return {
         ...profileData,
         role: role as 'admin' | 'mentor' | 'student',
@@ -88,17 +112,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Exception in fetchProfile:', error);
       return null;
+    } finally {
+      profileFetchInProgressRef.current = null;
     }
   };
 
   const refreshProfile = async () => {
     if (user) {
-      const profileData = await fetchProfile(user.id);
-      setProfile(profileData);
+      const profileData = await fetchProfile(user.id, true); // Force refresh
+      if (profileData) setProfile(profileData);
     }
   };
 
   useEffect(() => {
+    // Prevent re-initialization
+    if (isInitialized) return;
+    
     let mounted = true;
 
     const initializeAuth = async () => {
@@ -110,7 +139,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (sessionError) {
           console.error('Session error:', sessionError);
-          if (mounted) setLoading(false);
+          if (mounted) {
+            setLoading(false);
+            setIsInitialized(true);
+          }
           return;
         }
 
@@ -122,42 +154,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           if (session?.user) {
             const profileData = await fetchProfile(session.user.id);
-            if (mounted) setProfile(profileData);
+            if (mounted && profileData) setProfile(profileData);
           }
           
           setLoading(false);
+          setIsInitialized(true);
           console.log('Auth initialized');
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          setIsInitialized(true);
+        }
       }
     };
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (event, currentSession) => {
         console.log('Auth state changed:', event);
         
         if (!mounted) return;
 
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Defer Supabase calls to prevent deadlock
-        if (session?.user) {
-          setTimeout(() => {
-            if (mounted) {
-              fetchProfile(session.user.id).then(profileData => {
-                if (mounted) setProfile(profileData);
-              });
-            }
-          }, 0);
-        } else {
+        // Only handle meaningful auth events
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          setUser(null);
           setProfile(null);
+          lastProfileFetchRef.current = null;
+          setLoading(false);
+          return;
         }
         
-        setLoading(false);
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+          setSession(currentSession);
+          setUser(currentSession?.user ?? null);
+          
+          // Only fetch profile on SIGNED_IN, not on every token refresh
+          if (event === 'SIGNED_IN' && currentSession?.user) {
+            // Defer to prevent deadlock
+            setTimeout(() => {
+              if (mounted) {
+                fetchProfile(currentSession.user.id).then(profileData => {
+                  if (mounted && profileData) setProfile(profileData);
+                });
+              }
+            }, 100);
+          }
+          
+          setLoading(false);
+        }
       }
     );
 
@@ -167,7 +214,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [isInitialized]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
