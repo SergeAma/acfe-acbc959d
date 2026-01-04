@@ -53,6 +53,8 @@ interface Course {
   is_published: boolean;
   drip_enabled: boolean;
   duration_weeks: number | null;
+  category: string | null;
+  level: string | null;
   is_live: boolean;
   live_date: string | null;
   live_platform: string | null;
@@ -92,6 +94,10 @@ export const AdminCourseBuilder = () => {
   const [dripEnabled, setDripEnabled] = useState(false);
   const [durationWeeks, setDurationWeeks] = useState<number | null>(null);
   const [savingDuration, setSavingDuration] = useState(false);
+  const [category, setCategory] = useState<string>('');
+  const [savingCategory, setSavingCategory] = useState(false);
+  const [level, setLevel] = useState<string>('');
+  const [savingLevel, setSavingLevel] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   const [togglingPublish, setTogglingPublish] = useState(false);
   const [enrolledCount, setEnrolledCount] = useState(0);
@@ -204,6 +210,8 @@ export const AdminCourseBuilder = () => {
     setIsPaid(courseData?.is_paid ?? false);
     setDripEnabled(courseData?.drip_enabled ?? false);
     setDurationWeeks(courseData?.duration_weeks ?? null);
+    setCategory(courseData?.category || '');
+    setLevel(courseData?.level || '');
     setIsPublished(courseData?.is_published ?? false);
     // Live course settings
     setIsLive(courseData?.is_live ?? false);
@@ -351,6 +359,56 @@ export const AdminCourseBuilder = () => {
       });
     }
     setSavingDuration(false);
+  };
+
+  const handleSaveCategory = async () => {
+    if (!courseId) return;
+    
+    setSavingCategory(true);
+    const { error } = await supabase
+      .from('courses')
+      .update({ category: category || null })
+      .eq('id', courseId);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update category',
+        variant: 'destructive',
+      });
+    } else {
+      setCourse(prev => prev ? { ...prev, category: category || null } : null);
+      toast({
+        title: 'Success',
+        description: 'Course category updated',
+      });
+    }
+    setSavingCategory(false);
+  };
+
+  const handleSaveLevel = async () => {
+    if (!courseId) return;
+    
+    setSavingLevel(true);
+    const { error } = await supabase
+      .from('courses')
+      .update({ level: level || null })
+      .eq('id', courseId);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update level',
+        variant: 'destructive',
+      });
+    } else {
+      setCourse(prev => prev ? { ...prev, level: level || null } : null);
+      toast({
+        title: 'Success',
+        description: 'Course level updated',
+      });
+    }
+    setSavingLevel(false);
   };
 
   const handleSaveTitle = async () => {
@@ -1047,6 +1105,88 @@ export const AdminCourseBuilder = () => {
               <p className="text-xs text-muted-foreground mt-2">
                 Leave blank if self-paced with no estimated time
               </p>
+            </CardContent>
+          </Card>
+
+          {/* Course Category */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Course Category
+              </CardTitle>
+              <CardDescription>
+                Help students find your course
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-3">
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border">
+                    <SelectItem value="Tech Jobs">Tech Jobs</SelectItem>
+                    <SelectItem value="Software Development">Software Development</SelectItem>
+                    <SelectItem value="Data Science">Data Science</SelectItem>
+                    <SelectItem value="Design">Design</SelectItem>
+                    <SelectItem value="Marketing">Marketing</SelectItem>
+                    <SelectItem value="Business">Business</SelectItem>
+                    <SelectItem value="Finance">Finance</SelectItem>
+                    <SelectItem value="Leadership">Leadership</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button 
+                  size="sm" 
+                  onClick={handleSaveCategory}
+                  disabled={savingCategory || category === (course?.category || '')}
+                >
+                  {savingCategory ? (
+                    <span className="animate-spin">⏳</span>
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Course Level */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Difficulty Level
+              </CardTitle>
+              <CardDescription>
+                Set the expected skill level for this course
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-3">
+                <Select value={level} onValueChange={setLevel}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select level" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border">
+                    <SelectItem value="beginner">Beginner</SelectItem>
+                    <SelectItem value="intermediate">Intermediate</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button 
+                  size="sm" 
+                  onClick={handleSaveLevel}
+                  disabled={savingLevel || level === (course?.level || '')}
+                >
+                  {savingLevel ? (
+                    <span className="animate-spin">⏳</span>
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
