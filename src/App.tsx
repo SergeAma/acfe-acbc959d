@@ -44,6 +44,7 @@ import AcceptMentorInvite from "./pages/AcceptMentorInvite";
 import AdminMentorInvitations from "./pages/AdminMentorInvitations";
 import { AdminLearnerAnalytics } from "./pages/AdminLearnerAnalytics";
 import { MentorCohort } from "./pages/MentorCohort";
+import { MentorSessions } from "./pages/MentorSessions";
 import { CohortCommunity } from "./pages/CohortCommunity";
 import { PaymentSuccess } from "./pages/PaymentSuccess";
 import { AdminPricing } from "./pages/AdminPricing";
@@ -113,6 +114,7 @@ const App = () => (
             <Route path="/mentor/courses/new" element={<ProtectedRoute><CreateCourse /></ProtectedRoute>} />
             <Route path="/mentor/courses/:courseId/build" element={<ProtectedRoute><AdminCourseBuilder /></ProtectedRoute>} />
             <Route path="/mentor/cohort" element={<ProtectedRoute><MentorCohort /></ProtectedRoute>} />
+            <Route path="/mentor/sessions" element={<ProtectedRoute><MentorSessions /></ProtectedRoute>} />
             <Route path="/mentor/cohort/community" element={<ProtectedRoute><CohortCommunity /></ProtectedRoute>} />
             <Route path="/cohort/community" element={<ProtectedRoute><CohortCommunity /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />

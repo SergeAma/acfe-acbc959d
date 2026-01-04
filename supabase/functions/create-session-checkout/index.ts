@@ -37,9 +37,10 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    const { mentorId, mentorName } = await req.json();
+    const { mentorId, mentorName, scheduledDate, startTime, endTime, timezone } = await req.json();
     if (!mentorId) throw new Error("Mentor ID is required");
-    logStep("Request parsed", { mentorId, mentorName });
+    if (!scheduledDate || !startTime || !endTime) throw new Error("Session time slot is required");
+    logStep("Request parsed", { mentorId, mentorName, scheduledDate, startTime, endTime, timezone });
 
     // Get the session price from platform settings
     const { data: settingsData, error: settingsError } = await supabaseClient
@@ -75,8 +76,31 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "https://acfe-app.lovable.app";
 
+    // Create pending session record
+    const { data: sessionRecord, error: sessionError } = await supabaseClient
+      .from('mentorship_sessions')
+      .insert({
+        mentor_id: mentorId,
+        student_id: user.id,
+        scheduled_date: scheduledDate,
+        start_time: startTime,
+        end_time: endTime,
+        timezone: timezone || 'UTC',
+        status: 'pending',
+        amount_cents: priceCents,
+      })
+      .select()
+      .single();
+
+    if (sessionError) {
+      logStep("Error creating session record", { error: sessionError });
+      throw new Error("Failed to create session record");
+    }
+
+    logStep("Session record created", { sessionId: sessionRecord.id });
+
     // Create checkout session for one-time payment
-    const session = await stripe.checkout.sessions.create({
+    const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [
@@ -85,7 +109,7 @@ serve(async (req) => {
             currency: 'usd',
             product_data: {
               name: `1:1 Session with ${mentorName || 'Mentor'}`,
-              description: 'One-on-one mentorship session',
+              description: `Scheduled for ${scheduledDate} at ${startTime}`,
             },
             unit_amount: priceCents,
           },
@@ -93,18 +117,28 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${origin}/mentors/${mentorId}?session_purchased=true`,
+      success_url: `${origin}/mentors/${mentorId}?session_purchased=true&session_id=${sessionRecord.id}`,
       cancel_url: `${origin}/mentors/${mentorId}`,
       metadata: {
         mentor_id: mentorId,
         student_id: user.id,
+        session_id: sessionRecord.id,
         type: 'mentorship_session',
       },
     });
 
-    logStep("Checkout session created", { sessionId: session.id });
+    // Update session with Stripe checkout session ID
+    await supabaseClient
+      .from('mentorship_sessions')
+      .update({ stripe_checkout_session_id: checkoutSession.id })
+      .eq('id', sessionRecord.id);
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    logStep("Checkout session created", { checkoutSessionId: checkoutSession.id });
+
+    return new Response(JSON.stringify({ 
+      url: checkoutSession.url,
+      sessionId: sessionRecord.id 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
