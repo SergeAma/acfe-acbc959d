@@ -13,7 +13,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { CompanyLogos } from '@/components/CompanyLogos';
 import { MentorshipRequestDialog } from '@/components/mentorship/MentorshipRequestDialog';
 import { MentorSessionBooking } from '@/components/mentorship/MentorSessionBooking';
-import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe, ArrowLeft, Clock, BarChart, User } from 'lucide-react';
+import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe, ArrowLeft, Clock, BarChart, User, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuth } from '@/contexts/AuthContext';
 import { stripHtml } from '@/lib/html-utils';
 
@@ -334,15 +335,8 @@ export const MentorProfile = () => {
             </div>
           </div>
 
-          {/* 1:1 Session Booking */}
-          {user && id && (
-            <div className="mb-8">
-              <MentorSessionBooking mentorId={id} mentorName={mentor.full_name || 'Mentor'} />
-            </div>
-          )}
-
           {/* Courses Section */}
-          <div>
+          <div className="mb-8">
             <h2 className="text-2xl font-bold mb-6">Courses by {mentor.full_name?.split(' ')[0] || 'this mentor'}</h2>
             
             {courses && courses.length > 0 ? (
@@ -406,6 +400,31 @@ export const MentorProfile = () => {
               </Card>
             )}
           </div>
+
+          {/* 1:1 Session Booking - Collapsible */}
+          {user && id && (
+            <Collapsible defaultOpen={false} className="mb-8">
+              <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                <CollapsibleTrigger className="w-full">
+                  <CardHeader className="pb-3 cursor-pointer hover:bg-primary/5 transition-colors rounded-t-lg">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <BookOpen className="h-5 w-5 text-primary" />
+                        Book a 1:1 Session
+                      </CardTitle>
+                      <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                    </div>
+                    <p className="text-sm text-muted-foreground text-left">
+                      Get personalized guidance with a private mentorship session
+                    </p>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <MentorSessionBooking mentorId={id} mentorName={mentor.full_name || 'Mentor'} isEmbedded />
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+          )}
         </div>
         </div>
       </main>

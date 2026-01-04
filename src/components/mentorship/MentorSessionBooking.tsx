@@ -10,9 +10,10 @@ import { useSearchParams } from 'react-router-dom';
 interface MentorSessionBookingProps {
   mentorId: string;
   mentorName: string;
+  isEmbedded?: boolean;
 }
 
-export const MentorSessionBooking = ({ mentorId, mentorName }: MentorSessionBookingProps) => {
+export const MentorSessionBooking = ({ mentorId, mentorName, isEmbedded = false }: MentorSessionBookingProps) => {
   const { session, user } = useAuth();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -96,6 +97,55 @@ export const MentorSessionBooking = ({ mentorId, mentorName }: MentorSessionBook
           </div>
         </CardContent>
       </Card>
+    );
+  }
+
+  // When embedded in collapsible, only show the content without card wrapper
+  if (isEmbedded) {
+    return (
+      <CardContent className="space-y-4 pt-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Session Price</span>
+          </div>
+          {priceLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <span className="text-2xl font-bold text-primary">
+              ${(priceCents / 100).toFixed(0)}
+            </span>
+          )}
+        </div>
+
+        <ul className="text-sm text-muted-foreground space-y-1.5">
+          <li className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+            Direct access to the mentor
+          </li>
+          <li className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+            Personalized career advice
+          </li>
+          <li className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+            Resume/portfolio review available
+          </li>
+        </ul>
+
+        <Button 
+          onClick={handleBookSession} 
+          className="w-full"
+          disabled={loading || priceLoading}
+        >
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <Video className="h-4 w-4 mr-2" />
+          )}
+          Book Session – ${(priceCents / 100).toFixed(0)}
+        </Button>
+      </CardContent>
     );
   }
 
