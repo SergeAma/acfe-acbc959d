@@ -1146,11 +1146,6 @@ export const AdminCourseBuilder = () => {
             </CardContent>
           </Card>
 
-          {/* Quiz & Assignment Section */}
-          <div className="md:col-span-2 space-y-6">
-            <QuizBuilder courseId={courseId!} />
-            <AssignmentBuilder courseId={courseId!} />
-          </div>
         </div>
 
         <div className="flex justify-between items-center mb-6">
@@ -1220,6 +1215,12 @@ export const AdminCourseBuilder = () => {
             </SortableContext>
           </DndContext>
         )}
+
+        {/* Quiz & Assignment Section - shown after course content is built */}
+        <div className="mt-8 space-y-6">
+          <QuizBuilder courseId={courseId!} />
+          <AssignmentBuilder courseId={courseId!} />
+        </div>
       </div>
     </div>
   );
