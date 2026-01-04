@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, DollarSign, Gift, Loader2, Save, Ticket, Plus, Copy, Check, BarChart3, TrendingUp, Edit2, Power } from 'lucide-react';
+import { ArrowLeft, DollarSign, Gift, Loader2, Save, Ticket, Plus, Copy, Check, BarChart3, TrendingUp, Edit2, Power, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { RichTextEditor } from '@/components/RichTextEditor';
 import {
@@ -77,6 +77,7 @@ export const AdminPricing = () => {
   const [couponsInitialized, setCouponsInitialized] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
+  const [reactivatingId, setReactivatingId] = useState<string | null>(null);
   
   // Subscription pricing state
   const [subscriptionPriceCents, setSubscriptionPriceCents] = useState<number>(1000);
@@ -339,6 +340,36 @@ export const AdminPricing = () => {
     setDeactivatingId(null);
   };
 
+  const handleReactivateCoupon = async (promotionCodeId: string, code: string) => {
+    setReactivatingId(promotionCodeId);
+    
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke('reactivate-coupon', {
+        body: { promotionCodeId },
+        headers: {
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+      
+      toast({
+        title: "Coupon Reactivated",
+        description: `"${code}" is now active again`,
+      });
+      
+      fetchCoupons(false);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reactivate coupon",
+        variant: "destructive",
+      });
+    }
+    setReactivatingId(null);
+  };
+
   const copyToClipboard = (code: string) => {
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
@@ -540,17 +571,36 @@ export const AdminPricing = () => {
                     {inactiveCoupons.map((coupon) => (
                       <div 
                         key={coupon.id} 
-                        className="flex items-center justify-between p-3 bg-muted/20 border border-dashed rounded-lg opacity-60"
+                        className="flex items-center justify-between p-3 bg-muted/20 border border-dashed rounded-lg"
                       >
                         <div className="flex items-center gap-2 flex-wrap">
-                          <code className="font-mono font-bold line-through">{coupon.code}</code>
+                          <code className="font-mono font-bold text-muted-foreground">{coupon.code}</code>
                           <Badge variant="secondary" className="text-xs">
                             {formatTrialDays(coupon.trial_days)} free
                           </Badge>
+                          {coupon.name && (
+                            <span className="text-sm text-muted-foreground hidden sm:inline">{coupon.name}</span>
+                          )}
                         </div>
-                        <span className="text-xs text-muted-foreground">
-                          {coupon.times_redeemed} redemptions
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            {coupon.times_redeemed} redemptions
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-green-600 border-green-300 hover:bg-green-50 hover:text-green-700"
+                            onClick={() => handleReactivateCoupon(coupon.id, coupon.code)}
+                            disabled={reactivatingId === coupon.id}
+                          >
+                            {reactivatingId === coupon.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                            ) : (
+                              <RotateCcw className="h-4 w-4 mr-1" />
+                            )}
+                            Reactivate
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
