@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { stripHtml } from '@/lib/html-utils';
+import { sanitizeHtml } from '@/lib/sanitize-html';
 import { CourseDescriptionPlayer } from '@/components/learning/CourseDescriptionPlayer';
 
 interface Course {
@@ -604,7 +605,10 @@ export const CoursePreview = () => {
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg">{section.title}</h3>
                         {section.description && (
-                          <p className="text-sm text-muted-foreground mt-1">{section.description}</p>
+                          <div 
+                            className="text-sm text-muted-foreground mt-1 rich-text-content"
+                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(section.description) }}
+                          />
                         )}
                         <p className="text-xs text-muted-foreground mt-1">
                           {section.content.length} {section.content.length === 1 ? 'lesson' : 'lessons'}
