@@ -51,6 +51,7 @@ interface CouponAnalytics {
 }
 
 const TRIAL_OPTIONS = [
+  { value: '2', label: '48 Hours' },
   { value: '3', label: '3 Days' },
   { value: '7', label: '1 Week' },
   { value: '14', label: '2 Weeks' },
@@ -59,6 +60,7 @@ const TRIAL_OPTIONS = [
 
 const formatTrialDays = (days: number) => {
   if (days === 1) return "1 day";
+  if (days === 2) return "48 hours";
   if (days < 7) return `${days} days`;
   if (days === 7) return "1 week";
   if (days === 14) return "2 weeks";
@@ -98,7 +100,7 @@ export const AdminPricing = () => {
   const [couponToDeactivate, setCouponToDeactivate] = useState<{ id: string; code: string } | null>(null);
   const [newCouponCode, setNewCouponCode] = useState('');
   const [newCouponName, setNewCouponName] = useState('');
-  const [newCouponTrialDays, setNewCouponTrialDays] = useState('7');
+  const [newCouponTrialDays, setNewCouponTrialDays] = useState('2');
 
   // Only redirect if auth is fully loaded AND profile explicitly has non-admin role
   useEffect(() => {
@@ -294,7 +296,7 @@ export const AdminPricing = () => {
       
       setNewCouponCode('');
       setNewCouponName('');
-      setNewCouponTrialDays('7');
+      setNewCouponTrialDays('2');
       fetchCoupons(false);
     } catch (error: any) {
       toast({

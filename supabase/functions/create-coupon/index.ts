@@ -45,7 +45,7 @@ serve(async (req) => {
     }
     logStep("Admin verified");
 
-    const { code, name, trialDays = 7 } = await req.json();
+    const { code, name, trialDays = 2 } = await req.json();
     if (!code) throw new Error("Coupon code is required");
     
     // Validate trial days (min 1, max 90)
