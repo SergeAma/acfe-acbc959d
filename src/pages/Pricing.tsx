@@ -182,7 +182,7 @@ export const Pricing = () => {
                         <div className="flex-shrink-0 h-5 w-5 rounded-full bg-muted flex items-center justify-center">
                           <Check className="h-3 w-3 text-muted-foreground" />
                         </div>
-                        <span className="text-sm">{feature}</span>
+                        <span className="text-sm text-muted-foreground">{feature}</span>
                       </div>
                     ))}
                   </div>
@@ -239,8 +239,8 @@ export const Pricing = () => {
                       "Priority community support"
                     ].map((feature, index) => (
                       <div key={index} className="flex items-center gap-3">
-                        <div className="flex-shrink-0 h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Check className="h-3 w-3 text-primary" />
+                        <div className="flex-shrink-0 h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
+                          <Check className="h-3 w-3 text-green-700" />
                         </div>
                         <span className="text-sm">{feature}</span>
                       </div>
