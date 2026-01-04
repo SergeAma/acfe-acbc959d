@@ -255,7 +255,10 @@ export const CourseDetail = () => {
                         Sponsored by {priceInfo.sponsor}
                       </p>
                       {priceInfo.message && (
-                        <p className="text-xs text-green-600 mt-1">{priceInfo.message}</p>
+                        <div 
+                          className="text-xs text-green-600 mt-2 rich-text-content prose prose-sm prose-green max-w-none [&_p]:mb-1 [&_p]:mt-1"
+                          dangerouslySetInnerHTML={{ __html: priceInfo.message }}
+                        />
                       )}
                       <div className="mt-2 flex items-center justify-center gap-2">
                         <span className="text-lg line-through text-muted-foreground">
