@@ -9,9 +9,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, DollarSign, Gift, Loader2, Save, Ticket, Plus, Copy, Check, Trash2, BarChart3, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface PricingOverride {
   enabled: boolean;
@@ -76,6 +86,7 @@ export const AdminPricing = () => {
 
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [analytics, setAnalytics] = useState<CouponAnalytics | null>(null);
+  const [couponToDeactivate, setCouponToDeactivate] = useState<{ id: string; code: string } | null>(null);
   const [newCouponCode, setNewCouponCode] = useState('');
   const [newCouponName, setNewCouponName] = useState('');
   const [newCouponTrialDays, setNewCouponTrialDays] = useState('7');
@@ -222,8 +233,13 @@ export const AdminPricing = () => {
     setCreatingCoupon(false);
   };
 
-  const handleDeactivateCoupon = async (promotionCodeId: string, code: string) => {
+  const handleDeactivateCoupon = async () => {
+    if (!couponToDeactivate) return;
+    
+    const { id: promotionCodeId, code } = couponToDeactivate;
     setDeactivatingId(promotionCodeId);
+    setCouponToDeactivate(null);
+    
     try {
       const { data: session } = await supabase.auth.getSession();
       const { data, error } = await supabase.functions.invoke('deactivate-coupon', {
@@ -427,7 +443,7 @@ export const AdminPricing = () => {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={() => handleDeactivateCoupon(coupon.id, coupon.code)}
+                            onClick={() => setCouponToDeactivate({ id: coupon.id, code: coupon.code })}
                             disabled={deactivatingId === coupon.id}
                           >
                             {deactivatingId === coupon.id ? (
@@ -571,6 +587,28 @@ export const AdminPricing = () => {
           </Card>
         </div>
       </div>
+
+      {/* Deactivation Confirmation Dialog */}
+      <AlertDialog open={!!couponToDeactivate} onOpenChange={(open) => !open && setCouponToDeactivate(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deactivate Coupon</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to deactivate the coupon <strong>"{couponToDeactivate?.code}"</strong>? 
+              This action cannot be undone and the coupon will no longer be usable by customers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeactivateCoupon}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Deactivate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
