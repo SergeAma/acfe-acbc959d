@@ -169,7 +169,7 @@ export const CareerCentreLanding = () => {
                 What Your Students Get
               </h2>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                A private, branded environment designed to accelerate career outcomes for your graduates
+                A private, branded environment designed to accelerate career outcomes for your graduates.
               </p>
             </div>
 
