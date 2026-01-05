@@ -98,14 +98,32 @@ export const InstitutionCareerCentre = () => {
     enabled: !!user,
   });
 
-  // Fetch all published courses for general ACFE courses
+  // Fetch institution-exclusive courses
+  const { data: exclusiveCourses = [] } = useQuery({
+    queryKey: ['institution-exclusive-courses', institution?.id],
+    queryFn: async () => {
+      if (!institution?.id) return [];
+      const { data, error } = await supabase
+        .from('courses')
+        .select('id, title, description, thumbnail_url, category, level, is_live, live_date')
+        .eq('institution_id', institution.id)
+        .eq('is_published', true)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as Course[];
+    },
+    enabled: !!institution?.id,
+  });
+
+  // Fetch all published courses for general ACFE courses (excluding institution-specific ones)
   const { data: allCourses = [] } = useQuery({
-    queryKey: ['published-courses'],
+    queryKey: ['published-courses-general'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('courses')
         .select('id, title, description, thumbnail_url, category, level, is_live, live_date')
         .eq('is_published', true)
+        .is('institution_id', null)
         .order('created_at', { ascending: false })
         .limit(6);
       if (error) throw error;
@@ -367,54 +385,108 @@ export const InstitutionCareerCentre = () => {
                     Exclusive to {institution.name}
                   </h2>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Events and opportunities available through your institution's partnership with ACFE
+                    Courses and events available through your institution's partnership with ACFE
                   </p>
                 </div>
               </div>
-              
-              {upcomingEvents.length > 0 ? (
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {upcomingEvents.map(event => (
-                    <Card key={event.id} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="h-12 w-12 rounded-lg bg-primary/10 flex flex-col items-center justify-center shrink-0">
-                            <span className="text-lg font-bold text-primary leading-none">
-                              {format(new Date(event.event_date!), 'd')}
-                            </span>
-                            <span className="text-xs text-primary uppercase">
-                              {format(new Date(event.event_date!), 'MMM')}
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-foreground truncate">{event.title}</h4>
-                            <Badge variant="outline" className="text-xs mt-1">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {format(new Date(event.event_date!), 'h:mm a')}
+
+              {/* Exclusive Courses */}
+              {exclusiveCourses.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                    Exclusive Courses
+                  </h3>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {exclusiveCourses.map(course => (
+                      <Card key={course.id} className="hover:shadow-md transition-shadow border-primary/20 bg-primary/5">
+                        <CardContent className="p-4">
+                          <div className="aspect-video rounded-lg bg-muted mb-3 overflow-hidden relative">
+                            {course.thumbnail_url ? (
+                              <img 
+                                src={course.thumbnail_url} 
+                                alt={course.title}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <BookOpen className="h-8 w-8 text-muted-foreground" />
+                              </div>
+                            )}
+                            <Badge className="absolute top-2 left-2 text-xs bg-primary">
+                              EXCLUSIVE
                             </Badge>
                           </div>
-                        </div>
-                        {event.description && (
-                          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{event.description}</p>
-                        )}
-                        {event.event_url && (
-                          <Button variant="outline" size="sm" asChild className="w-full">
-                            <a href={event.event_url} target="_blank" rel="noopener noreferrer">
-                              <ExternalLink className="h-4 w-4 mr-2" />
-                              View Event
-                            </a>
+                          <h4 className="font-semibold text-foreground line-clamp-1 mb-1">{course.title}</h4>
+                          {course.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                              {stripHtml(course.description).substring(0, 100)}...
+                            </p>
+                          )}
+                          <Button variant="default" size="sm" asChild className="w-full">
+                            <Link to={`/courses/${course.id}`}>
+                              View Course
+                              <ArrowRight className="h-4 w-4 ml-2" />
+                            </Link>
                           </Button>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
-              ) : (
+              )}
+
+              {/* Exclusive Events */}
+              {upcomingEvents.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                    Upcoming Events
+                  </h3>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {upcomingEvents.map(event => (
+                      <Card key={event.id} className="hover:shadow-md transition-shadow">
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="h-12 w-12 rounded-lg bg-primary/10 flex flex-col items-center justify-center shrink-0">
+                              <span className="text-lg font-bold text-primary leading-none">
+                                {format(new Date(event.event_date!), 'd')}
+                              </span>
+                              <span className="text-xs text-primary uppercase">
+                                {format(new Date(event.event_date!), 'MMM')}
+                              </span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-foreground truncate">{event.title}</h4>
+                              <Badge variant="outline" className="text-xs mt-1">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {format(new Date(event.event_date!), 'h:mm a')}
+                              </Badge>
+                            </div>
+                          </div>
+                          {event.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{event.description}</p>
+                          )}
+                          {event.event_url && (
+                            <Button variant="outline" size="sm" asChild className="w-full">
+                              <a href={event.event_url} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="h-4 w-4 mr-2" />
+                                View Event
+                              </a>
+                            </Button>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Empty state if no exclusive content */}
+              {exclusiveCourses.length === 0 && upcomingEvents.length === 0 && (
                 <Card>
                   <CardContent className="p-8 text-center">
-                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-muted-foreground">No exclusive events scheduled yet.</p>
-                    <p className="text-sm text-muted-foreground mt-1">Check back soon for upcoming events!</p>
+                    <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground">No exclusive content available yet.</p>
+                    <p className="text-sm text-muted-foreground mt-1">Check back soon for courses and events!</p>
                   </CardContent>
                 </Card>
               )}
