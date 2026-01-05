@@ -6,6 +6,32 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+async function verifyTurnstile(token: string): Promise<boolean> {
+  const secretKey = Deno.env.get("TURNSTILE_SECRET_KEY");
+  if (!secretKey) {
+    console.error("TURNSTILE_SECRET_KEY not configured");
+    return false;
+  }
+
+  try {
+    const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        secret: secretKey,
+        response: token,
+      }),
+    });
+
+    const data = await response.json();
+    console.log("Turnstile verification result:", data.success);
+    return data.success === true;
+  } catch (error) {
+    console.error("Turnstile verification error:", error);
+    return false;
+  }
+}
+
 serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -13,7 +39,25 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email } = await req.json();
+    const { email, turnstileToken } = await req.json();
+
+    // Verify CAPTCHA first
+    if (!turnstileToken) {
+      console.error("Missing CAPTCHA token");
+      return new Response(
+        JSON.stringify({ error: "Please complete the CAPTCHA verification" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const isCaptchaValid = await verifyTurnstile(turnstileToken);
+    if (!isCaptchaValid) {
+      console.error("CAPTCHA verification failed");
+      return new Response(
+        JSON.stringify({ error: "CAPTCHA verification failed. Please try again." }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
