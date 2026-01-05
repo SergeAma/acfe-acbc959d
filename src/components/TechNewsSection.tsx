@@ -122,25 +122,22 @@ export const TechNewsSection = () => {
     }
     setIsSubscribing(true);
     try {
-      const { error } = await supabase.from('contacts').insert({
-        email: email.trim(),
-        source: 'newsletter_signup'
+      const { data, error } = await supabase.functions.invoke('newsletter-signup', {
+        body: { email: email.trim() }
       });
+
       if (error) {
-        if (error.code === '23505') {
-          toast.success("You're already subscribed!");
-        } else {
-          throw error;
-        }
+        throw error;
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      if (data?.alreadySubscribed) {
+        toast.success("You're already subscribed!");
       } else {
         toast.success('Successfully subscribed to the newsletter!');
-        try {
-          await supabase.functions.invoke('send-newsletter-welcome', {
-            body: { email: email.trim() },
-          });
-        } catch (emailError) {
-          console.error('Failed to send newsletter welcome email:', emailError);
-        }
       }
       setEmail('');
     } catch (error) {

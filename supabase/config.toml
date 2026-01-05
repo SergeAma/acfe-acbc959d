@@ -120,4 +120,11 @@ verify_jwt = false
 [functions.generate-spectrogram-token]
 verify_jwt = true
 
+[functions.create-subscription-checkout]
+verify_jwt = true
 
+[functions.send-institution-inquiry]
+verify_jwt = false
+
+[functions.newsletter-signup]
+verify_jwt = false
