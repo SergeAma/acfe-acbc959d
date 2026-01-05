@@ -166,8 +166,9 @@ export const InstitutionCareerCentre = () => {
     );
   }
 
-  // Membership gate - must be verified member
-  if (!membershipLoading && !membership) {
+  // Membership gate - must be verified member (admins bypass this check)
+  const isAdmin = profile?.role === 'admin';
+  if (!membershipLoading && !membership && !isAdmin) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
