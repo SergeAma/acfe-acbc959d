@@ -207,7 +207,7 @@ export const CareerCentreLanding = () => {
               animationDelay: '0.4s',
               animationFillMode: 'forwards'
             }}>
-                <Button size="lg" className="bg-amber-700 hover:bg-amber-800 text-white h-14 px-8 text-lg rounded-full shadow-lg shadow-amber-700/20 hover:shadow-xl hover:shadow-amber-800/25 transition-all duration-300 hover:-translate-y-0.5" onClick={() => setShowInstitutionDialog(true)}>
+                <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground h-14 px-8 text-lg rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/25 transition-all duration-300 hover:-translate-y-0.5" onClick={() => setShowInstitutionDialog(true)}>
                   <Building2 className="h-5 w-5 mr-2" />
                   Partner With ACFE
                   <ArrowRight className="h-5 w-5 ml-2" />
@@ -301,7 +301,7 @@ export const CareerCentreLanding = () => {
                 </CardHeader>
                 
                 <CardContent className="pb-12 px-8">
-                  <Button size="lg" className="w-full mb-10 text-lg h-16 bg-amber-700 hover:bg-amber-800 text-white rounded-xl shadow-lg shadow-amber-700/15 hover:shadow-xl hover:shadow-amber-800/20 transition-all duration-300" onClick={() => setShowInstitutionDialog(true)}>
+                  <Button size="lg" className="w-full mb-10 text-lg h-16 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-lg shadow-primary/15 hover:shadow-xl hover:shadow-primary/20 transition-all duration-300" onClick={() => setShowInstitutionDialog(true)}>
                     <Building2 className="h-5 w-5 mr-2" />
                     Contact ACFE Team
                     <ArrowRight className="h-5 w-5 ml-2" />
@@ -341,7 +341,7 @@ export const CareerCentreLanding = () => {
                 Join leading African institutions already partnering with ACFE to provide 
                 world-class tech education and career pathways for their students.
               </p>
-              <Button size="lg" className="bg-white hover:bg-amber-50 text-amber-800 h-16 px-10 text-lg rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:-translate-y-1" onClick={() => setShowInstitutionDialog(true)}>
+              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground h-16 px-10 text-lg rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:-translate-y-1" onClick={() => setShowInstitutionDialog(true)}>
                 Get Started Today
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Button>
