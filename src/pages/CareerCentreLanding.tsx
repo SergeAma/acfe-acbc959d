@@ -26,7 +26,8 @@ export const CareerCentreLanding = () => {
   const [institutionForm, setInstitutionForm] = useState({
     institutionName: '',
     institutionType: '',
-    contactName: '',
+    firstName: '',
+    lastName: '',
     contactEmail: '',
     contactPhone: '',
     estimatedStudents: '',
@@ -74,7 +75,7 @@ export const CareerCentreLanding = () => {
   const handleInstitutionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!institutionForm.institutionName || !institutionForm.institutionType || !institutionForm.contactName || !institutionForm.contactEmail || !institutionForm.contactPhone || !institutionForm.estimatedStudents || !institutionForm.message) {
+    if (!institutionForm.institutionName || !institutionForm.institutionType || !institutionForm.firstName || !institutionForm.lastName || !institutionForm.contactEmail || !institutionForm.contactPhone || !institutionForm.estimatedStudents || !institutionForm.message) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -101,7 +102,8 @@ export const CareerCentreLanding = () => {
       setInstitutionForm({
         institutionName: '',
         institutionType: '',
-        contactName: '',
+        firstName: '',
+        lastName: '',
         contactEmail: '',
         contactPhone: '',
         estimatedStudents: '',
@@ -314,15 +316,27 @@ export const CareerCentreLanding = () => {
               </Select>
             </div>
 
-            <div>
-              <Label htmlFor="contactName">Your Name *</Label>
-              <Input
-                id="contactName"
-                value={institutionForm.contactName}
-                onChange={(e) => setInstitutionForm(prev => ({ ...prev, contactName: e.target.value }))}
-                placeholder="Full name"
-                className="mt-1"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="firstName">First Name *</Label>
+                <Input
+                  id="firstName"
+                  value={institutionForm.firstName}
+                  onChange={(e) => setInstitutionForm(prev => ({ ...prev, firstName: e.target.value }))}
+                  placeholder="First name"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="lastName">Last Name *</Label>
+                <Input
+                  id="lastName"
+                  value={institutionForm.lastName}
+                  onChange={(e) => setInstitutionForm(prev => ({ ...prev, lastName: e.target.value }))}
+                  placeholder="Last name"
+                  className="mt-1"
+                />
+              </div>
             </div>
 
             <div>
