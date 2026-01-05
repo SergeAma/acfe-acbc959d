@@ -87,16 +87,32 @@ serve(async (req: Request) => {
         .eq('email', normalizedEmail)
         .single();
 
-      if (existing && existing.status !== 'revoked') {
-        errors.push(`Already invited: ${email}`);
+      if (existing && existing.status === 'active') {
+        errors.push(`Already a member: ${email}`);
         continue;
       }
+
+      // Check if this email belongs to an existing user - if so, auto-activate
+      const { data: existingProfile } = await supabaseClient
+        .from('profiles')
+        .select('id')
+        .ilike('email', normalizedEmail)
+        .single();
+
+      const shouldAutoActivate = !!existingProfile;
+      const inviteStatus = shouldAutoActivate ? 'active' : 'pending';
 
       // Insert or update the invitation
       if (existing) {
         await supabaseClient
           .from('institution_students')
-          .update({ status: 'pending', invited_at: new Date().toISOString(), invited_by: user.id })
+          .update({ 
+            status: inviteStatus, 
+            user_id: existingProfile?.id || null,
+            invited_at: new Date().toISOString(), 
+            invited_by: user.id,
+            joined_at: shouldAutoActivate ? new Date().toISOString() : null
+          })
           .eq('id', existing.id);
       } else {
         const { error: insertError } = await supabaseClient
@@ -104,8 +120,10 @@ serve(async (req: Request) => {
           .insert({
             institution_id: institutionId,
             email: normalizedEmail,
-            status: 'pending',
+            status: inviteStatus,
+            user_id: existingProfile?.id || null,
             invited_by: user.id,
+            joined_at: shouldAutoActivate ? new Date().toISOString() : null
           });
 
         if (insertError) {
