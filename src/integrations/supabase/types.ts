@@ -2215,6 +2215,10 @@ export type Database = {
         Args: { _admin_id: string; _request_id: string }
         Returns: undefined
       }
+      claim_institution_invitation: {
+        Args: { _institution_id: string; _user_id: string }
+        Returns: boolean
+      }
       get_public_mentor_profile: {
         Args: { mentor_id: string }
         Returns: {
