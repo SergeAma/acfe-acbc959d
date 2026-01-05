@@ -192,50 +192,6 @@ export const CareerCentreLanding = () => {
           </div>
         </section>
 
-        {/* Subscription Box */}
-        <section className="py-16 md:py-24 bg-muted/30">
-          <div className="container mx-auto px-4">
-            <div className="max-w-lg mx-auto">
-              <Card className="relative overflow-hidden border-2 border-stone-500/50 bg-gradient-to-b from-stone-100/50 to-background dark:from-stone-900/20 dark:to-background">
-                <div className="absolute top-0 right-0 text-white px-4 py-1 text-sm font-medium rounded-bl-lg bg-amber-600">
-                  <GraduationCap className="h-4 w-4 inline-block mr-1" />
-                  Institutions
-                </div>
-                <CardHeader className="text-center pt-10 pb-6">
-                  <CardTitle className="text-2xl mb-2">Educational Partners</CardTitle>
-                  <CardDescription className="text-base">
-                    Empower your students with tech skills
-                  </CardDescription>
-                  <div className="mt-6">
-                    <span className="text-3xl font-bold text-stone-600">Custom Pricing</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Tailored to your institution's needs
-                  </p>
-                </CardHeader>
-                <CardContent className="pb-8">
-                  <Button size="lg" variant="outline" onClick={() => setShowInstitutionDialog(true)} className="w-full mb-6 text-lg h-14 border-stone-500 text-destructive-foreground bg-amber-600 hover:bg-amber-500">
-                    <Building2 className="h-5 w-5 mr-2" />
-                    Contact ACFE Team
-                  </Button>
-                  
-                  <div className="space-y-3">
-                    <p className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                      Everything in Membership, plus:
-                    </p>
-                    {["Bespoke pricing for your institution", "Tailored enablement events", "Topic-driven mentorship at scale", "Dedicated ACFE Career Centre", "Spectrogram talent profiles for graduates"].map((feature, index) => <div key={index} className="flex items-center gap-3">
-                        <div className="flex-shrink-0 h-5 w-5 rounded-full bg-stone-200 flex items-center justify-center">
-                          <Check className="h-3 w-3 text-stone-700" />
-                        </div>
-                        <span className="text-sm">{feature}</span>
-                      </div>)}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
         {/* CTA Section */}
         <section className="py-16 md:py-20">
           <div className="container mx-auto px-4">
