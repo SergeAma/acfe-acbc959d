@@ -217,7 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [isInitialized]);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -228,9 +228,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: error.message,
         variant: "destructive",
       });
+      return { error };
     }
 
-    return { error };
+    // Successfully signed in - update state immediately
+    if (data.session && data.user) {
+      setSession(data.session);
+      setUser(data.user);
+      
+      // Fetch profile immediately
+      const profileData = await fetchProfile(data.user.id, true);
+      if (profileData) setProfile(profileData);
+    }
+
+    return { error: null };
   };
 
   const signUp = async (email: string, password: string, fullName: string, linkedinUrl?: string, wantsMentor?: boolean, university?: string, mentorBio?: string, portfolioLinks?: string) => {
