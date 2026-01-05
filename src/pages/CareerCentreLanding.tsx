@@ -14,9 +14,7 @@ import { Check, GraduationCap, Building2, Users, Briefcase, Award, BarChart3, Me
 import { PhoneInput } from '@/components/ui/phone-input';
 import { AutocompleteInput } from '@/components/ui/autocomplete-input';
 import { AFRICAN_UNIVERSITIES } from '@/data/universities';
-
 const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
-
 export const CareerCentreLanding = () => {
   const [showInstitutionDialog, setShowInstitutionDialog] = useState(false);
   const [institutionLoading, setInstitutionLoading] = useState(false);
@@ -31,7 +29,7 @@ export const CareerCentreLanding = () => {
     contactEmail: '',
     contactPhone: '',
     estimatedStudents: '',
-    message: '',
+    message: ''
   });
 
   // Initialize Turnstile when dialog opens
@@ -44,9 +42,7 @@ export const CareerCentreLanding = () => {
       }
       return;
     }
-
     const existingScript = document.querySelector('script[src*="turnstile"]');
-    
     const initTurnstile = () => {
       setTimeout(() => {
         if (turnstileRef.current && !turnstileWidgetId.current && (window as any).turnstile) {
@@ -54,12 +50,11 @@ export const CareerCentreLanding = () => {
             sitekey: TURNSTILE_SITE_KEY,
             callback: (token: string) => setTurnstileToken(token),
             'expired-callback': () => setTurnstileToken(null),
-            theme: 'auto',
+            theme: 'auto'
           });
         }
       }, 100);
     };
-
     if (existingScript) {
       initTurnstile();
     } else {
@@ -71,32 +66,31 @@ export const CareerCentreLanding = () => {
       document.head.appendChild(script);
     }
   }, [showInstitutionDialog]);
-
   const handleInstitutionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!institutionForm.institutionName || !institutionForm.institutionType || !institutionForm.firstName || !institutionForm.lastName || !institutionForm.contactEmail || !institutionForm.contactPhone || !institutionForm.estimatedStudents || !institutionForm.message) {
       toast.error('Please fill in all required fields');
       return;
     }
-
     if (!turnstileToken) {
       toast.error('Please complete the CAPTCHA verification');
       return;
     }
-
     setInstitutionLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-institution-inquiry', {
-        body: { ...institutionForm, turnstileToken },
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('send-institution-inquiry', {
+        body: {
+          ...institutionForm,
+          turnstileToken
+        }
       });
-      
       if (error) throw error;
-
       if (data?.error) {
         throw new Error(data.error);
       }
-      
       toast.success('Thank you! Our partnerships team will contact you within 2-3 business days.');
       setShowInstitutionDialog(false);
       setInstitutionForm({
@@ -107,7 +101,7 @@ export const CareerCentreLanding = () => {
         contactEmail: '',
         contactPhone: '',
         estimatedStudents: '',
-        message: '',
+        message: ''
       });
       setTurnstileToken(null);
     } catch (error: any) {
@@ -121,18 +115,32 @@ export const CareerCentreLanding = () => {
       setInstitutionLoading(false);
     }
   };
-
-  const features = [
-    { icon: Users, title: "Gated Student Environment", description: "Private, branded career centre exclusively for your institution's students" },
-    { icon: Briefcase, title: "Job Opportunity Surfacing", description: "Curated job postings aligned with your students' completed courses and skills" },
-    { icon: Award, title: "Spectrogram Talent Profiles", description: "Graduates automatically create verified talent profiles for employer discovery" },
-    { icon: BarChart3, title: "Institutional Reporting", description: "Track participation, certifications, and job application outcomes" },
-    { icon: MessageSquare, title: "Focused Discussions", description: "Signal-dense conversations around events, courses, and career opportunities" },
-    { icon: Globe, title: "Africa-Focused Training", description: "Content designed specifically for African youth with locally relevant career paths" },
-  ];
-
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
+  const features = [{
+    icon: Users,
+    title: "Gated Student Environment",
+    description: "Private, branded career centre exclusively for your institution's students"
+  }, {
+    icon: Briefcase,
+    title: "Job Opportunity Surfacing",
+    description: "Curated job postings aligned with your students' completed courses and skills"
+  }, {
+    icon: Award,
+    title: "Spectrogram Talent Profiles",
+    description: "Graduates automatically create verified talent profiles for employer discovery"
+  }, {
+    icon: BarChart3,
+    title: "Institutional Reporting",
+    description: "Track participation, certifications, and job application outcomes"
+  }, {
+    icon: MessageSquare,
+    title: "Focused Discussions",
+    description: "Signal-dense conversations around events, courses, and career opportunities"
+  }, {
+    icon: Globe,
+    title: "Africa-Focused Training",
+    description: "Content designed specifically for African youth with locally relevant career paths"
+  }];
+  return <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
       
       <main className="flex-1">
@@ -144,18 +152,14 @@ export const CareerCentreLanding = () => {
               For Educational Institutions
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-              "Your Institution" <span className="text-stone-600">Career Development Center</span>
+              "Your Institution" <span className="text-amber-700">Career Development Center</span>
               <span className="block text-xl md:text-2xl font-medium text-muted-foreground mt-2">Powered by ACFE</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
               Empower your students with job-ready tech skills, verified credentials, and direct pathways 
               to employment through our dedicated institutional partnership program.
             </p>
-            <Button 
-              size="lg" 
-              className="bg-stone-500 hover:bg-stone-600 text-white h-14 px-8 text-lg"
-              onClick={() => setShowInstitutionDialog(true)}
-            >
+            <Button size="lg" className="bg-stone-500 hover:bg-stone-600 text-white h-14 px-8 text-lg" onClick={() => setShowInstitutionDialog(true)}>
               <Building2 className="h-5 w-5 mr-2" />
               Partner With ACFE
             </Button>
@@ -175,8 +179,7 @@ export const CareerCentreLanding = () => {
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {features.map((feature, index) => (
-                <Card key={index} className="border-border/50 hover:border-stone-500/50 transition-colors">
+              {features.map((feature, index) => <Card key={index} className="border-border/50 hover:border-stone-500/50 transition-colors">
                   <CardContent className="pt-6">
                     <div className="h-12 w-12 rounded-lg bg-stone-200 dark:bg-stone-800/30 flex items-center justify-center mb-4">
                       <feature.icon className="h-6 w-6 text-stone-600" />
@@ -184,8 +187,7 @@ export const CareerCentreLanding = () => {
                     <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
                     <p className="text-muted-foreground text-sm">{feature.description}</p>
                   </CardContent>
-                </Card>
-              ))}
+                </Card>)}
             </div>
           </div>
         </section>
@@ -212,12 +214,7 @@ export const CareerCentreLanding = () => {
                   </p>
                 </CardHeader>
                 <CardContent className="pb-8">
-                  <Button 
-                    size="lg" 
-                    variant="outline" 
-                    className="w-full mb-6 text-lg h-14 border-stone-500 text-stone-700 hover:bg-stone-100 dark:hover:bg-stone-900/50" 
-                    onClick={() => setShowInstitutionDialog(true)}
-                  >
+                  <Button size="lg" variant="outline" className="w-full mb-6 text-lg h-14 border-stone-500 text-stone-700 hover:bg-stone-100 dark:hover:bg-stone-900/50" onClick={() => setShowInstitutionDialog(true)}>
                     <Building2 className="h-5 w-5 mr-2" />
                     Contact ACFE Team
                   </Button>
@@ -226,20 +223,12 @@ export const CareerCentreLanding = () => {
                     <p className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
                       Everything in Membership, plus:
                     </p>
-                    {[
-                      "Bespoke pricing for your institution",
-                      "Tailored enablement events",
-                      "Topic-driven mentorship at scale",
-                      "Dedicated ACFE Career Centre",
-                      "Spectrogram talent profiles for graduates"
-                    ].map((feature, index) => (
-                      <div key={index} className="flex items-center gap-3">
+                    {["Bespoke pricing for your institution", "Tailored enablement events", "Topic-driven mentorship at scale", "Dedicated ACFE Career Centre", "Spectrogram talent profiles for graduates"].map((feature, index) => <div key={index} className="flex items-center gap-3">
                         <div className="flex-shrink-0 h-5 w-5 rounded-full bg-stone-200 flex items-center justify-center">
                           <Check className="h-3 w-3 text-stone-700" />
                         </div>
                         <span className="text-sm">{feature}</span>
-                      </div>
-                    ))}
+                      </div>)}
                   </div>
                 </CardContent>
               </Card>
@@ -258,11 +247,7 @@ export const CareerCentreLanding = () => {
                 Join leading African institutions already partnering with ACFE to provide 
                 world-class tech education and career pathways for their students.
               </p>
-              <Button 
-                size="lg" 
-                className="bg-stone-500 hover:bg-stone-600 text-white h-14 px-8 text-lg"
-                onClick={() => setShowInstitutionDialog(true)}
-              >
+              <Button size="lg" className="bg-stone-500 hover:bg-stone-600 text-white h-14 px-8 text-lg" onClick={() => setShowInstitutionDialog(true)}>
                 Get Started Today
               </Button>
             </div>
@@ -288,22 +273,18 @@ export const CareerCentreLanding = () => {
           <form onSubmit={handleInstitutionSubmit} className="space-y-4 mt-4">
             <div>
               <Label htmlFor="institutionName">Institution Name *</Label>
-              <AutocompleteInput
-                id="institutionName"
-                value={institutionForm.institutionName}
-                onChange={(value) => setInstitutionForm(prev => ({ ...prev, institutionName: value }))}
-                suggestions={AFRICAN_UNIVERSITIES}
-                placeholder="Enter institution name"
-                className="mt-1"
-              />
+              <AutocompleteInput id="institutionName" value={institutionForm.institutionName} onChange={value => setInstitutionForm(prev => ({
+              ...prev,
+              institutionName: value
+            }))} suggestions={AFRICAN_UNIVERSITIES} placeholder="Enter institution name" className="mt-1" />
             </div>
 
             <div>
               <Label htmlFor="institutionType">Institution Type *</Label>
-              <Select
-                value={institutionForm.institutionType}
-                onValueChange={(value) => setInstitutionForm(prev => ({ ...prev, institutionType: value }))}
-              >
+              <Select value={institutionForm.institutionType} onValueChange={value => setInstitutionForm(prev => ({
+              ...prev,
+              institutionType: value
+            }))}>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
@@ -320,54 +301,42 @@ export const CareerCentreLanding = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="firstName">First Name *</Label>
-                <Input
-                  id="firstName"
-                  value={institutionForm.firstName}
-                  onChange={(e) => setInstitutionForm(prev => ({ ...prev, firstName: e.target.value }))}
-                  placeholder="First name"
-                  className="mt-1"
-                />
+                <Input id="firstName" value={institutionForm.firstName} onChange={e => setInstitutionForm(prev => ({
+                ...prev,
+                firstName: e.target.value
+              }))} placeholder="First name" className="mt-1" />
               </div>
               <div>
                 <Label htmlFor="lastName">Last Name *</Label>
-                <Input
-                  id="lastName"
-                  value={institutionForm.lastName}
-                  onChange={(e) => setInstitutionForm(prev => ({ ...prev, lastName: e.target.value }))}
-                  placeholder="Last name"
-                  className="mt-1"
-                />
+                <Input id="lastName" value={institutionForm.lastName} onChange={e => setInstitutionForm(prev => ({
+                ...prev,
+                lastName: e.target.value
+              }))} placeholder="Last name" className="mt-1" />
               </div>
             </div>
 
             <div>
               <Label htmlFor="contactEmail">Work Email *</Label>
-              <Input
-                id="contactEmail"
-                type="email"
-                value={institutionForm.contactEmail}
-                onChange={(e) => setInstitutionForm(prev => ({ ...prev, contactEmail: e.target.value }))}
-                placeholder="you@institution.edu"
-                className="mt-1"
-              />
+              <Input id="contactEmail" type="email" value={institutionForm.contactEmail} onChange={e => setInstitutionForm(prev => ({
+              ...prev,
+              contactEmail: e.target.value
+            }))} placeholder="you@institution.edu" className="mt-1" />
             </div>
 
             <div>
               <Label htmlFor="contactPhone">Phone Number *</Label>
-              <PhoneInput
-                value={institutionForm.contactPhone}
-                onChange={(value) => setInstitutionForm(prev => ({ ...prev, contactPhone: value || '' }))}
-                id="contactPhone"
-                className="mt-1"
-              />
+              <PhoneInput value={institutionForm.contactPhone} onChange={value => setInstitutionForm(prev => ({
+              ...prev,
+              contactPhone: value || ''
+            }))} id="contactPhone" className="mt-1" />
             </div>
 
             <div>
               <Label htmlFor="estimatedStudents">Estimated Number of Students *</Label>
-              <Select
-                value={institutionForm.estimatedStudents}
-                onValueChange={(value) => setInstitutionForm(prev => ({ ...prev, estimatedStudents: value }))}
-              >
+              <Select value={institutionForm.estimatedStudents} onValueChange={value => setInstitutionForm(prev => ({
+              ...prev,
+              estimatedStudents: value
+            }))}>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select range" />
                 </SelectTrigger>
@@ -383,36 +352,23 @@ export const CareerCentreLanding = () => {
 
             <div>
               <Label htmlFor="message">Tell us about your goals *</Label>
-              <Textarea
-                id="message"
-                value={institutionForm.message}
-                onChange={(e) => setInstitutionForm(prev => ({ ...prev, message: e.target.value }))}
-                placeholder="What outcomes are you looking to achieve for your students?"
-                className="mt-1 min-h-[100px]"
-              />
+              <Textarea id="message" value={institutionForm.message} onChange={e => setInstitutionForm(prev => ({
+              ...prev,
+              message: e.target.value
+            }))} placeholder="What outcomes are you looking to achieve for your students?" className="mt-1 min-h-[100px]" />
             </div>
 
             <div ref={turnstileRef} className="flex justify-center" />
 
-            <Button 
-              type="submit" 
-              className="w-full bg-stone-500 hover:bg-stone-600"
-              disabled={institutionLoading || !turnstileToken}
-            >
-              {institutionLoading ? (
-                <>
+            <Button type="submit" className="w-full bg-stone-500 hover:bg-stone-600" disabled={institutionLoading || !turnstileToken}>
+              {institutionLoading ? <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Submitting...
-                </>
-              ) : (
-                'Submit Inquiry'
-              )}
+                </> : 'Submit Inquiry'}
             </Button>
           </form>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 };
-
 export default CareerCentreLanding;
