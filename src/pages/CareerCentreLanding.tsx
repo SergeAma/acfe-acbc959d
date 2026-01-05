@@ -197,7 +197,7 @@ export const CareerCentreLanding = () => {
           <div className="container mx-auto px-4">
             <div className="max-w-lg mx-auto">
               <Card className="relative overflow-hidden border-2 border-stone-500/50 bg-gradient-to-b from-stone-100/50 to-background dark:from-stone-900/20 dark:to-background">
-                <div className="absolute top-0 right-0 bg-stone-500 text-white px-4 py-1 text-sm font-medium rounded-bl-lg">
+                <div className="absolute top-0 right-0 text-white px-4 py-1 text-sm font-medium rounded-bl-lg bg-amber-600">
                   <GraduationCap className="h-4 w-4 inline-block mr-1" />
                   Institutions
                 </div>
