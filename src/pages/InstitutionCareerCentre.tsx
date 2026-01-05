@@ -63,17 +63,18 @@ export const InstitutionCareerCentre = () => {
 
   // If user has pending invitation, trigger claim to activate it
   useEffect(() => {
-    if (membership?.status === 'pending' && !claimInvitation.isPending && !claimInvitation.isSuccess) {
-      claimInvitation.mutate({ userId: user!.id, instId: institution!.id });
+    if (membership?.status === 'pending' && user?.id && institution?.id && !claimInvitation.isPending) {
+      claimInvitation.mutate({ userId: user.id, instId: institution.id });
     }
-  }, [membership?.status, claimInvitation.isPending, claimInvitation.isSuccess, user?.id, institution?.id]);
+  }, [membership?.status, user?.id, institution?.id, claimInvitation.isPending]);
 
-  // Refetch membership after successful claim
+  // Refetch membership after claim attempt completes (success or not)
   useEffect(() => {
-    if (claimInvitation.isSuccess && claimInvitation.data === true) {
+    if (claimInvitation.isSuccess) {
+      // Always refetch to get the latest status from DB
       refetchMembership();
     }
-  }, [claimInvitation.isSuccess, claimInvitation.data, refetchMembership]);
+  }, [claimInvitation.isSuccess, refetchMembership]);
 
   // Fetch user's enrollments
   const { data: enrollments = [] } = useQuery({
