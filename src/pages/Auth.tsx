@@ -95,6 +95,7 @@ export const Auth = () => {
     mentorBio: '',
     portfolioLinks: '',
     mentorPledge: false,
+    rememberMe: false,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -266,6 +267,16 @@ export const Auth = () => {
                   />
                   {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                 </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="remember-me"
+                    checked={formData.rememberMe}
+                    onCheckedChange={(checked) => setFormData({ ...formData, rememberMe: !!checked })}
+                  />
+                  <label htmlFor="remember-me" className="text-sm cursor-pointer">
+                    Remember me
+                  </label>
+                </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Sign In'}
                 </Button>
@@ -388,6 +399,7 @@ export const Auth = () => {
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    showStrength
                     required
                   />
                   {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
