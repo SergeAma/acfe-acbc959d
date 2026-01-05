@@ -26,6 +26,7 @@ export const Navbar = () => {
     { to: "/partners", label: "Partners" },
     { to: "/jobs", label: "Jobs" },
     { to: "/pricing", label: "Pricing" },
+    { to: "/career-centre", label: "Career Centre" },
     { to: "/startups", label: "Startups" },
   ];
 
