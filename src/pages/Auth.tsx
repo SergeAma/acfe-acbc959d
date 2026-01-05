@@ -152,30 +152,35 @@ export const Auth = () => {
 
     setLoading(true);
 
-    if (mode === 'signin') {
-      const { error } = await signIn(formData.email, formData.password);
-      if (!error) {
-        navigate(redirectUrl);
+    try {
+      if (mode === 'signin') {
+        const { error } = await signIn(formData.email, formData.password);
+        if (!error) {
+          // Use replace to prevent back button returning to login
+          navigate(redirectUrl, { replace: true });
+          return; // Exit early, don't set loading to false
+        }
+      } else {
+        const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+        const { error } = await signUp(
+          formData.email,
+          formData.password,
+          fullName,
+          formData.linkedinUrl,
+          isMentorSignup,
+          formData.university,
+          isMentorSignup ? formData.mentorBio : undefined,
+          isMentorSignup ? formData.portfolioLinks : undefined
+        );
+        if (!error) {
+          navigate(redirectUrl, { replace: true });
+          return; // Exit early, don't set loading to false
+        }
       }
-    } else {
-      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
-      // Only set wantsMentor to true if on the mentor signup path
-      const { error } = await signUp(
-        formData.email,
-        formData.password,
-        fullName,
-        formData.linkedinUrl,
-        isMentorSignup, // Use the path-based flag instead of checkbox
-        formData.university,
-        isMentorSignup ? formData.mentorBio : undefined,
-        isMentorSignup ? formData.portfolioLinks : undefined
-      );
-      if (!error) {
-        navigate(redirectUrl);
-      }
+    } finally {
+      // Only set loading to false if we didn't navigate away
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
