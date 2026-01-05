@@ -117,9 +117,22 @@ export const AdminInstitutions = () => {
   // Create institution mutation
   const createInstitutionMutation = useMutation({
     mutationFn: async (data: typeof newInstitution) => {
+      // Sanitize slug: remove URLs, special chars, convert to lowercase kebab-case
+      const sanitizedSlug = data.slug
+        .toLowerCase()
+        .replace(/https?:\/\//g, '') // Remove http:// or https://
+        .replace(/[^a-z0-9\s-]/g, '') // Remove special chars
+        .replace(/\s+/g, '-') // Replace spaces with dashes
+        .replace(/-+/g, '-') // Replace multiple dashes with single
+        .replace(/^-|-$/g, ''); // Remove leading/trailing dashes
+      
+      if (!sanitizedSlug) {
+        throw new Error('Please provide a valid slug (letters, numbers, and dashes only)');
+      }
+      
       const { error } = await supabase.from('institutions').insert({
         name: data.name,
-        slug: data.slug.toLowerCase().replace(/\s+/g, '-'),
+        slug: sanitizedSlug,
         email_domain: data.email_domain || null,
         description: data.description || null,
       });
