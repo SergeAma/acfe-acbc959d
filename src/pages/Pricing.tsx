@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -18,6 +18,8 @@ import { PhoneInput } from '@/components/ui/phone-input';
 import { AutocompleteInput } from '@/components/ui/autocomplete-input';
 import { AFRICAN_UNIVERSITIES } from '@/data/universities';
 
+const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
+
 export const Pricing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -25,6 +27,9 @@ export const Pricing = () => {
   const [pricePerMonth, setPricePerMonth] = useState(10);
   const [showInstitutionDialog, setShowInstitutionDialog] = useState(false);
   const [institutionLoading, setInstitutionLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<HTMLDivElement>(null);
+  const turnstileWidgetId = useRef<string | null>(null);
   const [institutionForm, setInstitutionForm] = useState({
     institutionName: '',
     institutionType: '',
@@ -47,6 +52,47 @@ export const Pricing = () => {
     };
     fetchPrice();
   }, []);
+
+  // Initialize Turnstile when dialog opens
+  useEffect(() => {
+    if (!showInstitutionDialog) {
+      // Reset token when dialog closes
+      setTurnstileToken(null);
+      if (turnstileWidgetId.current && (window as any).turnstile) {
+        (window as any).turnstile.remove(turnstileWidgetId.current);
+        turnstileWidgetId.current = null;
+      }
+      return;
+    }
+
+    // Load Turnstile script if not already loaded
+    const existingScript = document.querySelector('script[src*="turnstile"]');
+    
+    const initTurnstile = () => {
+      // Wait for the ref to be available
+      setTimeout(() => {
+        if (turnstileRef.current && !turnstileWidgetId.current && (window as any).turnstile) {
+          turnstileWidgetId.current = (window as any).turnstile.render(turnstileRef.current, {
+            sitekey: TURNSTILE_SITE_KEY,
+            callback: (token: string) => setTurnstileToken(token),
+            'expired-callback': () => setTurnstileToken(null),
+            theme: 'auto',
+          });
+        }
+      }, 100);
+    };
+
+    if (existingScript) {
+      initTurnstile();
+    } else {
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      script.async = true;
+      script.defer = true;
+      script.onload = initTurnstile;
+      document.head.appendChild(script);
+    }
+  }, [showInstitutionDialog]);
 
   const handleSubscribe = async () => {
     if (!user) {
@@ -87,13 +133,22 @@ export const Pricing = () => {
       return;
     }
 
+    if (!turnstileToken) {
+      toast.error('Please complete the CAPTCHA verification');
+      return;
+    }
+
     setInstitutionLoading(true);
     try {
-      const { error } = await supabase.functions.invoke('send-institution-inquiry', {
-        body: institutionForm,
+      const { data, error } = await supabase.functions.invoke('send-institution-inquiry', {
+        body: { ...institutionForm, turnstileToken },
       });
       
       if (error) throw error;
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
       
       toast.success('Thank you! Our partnerships team will contact you within 2-3 business days.');
       setShowInstitutionDialog(false);
@@ -106,9 +161,15 @@ export const Pricing = () => {
         estimatedStudents: '',
         message: '',
       });
+      setTurnstileToken(null);
     } catch (error: any) {
       console.error('Institution inquiry error:', error);
       toast.error(error.message || 'Failed to submit inquiry. Please try again.');
+      // Reset Turnstile on error
+      if (turnstileWidgetId.current && (window as any).turnstile) {
+        (window as any).turnstile.reset(turnstileWidgetId.current);
+      }
+      setTurnstileToken(null);
     } finally {
       setInstitutionLoading(false);
     }
@@ -507,8 +568,10 @@ export const Pricing = () => {
                 <li>• Automatic Spectrogram talent profiles on course completion</li>
               </ul>
             </div>
+
+            <div ref={turnstileRef} className="flex justify-center" />
             
-            <Button type="submit" className="w-full" disabled={institutionLoading}>
+            <Button type="submit" className="w-full" disabled={institutionLoading || !turnstileToken}>
               {institutionLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

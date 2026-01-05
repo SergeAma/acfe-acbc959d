@@ -12,11 +12,39 @@ const logStep = (step: string, details?: any) => {
 
 interface InstitutionInquiryRequest {
   institutionName: string;
+  institutionType: string;
   contactName: string;
   contactEmail: string;
   contactPhone?: string;
   estimatedStudents?: string;
   message?: string;
+  turnstileToken: string;
+}
+
+async function verifyTurnstile(token: string): Promise<boolean> {
+  const secretKey = Deno.env.get("TURNSTILE_SECRET_KEY");
+  if (!secretKey) {
+    logStep("ERROR", { message: "TURNSTILE_SECRET_KEY not configured" });
+    return false;
+  }
+
+  try {
+    const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        secret: secretKey,
+        response: token,
+      }),
+    });
+
+    const data = await response.json();
+    logStep("Turnstile verification result", { success: data.success });
+    return data.success === true;
+  } catch (error) {
+    logStep("Turnstile verification error", { error });
+    return false;
+  }
 }
 
 async function sendEmail(to: string[], subject: string, html: string) {
@@ -54,13 +82,31 @@ serve(async (req) => {
     logStep("Function started");
 
     const body: InstitutionInquiryRequest = await req.json();
-    const { institutionName, contactName, contactEmail, contactPhone, estimatedStudents, message } = body;
+    const { institutionName, institutionType, contactName, contactEmail, contactPhone, estimatedStudents, message, turnstileToken } = body;
+
+    // Verify CAPTCHA first
+    if (!turnstileToken) {
+      logStep("Missing CAPTCHA token");
+      return new Response(
+        JSON.stringify({ error: "Please complete the CAPTCHA verification" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const isCaptchaValid = await verifyTurnstile(turnstileToken);
+    if (!isCaptchaValid) {
+      logStep("CAPTCHA verification failed");
+      return new Response(
+        JSON.stringify({ error: "CAPTCHA verification failed. Please try again." }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     if (!institutionName || !contactName || !contactEmail) {
       throw new Error("Missing required fields: institutionName, contactName, contactEmail");
     }
 
-    logStep("Sending institution inquiry email", { institutionName, contactEmail });
+    logStep("Sending institution inquiry email", { institutionName, institutionType, contactEmail });
 
     // Send email to ACFE team
     const acfeEmailHtml = `
