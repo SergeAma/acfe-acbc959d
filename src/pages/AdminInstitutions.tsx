@@ -30,7 +30,7 @@ import {
 import { 
   Building2, Plus, Users, Calendar, Megaphone, Loader2, 
   Trash2, Mail, ExternalLink, BarChart3, CheckCircle2, XCircle,
-  Upload, Pencil, Download, FileText
+  Upload, Pencil, Download, FileText, RotateCcw, Send, Ban
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -233,7 +233,7 @@ export const AdminInstitutions = () => {
     mutationFn: async (studentId: string) => {
       const { error } = await supabase
         .from('institution_students')
-        .update({ status: 'revoked' })
+        .update({ status: 'revoked', joined_at: null })
         .eq('id', studentId);
       if (error) throw error;
     },
@@ -242,6 +242,49 @@ export const AdminInstitutions = () => {
       toast.success('Access revoked');
     },
     onError: () => toast.error('Failed to revoke access'),
+  });
+
+  // Reinstate access mutation
+  const reinstateAccessMutation = useMutation({
+    mutationFn: async (studentId: string) => {
+      const { error } = await supabase
+        .from('institution_students')
+        .update({ status: 'active', joined_at: new Date().toISOString() })
+        .eq('id', studentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['institution-students'] });
+      toast.success('Access reinstated');
+    },
+    onError: () => toast.error('Failed to reinstate access'),
+  });
+
+  // Resend invitation mutation
+  const resendInvitationMutation = useMutation({
+    mutationFn: async (email: string) => {
+      if (!selectedInstitution) throw new Error('No institution selected');
+      const { data: session } = await supabase.auth.getSession();
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-institution-invitation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.session?.access_token}`,
+        },
+        body: JSON.stringify({
+          institutionId: selectedInstitution.id,
+          emails: [email],
+          institutionName: selectedInstitution.name,
+          institutionSlug: selectedInstitution.slug,
+        }),
+      });
+      if (!response.ok) throw new Error('Failed to resend invitation');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast.success('Invitation resent');
+    },
+    onError: () => toast.error('Failed to resend invitation'),
   });
 
   // Delete event mutation
@@ -754,19 +797,20 @@ export const AdminInstitutions = () => {
                                 <TableHead>Email</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Invited</TableHead>
-                                <TableHead></TableHead>
+                                <TableHead>Joined</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
                               {studentsLoading ? (
                                 <TableRow>
-                                  <TableCell colSpan={4} className="text-center py-8">
+                                  <TableCell colSpan={5} className="text-center py-8">
                                     <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
                                   </TableCell>
                                 </TableRow>
                               ) : students.length === 0 ? (
                                 <TableRow>
-                                  <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                                     No students invited yet. Click "Invite Students" to get started.
                                   </TableCell>
                                 </TableRow>
@@ -778,23 +822,55 @@ export const AdminInstitutions = () => {
                                       student.status === 'active' ? 'default' :
                                       student.status === 'pending' ? 'secondary' : 'destructive'
                                     }>
-                                      {student.status}
+                                      {student.status === 'active' ? 'Active' : 
+                                       student.status === 'pending' ? 'Pending' : 'Revoked'}
                                     </Badge>
                                   </TableCell>
                                   <TableCell className="text-muted-foreground text-sm">
                                     {student.invited_at ? format(new Date(student.invited_at), 'MMM d, yyyy') : '-'}
                                   </TableCell>
-                                  <TableCell>
-                                    {student.status !== 'revoked' && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => revokeAccessMutation.mutate(student.id)}
-                                        disabled={revokeAccessMutation.isPending}
-                                      >
-                                        <XCircle className="h-4 w-4 text-destructive" />
-                                      </Button>
-                                    )}
+                                  <TableCell className="text-muted-foreground text-sm">
+                                    {student.joined_at ? format(new Date(student.joined_at), 'MMM d, yyyy') : '-'}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex items-center justify-end gap-1">
+                                      {/* Resend invitation for pending */}
+                                      {student.status === 'pending' && (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => resendInvitationMutation.mutate(student.email)}
+                                          disabled={resendInvitationMutation.isPending}
+                                          title="Resend invitation"
+                                        >
+                                          <Send className="h-4 w-4 text-muted-foreground" />
+                                        </Button>
+                                      )}
+                                      {/* Revoke for active or pending */}
+                                      {(student.status === 'active' || student.status === 'pending') && (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => revokeAccessMutation.mutate(student.id)}
+                                          disabled={revokeAccessMutation.isPending}
+                                          title="Revoke access"
+                                        >
+                                          <Ban className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                      )}
+                                      {/* Reinstate for revoked */}
+                                      {student.status === 'revoked' && (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => reinstateAccessMutation.mutate(student.id)}
+                                          disabled={reinstateAccessMutation.isPending}
+                                          title="Reinstate access"
+                                        >
+                                          <RotateCcw className="h-4 w-4 text-green-600" />
+                                        </Button>
+                                      )}
+                                    </div>
                                   </TableCell>
                                 </TableRow>
                               ))}
