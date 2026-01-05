@@ -1050,6 +1050,282 @@ export type Database = {
         }
         Relationships: []
       }
+      institution_admins: {
+        Row: {
+          created_at: string | null
+          id: string
+          institution_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          institution_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          institution_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institution_admins_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      institution_announcements: {
+        Row: {
+          content: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          institution_id: string
+          is_pinned: boolean | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          institution_id: string
+          is_pinned?: boolean | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          institution_id?: string
+          is_pinned?: boolean | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institution_announcements_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      institution_events: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          event_date: string | null
+          event_url: string | null
+          id: string
+          institution_id: string
+          is_pinned: boolean | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          event_date?: string | null
+          event_url?: string | null
+          id?: string
+          institution_id: string
+          is_pinned?: boolean | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          event_date?: string | null
+          event_url?: string | null
+          id?: string
+          institution_id?: string
+          is_pinned?: boolean | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institution_events_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      institution_job_visibility: {
+        Row: {
+          created_at: string | null
+          id: string
+          institution_id: string
+          is_featured: boolean | null
+          job_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          institution_id: string
+          is_featured?: boolean | null
+          job_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          institution_id?: string
+          is_featured?: boolean | null
+          job_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institution_job_visibility_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      institution_students: {
+        Row: {
+          email: string
+          id: string
+          institution_id: string
+          invited_at: string | null
+          invited_by: string | null
+          joined_at: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          email: string
+          id?: string
+          institution_id: string
+          invited_at?: string | null
+          invited_by?: string | null
+          joined_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          email?: string
+          id?: string
+          institution_id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          joined_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institution_students_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      institution_threads: {
+        Row: {
+          archived_at: string | null
+          archived_by: string | null
+          author_id: string | null
+          content: string
+          created_at: string | null
+          id: string
+          institution_id: string
+          is_archived: boolean | null
+          thread_type: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          archived_by?: string | null
+          author_id?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          institution_id: string
+          is_archived?: boolean | null
+          thread_type: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          archived_by?: string | null
+          author_id?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          institution_id?: string
+          is_archived?: boolean | null
+          thread_type?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institution_threads_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      institutions: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          email_domain: string | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          email_domain?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name: string
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          email_domain?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       learner_analytics: {
         Row: {
           completed: boolean | null
@@ -1975,6 +2251,15 @@ export type Database = {
           website_url: string
         }[]
       }
+      get_user_institutions: {
+        Args: { _user_id: string }
+        Returns: {
+          institution_id: string
+          institution_logo: string
+          institution_name: string
+          institution_slug: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -1992,6 +2277,10 @@ export type Database = {
       }
       is_enrolled_in_course_content: {
         Args: { file_name: string }
+        Returns: boolean
+      }
+      is_institution_member: {
+        Args: { _institution_id: string; _user_id: string }
         Returns: boolean
       }
       reinstate_mentor: {

@@ -321,6 +321,9 @@ export const AdminDashboard = () => {
               <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/learner-analytics')}>
                 Learner Analytics
               </Button>
+              <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/institutions')}>
+                Institution Centres
+              </Button>
               <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/admin/settings')}>
                 System Settings
               </Button>

@@ -54,6 +54,8 @@ import { TermsOfService } from "./pages/TermsOfService";
 import { MentorApplicationStatus } from "./pages/MentorApplicationStatus";
 import { SpectrogramConnect } from "./pages/SpectrogramConnect";
 import { Pricing } from "./pages/Pricing";
+import { InstitutionCareerCentre } from "./pages/InstitutionCareerCentre";
+import { AdminInstitutions } from "./pages/AdminInstitutions";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -109,8 +111,10 @@ const App = () => (
             <Route path="/admin/learner-analytics" element={<ProtectedRoute requiredRole="admin"><AdminLearnerAnalytics /></ProtectedRoute>} />
             <Route path="/admin/pricing" element={<ProtectedRoute requiredRole="admin"><AdminPricing /></ProtectedRoute>} />
             <Route path="/admin/revenue" element={<ProtectedRoute requiredRole="admin"><AdminRevenue /></ProtectedRoute>} />
+            <Route path="/admin/institutions" element={<ProtectedRoute requiredRole="admin"><AdminInstitutions /></ProtectedRoute>} />
             <Route path="/admin/courses" element={<ProtectedRoute requiredRole="admin"><AdminCourses /></ProtectedRoute>} />
             <Route path="/admin/courses/:courseId/build" element={<ProtectedRoute requiredRole="admin"><AdminCourseBuilder /></ProtectedRoute>} />
+            <Route path="/career-centre/:slug" element={<InstitutionCareerCentre />} />
             <Route path="/payment-success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
             <Route path="/mentor/courses" element={<ProtectedRoute><MentorCourses /></ProtectedRoute>} />
             <Route path="/mentor/courses/new" element={<ProtectedRoute><CreateCourse /></ProtectedRoute>} />

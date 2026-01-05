@@ -9,8 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { RequestMentorRole } from '@/components/RequestMentorRole';
 import { MySubmissions } from '@/components/dashboard/MySubmissions';
 import { SubscriptionStatus } from '@/components/dashboard/SubscriptionStatus';
-import { BookOpen, Library, Award, TrendingUp, UserCheck, Clock, BookOpenCheck, MessageSquare, CreditCard } from 'lucide-react';
+import { BookOpen, Library, Award, TrendingUp, UserCheck, Clock, BookOpenCheck, MessageSquare, CreditCard, Building2 } from 'lucide-react';
 import { stripHtml } from '@/lib/html-utils';
+import { useUserInstitutions } from '@/hooks/useInstitution';
 
 interface Enrollment {
   id: string;
@@ -46,6 +47,7 @@ export const StudentDashboard = () => {
   const [mentorProfiles, setMentorProfiles] = useState<Record<string, { full_name: string; avatar_url: string }>>({});
   const [subscribedCourseIds, setSubscribedCourseIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const { data: userInstitutions = [] } = useUserInstitutions();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -178,6 +180,32 @@ export const StudentDashboard = () => {
           </Card>
         </Link>
       </div>
+
+      {/* Institution Career Centre */}
+      {userInstitutions.length > 0 && (
+        <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Building2 className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Career Development Centre</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Access exclusive opportunities from {userInstitutions[0].institution_name}
+                  </p>
+                </div>
+              </div>
+              <Link to={`/career-centre/${userInstitutions[0].institution_slug}`}>
+                <Button variant="outline" size="sm" className="rounded-full">
+                  Access Centre
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Subscription Status */}
       <div className="flex items-center justify-between">
