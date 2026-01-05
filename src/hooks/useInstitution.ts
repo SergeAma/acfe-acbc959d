@@ -58,14 +58,15 @@ export const useInstitutionBySlug = (slug: string | undefined) => {
 };
 
 export const useInstitutionMembership = (institutionId: string | undefined) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   return useQuery({
     queryKey: ['institution-membership', institutionId, user?.id],
     queryFn: async () => {
       if (!user || !institutionId) return null;
       
-      const { data, error } = await supabase
+      // First check for active membership by user_id
+      const { data: activeMembership, error: activeError } = await supabase
         .from('institution_students')
         .select('*')
         .eq('institution_id', institutionId)
@@ -73,8 +74,25 @@ export const useInstitutionMembership = (institutionId: string | undefined) => {
         .eq('status', 'active')
         .maybeSingle();
       
-      if (error) throw error;
-      return data;
+      if (activeError) throw activeError;
+      if (activeMembership) return activeMembership;
+      
+      // If no active membership, check for pending invitation by email
+      // This grants access to invited users even before claim completes
+      if (profile?.email) {
+        const { data: pendingInvite, error: pendingError } = await supabase
+          .from('institution_students')
+          .select('*')
+          .eq('institution_id', institutionId)
+          .ilike('email', profile.email)
+          .eq('status', 'pending')
+          .maybeSingle();
+        
+        if (pendingError) throw pendingError;
+        return pendingInvite;
+      }
+      
+      return null;
     },
     enabled: !!user && !!institutionId,
   });

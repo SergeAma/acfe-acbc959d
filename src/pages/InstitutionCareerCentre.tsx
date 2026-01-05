@@ -56,10 +56,24 @@ export const InstitutionCareerCentre = () => {
   // Auto-claim pending invitation when user visits
   const claimInvitation = useClaimInstitutionInvitation(institution?.id);
   
-  const { data: membership, isLoading: membershipLoading } = useInstitutionMembership(institution?.id);
+  const { data: membership, isLoading: membershipLoading, refetch: refetchMembership } = useInstitutionMembership(institution?.id);
   const { data: events = [] } = useInstitutionEvents(institution?.id);
   const { data: announcements = [] } = useInstitutionAnnouncements(institution?.id);
   const { data: careerReadiness } = useCareerReadiness();
+
+  // If user has pending invitation, trigger claim to activate it
+  useEffect(() => {
+    if (membership?.status === 'pending' && !claimInvitation.isPending && !claimInvitation.isSuccess) {
+      claimInvitation.mutate({ userId: user!.id, instId: institution!.id });
+    }
+  }, [membership?.status, claimInvitation.isPending, claimInvitation.isSuccess, user?.id, institution?.id]);
+
+  // Refetch membership after successful claim
+  useEffect(() => {
+    if (claimInvitation.isSuccess && claimInvitation.data === true) {
+      refetchMembership();
+    }
+  }, [claimInvitation.isSuccess, claimInvitation.data, refetchMembership]);
 
   // Fetch user's enrollments
   const { data: enrollments = [] } = useQuery({
@@ -233,10 +247,17 @@ export const InstitutionCareerCentre = () => {
               )}
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
-                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                    Verified Student
-                  </Badge>
+                  {membership?.status === 'active' ? (
+                    <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
+                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                      Verified Student
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/20">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Invitation Pending
+                    </Badge>
+                  )}
                 </div>
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
                   Welcome back, {profile?.full_name?.split(' ')[0] || 'Student'}!
