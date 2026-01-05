@@ -153,7 +153,7 @@ export const CareerCentreLanding = () => {
             </p>
             <Button 
               size="lg" 
-              className="bg-amber-500 hover:bg-amber-600 text-white h-14 px-8 text-lg"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground h-14 px-8 text-lg"
               onClick={() => setShowInstitutionDialog(true)}
             >
               <Building2 className="h-5 w-5 mr-2" />
@@ -260,7 +260,7 @@ export const CareerCentreLanding = () => {
               </p>
               <Button 
                 size="lg" 
-                className="bg-amber-500 hover:bg-amber-600 text-white h-14 px-8 text-lg"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground h-14 px-8 text-lg"
                 onClick={() => setShowInstitutionDialog(true)}
               >
                 Get Started Today
@@ -396,7 +396,7 @@ export const CareerCentreLanding = () => {
 
             <Button 
               type="submit" 
-              className="w-full bg-amber-500 hover:bg-amber-600"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               disabled={institutionLoading || !turnstileToken}
             >
               {institutionLoading ? (
