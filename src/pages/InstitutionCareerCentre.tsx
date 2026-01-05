@@ -24,6 +24,7 @@ import {
   useInstitutionAnnouncements,
   useInstitutionThreads
 } from '@/hooks/useInstitution';
+import { useClaimInstitutionInvitation } from '@/hooks/useClaimInstitutionInvitation';
 import { useCareerReadiness } from '@/hooks/useCareerReadiness';
 import { toast } from 'sonner';
 import { formatDistanceToNow, format, isPast } from 'date-fns';
@@ -51,6 +52,10 @@ export const InstitutionCareerCentre = () => {
   const [isCreatingSpectrogram, setIsCreatingSpectrogram] = useState(false);
 
   const { data: institution, isLoading: institutionLoading } = useInstitutionBySlug(slug);
+  
+  // Auto-claim pending invitation when user visits
+  const claimInvitation = useClaimInstitutionInvitation(institution?.id);
+  
   const { data: membership, isLoading: membershipLoading } = useInstitutionMembership(institution?.id);
   const { data: events = [] } = useInstitutionEvents(institution?.id);
   const { data: announcements = [] } = useInstitutionAnnouncements(institution?.id);
@@ -113,8 +118,10 @@ export const InstitutionCareerCentre = () => {
     }
   };
 
-  // Loading states
-  if (authLoading || institutionLoading) {
+  // Loading states - include claim attempt in loading
+  const isClaimingInvitation = claimInvitation.isPending;
+  
+  if (authLoading || institutionLoading || isClaimingInvitation) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -128,6 +135,8 @@ export const InstitutionCareerCentre = () => {
   }
 
   // Auth gate - must be logged in
+  const currentPath = `/career-centre/${slug}`;
+  
   if (!user) {
     return (
       <div className="min-h-screen bg-background">
@@ -142,12 +151,15 @@ export const InstitutionCareerCentre = () => {
               <p className="text-muted-foreground text-sm">
                 Sign in to access the {institution.name} Career Centre.
               </p>
+              <p className="text-muted-foreground text-xs">
+                Use the same email address that received your invitation.
+              </p>
               <div className="flex flex-col gap-3 pt-2">
                 <Button asChild className="rounded-full">
-                  <Link to="/auth">Sign In</Link>
+                  <Link to={`/auth?redirect=${encodeURIComponent(currentPath)}`}>Sign In</Link>
                 </Button>
                 <Button variant="outline" asChild className="rounded-full">
-                  <Link to="/auth">Create Account</Link>
+                  <Link to={`/auth?mode=signup&redirect=${encodeURIComponent(currentPath)}`}>Create Account</Link>
                 </Button>
               </div>
             </CardContent>
