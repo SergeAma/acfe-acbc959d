@@ -8,8 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, BookOpen, X, GraduationCap, CreditCard } from 'lucide-react';
+import { Search, BookOpen, X, GraduationCap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { CourseBadge } from '@/components/CourseBadge';
 import { stripHtml } from '@/lib/html-utils';
 
 interface Course {
@@ -22,6 +23,11 @@ interface Course {
   thumbnail_url: string;
   mentor_id: string;
   is_paid: boolean;
+  institution_id: string | null;
+  institution?: {
+    id: string;
+    name: string;
+  } | null;
   mentor: {
     full_name: string;
   };
@@ -49,6 +55,10 @@ export const Courses = () => {
           *,
           mentor:profiles!courses_mentor_id_fkey (
             full_name
+          ),
+          institution:institutions (
+            id,
+            name
           )
         `)
         .eq('is_published', true)
@@ -241,22 +251,14 @@ export const Courses = () => {
               const isSubscribed = subscribedCourseIds.includes(course.id);
               return (
               <Card key={course.id} className={`hover:shadow-lg transition-shadow relative ${isSubscribed ? 'ring-2 ring-primary' : ''}`}>
-                {isSubscribed && (
-                  <div className="absolute top-2 right-2 z-10">
-                    <Badge className="bg-primary text-primary-foreground">
-                      <CreditCard className="h-3 w-3 mr-1" />
-                      Subscribed
-                    </Badge>
-                  </div>
-                )}
-                {course.is_paid && !isSubscribed && (
-                  <div className="absolute top-2 right-2 z-10">
-                    <Badge variant="secondary">
-                      <CreditCard className="h-3 w-3 mr-1" />
-                      Premium
-                    </Badge>
-                  </div>
-                )}
+                <div className="absolute top-2 right-2 z-10">
+                  <CourseBadge
+                    isPaid={course.is_paid}
+                    isSubscribed={isSubscribed}
+                    institutionId={course.institution_id}
+                    institutionName={course.institution?.name}
+                  />
+                </div>
                 {course.thumbnail_url && (
                   <div className="relative h-40 overflow-hidden rounded-t-lg">
                     <img

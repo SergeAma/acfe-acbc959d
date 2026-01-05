@@ -649,6 +649,7 @@ export type Database = {
           drip_enabled: boolean | null
           duration_weeks: number | null
           id: string
+          institution_id: string | null
           is_live: boolean | null
           is_paid: boolean | null
           is_published: boolean | null
@@ -674,6 +675,7 @@ export type Database = {
           drip_enabled?: boolean | null
           duration_weeks?: number | null
           id?: string
+          institution_id?: string | null
           is_live?: boolean | null
           is_paid?: boolean | null
           is_published?: boolean | null
@@ -699,6 +701,7 @@ export type Database = {
           drip_enabled?: boolean | null
           duration_weeks?: number | null
           id?: string
+          institution_id?: string | null
           is_live?: boolean | null
           is_paid?: boolean | null
           is_published?: boolean | null
@@ -715,6 +718,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "courses_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "courses_mentor_id_fkey"
             columns: ["mentor_id"]
