@@ -82,7 +82,7 @@ export const Pricing = () => {
   const handleInstitutionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!institutionForm.institutionName || !institutionForm.institutionType || !institutionForm.contactName || !institutionForm.contactEmail) {
+    if (!institutionForm.institutionName || !institutionForm.institutionType || !institutionForm.contactName || !institutionForm.contactEmail || !institutionForm.contactPhone || !institutionForm.estimatedStudents || !institutionForm.message) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -465,32 +465,35 @@ export const Pricing = () => {
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="contactPhone">Phone Number</Label>
+                <Label htmlFor="contactPhone">Phone Number *</Label>
                 <PhoneInput
                   id="contactPhone"
                   value={institutionForm.contactPhone}
                   onChange={(value) => setInstitutionForm(prev => ({ ...prev, contactPhone: value }))}
+                  required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="estimatedStudents">Estimated Students</Label>
+                <Label htmlFor="estimatedStudents">Estimated Students *</Label>
                 <Input
                   id="estimatedStudents"
                   placeholder="e.g., 500"
                   value={institutionForm.estimatedStudents}
                   onChange={(e) => setInstitutionForm(prev => ({ ...prev, estimatedStudents: e.target.value }))}
+                  required
                 />
               </div>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="message">Additional Information</Label>
+              <Label htmlFor="message">Additional Information *</Label>
               <Textarea
                 id="message"
                 placeholder="Tell us about your institution and what you're looking for..."
                 value={institutionForm.message}
                 onChange={(e) => setInstitutionForm(prev => ({ ...prev, message: e.target.value }))}
                 rows={3}
+                required
               />
             </div>
             
