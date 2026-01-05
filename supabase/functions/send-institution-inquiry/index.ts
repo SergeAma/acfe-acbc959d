@@ -13,7 +13,8 @@ const logStep = (step: string, details?: any) => {
 interface InstitutionInquiryRequest {
   institutionName: string;
   institutionType: string;
-  contactName: string;
+  firstName: string;
+  lastName: string;
   contactEmail: string;
   contactPhone?: string;
   estimatedStudents?: string;
@@ -82,7 +83,8 @@ serve(async (req) => {
     logStep("Function started");
 
     const body: InstitutionInquiryRequest = await req.json();
-    const { institutionName, institutionType, contactName, contactEmail, contactPhone, estimatedStudents, message, turnstileToken } = body;
+    const { institutionName, institutionType, firstName, lastName, contactEmail, contactPhone, estimatedStudents, message, turnstileToken } = body;
+    const contactName = `${firstName} ${lastName}`.trim();
 
     // Verify CAPTCHA first
     if (!turnstileToken) {
@@ -102,8 +104,8 @@ serve(async (req) => {
       );
     }
 
-    if (!institutionName || !contactName || !contactEmail) {
-      throw new Error("Missing required fields: institutionName, contactName, contactEmail");
+    if (!institutionName || !firstName || !lastName || !contactEmail) {
+      throw new Error("Missing required fields: institutionName, firstName, lastName, contactEmail");
     }
 
     logStep("Sending institution inquiry email", { institutionName, institutionType, contactEmail });
