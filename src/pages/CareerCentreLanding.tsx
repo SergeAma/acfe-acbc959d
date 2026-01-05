@@ -144,7 +144,8 @@ export const CareerCentreLanding = () => {
               For Educational Institutions
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-              ACFE <span className="text-amber-600">Career Development Centre</span>
+              "Your Institution" <span className="text-amber-600">Career Development Center</span>
+              <span className="block text-xl md:text-2xl font-medium text-muted-foreground mt-2">Powered by ACFE</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
               Empower your students with job-ready tech skills, verified credentials, and direct pathways 
