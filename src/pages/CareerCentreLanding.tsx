@@ -247,7 +247,7 @@ export const CareerCentreLanding = () => {
                 Join leading African institutions already partnering with ACFE to provide 
                 world-class tech education and career pathways for their students.
               </p>
-              <Button size="lg" className="bg-stone-500 hover:bg-stone-600 text-white h-14 px-8 text-lg" onClick={() => setShowInstitutionDialog(true)}>
+              <Button size="lg" onClick={() => setShowInstitutionDialog(true)} className="text-white h-14 px-8 text-lg bg-amber-600 hover:bg-amber-500">
                 Get Started Today
               </Button>
             </div>
