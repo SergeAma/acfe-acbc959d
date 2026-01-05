@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Crop, RotateCcw, RotateCw, Pencil, Loader2, Upload } from 'lucide-react';
+import { RotateCcw, RotateCw, Pencil, Loader2 } from 'lucide-react';
 import ReactCrop, { type Crop as CropType, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { useToast } from '@/hooks/use-toast';
@@ -15,9 +15,13 @@ interface InstitutionLogoEditorProps {
   onCancel: () => void;
 }
 
-function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: number) {
+// No forced aspect ratio - let user crop freely based on logo shape
+function centerFreeCrop(mediaWidth: number, mediaHeight: number) {
+  // Start with a crop that covers 80% of the image, maintaining its natural aspect ratio
+  const cropWidth = 80;
+  const cropHeight = 80;
   return centerCrop(
-    makeAspectCrop({ unit: '%', width: 90 }, aspect, mediaWidth, mediaHeight),
+    { unit: '%', width: cropWidth, height: cropHeight, x: 0, y: 0 },
     mediaWidth,
     mediaHeight
   );
@@ -53,7 +57,8 @@ export const InstitutionLogoEditor = ({
 
   const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const { width, height } = e.currentTarget;
-    const initialCrop = centerAspectCrop(width, height, 1);
+    // Use free crop - no fixed aspect ratio
+    const initialCrop = centerFreeCrop(width, height);
     setCrop(initialCrop);
     setCompletedCrop(initialCrop);
     setImageError(false);
@@ -80,22 +85,35 @@ export const InstitutionLogoEditor = ({
       height: (crop.height / 100) * image.height * scaleY,
     };
     
-    const outputSize = 400;
-    canvas.width = outputSize;
-    canvas.height = outputSize;
+    // Keep the natural aspect ratio of the crop, max 800px on longest side
+    const maxSize = 800;
+    const aspectRatio = pixelCrop.width / pixelCrop.height;
+    let outputWidth: number;
+    let outputHeight: number;
+    
+    if (aspectRatio >= 1) {
+      outputWidth = Math.min(pixelCrop.width, maxSize);
+      outputHeight = outputWidth / aspectRatio;
+    } else {
+      outputHeight = Math.min(pixelCrop.height, maxSize);
+      outputWidth = outputHeight * aspectRatio;
+    }
+    
+    canvas.width = outputWidth;
+    canvas.height = outputHeight;
     const ctx = canvas.getContext('2d');
 
     if (!ctx) throw new Error('No 2d context');
 
     // Fill with white background for transparent images
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, outputSize, outputSize);
+    ctx.fillRect(0, 0, outputWidth, outputHeight);
 
     ctx.save();
-    ctx.translate(outputSize / 2, outputSize / 2);
+    ctx.translate(outputWidth / 2, outputHeight / 2);
     ctx.rotate((rotation[0] * Math.PI) / 180);
     ctx.scale(zoom[0], zoom[0]);
-    ctx.translate(-outputSize / 2, -outputSize / 2);
+    ctx.translate(-outputWidth / 2, -outputHeight / 2);
     
     ctx.drawImage(
       image,
@@ -105,8 +123,8 @@ export const InstitutionLogoEditor = ({
       pixelCrop.height,
       0,
       0,
-      outputSize,
-      outputSize
+      outputWidth,
+      outputHeight
     );
     ctx.restore();
 
@@ -175,7 +193,6 @@ export const InstitutionLogoEditor = ({
                     crop={crop}
                     onChange={(_, percentCrop) => setCrop(percentCrop)}
                     onComplete={(_, percentCrop) => setCompletedCrop(percentCrop)}
-                    aspect={1}
                   >
                     <img
                       ref={imgRef}
@@ -184,7 +201,7 @@ export const InstitutionLogoEditor = ({
                       crossOrigin="anonymous"
                       onLoad={onImageLoad}
                       onError={onImageError}
-                      style={{ maxHeight: '300px' }}
+                      style={{ maxHeight: '400px', maxWidth: '100%' }}
                     />
                   </ReactCrop>
                 </div>
