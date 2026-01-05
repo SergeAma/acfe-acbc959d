@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye, Award, Info, DollarSign, Globe, EyeOff, Users, CheckCircle, BarChart3, Clock, Zap, Radio, Video, Link2, Calendar, Play } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye, Award, Info, DollarSign, Globe, EyeOff, Users, CheckCircle, BarChart3, Clock, Zap, Radio, Video, Link2, Calendar, Play, Building2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -61,6 +61,13 @@ interface Course {
   live_url: string | null;
   registration_deadline: string | null;
   recording_url: string | null;
+  institution_id: string | null;
+}
+
+interface Institution {
+  id: string;
+  name: string;
+  slug: string;
 }
 
 interface Section {
@@ -113,6 +120,10 @@ export const AdminCourseBuilder = () => {
   const [liveUrl, setLiveUrl] = useState('');
   const [registrationDeadline, setRegistrationDeadline] = useState('');
   const [recordingUrl, setRecordingUrl] = useState('');
+  // Institution exclusivity settings
+  const [institutionId, setInstitutionId] = useState<string | null>(null);
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [savingInstitution, setSavingInstitution] = useState(false);
   const [showEditingTip, setShowEditingTip] = useState(() => {
     return localStorage.getItem('courseBuilderTipDismissed') !== 'true';
   });
@@ -133,8 +144,18 @@ export const AdminCourseBuilder = () => {
     if (courseId) {
       fetchCourseData();
       fetchAnalytics();
+      fetchInstitutions();
     }
   }, [courseId]);
+
+  const fetchInstitutions = async () => {
+    const { data } = await supabase
+      .from('institutions')
+      .select('id, name, slug')
+      .eq('is_active', true)
+      .order('name');
+    if (data) setInstitutions(data);
+  };
 
   const fetchAnalytics = async () => {
     if (!courseId) return;
@@ -223,8 +244,40 @@ export const AdminCourseBuilder = () => {
     setLiveUrl(courseData?.live_url || '');
     setRegistrationDeadline(courseData?.registration_deadline ? new Date(courseData.registration_deadline).toISOString().slice(0, 16) : '');
     setRecordingUrl(courseData?.recording_url || '');
+    setInstitutionId(courseData?.institution_id || null);
     setSections(sectionsData || []);
     setLoading(false);
+  };
+
+  const handleInstitutionChange = async (value: string) => {
+    if (!courseId) return;
+    
+    setSavingInstitution(true);
+    const newInstitutionId = value === 'all' ? null : value;
+    setInstitutionId(newInstitutionId);
+    
+    const { error } = await supabase
+      .from('courses')
+      .update({ institution_id: newInstitutionId })
+      .eq('id', courseId);
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update course availability',
+        variant: 'destructive',
+      });
+      setInstitutionId(course?.institution_id || null);
+    } else {
+      setCourse(prev => prev ? { ...prev, institution_id: newInstitutionId } : null);
+      toast({
+        title: 'Saved',
+        description: newInstitutionId 
+          ? `Course now exclusive to ${institutions.find(i => i.id === newInstitutionId)?.name}`
+          : 'Course available to all ACFE learners',
+      });
+    }
+    setSavingInstitution(false);
   };
 
   const handleUnpublishClick = () => {
@@ -1089,6 +1142,46 @@ export const AdminCourseBuilder = () => {
                   </p>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Course Availability / Institution Exclusivity */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Course Availability
+              </CardTitle>
+              <CardDescription>
+                Choose who can access this course
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Available to</Label>
+                <Select 
+                  value={institutionId || 'all'} 
+                  onValueChange={handleInstitutionChange}
+                  disabled={savingInstitution}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select availability" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border">
+                    <SelectItem value="all">All ACFE Learners</SelectItem>
+                    {institutions.map((inst) => (
+                      <SelectItem key={inst.id} value={inst.id}>
+                        {inst.name} (Exclusive)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {institutionId 
+                    ? 'Only students from this institution can access this course'
+                    : 'Course is available to all learners based on pricing tier'}
+                </p>
+              </div>
             </CardContent>
           </Card>
 
