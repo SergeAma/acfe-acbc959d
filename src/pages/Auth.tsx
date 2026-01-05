@@ -15,6 +15,7 @@ import acfeIcon from '@/assets/acfe-icon.png';
 import { Navbar } from '@/components/Navbar';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { AutocompleteInput } from '@/components/ui/autocomplete-input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { AFRICAN_UNIVERSITIES } from '@/data/universities';
 import { AFRICAN_CITIES } from '@/data/cities';
 const baseAuthSchema = z.object({
@@ -256,9 +257,8 @@ export const Auth = () => {
                       Forgot password?
                     </button>
                   </div>
-                  <Input
+                  <PasswordInput
                     id="signin-password"
-                    type="password"
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -383,9 +383,8 @@ export const Auth = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Password</Label>
-                  <Input
+                  <PasswordInput
                     id="signup-password"
-                    type="password"
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -592,9 +591,8 @@ export const Auth = () => {
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="new-password">New Password</Label>
-                <Input
+                <PasswordInput
                   id="new-password"
-                  type="password"
                   placeholder="••••••••"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -604,9 +602,8 @@ export const Auth = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirm-password">Confirm Password</Label>
-                <Input
+                <PasswordInput
                   id="confirm-password"
-                  type="password"
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
