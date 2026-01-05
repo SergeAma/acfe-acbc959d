@@ -192,7 +192,7 @@ export const CareerCentreLanding = () => {
               >
                 <Button 
                   size="lg" 
-                  className="bg-amber-500 hover:bg-amber-600 text-white h-14 px-8 text-lg rounded-full shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30 transition-all duration-300 hover:-translate-y-0.5"
+                  className="bg-amber-700 hover:bg-amber-800 text-white h-14 px-8 text-lg rounded-full shadow-lg shadow-amber-700/20 hover:shadow-xl hover:shadow-amber-800/25 transition-all duration-300 hover:-translate-y-0.5"
                   onClick={() => setShowInstitutionDialog(true)}
                 >
                   <Building2 className="h-5 w-5 mr-2" />
@@ -302,7 +302,7 @@ export const CareerCentreLanding = () => {
                 <CardContent className="pb-12 px-8">
                   <Button 
                     size="lg" 
-                    className="w-full mb-10 text-lg h-16 bg-amber-500 hover:bg-amber-600 text-white rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-xl hover:shadow-amber-500/30 transition-all duration-300" 
+                    className="w-full mb-10 text-lg h-16 bg-amber-700 hover:bg-amber-800 text-white rounded-xl shadow-lg shadow-amber-700/15 hover:shadow-xl hover:shadow-amber-800/20 transition-all duration-300" 
                     onClick={() => setShowInstitutionDialog(true)}
                   >
                     <Building2 className="h-5 w-5 mr-2" />
@@ -341,7 +341,7 @@ export const CareerCentreLanding = () => {
         {/* Final CTA Section - Bold & Compelling */}
         <section className="py-24 md:py-32 relative overflow-hidden">
           {/* Gradient Background */}
-          <div className="absolute inset-0 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500" />
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-700 via-amber-800 to-amber-700" />
           <div className="absolute inset-0 opacity-10" style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")`,
           }} />
@@ -357,7 +357,7 @@ export const CareerCentreLanding = () => {
               </p>
               <Button 
                 size="lg" 
-                className="bg-white hover:bg-amber-50 text-amber-600 h-16 px-10 text-lg rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:-translate-y-1"
+                className="bg-white hover:bg-amber-50 text-amber-800 h-16 px-10 text-lg rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:-translate-y-1"
                 onClick={() => setShowInstitutionDialog(true)}
               >
                 Get Started Today
@@ -494,7 +494,7 @@ export const CareerCentreLanding = () => {
 
             <Button 
               type="submit" 
-              className="w-full bg-amber-500 hover:bg-amber-600"
+              className="w-full bg-amber-700 hover:bg-amber-800"
               disabled={institutionLoading || !turnstileToken}
             >
               {institutionLoading ? (
