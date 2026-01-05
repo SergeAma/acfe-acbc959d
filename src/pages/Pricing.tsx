@@ -220,11 +220,7 @@ export const Pricing = () => {
               <h2 className="text-2xl md:text-3xl font-bold mb-4">
                 Career Support from Spectrogram Consulting
               </h2>
-              <p className="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto">
-                Our founding partner, Spectrogram Consulting, provides exclusive job opportunities, 
-                career guidance, and up to $500 in funding support for innovative ideas through our 
-                Innovators Incubator program.
-              </p>
+              <p className="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto">Our founding partner, Spectrogram Consulting, provides exclusive job opportunities, career guidance, and up to $1000 in funding support for innovative ideas through our Innovators Incubator program.</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button variant="outline" onClick={() => navigate('/jobs')}>
                   <Briefcase className="h-4 w-4 mr-2" />
