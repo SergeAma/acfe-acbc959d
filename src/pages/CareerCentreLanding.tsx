@@ -137,14 +137,14 @@ export const CareerCentreLanding = () => {
       
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="py-16 md:py-24 bg-gradient-to-b from-amber-50/50 to-background dark:from-amber-950/10 dark:to-background">
+        <section className="py-16 md:py-24 bg-gradient-to-b from-stone-100/50 to-background dark:from-stone-900/10 dark:to-background">
           <div className="container mx-auto px-4 text-center">
-            <div className="inline-flex items-center gap-2 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-4 py-2 rounded-full text-sm font-medium mb-6">
+            <div className="inline-flex items-center gap-2 bg-stone-200 dark:bg-stone-800/30 text-stone-700 dark:text-stone-400 px-4 py-2 rounded-full text-sm font-medium mb-6">
               <GraduationCap className="h-4 w-4" />
               For Educational Institutions
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-              "Your Institution" <span className="text-amber-600">Career Development Center</span>
+              "Your Institution" <span className="text-stone-600 dark:text-stone-400">Career Development Center</span>
               <span className="block text-xl md:text-2xl font-medium text-muted-foreground mt-2">Powered by ACFE</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
@@ -153,7 +153,7 @@ export const CareerCentreLanding = () => {
             </p>
             <Button 
               size="lg" 
-              className="bg-amber-600 hover:bg-amber-700 text-white h-14 px-8 text-lg"
+              className="bg-stone-600 hover:bg-stone-700 text-white h-14 px-8 text-lg"
               onClick={() => setShowInstitutionDialog(true)}
             >
               <Building2 className="h-5 w-5 mr-2" />
@@ -176,10 +176,10 @@ export const CareerCentreLanding = () => {
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
               {features.map((feature, index) => (
-                <Card key={index} className="border-border/50 hover:border-amber-500/50 transition-colors">
+                <Card key={index} className="border-border/50 hover:border-stone-500/50 transition-colors">
                   <CardContent className="pt-6">
-                    <div className="h-12 w-12 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4">
-                      <feature.icon className="h-6 w-6 text-amber-600" />
+                    <div className="h-12 w-12 rounded-lg bg-stone-200 dark:bg-stone-800/30 flex items-center justify-center mb-4">
+                      <feature.icon className="h-6 w-6 text-stone-600 dark:text-stone-400" />
                     </div>
                     <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
                     <p className="text-muted-foreground text-sm">{feature.description}</p>
@@ -194,8 +194,8 @@ export const CareerCentreLanding = () => {
         <section className="py-16 md:py-24 bg-muted/30">
           <div className="container mx-auto px-4">
             <div className="max-w-lg mx-auto">
-              <Card className="relative overflow-hidden border-2 border-amber-500/50 bg-gradient-to-b from-amber-50/50 to-background dark:from-amber-950/20 dark:to-background">
-                <div className="absolute top-0 right-0 bg-amber-500 text-white px-4 py-1 text-sm font-medium rounded-bl-lg">
+              <Card className="relative overflow-hidden border-2 border-stone-500/50 bg-gradient-to-b from-stone-100/50 to-background dark:from-stone-900/20 dark:to-background">
+                <div className="absolute top-0 right-0 bg-stone-500 text-white px-4 py-1 text-sm font-medium rounded-bl-lg">
                   <GraduationCap className="h-4 w-4 inline-block mr-1" />
                   Institutions
                 </div>
@@ -205,7 +205,7 @@ export const CareerCentreLanding = () => {
                     Empower your students with tech skills
                   </CardDescription>
                   <div className="mt-6">
-                    <span className="text-3xl font-bold text-amber-600">Custom Pricing</span>
+                    <span className="text-3xl font-bold text-stone-600 dark:text-stone-400">Custom Pricing</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-2">
                     Tailored to your institution's needs
@@ -215,7 +215,7 @@ export const CareerCentreLanding = () => {
                   <Button 
                     size="lg" 
                     variant="outline" 
-                    className="w-full mb-6 text-lg h-14 border-amber-500 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/50" 
+                    className="w-full mb-6 text-lg h-14 border-stone-500 text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-900/50" 
                     onClick={() => setShowInstitutionDialog(true)}
                   >
                     <Building2 className="h-5 w-5 mr-2" />
@@ -234,8 +234,8 @@ export const CareerCentreLanding = () => {
                       "Spectrogram talent profiles for graduates"
                     ].map((feature, index) => (
                       <div key={index} className="flex items-center gap-3">
-                        <div className="flex-shrink-0 h-5 w-5 rounded-full bg-amber-100 flex items-center justify-center">
-                          <Check className="h-3 w-3 text-amber-700" />
+                        <div className="flex-shrink-0 h-5 w-5 rounded-full bg-stone-200 dark:bg-stone-800 flex items-center justify-center">
+                          <Check className="h-3 w-3 text-stone-700 dark:text-stone-300" />
                         </div>
                         <span className="text-sm">{feature}</span>
                       </div>
@@ -260,7 +260,7 @@ export const CareerCentreLanding = () => {
               </p>
               <Button 
                 size="lg" 
-                className="bg-amber-600 hover:bg-amber-700 text-white h-14 px-8 text-lg"
+                className="bg-stone-600 hover:bg-stone-700 text-white h-14 px-8 text-lg"
                 onClick={() => setShowInstitutionDialog(true)}
               >
                 Get Started Today
@@ -277,7 +277,7 @@ export const CareerCentreLanding = () => {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <GraduationCap className="h-5 w-5 text-amber-600" />
+              <GraduationCap className="h-5 w-5 text-stone-600 dark:text-stone-400" />
               Partner With ACFE
             </DialogTitle>
             <DialogDescription>
@@ -396,7 +396,7 @@ export const CareerCentreLanding = () => {
 
             <Button 
               type="submit" 
-              className="w-full bg-amber-600 hover:bg-amber-700"
+              className="w-full bg-stone-600 hover:bg-stone-700"
               disabled={institutionLoading || !turnstileToken}
             >
               {institutionLoading ? (
