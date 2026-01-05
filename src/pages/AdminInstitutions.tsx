@@ -59,6 +59,7 @@ export const AdminInstitutions = () => {
 
   // Form states
   const [newInstitution, setNewInstitution] = useState({ name: '', slug: '', email_domain: '', description: '' });
+  const [editInstitution, setEditInstitution] = useState({ name: '', slug: '', email_domain: '', description: '', is_active: true });
   const [inviteEmails, setInviteEmails] = useState('');
   const [newEvent, setNewEvent] = useState({ title: '', description: '', event_date: '', event_url: '' });
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '', is_pinned: false });
@@ -261,6 +262,56 @@ export const AdminInstitutions = () => {
     onError: () => toast.error('Failed to update logo'),
   });
 
+  // Update institution details mutation
+  const updateInstitutionMutation = useMutation({
+    mutationFn: async (data: typeof editInstitution) => {
+      // Sanitize slug
+      const sanitizedSlug = data.slug
+        .toLowerCase()
+        .replace(/https?:\/\//g, '')
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+      
+      if (!sanitizedSlug) {
+        throw new Error('Please provide a valid slug');
+      }
+      
+      const { error } = await supabase
+        .from('institutions')
+        .update({
+          name: data.name,
+          slug: sanitizedSlug,
+          email_domain: data.email_domain || null,
+          description: data.description || null,
+          is_active: data.is_active,
+        })
+        .eq('id', selectedInstitution!.id);
+      if (error) throw error;
+      
+      return { ...data, slug: sanitizedSlug };
+    },
+    onSuccess: (updatedData) => {
+      queryClient.invalidateQueries({ queryKey: ['all-institutions'] });
+      if (selectedInstitution) {
+        setSelectedInstitution({ 
+          ...selectedInstitution, 
+          name: updatedData.name,
+          slug: updatedData.slug,
+          email_domain: updatedData.email_domain || null,
+          description: updatedData.description || null,
+          is_active: updatedData.is_active,
+        });
+      }
+      toast.success('Institution updated successfully');
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : 'Failed to update institution';
+      toast.error(message);
+    },
+  });
+
   // Logo upload handlers
   const onSelectLogo = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -327,6 +378,19 @@ export const AdminInstitutions = () => {
     setShowLogoEditor(false);
     setLogoImgSrc('');
     if (logoInputRef.current) logoInputRef.current.value = '';
+  };
+
+  // Populate edit form when institution is selected
+  const handleSelectInstitution = (institution: Institution) => {
+    setSelectedInstitution(institution);
+    setEditInstitution({
+      name: institution.name,
+      slug: institution.slug,
+      email_domain: institution.email_domain || '',
+      description: institution.description || '',
+      is_active: institution.is_active,
+    });
+    setActiveTab('overview');
   };
 
   // Export report as CSV
@@ -479,7 +543,7 @@ export const AdminInstitutions = () => {
                       {institutions.map(inst => (
                         <button
                           key={inst.id}
-                          onClick={() => setSelectedInstitution(inst)}
+                          onClick={() => handleSelectInstitution(inst)}
                           className={`w-full p-4 text-left hover:bg-muted/50 transition-colors ${
                             selectedInstitution?.id === inst.id ? 'bg-muted' : ''
                           }`}
@@ -589,6 +653,7 @@ export const AdminInstitutions = () => {
                           <TabsTrigger value="events">Events</TabsTrigger>
                           <TabsTrigger value="announcements">Announcements</TabsTrigger>
                           <TabsTrigger value="reports">Reports</TabsTrigger>
+                          <TabsTrigger value="settings">Settings</TabsTrigger>
                         </TabsList>
 
                         {/* Overview Tab */}
@@ -956,6 +1021,97 @@ export const AdminInstitutions = () => {
                                   </TableRow>
                                 </TableBody>
                               </Table>
+                            </div>
+                          </div>
+                        </TabsContent>
+
+                        {/* Settings Tab */}
+                        <TabsContent value="settings">
+                          <div className="space-y-6 max-w-2xl">
+                            <div>
+                              <h3 className="font-semibold mb-4">Institution Settings</h3>
+                              <p className="text-sm text-muted-foreground mb-6">
+                                Edit your institution's details and configuration
+                              </p>
+                            </div>
+
+                            <div className="space-y-4">
+                              <div>
+                                <Label htmlFor="edit-name">Institution Name *</Label>
+                                <Input
+                                  id="edit-name"
+                                  value={editInstitution.name}
+                                  onChange={(e) => setEditInstitution(prev => ({ ...prev, name: e.target.value }))}
+                                  placeholder="e.g. University of Technology"
+                                  className="mt-1"
+                                />
+                              </div>
+
+                              <div>
+                                <Label htmlFor="edit-slug">URL Slug *</Label>
+                                <Input
+                                  id="edit-slug"
+                                  value={editInstitution.slug}
+                                  onChange={(e) => setEditInstitution(prev => ({ ...prev, slug: e.target.value }))}
+                                  placeholder="e.g. university-of-technology"
+                                  className="mt-1"
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Career centre URL: /career-centre/{editInstitution.slug || 'slug'}
+                                </p>
+                              </div>
+
+                              <div>
+                                <Label htmlFor="edit-email-domain">Email Domain (Optional)</Label>
+                                <Input
+                                  id="edit-email-domain"
+                                  value={editInstitution.email_domain}
+                                  onChange={(e) => setEditInstitution(prev => ({ ...prev, email_domain: e.target.value }))}
+                                  placeholder="e.g. university.edu"
+                                  className="mt-1"
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Students with this email domain can auto-join
+                                </p>
+                              </div>
+
+                              <div>
+                                <Label htmlFor="edit-description">Description</Label>
+                                <Textarea
+                                  id="edit-description"
+                                  value={editInstitution.description}
+                                  onChange={(e) => setEditInstitution(prev => ({ ...prev, description: e.target.value }))}
+                                  placeholder="Brief description of the institution..."
+                                  className="mt-1"
+                                  rows={3}
+                                />
+                              </div>
+
+                              <div className="flex items-center gap-3 pt-2">
+                                <Label htmlFor="edit-active" className="flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    id="edit-active"
+                                    checked={editInstitution.is_active}
+                                    onChange={(e) => setEditInstitution(prev => ({ ...prev, is_active: e.target.checked }))}
+                                    className="w-4 h-4 rounded border-border"
+                                  />
+                                  Active
+                                </Label>
+                                <span className="text-xs text-muted-foreground">
+                                  Inactive institutions won't appear in the career centre
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="pt-4 border-t">
+                              <Button 
+                                onClick={() => updateInstitutionMutation.mutate(editInstitution)}
+                                disabled={!editInstitution.name || !editInstitution.slug || updateInstitutionMutation.isPending}
+                              >
+                                {updateInstitutionMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                                Save Changes
+                              </Button>
                             </div>
                           </div>
                         </TabsContent>
