@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { ExternalLink, Mail, ArrowRight, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +6,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
 
 interface NewsArticle {
   title: string;
@@ -54,6 +56,37 @@ export const TechNewsSection = () => {
   const [activeCategory, setActiveCategory] = useState<string>('ALL NEWS');
   const [email, setEmail] = useState('');
   const [isSubscribing, setIsSubscribing] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<HTMLDivElement>(null);
+  const turnstileWidgetId = useRef<string | null>(null);
+
+  // Load Turnstile script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad';
+    script.async = true;
+    script.defer = true;
+    
+    (window as any).onTurnstileLoad = () => {
+      if (turnstileRef.current && !turnstileWidgetId.current) {
+        turnstileWidgetId.current = (window as any).turnstile.render(turnstileRef.current, {
+          sitekey: TURNSTILE_SITE_KEY,
+          callback: (token: string) => setTurnstileToken(token),
+          'expired-callback': () => setTurnstileToken(null),
+          theme: 'auto',
+        });
+      }
+    };
+    
+    document.head.appendChild(script);
+    
+    return () => {
+      if (turnstileWidgetId.current && (window as any).turnstile) {
+        (window as any).turnstile.remove(turnstileWidgetId.current);
+      }
+      document.head.removeChild(script);
+    };
+  }, []);
 
   interface CuratedNews {
     article_url: string;
@@ -120,10 +153,14 @@ export const TechNewsSection = () => {
       toast.error('Please enter your email address');
       return;
     }
+    if (!turnstileToken) {
+      toast.error('Please complete the CAPTCHA verification');
+      return;
+    }
     setIsSubscribing(true);
     try {
       const { data, error } = await supabase.functions.invoke('newsletter-signup', {
-        body: { email: email.trim() }
+        body: { email: email.trim(), turnstileToken }
       });
 
       if (error) {
@@ -140,9 +177,19 @@ export const TechNewsSection = () => {
         toast.success('Successfully subscribed to the newsletter!');
       }
       setEmail('');
-    } catch (error) {
+      setTurnstileToken(null);
+      // Reset the Turnstile widget
+      if (turnstileWidgetId.current && (window as any).turnstile) {
+        (window as any).turnstile.reset(turnstileWidgetId.current);
+      }
+    } catch (error: any) {
       console.error('Newsletter signup error:', error);
-      toast.error('Failed to subscribe. Please try again.');
+      toast.error(error.message || 'Failed to subscribe. Please try again.');
+      // Reset on error too
+      if (turnstileWidgetId.current && (window as any).turnstile) {
+        (window as any).turnstile.reset(turnstileWidgetId.current);
+      }
+      setTurnstileToken(null);
     } finally {
       setIsSubscribing(false);
     }
@@ -346,13 +393,14 @@ export const TechNewsSection = () => {
               />
               <Button
                 type="submit"
-                disabled={isSubscribing}
+                disabled={isSubscribing || !turnstileToken}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground whitespace-nowrap"
               >
                 {isSubscribing ? 'Subscribing...' : 'Subscribe'}
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
+            <div ref={turnstileRef} className="mt-4" />
             <p className="text-xs text-muted-foreground mt-3">
               No spam. Unsubscribe anytime. We respect your privacy.
             </p>
