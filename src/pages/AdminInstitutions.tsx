@@ -68,20 +68,31 @@ export const AdminInstitutions = () => {
   const { data: stats } = useInstitutionStats(selectedInstitution?.id);
 
   // Fetch students for selected institution
-  const { data: students = [] } = useQuery({
+  const { data: students = [], isLoading: studentsLoading } = useQuery({
     queryKey: ['institution-students', selectedInstitution?.id],
     queryFn: async () => {
       if (!selectedInstitution) return [];
+      console.log('Fetching students for institution:', selectedInstitution.id);
       const { data, error } = await supabase
         .from('institution_students')
         .select('*')
         .eq('institution_id', selectedInstitution.id)
         .order('invited_at', { ascending: false });
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching students:', error);
+        throw error;
+      }
+      console.log('Fetched students:', data);
       return data;
     },
     enabled: !!selectedInstitution,
+    refetchOnMount: true,
+    staleTime: 0,
   });
+
+  // Calculate student stats
+  const pendingInvites = students.filter(s => s.status === 'pending').length;
+  const activeStudents = students.filter(s => s.status === 'active').length;
 
   // Fetch events for selected institution
   const { data: events = [] } = useQuery({
@@ -649,7 +660,14 @@ export const AdminInstitutions = () => {
                       <Tabs value={activeTab} onValueChange={setActiveTab}>
                         <TabsList className="mb-4">
                           <TabsTrigger value="overview">Overview</TabsTrigger>
-                          <TabsTrigger value="students">Students</TabsTrigger>
+                          <TabsTrigger value="students" className="flex items-center gap-2">
+                            Students
+                            {students.length > 0 && (
+                              <Badge variant="secondary" className="text-xs">
+                                {students.filter(s => s.status === 'pending').length} pending
+                              </Badge>
+                            )}
+                          </TabsTrigger>
                           <TabsTrigger value="events">Events</TabsTrigger>
                           <TabsTrigger value="announcements">Announcements</TabsTrigger>
                           <TabsTrigger value="reports">Reports</TabsTrigger>
@@ -660,8 +678,12 @@ export const AdminInstitutions = () => {
                         <TabsContent value="overview">
                           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             <div className="p-4 rounded-lg bg-muted/50 text-center">
-                              <div className="text-2xl font-bold">{stats?.totalStudents || 0}</div>
-                              <div className="text-xs text-muted-foreground">Total Students</div>
+                              <div className="text-2xl font-bold">{activeStudents}</div>
+                              <div className="text-xs text-muted-foreground">Active Students</div>
+                            </div>
+                            <div className="p-4 rounded-lg bg-amber-500/10 text-center">
+                              <div className="text-2xl font-bold text-amber-600">{pendingInvites}</div>
+                              <div className="text-xs text-muted-foreground">Pending Invites</div>
                             </div>
                             <div className="p-4 rounded-lg bg-muted/50 text-center">
                               <div className="text-2xl font-bold">{stats?.totalEnrollments || 0}</div>
@@ -736,10 +758,16 @@ export const AdminInstitutions = () => {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {students.length === 0 ? (
+                              {studentsLoading ? (
                                 <TableRow>
-                                  <TableCell colSpan={4} className="text-center text-muted-foreground">
-                                    No students invited yet
+                                  <TableCell colSpan={4} className="text-center py-8">
+                                    <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
+                                  </TableCell>
+                                </TableRow>
+                              ) : students.length === 0 ? (
+                                <TableRow>
+                                  <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                                    No students invited yet. Click "Invite Students" to get started.
                                   </TableCell>
                                 </TableRow>
                               ) : students.map(student => (
