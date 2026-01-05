@@ -230,8 +230,7 @@ export const Pricing = () => {
                   <Briefcase className="h-4 w-4 mr-2" />
                   View Job Opportunities
                 </Button>
-                <Button variant="outline" onClick={() => navigate('/startups')}>
-                  <Sparkles className="h-4 w-4 mr-2" />
+                <Button variant="outline" onClick={() => navigate('/startups')}>Submit Your Startup Idea<Sparkles className="h-4 w-4 mr-2" />
                   Submit Your Idea
                 </Button>
               </div>
