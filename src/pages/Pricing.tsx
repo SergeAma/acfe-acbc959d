@@ -13,6 +13,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Check, Sparkles, BookOpen, Video, Users, Award, Calendar, Briefcase, MessageSquare, BookMarked, Loader2, Zap, Globe, GraduationCap, Building2 } from 'lucide-react';
+import { PhoneInput } from '@/components/ui/phone-input';
+import { AutocompleteInput } from '@/components/ui/autocomplete-input';
+import { AFRICAN_UNIVERSITIES } from '@/data/universities';
 
 export const Pricing = () => {
   const navigate = useNavigate();
@@ -405,11 +408,12 @@ export const Pricing = () => {
           <form onSubmit={handleInstitutionSubmit} className="space-y-4 mt-4">
             <div className="space-y-2">
               <Label htmlFor="institutionName">Institution Name *</Label>
-              <Input
+              <AutocompleteInput
                 id="institutionName"
-                placeholder="e.g., University of Lagos"
+                placeholder="Start typing to see suggestions..."
                 value={institutionForm.institutionName}
-                onChange={(e) => setInstitutionForm(prev => ({ ...prev, institutionName: e.target.value }))}
+                onChange={(value) => setInstitutionForm(prev => ({ ...prev, institutionName: value }))}
+                suggestions={AFRICAN_UNIVERSITIES}
                 required
               />
             </div>
@@ -441,12 +445,10 @@ export const Pricing = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="contactPhone">Phone Number</Label>
-                <Input
+                <PhoneInput
                   id="contactPhone"
-                  type="tel"
-                  placeholder="+234..."
                   value={institutionForm.contactPhone}
-                  onChange={(e) => setInstitutionForm(prev => ({ ...prev, contactPhone: e.target.value }))}
+                  onChange={(value) => setInstitutionForm(prev => ({ ...prev, contactPhone: value }))}
                 />
               </div>
               <div className="space-y-2">
