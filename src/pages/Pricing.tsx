@@ -232,7 +232,7 @@ export const Pricing = () => {
                 </Button>
                 <Button variant="outline" onClick={() => navigate('/submit-idea')}>
                   <Sparkles className="h-4 w-4 mr-2" />
-                  Submit Your Idea
+                  Submit Your Startup Idea
                 </Button>
               </div>
             </div>
