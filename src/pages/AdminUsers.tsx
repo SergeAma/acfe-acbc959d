@@ -7,7 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
-import { Loader2, ArrowLeft, User, Mail, Calendar, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { 
+  Loader2, ArrowLeft, User, Mail, Calendar, Search, ChevronLeft, ChevronRight, 
+  Download, UserX, UserCheck, Users 
+} from 'lucide-react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Table,
@@ -26,6 +30,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface UserProfile {
   id: string;
@@ -40,7 +61,7 @@ interface UserProfile {
 const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100];
 
 export const AdminUsers = () => {
-  const { profile, loading: authLoading } = useAuth();
+  const { profile, user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -49,6 +70,12 @@ export const AdminUsers = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    action: 'suspend' | 'activate' | 'delete' | null;
+  }>({ open: false, action: null });
   
   const filter = searchParams.get('filter') || 'all';
 
@@ -79,6 +106,96 @@ export const AdminUsers = () => {
     setLoading(false);
   };
 
+  // Export users to CSV
+  const exportToCSV = () => {
+    const dataToExport = selectedUsers.size > 0 
+      ? searchFilteredUsers.filter(u => selectedUsers.has(u.id))
+      : searchFilteredUsers;
+    
+    const headers = ['Name', 'Email', 'Role', 'Country', 'Status', 'Joined'];
+    const csvContent = [
+      headers.join(','),
+      ...dataToExport.map(user => [
+        `"${user.full_name || 'Unknown'}"`,
+        `"${user.email}"`,
+        user.role,
+        `"${user.country || 'N/A'}"`,
+        user.account_status,
+        new Date(user.created_at).toLocaleDateString()
+      ].join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `users_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: 'Export complete',
+      description: `Exported ${dataToExport.length} users to CSV.`,
+    });
+  };
+
+  // Bulk status update
+  const handleBulkStatusUpdate = async (newStatus: string) => {
+    if (selectedUsers.size === 0) return;
+    
+    setBulkActionLoading(true);
+    const userIds = Array.from(selectedUsers);
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({ account_status: newStatus })
+      .in('id', userIds);
+    
+    if (error) {
+      toast({
+        title: 'Bulk action failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Bulk action complete',
+        description: `Updated ${userIds.length} users to ${newStatus} status.`,
+      });
+      setSelectedUsers(new Set());
+      fetchUsers();
+    }
+    
+    setBulkActionLoading(false);
+    setConfirmDialog({ open: false, action: null });
+  };
+
+  // Toggle user selection
+  const toggleUserSelection = (userId: string) => {
+    const newSelection = new Set(selectedUsers);
+    if (newSelection.has(userId)) {
+      newSelection.delete(userId);
+    } else {
+      newSelection.add(userId);
+    }
+    setSelectedUsers(newSelection);
+  };
+
+  // Select all visible users
+  const toggleSelectAll = () => {
+    if (selectedUsers.size === paginatedUsers.length) {
+      setSelectedUsers(new Set());
+    } else {
+      setSelectedUsers(new Set(paginatedUsers.map(u => u.id)));
+    }
+  };
+
+  // Select all filtered users
+  const selectAllFiltered = () => {
+    setSelectedUsers(new Set(searchFilteredUsers.map(u => u.id)));
+  };
+
   // Filter by role
   const roleFilteredUsers = filter === 'all' 
     ? users 
@@ -105,6 +222,7 @@ export const AdminUsers = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
+    setSelectedUsers(new Set());
   }, [filter, searchQuery, itemsPerPage]);
 
   if (authLoading) {
@@ -183,24 +301,81 @@ export const AdminUsers = () => {
           </Card>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <Tabs value={filter} onValueChange={(value) => setSearchParams({ filter: value })} className="flex-shrink-0">
-            <TabsList>
-              <TabsTrigger value="all">All Users</TabsTrigger>
-              <TabsTrigger value="mentor">Mentors</TabsTrigger>
-              <TabsTrigger value="student">Students</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name, email, or country..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
+        {/* Filters and Actions Bar */}
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Tabs value={filter} onValueChange={(value) => setSearchParams({ filter: value })} className="flex-shrink-0">
+              <TabsList>
+                <TabsTrigger value="all">All Users</TabsTrigger>
+                <TabsTrigger value="mentor">Mentors</TabsTrigger>
+                <TabsTrigger value="student">Students</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, email, or country..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            <div className="flex gap-2 ml-auto">
+              <Button variant="outline" size="sm" onClick={exportToCSV}>
+                <Download className="h-4 w-4 mr-2" />
+                Export {selectedUsers.size > 0 ? `(${selectedUsers.size})` : 'All'}
+              </Button>
+              
+              {selectedUsers.size > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="default" size="sm" disabled={bulkActionLoading}>
+                      {bulkActionLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                      <Users className="h-4 w-4 mr-2" />
+                      Bulk Actions ({selectedUsers.size})
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setConfirmDialog({ open: true, action: 'activate' })}>
+                      <UserCheck className="h-4 w-4 mr-2 text-green-600" />
+                      Activate Selected
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setConfirmDialog({ open: true, action: 'suspend' })}>
+                      <UserX className="h-4 w-4 mr-2 text-yellow-600" />
+                      Suspend Selected
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={() => setConfirmDialog({ open: true, action: 'delete' })}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <UserX className="h-4 w-4 mr-2" />
+                      Mark as Deleted
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
           </div>
+
+          {/* Selection info bar */}
+          {selectedUsers.size > 0 && (
+            <div className="flex items-center gap-4 p-3 bg-primary/5 rounded-lg border">
+              <span className="text-sm font-medium">
+                {selectedUsers.size} user{selectedUsers.size !== 1 ? 's' : ''} selected
+              </span>
+              {selectedUsers.size < searchFilteredUsers.length && (
+                <Button variant="link" size="sm" className="h-auto p-0" onClick={selectAllFiltered}>
+                  Select all {searchFilteredUsers.length} filtered users
+                </Button>
+              )}
+              <Button variant="link" size="sm" className="h-auto p-0 ml-auto" onClick={() => setSelectedUsers(new Set())}>
+                Clear selection
+              </Button>
+            </div>
+          )}
         </div>
 
         {loading ? (
@@ -214,6 +389,13 @@ export const AdminUsers = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={paginatedUsers.length > 0 && selectedUsers.size === paginatedUsers.length}
+                          onCheckedChange={toggleSelectAll}
+                          aria-label="Select all"
+                        />
+                      </TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Role</TableHead>
@@ -225,43 +407,50 @@ export const AdminUsers = () => {
                   <TableBody>
                     {paginatedUsers.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                           {searchQuery ? 'No users found matching your search.' : 'No users found.'}
                         </TableCell>
                       </TableRow>
                     ) : (
-                      paginatedUsers.map((user) => (
-                        <TableRow key={user.id}>
+                      paginatedUsers.map((u) => (
+                        <TableRow key={u.id} className={selectedUsers.has(u.id) ? 'bg-primary/5' : ''}>
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedUsers.has(u.id)}
+                              onCheckedChange={() => toggleUserSelection(u.id)}
+                              aria-label={`Select ${u.full_name}`}
+                            />
+                          </TableCell>
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-2">
                               <User className="h-4 w-4 text-muted-foreground" />
-                              {user.full_name || 'Unknown'}
+                              {u.full_name || 'Unknown'}
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Mail className="h-4 w-4 text-muted-foreground" />
-                              {user.email}
+                              {u.email}
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={user.role === 'mentor' ? 'default' : 'secondary'}>
-                              {user.role}
+                            <Badge variant={u.role === 'mentor' ? 'default' : 'secondary'}>
+                              {u.role}
                             </Badge>
                           </TableCell>
-                          <TableCell>{user.country || 'N/A'}</TableCell>
+                          <TableCell>{u.country || 'N/A'}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-muted-foreground" />
-                              {new Date(user.created_at).toLocaleDateString()}
+                              {new Date(u.created_at).toLocaleDateString()}
                             </div>
                           </TableCell>
                           <TableCell>
                             <UserStatusManager
-                              userId={user.id}
-                              userName={user.full_name || 'Unknown'}
-                              currentRole={user.role}
-                              currentStatus={user.account_status || 'active'}
+                              userId={u.id}
+                              userName={u.full_name || 'Unknown'}
+                              currentRole={u.role}
+                              currentStatus={u.account_status || 'active'}
                               onUpdate={fetchUsers}
                             />
                           </TableCell>
@@ -349,6 +538,46 @@ export const AdminUsers = () => {
           </>
         )}
       </div>
+
+      {/* Bulk Action Confirmation Dialog */}
+      <AlertDialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmDialog.action === 'activate' && 'Activate Selected Users'}
+              {confirmDialog.action === 'suspend' && 'Suspend Selected Users'}
+              {confirmDialog.action === 'delete' && 'Mark Users as Deleted'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmDialog.action === 'activate' && (
+                <>Are you sure you want to activate {selectedUsers.size} user{selectedUsers.size !== 1 ? 's' : ''}? They will regain access to the platform.</>
+              )}
+              {confirmDialog.action === 'suspend' && (
+                <>Are you sure you want to suspend {selectedUsers.size} user{selectedUsers.size !== 1 ? 's' : ''}? They will temporarily lose access to the platform.</>
+              )}
+              {confirmDialog.action === 'delete' && (
+                <>Are you sure you want to mark {selectedUsers.size} user{selectedUsers.size !== 1 ? 's' : ''} as deleted? This action can be reversed by changing their status back to active.</>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmDialog.action === 'activate') handleBulkStatusUpdate('active');
+                if (confirmDialog.action === 'suspend') handleBulkStatusUpdate('paused');
+                if (confirmDialog.action === 'delete') handleBulkStatusUpdate('deleted');
+              }}
+              className={confirmDialog.action === 'delete' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
+            >
+              {bulkActionLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {confirmDialog.action === 'activate' && 'Activate'}
+              {confirmDialog.action === 'suspend' && 'Suspend'}
+              {confirmDialog.action === 'delete' && 'Mark as Deleted'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
