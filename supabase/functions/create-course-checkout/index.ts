@@ -147,7 +147,7 @@ serve(async (req) => {
     const origin = req.headers.get("origin") || "https://lovable.dev";
     const coursePriceCents = course.price_cents || 1000;
     
-    // Build checkout session options
+    // Build checkout session options - disable Stripe's promo code input to ensure consistent 7-day trials
     const sessionOptions: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -183,10 +183,12 @@ serve(async (req) => {
           student_id: user.id,
         },
       },
-      allow_promotion_codes: true, // Allow Stripe's built-in promo code input
+      // Disable Stripe's built-in promo code input - users must enter codes on ACFE site
+      // This ensures consistent 7-day trial behavior for all promo codes
+      allow_promotion_codes: false,
     };
 
-    // If promo code provided, look it up and handle accordingly
+    // If promo code provided, look it up and apply 7-day trial
     if (promoCode) {
       try {
         const promoCodes = await stripe.promotionCodes.list({
@@ -206,29 +208,18 @@ serve(async (req) => {
             metadata: promo.metadata 
           });
           
-          // Get trial days from promo or coupon metadata
-          const trialDays = parseInt(
-            promo.metadata?.trial_days || 
-            coupon?.metadata?.trial_days || 
-            '0'
-          );
-          
-          // For 100% off coupons with trial days, apply trial period
-          if (coupon?.percent_off === 100 && trialDays > 0) {
-            sessionOptions.subscription_data!.trial_period_days = trialDays;
-            // Don't apply discount since we're using trial
-            logStep("Applied trial period from promo code", { code: promoCode, trialDays });
+          // For 100% off coupons, always apply 7-day trial period (standardized)
+          if (coupon?.percent_off === 100) {
+            const standardTrialDays = 7; // All promo codes give exactly 7 days free
+            sessionOptions.subscription_data!.trial_period_days = standardTrialDays;
+            logStep("Applied 7-day trial from promo code", { code: promoCode, trialDays: standardTrialDays });
           } else {
-            // Apply the promo code as a discount
+            // For non-100% off coupons, apply as discount
             sessionOptions.discounts = [{ promotion_code: promo.id }];
             logStep("Applied discount from promo code", { code: promoCode });
           }
-          
-          // Disable allow_promotion_codes since we're pre-applying
-          sessionOptions.allow_promotion_codes = false;
         } else {
           logStep("Promo code not found or inactive", { code: promoCode });
-          // Keep allow_promotion_codes true so user can try again in Stripe
         }
       } catch (promoError) {
         logStep("Error looking up promo code", { error: String(promoError) });
