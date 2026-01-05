@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -26,6 +27,7 @@ export const Pricing = () => {
   const [institutionLoading, setInstitutionLoading] = useState(false);
   const [institutionForm, setInstitutionForm] = useState({
     institutionName: '',
+    institutionType: '',
     contactName: '',
     contactEmail: '',
     contactPhone: '',
@@ -97,6 +99,7 @@ export const Pricing = () => {
       setShowInstitutionDialog(false);
       setInstitutionForm({
         institutionName: '',
+        institutionType: '',
         contactName: '',
         contactEmail: '',
         contactPhone: '',
@@ -406,16 +409,34 @@ export const Pricing = () => {
           </DialogHeader>
           
           <form onSubmit={handleInstitutionSubmit} className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label htmlFor="institutionName">Institution Name *</Label>
-              <AutocompleteInput
-                id="institutionName"
-                placeholder="Start typing to see suggestions..."
-                value={institutionForm.institutionName}
-                onChange={(value) => setInstitutionForm(prev => ({ ...prev, institutionName: value }))}
-                suggestions={AFRICAN_UNIVERSITIES}
-                required
-              />
+            <div className="grid grid-cols-3 gap-4">
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="institutionName">Institution Name *</Label>
+                <AutocompleteInput
+                  id="institutionName"
+                  placeholder="Start typing to see suggestions..."
+                  value={institutionForm.institutionName}
+                  onChange={(value) => setInstitutionForm(prev => ({ ...prev, institutionName: value }))}
+                  suggestions={AFRICAN_UNIVERSITIES}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="institutionType">Type *</Label>
+                <Select 
+                  value={institutionForm.institutionType} 
+                  onValueChange={(value) => setInstitutionForm(prev => ({ ...prev, institutionType: value }))}
+                >
+                  <SelectTrigger id="institutionType">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card">
+                    <SelectItem value="university">University</SelectItem>
+                    <SelectItem value="college">College</SelectItem>
+                    <SelectItem value="high-school">High School</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
