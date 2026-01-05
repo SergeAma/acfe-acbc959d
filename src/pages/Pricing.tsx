@@ -82,7 +82,7 @@ export const Pricing = () => {
   const handleInstitutionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!institutionForm.institutionName || !institutionForm.contactName || !institutionForm.contactEmail) {
+    if (!institutionForm.institutionName || !institutionForm.institutionType || !institutionForm.contactName || !institutionForm.contactEmail) {
       toast.error('Please fill in all required fields');
       return;
     }
