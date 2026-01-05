@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, Instagram, Linkedin, Menu, X } from "lucide-react";
+import { LogOut, Instagram, Linkedin, Menu, X, GraduationCap } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,11 +13,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NavLink } from "@/components/NavLink";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
+import { useUserInstitutions } from "@/hooks/useInstitution";
 import acfeLogo from "@/assets/acfe-logo.png";
 
 export const Navbar = () => {
   const { user, profile, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { data: userInstitutions = [] } = useUserInstitutions();
 
   const navLinks = [
     { to: "/home", label: "Home" },
@@ -66,6 +68,14 @@ export const Navbar = () => {
                 <DropdownMenuItem asChild>
                   <Link to="/dashboard">Dashboard</Link>
                 </DropdownMenuItem>
+                {userInstitutions.length > 0 && (
+                  <DropdownMenuItem asChild>
+                    <Link to={`/career-centre/${userInstitutions[0].institution_slug}`} className="flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4" />
+                      Career Centre
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 {profile?.role === "student" && (
                   <DropdownMenuItem asChild>
                     <Link to="/courses">Browse Courses</Link>
@@ -150,6 +160,16 @@ export const Navbar = () => {
                 >
                   Dashboard
                 </Link>
+                {userInstitutions.length > 0 && (
+                  <Link
+                    to={`/career-centre/${userInstitutions[0].institution_slug}`}
+                    className="text-sm font-bold text-foreground hover:text-primary transition-colors py-2 flex items-center gap-2"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <GraduationCap className="h-4 w-4" />
+                    Career Centre
+                  </Link>
+                )}
                 {profile?.role === "student" && (
                   <Link
                     to="/courses"
