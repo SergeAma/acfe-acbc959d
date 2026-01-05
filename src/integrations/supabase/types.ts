@@ -2297,6 +2297,10 @@ export type Database = {
         Args: { _institution_id: string; _user_id: string }
         Returns: boolean
       }
+      is_institution_member_direct: {
+        Args: { _institution_id: string; _user_id: string }
+        Returns: boolean
+      }
       reinstate_mentor: {
         Args: { _admin_id: string; _user_id: string }
         Returns: boolean
