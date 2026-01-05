@@ -159,7 +159,7 @@ export const CareerCentreLanding = () => {
               Empower your students with job-ready tech skills, verified credentials, and direct pathways 
               to employment through our dedicated institutional partnership program.
             </p>
-            <Button size="lg" className="bg-stone-500 hover:bg-stone-600 text-white h-14 px-8 text-lg" onClick={() => setShowInstitutionDialog(true)}>
+            <Button size="lg" onClick={() => setShowInstitutionDialog(true)} className="text-white h-14 px-8 text-lg bg-amber-600 hover:bg-amber-500">
               <Building2 className="h-5 w-5 mr-2" />
               Partner With ACFE
             </Button>
@@ -214,7 +214,7 @@ export const CareerCentreLanding = () => {
                   </p>
                 </CardHeader>
                 <CardContent className="pb-8">
-                  <Button size="lg" variant="outline" className="w-full mb-6 text-lg h-14 border-stone-500 text-stone-700 hover:bg-stone-100 dark:hover:bg-stone-900/50" onClick={() => setShowInstitutionDialog(true)}>
+                  <Button size="lg" variant="outline" onClick={() => setShowInstitutionDialog(true)} className="w-full mb-6 text-lg h-14 border-stone-500 text-destructive-foreground bg-amber-600 hover:bg-amber-500">
                     <Building2 className="h-5 w-5 mr-2" />
                     Contact ACFE Team
                   </Button>
