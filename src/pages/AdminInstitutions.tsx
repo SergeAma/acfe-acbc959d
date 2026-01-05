@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -29,7 +29,8 @@ import {
 } from '@/components/ui/table';
 import { 
   Building2, Plus, Users, Calendar, Megaphone, Loader2, 
-  Trash2, Mail, ExternalLink, BarChart3, CheckCircle2, XCircle
+  Trash2, Mail, ExternalLink, BarChart3, CheckCircle2, XCircle,
+  Upload, Pencil, Download, FileText
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -38,6 +39,7 @@ import { useInstitutionStats } from '@/hooks/useCareerReadiness';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Navigate, Link } from 'react-router-dom';
+import { InstitutionLogoEditor } from '@/components/admin/InstitutionLogoEditor';
 
 export const AdminInstitutions = () => {
   const { user, profile, loading: authLoading } = useAuth();
@@ -48,6 +50,12 @@ export const AdminInstitutions = () => {
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [isAnnouncementDialogOpen, setIsAnnouncementDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Logo editor state
+  const [showLogoEditor, setShowLogoEditor] = useState(false);
+  const [logoImgSrc, setLogoImgSrc] = useState('');
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Form states
   const [newInstitution, setNewInstitution] = useState({ name: '', slug: '', email_domain: '', description: '' });
@@ -123,8 +131,9 @@ export const AdminInstitutions = () => {
       setNewInstitution({ name: '', slug: '', email_domain: '', description: '' });
       toast.success('Institution created successfully');
     },
-    onError: (error: any) => {
-      toast.error(error.message || 'Failed to create institution');
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : 'Failed to create institution';
+      toast.error(message);
     },
   });
 
@@ -222,6 +231,123 @@ export const AdminInstitutions = () => {
     },
     onError: () => toast.error('Failed to delete event'),
   });
+
+  // Update institution logo mutation
+  const updateLogoMutation = useMutation({
+    mutationFn: async (logoUrl: string) => {
+      const { error } = await supabase
+        .from('institutions')
+        .update({ logo_url: logoUrl })
+        .eq('id', selectedInstitution!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-institutions'] });
+      toast.success('Logo updated successfully');
+    },
+    onError: () => toast.error('Failed to update logo'),
+  });
+
+  // Logo upload handlers
+  const onSelectLogo = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0];
+      
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Please select an image smaller than 5MB');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        setLogoImgSrc(reader.result?.toString() || '');
+        setShowLogoEditor(true);
+      });
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleLogoSave = async (croppedBlob: Blob) => {
+    try {
+      setUploadingLogo(true);
+      setShowLogoEditor(false);
+
+      const filePath = `institutions/${selectedInstitution!.id}/${Date.now()}.png`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, croppedBlob, { 
+          upsert: true,
+          contentType: 'image/png'
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      await updateLogoMutation.mutateAsync(publicUrl);
+      
+      // Update local state
+      if (selectedInstitution) {
+        setSelectedInstitution({ ...selectedInstitution, logo_url: publicUrl });
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to upload logo';
+      toast.error(message);
+    } finally {
+      setUploadingLogo(false);
+      setLogoImgSrc('');
+      if (logoInputRef.current) logoInputRef.current.value = '';
+    }
+  };
+
+  const handleEditExistingLogo = () => {
+    if (selectedInstitution?.logo_url) {
+      setLogoImgSrc(selectedInstitution.logo_url);
+      setShowLogoEditor(true);
+    }
+  };
+
+  const handleCancelLogoEditor = () => {
+    setShowLogoEditor(false);
+    setLogoImgSrc('');
+    if (logoInputRef.current) logoInputRef.current.value = '';
+  };
+
+  // Export report as CSV
+  const exportReport = () => {
+    if (!selectedInstitution || !stats) return;
+
+    const activeStudents = students.filter(s => s.status === 'active').length;
+    const pendingStudents = students.filter(s => s.status === 'pending').length;
+    
+    const reportData = [
+      ['Institution Report', selectedInstitution.name],
+      ['Generated', format(new Date(), 'PPpp')],
+      [''],
+      ['Metric', 'Value'],
+      ['Total Students', stats.totalStudents?.toString() || '0'],
+      ['Active Students', activeStudents.toString()],
+      ['Pending Invitations', pendingStudents.toString()],
+      ['Course Enrollments', stats.totalEnrollments?.toString() || '0'],
+      ['Courses Completed', stats.totalCompletedCourses?.toString() || '0'],
+      ['Certificates Issued', stats.totalCertificates?.toString() || '0'],
+      ['Talent Profiles Created', stats.spectrogramProfiles?.toString() || '0'],
+      ['Events Created', events.length.toString()],
+      ['Announcements Made', announcements.length.toString()],
+    ];
+
+    const csvContent = reportData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${selectedInstitution.slug}-report-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    link.click();
+    
+    toast.success('Report exported successfully');
+  };
 
   if (authLoading) {
     return (
@@ -378,16 +504,64 @@ export const AdminInstitutions = () => {
                   <Card>
                     <CardHeader>
                       <div className="flex items-center justify-between">
-                        <div>
-                          <CardTitle>{selectedInstitution.name}</CardTitle>
-                          <CardDescription>
-                            <Link 
-                              to={`/career-centre/${selectedInstitution.slug}`}
-                              className="text-primary hover:underline inline-flex items-center gap-1"
-                            >
-                              View Career Centre <ExternalLink className="h-3 w-3" />
-                            </Link>
-                          </CardDescription>
+                        <div className="flex items-center gap-4">
+                          {/* Logo with upload */}
+                          <div className="relative group">
+                            {selectedInstitution.logo_url ? (
+                              <img 
+                                src={selectedInstitution.logo_url} 
+                                alt="" 
+                                className="h-16 w-16 object-contain rounded-lg border"
+                              />
+                            ) : (
+                              <div className="h-16 w-16 rounded-lg bg-primary/10 flex items-center justify-center border">
+                                <Building2 className="h-8 w-8 text-primary" />
+                              </div>
+                            )}
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-1">
+                              <input
+                                ref={logoInputRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                onChange={onSelectLogo}
+                                className="hidden"
+                              />
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 text-white hover:bg-white/20"
+                                onClick={() => logoInputRef.current?.click()}
+                                disabled={uploadingLogo}
+                              >
+                                {uploadingLogo ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Upload className="h-4 w-4" />
+                                )}
+                              </Button>
+                              {selectedInstitution.logo_url && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 text-white hover:bg-white/20"
+                                  onClick={handleEditExistingLogo}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                          <div>
+                            <CardTitle>{selectedInstitution.name}</CardTitle>
+                            <CardDescription>
+                              <Link 
+                                to={`/career-centre/${selectedInstitution.slug}`}
+                                className="text-primary hover:underline inline-flex items-center gap-1"
+                              >
+                                View Career Centre <ExternalLink className="h-3 w-3" />
+                              </Link>
+                            </CardDescription>
+                          </div>
                         </div>
                         <Badge variant={selectedInstitution.is_active ? "default" : "secondary"}>
                           {selectedInstitution.is_active ? 'Active' : 'Inactive'}
@@ -401,6 +575,7 @@ export const AdminInstitutions = () => {
                           <TabsTrigger value="students">Students</TabsTrigger>
                           <TabsTrigger value="events">Events</TabsTrigger>
                           <TabsTrigger value="announcements">Announcements</TabsTrigger>
+                          <TabsTrigger value="reports">Reports</TabsTrigger>
                         </TabsList>
 
                         {/* Overview Tab */}
@@ -501,7 +676,7 @@ export const AdminInstitutions = () => {
                                     </Badge>
                                   </TableCell>
                                   <TableCell className="text-muted-foreground text-sm">
-                                    {format(new Date(student.invited_at), 'MMM d, yyyy')}
+                                    {student.invited_at ? format(new Date(student.invited_at), 'MMM d, yyyy') : '-'}
                                   </TableCell>
                                   <TableCell>
                                     {student.status !== 'revoked' && (
@@ -673,6 +848,104 @@ export const AdminInstitutions = () => {
                             ))}
                           </div>
                         </TabsContent>
+
+                        {/* Reports Tab */}
+                        <TabsContent value="reports">
+                          <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h3 className="font-semibold">Institution Report</h3>
+                                <p className="text-sm text-muted-foreground">
+                                  Export comprehensive data about institution activity
+                                </p>
+                              </div>
+                              <Button onClick={exportReport} className="rounded-full">
+                                <Download className="h-4 w-4 mr-2" />
+                                Export CSV
+                              </Button>
+                            </div>
+
+                            <div className="border rounded-lg overflow-hidden">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Metric</TableHead>
+                                    <TableHead className="text-right">Value</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  <TableRow>
+                                    <TableCell className="font-medium flex items-center gap-2">
+                                      <Users className="h-4 w-4 text-muted-foreground" />
+                                      Total Students
+                                    </TableCell>
+                                    <TableCell className="text-right">{stats?.totalStudents || 0}</TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium flex items-center gap-2">
+                                      <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                                      Active Students
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {students.filter(s => s.status === 'active').length}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium flex items-center gap-2">
+                                      <Mail className="h-4 w-4 text-muted-foreground" />
+                                      Pending Invitations
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {students.filter(s => s.status === 'pending').length}
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium flex items-center gap-2">
+                                      <FileText className="h-4 w-4 text-muted-foreground" />
+                                      Course Enrollments
+                                    </TableCell>
+                                    <TableCell className="text-right">{stats?.totalEnrollments || 0}</TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium flex items-center gap-2">
+                                      <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                                      Courses Completed
+                                    </TableCell>
+                                    <TableCell className="text-right">{stats?.totalCompletedCourses || 0}</TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium flex items-center gap-2">
+                                      <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                                      Certificates Issued
+                                    </TableCell>
+                                    <TableCell className="text-right">{stats?.totalCertificates || 0}</TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium flex items-center gap-2">
+                                      <Users className="h-4 w-4 text-muted-foreground" />
+                                      Talent Profiles Created
+                                    </TableCell>
+                                    <TableCell className="text-right">{stats?.spectrogramProfiles || 0}</TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium flex items-center gap-2">
+                                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                                      Events Created
+                                    </TableCell>
+                                    <TableCell className="text-right">{events.length}</TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="font-medium flex items-center gap-2">
+                                      <Megaphone className="h-4 w-4 text-muted-foreground" />
+                                      Announcements Made
+                                    </TableCell>
+                                    <TableCell className="text-right">{announcements.length}</TableCell>
+                                  </TableRow>
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </div>
+                        </TabsContent>
                       </Tabs>
                     </CardContent>
                   </Card>
@@ -682,6 +955,15 @@ export const AdminInstitutions = () => {
           </div>
         </div>
       </section>
+
+      {/* Logo Editor Dialog */}
+      <InstitutionLogoEditor
+        open={showLogoEditor}
+        onOpenChange={setShowLogoEditor}
+        imgSrc={logoImgSrc}
+        onSave={handleLogoSave}
+        onCancel={handleCancelLogoEditor}
+      />
 
       <Footer />
     </div>
