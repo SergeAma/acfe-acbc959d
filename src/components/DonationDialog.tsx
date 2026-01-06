@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -6,15 +6,30 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Heart, DollarSign } from 'lucide-react';
+import { Loader2, Heart, DollarSign, Building2 } from 'lucide-react';
+
+const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (container: HTMLElement, options: { sitekey: string; callback: (token: string) => void; 'error-callback'?: () => void; theme?: string }) => string;
+      reset: (widgetId: string) => void;
+      remove: (widgetId: string) => void;
+    };
+  }
+}
 
 const donationSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(50),
   lastName: z.string().min(1, 'Last name is required').max(50),
   email: z.string().email('Please enter a valid email'),
+  company: z.string().max(100).optional(),
+  reason: z.string().min(1, 'Please share why you want to support us').max(500, 'Maximum 500 characters'),
   amount: z.number().min(10, 'Minimum donation is $10').max(10000, 'Maximum donation is $10,000'),
 });
 
@@ -31,6 +46,10 @@ export const DonationDialog = ({ open, onOpenChange }: DonationDialogProps) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState<number | null>(10);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaLoading, setCaptchaLoading] = useState(false);
+  const captchaContainerRef = useRef<HTMLDivElement>(null);
+  const widgetIdRef = useRef<string | null>(null);
 
   const form = useForm<DonationFormData>({
     resolver: zodResolver(donationSchema),
@@ -38,9 +57,67 @@ export const DonationDialog = ({ open, onOpenChange }: DonationDialogProps) => {
       firstName: '',
       lastName: '',
       email: '',
+      company: '',
+      reason: '',
       amount: 10,
     },
   });
+
+  useEffect(() => {
+    if (!open) {
+      setCaptchaToken(null);
+      return;
+    }
+
+    const loadTurnstile = () => {
+      if (window.turnstile && captchaContainerRef.current) {
+        setCaptchaLoading(true);
+        if (widgetIdRef.current) {
+          window.turnstile.remove(widgetIdRef.current);
+        }
+        widgetIdRef.current = window.turnstile.render(captchaContainerRef.current, {
+          sitekey: TURNSTILE_SITE_KEY,
+          callback: (token: string) => {
+            setCaptchaToken(token);
+            setCaptchaLoading(false);
+          },
+          'error-callback': () => {
+            setCaptchaLoading(false);
+            toast({
+              title: "Verification Error",
+              description: "Please try again.",
+              variant: "destructive",
+            });
+          },
+          theme: 'light',
+        });
+        setCaptchaLoading(false);
+      }
+    };
+
+    // Check if script is already loaded
+    if (window.turnstile) {
+      setTimeout(loadTurnstile, 100);
+    } else {
+      const existingScript = document.querySelector('script[src*="turnstile"]');
+      if (!existingScript) {
+        const script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+        script.async = true;
+        script.onload = () => setTimeout(loadTurnstile, 100);
+        document.body.appendChild(script);
+      } else {
+        setTimeout(loadTurnstile, 500);
+      }
+    }
+
+    return () => {
+      if (widgetIdRef.current && window.turnstile) {
+        window.turnstile.remove(widgetIdRef.current);
+        widgetIdRef.current = null;
+      }
+    };
+  }, [open, toast]);
 
   const handleAmountSelect = (amount: number) => {
     setSelectedAmount(amount);
@@ -48,6 +125,15 @@ export const DonationDialog = ({ open, onOpenChange }: DonationDialogProps) => {
   };
 
   const onSubmit = async (data: DonationFormData) => {
+    if (!captchaToken) {
+      toast({
+        title: "Verification required",
+        description: "Please complete the security check.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
@@ -56,7 +142,10 @@ export const DonationDialog = ({ open, onOpenChange }: DonationDialogProps) => {
           firstName: data.firstName,
           lastName: data.lastName,
           email: data.email,
+          company: data.company || null,
+          reason: data.reason,
           amountCents: Math.round(data.amount * 100),
+          captchaToken,
         },
       });
 
@@ -83,7 +172,7 @@ export const DonationDialog = ({ open, onOpenChange }: DonationDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Heart className="h-5 w-5 text-primary" />
@@ -102,7 +191,7 @@ export const DonationDialog = ({ open, onOpenChange }: DonationDialogProps) => {
                 name="firstName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>First Name</FormLabel>
+                    <FormLabel>First Name <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input placeholder="John" {...field} />
                     </FormControl>
@@ -115,7 +204,7 @@ export const DonationDialog = ({ open, onOpenChange }: DonationDialogProps) => {
                 name="lastName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Last Name</FormLabel>
+                    <FormLabel>Last Name <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input placeholder="Doe" {...field} />
                     </FormControl>
@@ -130,7 +219,7 @@ export const DonationDialog = ({ open, onOpenChange }: DonationDialogProps) => {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Email <span className="text-destructive">*</span></FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="john@example.com" {...field} />
                   </FormControl>
@@ -139,8 +228,44 @@ export const DonationDialog = ({ open, onOpenChange }: DonationDialogProps) => {
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="company"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-1">
+                    <Building2 className="h-3.5 w-3.5" />
+                    Company <span className="text-muted-foreground text-xs">(optional)</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder="Your company name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="reason"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Why do you want to support ACFE? <span className="text-destructive">*</span></FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Share your reason for supporting our mission..." 
+                      className="resize-none"
+                      rows={3}
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="space-y-2">
-              <Label>Monthly Amount (USD)</Label>
+              <Label>Monthly Amount (USD) <span className="text-destructive">*</span></Label>
               <div className="grid grid-cols-4 gap-2">
                 {suggestedAmounts.map((amount) => (
                   <Button
@@ -183,7 +308,12 @@ export const DonationDialog = ({ open, onOpenChange }: DonationDialogProps) => {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {/* Cloudflare Turnstile CAPTCHA */}
+            <div className="flex justify-center">
+              <div ref={captchaContainerRef} className="min-h-[65px]" />
+            </div>
+
+            <Button type="submit" className="w-full" disabled={isSubmitting || !captchaToken}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
