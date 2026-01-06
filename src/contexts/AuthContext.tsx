@@ -55,21 +55,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const lastFetch = lastProfileFetchRef.current;
     
     if (!force && lastFetch && lastFetch.userId === userId && (now - lastFetch.timestamp) < 5000) {
-      console.log('Skipping profile fetch - recently fetched');
       return profile; // Return existing profile
     }
     
     // Prevent concurrent fetches for the same user
     if (profileFetchInProgressRef.current === userId) {
-      console.log('Skipping profile fetch - already in progress');
       return null;
     }
     
     profileFetchInProgressRef.current = userId;
     
     try {
-      console.log('Fetching profile for user:', userId);
-      
       // Fetch profile data
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -78,11 +74,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (profileError) {
-        console.error('Error fetching profile:', profileError);
         return null;
       }
-
-      console.log('Profile data fetched:', profileData);
 
       // Fetch role from user_roles table (source of truth)
       const { data: roleData, error: roleError } = await supabase
@@ -93,11 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .limit(1)
         .maybeSingle();
 
-      if (roleError) {
-        console.error('Error fetching role:', roleError);
-      }
-
-      console.log('Role data fetched:', roleData);
+      // Role error is non-fatal, we fall back to profile role
 
       // Use role from user_roles if available, fallback to profile role
       const role = roleData?.role || profileData.role;
@@ -109,8 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role: role as 'admin' | 'mentor' | 'student',
         profile_frame: (profileData.profile_frame as ProfileFrame) || 'none'
       };
-    } catch (error) {
-      console.error('Exception in fetchProfile:', error);
+    } catch {
       return null;
     } finally {
       profileFetchInProgressRef.current = null;
@@ -132,21 +120,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initializeAuth = async () => {
       try {
-        console.log('Initializing auth...');
-        
         // Check for existing session first
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
-          console.error('Session error:', sessionError);
           if (mounted) {
             setLoading(false);
             setIsInitialized(true);
           }
           return;
         }
-
-        console.log('Session:', session ? 'exists' : 'none');
 
         if (mounted) {
           setSession(session);
@@ -159,10 +142,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           setLoading(false);
           setIsInitialized(true);
-          console.log('Auth initialized');
         }
-      } catch (error) {
-        console.error('Error initializing auth:', error);
+      } catch {
         if (mounted) {
           setLoading(false);
           setIsInitialized(true);
@@ -173,8 +154,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
-        console.log('Auth state changed:', event);
-        
         if (!mounted) return;
 
         // Only handle meaningful auth events
@@ -296,8 +275,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               reason: reasonParts.length > 0 ? reasonParts.join('\n\n') : 'Applied during registration',
               status: 'pending'
             });
-        } catch (mentorRequestError) {
-          console.error('Failed to create mentor request:', mentorRequestError);
+        } catch {
+          // Mentor request failure is non-critical
         }
       }
 
@@ -314,8 +293,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               user_id: data.user.id,
             },
           });
-        } catch (emailError) {
-          console.error('Failed to send welcome email:', emailError);
+        } catch {
+          // Welcome email failure is non-critical
         }
       }
     }
