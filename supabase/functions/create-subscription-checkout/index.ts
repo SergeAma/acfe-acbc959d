@@ -12,6 +12,20 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-SUBSCRIPTION-CHECKOUT] ${step}${detailsStr}`);
 };
 
+// Tier configuration with Stripe price IDs
+const SUBSCRIPTION_TIERS = {
+  membership: {
+    priceId: "price_1SmiEGJv3w1nJBLYw5Wi2f4b", // $15/month ACFE Membership
+    productId: "prod_TkCdNAxRmKONyc",
+    name: "ACFE Membership",
+  },
+  mentorship_plus: {
+    priceId: "price_1Smj0WJv3w1nJBLYn4uAQZ8g", // $30/month Mentorship Plus
+    productId: "prod_TkDR4mktfjQo8r",
+    name: "ACFE Mentorship Plus",
+  },
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -41,6 +55,20 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    // Parse request body to get the tier
+    let tier = "membership"; // Default tier
+    try {
+      const body = await req.json();
+      if (body.tier && SUBSCRIPTION_TIERS[body.tier as keyof typeof SUBSCRIPTION_TIERS]) {
+        tier = body.tier;
+      }
+    } catch {
+      // No body or invalid JSON, use default tier
+    }
+
+    const selectedTier = SUBSCRIPTION_TIERS[tier as keyof typeof SUBSCRIPTION_TIERS];
+    logStep("Selected tier", { tier, priceId: selectedTier.priceId });
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
     // Look for existing Stripe customer
@@ -51,43 +79,41 @@ serve(async (req) => {
       customerId = customers.data[0].id;
       logStep("Found existing customer", { customerId });
       
-      // Check if they already have an active subscription
+      // Check if they already have an active subscription for this product
       const existingSubs = await stripe.subscriptions.list({
         customer: customerId,
         status: "active",
-        limit: 1,
       });
       
-      if (existingSubs.data.length > 0) {
-        logStep("User already has active subscription");
+      // Check if they already have the same tier subscription
+      const hasSameTier = existingSubs.data.some((sub: Stripe.Subscription) => 
+        sub.items.data.some((item: Stripe.SubscriptionItem) => item.price.id === selectedTier.priceId)
+      );
+      
+      if (hasSameTier) {
+        logStep("User already has this subscription tier");
         return new Response(JSON.stringify({ 
-          error: "You already have an active subscription",
+          error: `You already have an active ${selectedTier.name} subscription`,
           alreadySubscribed: true
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 400,
         });
       }
-    }
-
-    // Get the subscription price from platform settings or use the Stripe price directly
-    const { data: settingsData } = await supabaseClient
-      .from('platform_settings')
-      .select('setting_value')
-      .eq('setting_key', 'subscription_price')
-      .single();
-
-    // Use the stored Stripe price ID if available, otherwise use the default monthly subscription price
-    let priceId = "price_1SmiEGJv3w1nJBLYw5Wi2f4b"; // Default $15/month ACFE Membership price
-    
-    if (settingsData?.setting_value) {
-      const settingValue = settingsData.setting_value as any;
-      if (settingValue.price_id) {
-        priceId = settingValue.price_id;
+      
+      // If they have a different active subscription, they can upgrade/downgrade via portal
+      if (existingSubs.data.length > 0) {
+        logStep("User has different subscription, can upgrade via portal");
+        return new Response(JSON.stringify({ 
+          error: "You already have an active subscription. Please use 'Manage Billing' to upgrade or change your plan.",
+          alreadySubscribed: true,
+          hasOtherSubscription: true
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        });
       }
     }
-    
-    logStep("Using price", { priceId });
 
     const origin = req.headers.get("origin") || "https://acloudforeveryone.org";
 
@@ -96,7 +122,7 @@ serve(async (req) => {
       customer_email: customerId ? undefined : user.email,
       line_items: [
         {
-          price: priceId,
+          price: selectedTier.priceId,
           quantity: 1,
         },
       ],
@@ -106,11 +132,13 @@ serve(async (req) => {
       metadata: {
         user_id: user.id,
         user_email: user.email,
+        tier: tier,
       },
       subscription_data: {
         metadata: {
           user_id: user.id,
           user_email: user.email,
+          tier: tier,
         },
       },
       payment_method_types: ["card"],
@@ -118,7 +146,7 @@ serve(async (req) => {
     };
 
     const session = await stripe.checkout.sessions.create(sessionOptions);
-    logStep("Checkout session created", { sessionId: session.id, url: session.url });
+    logStep("Checkout session created", { sessionId: session.id, url: session.url, tier });
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

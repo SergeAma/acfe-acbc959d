@@ -96,21 +96,34 @@ export const Pricing = () => {
     }
   }, [showInstitutionDialog]);
 
-  const handleSubscribe = async () => {
+  const [loadingTier, setLoadingTier] = useState<string | null>(null);
+
+  const handleSubscribe = async (tier: 'membership' | 'mentorship_plus' = 'membership') => {
     if (!user) {
       navigate('/auth?redirect=/pricing');
       return;
     }
 
+    setLoadingTier(tier);
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('create-subscription-checkout');
+      const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
+        body: { tier },
+      });
       
       if (error) throw error;
       
       if (data?.alreadySubscribed) {
-        toast.info("You already have an active subscription!");
-        navigate('/dashboard');
+        if (data?.hasOtherSubscription) {
+          toast.info("You have an existing subscription. Use 'Manage Billing' to upgrade or change your plan.", {
+            action: {
+              label: "My Subscriptions",
+              onClick: () => navigate('/my-subscriptions'),
+            },
+          });
+        } else {
+          toast.info("You already have this subscription!");
+        }
         return;
       }
       
@@ -124,6 +137,7 @@ export const Pricing = () => {
       toast.error(error.message || 'Failed to start checkout');
     } finally {
       setLoading(false);
+      setLoadingTier(null);
     }
   };
 
@@ -265,8 +279,8 @@ export const Pricing = () => {
                   </p>
                 </CardHeader>
                 <CardContent className="pb-8">
-                  <Button size="lg" className="w-full mb-6 text-lg h-14" onClick={handleSubscribe} disabled={loading}>
-                    {loading ? (
+                  <Button size="lg" className="w-full mb-6 text-lg h-14" onClick={() => handleSubscribe('membership')} disabled={loading && loadingTier === 'membership'}>
+                    {loading && loadingTier === 'membership' ? (
                       <>
                         <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                         {t('pricing_processing')}
@@ -318,10 +332,10 @@ export const Pricing = () => {
                   <Button 
                     size="lg" 
                     className="w-full mb-6 text-lg h-14 bg-secondary hover:bg-secondary/90 text-secondary-foreground" 
-                    onClick={handleSubscribe} 
-                    disabled={loading}
+                    onClick={() => handleSubscribe('mentorship_plus')} 
+                    disabled={loading && loadingTier === 'mentorship_plus'}
                   >
-                    {loading ? (
+                    {loading && loadingTier === 'mentorship_plus' ? (
                       <>
                         <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                         {t('pricing_processing')}
@@ -487,7 +501,7 @@ export const Pricing = () => {
             <p className="text-muted-foreground text-lg mb-8 max-w-xl mx-auto">
               {t('pricing_cta_subtitle')}
             </p>
-            <Button size="lg" className="text-lg h-14 px-8" onClick={handleSubscribe} disabled={loading}>
+            <Button size="lg" className="text-lg h-14 px-8" onClick={() => handleSubscribe('membership')} disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="h-5 w-5 mr-2 animate-spin" />
