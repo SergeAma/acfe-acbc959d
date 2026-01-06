@@ -71,21 +71,25 @@ export const SpectrogramJobs = () => {
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto text-center">
               {/* Partnership Logos */}
-              <div className="flex items-center justify-center gap-4 sm:gap-8 mb-8">
-                <img 
-                  src={spectrogramLogo} 
-                  alt="Spectrogram Consulting" 
-                  className="h-14 sm:h-20 w-auto"
-                />
+              <div className="flex items-center justify-center gap-6 sm:gap-10 mb-8">
+                <div className="h-16 sm:h-24 w-32 sm:w-48 flex items-center justify-center">
+                  <img 
+                    src={spectrogramLogo} 
+                    alt="Spectrogram Consulting" 
+                    className="max-h-full max-w-full object-contain"
+                  />
+                </div>
                 <div className="flex flex-col items-center text-muted-foreground">
                   <span className="text-2xl sm:text-3xl">×</span>
                   <span className="text-xs font-medium">{t('spectrogram.jobs.partnership')}</span>
                 </div>
-                <img 
-                  src={acfeLogo} 
-                  alt="A Cloud For Everyone" 
-                  className="h-14 sm:h-20 w-auto"
-                />
+                <div className="h-16 sm:h-24 w-32 sm:w-48 flex items-center justify-center">
+                  <img 
+                    src={acfeLogo} 
+                    alt="A Cloud For Everyone" 
+                    className="max-h-full max-w-full object-contain"
+                  />
+                </div>
               </div>
 
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
