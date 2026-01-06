@@ -97,7 +97,7 @@ const handler = async (req: Request): Promise<Response> => {
     ${reminders.map(r => `<p style="margin: 10px 0;">${r}</p>`).join('')}
   </div>
   
-  <p style="margin-bottom: 20px;">Your journey to becoming part of Africa's tech future starts with small steps every day!</p>
+  <p style="margin-bottom: 20px;">Your journey to becoming part of Africa's tech career starts with small steps every day!</p>
   
   <div style="text-align: center; margin: 30px 0;">
     <a href="https://acloudforeveryone.org/courses" style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-right: 10px;">Explore Courses</a>
