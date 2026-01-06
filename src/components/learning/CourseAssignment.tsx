@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
@@ -8,9 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, Upload, Video, FileText, CheckCircle, Clock, AlertCircle, Send, ExternalLink, Square, CheckSquare } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Briefcase, Upload, Video, FileText, CheckCircle, Clock, AlertCircle, Send, ExternalLink, Link2, X } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { createSafeHtml } from '@/lib/sanitize-html';
+import { isValidVideoUrl } from '@/lib/video-utils';
 
 interface CourseAssignmentProps {
   courseId: string;
@@ -56,6 +58,13 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
   const [fileUrl, setFileUrl] = useState('');
   const [fileName, setFileName] = useState('');
   const [spectrogramConsent, setSpectrogramConsent] = useState(false);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoFileUrl, setVideoFileUrl] = useState('');
+  const [videoFileName, setVideoFileName] = useState('');
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [videoTab, setVideoTab] = useState<'upload' | 'link'>('upload');
+  const [videoDurationError, setVideoDurationError] = useState('');
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchAssignment();
@@ -101,6 +110,83 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
     setLoading(false);
   };
 
+  const validateVideoDuration = (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      
+      video.onloadedmetadata = () => {
+        window.URL.revokeObjectURL(video.src);
+        const duration = video.duration;
+        if (duration > 60) {
+          setVideoDurationError(`Video is ${Math.round(duration)} seconds. Maximum allowed is 60 seconds (1 minute).`);
+          resolve(false);
+        } else {
+          setVideoDurationError('');
+          resolve(true);
+        }
+      };
+      
+      video.onerror = () => {
+        // If we can't read metadata, allow upload but warn
+        setVideoDurationError('');
+        resolve(true);
+      };
+      
+      video.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleVideoFileUpload = async (selectedFile: File) => {
+    if (!user || !assignment) return;
+    
+    // Check file type
+    if (!selectedFile.type.startsWith('video/')) {
+      toast({ title: 'Error', description: 'Please select a video file', variant: 'destructive' });
+      return;
+    }
+    
+    // Check file size (max 100MB)
+    const maxSize = 100 * 1024 * 1024;
+    if (selectedFile.size > maxSize) {
+      toast({ title: 'Error', description: 'Video must be under 100MB', variant: 'destructive' });
+      return;
+    }
+    
+    // Validate duration
+    const isValidDuration = await validateVideoDuration(selectedFile);
+    if (!isValidDuration) {
+      toast({ title: 'Error', description: 'Video must be 1 minute or less', variant: 'destructive' });
+      return;
+    }
+    
+    setUploadingVideo(true);
+    setVideoFile(selectedFile);
+
+    const fileExt = selectedFile.name.split('.').pop();
+    const filePath = `assignments/${user.id}/${assignment.id}/video_${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('course-files')
+      .upload(filePath, selectedFile, { upsert: true });
+
+    if (uploadError) {
+      toast({ title: 'Error', description: 'Failed to upload video', variant: 'destructive' });
+      setUploadingVideo(false);
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('course-files')
+      .getPublicUrl(filePath);
+
+    setVideoFileUrl(publicUrl);
+    setVideoFileName(selectedFile.name);
+    setVideoUrl(''); // Clear link if file uploaded
+    setUploadingVideo(false);
+    toast({ title: 'Success', description: 'Video uploaded' });
+  };
+
   const handleFileUpload = async (selectedFile: File) => {
     if (!user || !assignment) return;
     
@@ -130,11 +216,24 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
     toast({ title: 'Success', description: 'File uploaded' });
   };
 
+  const clearVideoUpload = () => {
+    setVideoFile(null);
+    setVideoFileUrl('');
+    setVideoFileName('');
+    setVideoDurationError('');
+    if (videoInputRef.current) {
+      videoInputRef.current.value = '';
+    }
+  };
+
   const submitAssignment = async () => {
     if (!assignment || !user) return;
     
+    // Determine final video URL (file upload takes precedence)
+    const finalVideoUrl = videoFileUrl || videoUrl;
+    
     // Validate at least one field is filled
-    if (!textContent && !videoUrl && !fileUrl) {
+    if (!textContent && !finalVideoUrl && !fileUrl) {
       toast({ 
         title: 'Error', 
         description: 'Please provide at least one type of submission (text, video, or file)', 
@@ -160,7 +259,7 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
       student_id: user.id,
       enrollment_id: enrollmentId,
       text_content: textContent || null,
-      video_url: videoUrl || null,
+      video_url: finalVideoUrl || null,
       file_url: fileUrl || null,
       file_name: fileName || null,
       status: 'pending' as const,
@@ -362,22 +461,89 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
           </div>
         )}
 
-        {/* Video URL */}
+        {/* Video submission - Upload or Link */}
         {assignment.allow_video && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label className="flex items-center gap-2">
               <Video className="h-4 w-4" />
-              Video URL
+              Video Submission
+              <Badge variant="outline" className="ml-2 font-normal text-xs">Max 1 minute</Badge>
             </Label>
-            <Input
-              type="url"
-              value={videoUrl}
-              onChange={(e) => setVideoUrl(e.target.value)}
-              placeholder="https://youtube.com/... or https://vimeo.com/..."
-            />
-            <p className="text-xs text-muted-foreground">
-              Upload your video to YouTube, Vimeo, or Loom and paste the link here
-            </p>
+            
+            <Tabs value={videoTab} onValueChange={(v) => setVideoTab(v as 'upload' | 'link')} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="upload" className="flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  Upload Video
+                </TabsTrigger>
+                <TabsTrigger value="link" className="flex items-center gap-2">
+                  <Link2 className="h-4 w-4" />
+                  Share Link
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="upload" className="mt-3">
+                {videoFileUrl ? (
+                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                    <Video className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm flex-1 truncate">{videoFileName}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearVideoUpload}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                    <Input
+                      ref={videoInputRef}
+                      type="file"
+                      accept="video/*"
+                      className="hidden"
+                      id="video-upload"
+                      onChange={(e) => {
+                        const selectedFile = e.target.files?.[0];
+                        if (selectedFile) handleVideoFileUpload(selectedFile);
+                      }}
+                    />
+                    <label htmlFor="video-upload" className="cursor-pointer">
+                      <Video className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        {uploadingVideo ? 'Uploading video...' : 'Click to upload a video'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        MP4, MOV, WebM (max 100MB, max 1 minute)
+                      </p>
+                    </label>
+                  </div>
+                )}
+                {videoDurationError && (
+                  <p className="text-xs text-destructive mt-2 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {videoDurationError}
+                  </p>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="link" className="mt-3 space-y-2">
+                <Input
+                  type="url"
+                  value={videoUrl}
+                  onChange={(e) => {
+                    setVideoUrl(e.target.value);
+                    if (e.target.value) {
+                      clearVideoUpload(); // Clear file upload if link is entered
+                    }
+                  }}
+                  placeholder="https://youtube.com/... or https://vimeo.com/..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  Paste a link from YouTube, Vimeo, Loom, or any video hosting platform
+                </p>
+              </TabsContent>
+            </Tabs>
           </div>
         )}
 
@@ -459,7 +625,7 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
         <Button 
           onClick={submitAssignment} 
           className="w-full" 
-          disabled={submitting || uploading || !spectrogramConsent}
+          disabled={submitting || uploading || uploadingVideo || !spectrogramConsent}
         >
           <Send className="h-4 w-4 mr-2" />
           {submitting ? 'Submitting...' : submission ? 'Resubmit Assignment' : 'Submit Assignment'}
