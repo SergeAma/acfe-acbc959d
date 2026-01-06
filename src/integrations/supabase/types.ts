@@ -804,6 +804,7 @@ export type Database = {
       donations: {
         Row: {
           amount_cents: number
+          company: string | null
           created_at: string
           currency: string
           email: string
@@ -811,6 +812,7 @@ export type Database = {
           id: string
           is_recurring: boolean
           last_name: string
+          reason: string | null
           status: string
           stripe_checkout_session_id: string | null
           stripe_customer_id: string | null
@@ -819,6 +821,7 @@ export type Database = {
         }
         Insert: {
           amount_cents: number
+          company?: string | null
           created_at?: string
           currency?: string
           email: string
@@ -826,6 +829,7 @@ export type Database = {
           id?: string
           is_recurring?: boolean
           last_name: string
+          reason?: string | null
           status?: string
           stripe_checkout_session_id?: string | null
           stripe_customer_id?: string | null
@@ -834,6 +838,7 @@ export type Database = {
         }
         Update: {
           amount_cents?: number
+          company?: string | null
           created_at?: string
           currency?: string
           email?: string
@@ -841,6 +846,7 @@ export type Database = {
           id?: string
           is_recurring?: boolean
           last_name?: string
+          reason?: string | null
           status?: string
           stripe_checkout_session_id?: string | null
           stripe_customer_id?: string | null
@@ -2319,6 +2325,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          referred_company: string
+          referred_email: string
+          referred_first_name: string
+          referred_last_name: string
+          referrer_company: string | null
+          referrer_email: string
+          referrer_first_name: string
+          referrer_last_name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          referred_company: string
+          referred_email: string
+          referred_first_name: string
+          referred_last_name: string
+          referrer_company?: string | null
+          referrer_email: string
+          referrer_first_name: string
+          referrer_last_name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          referred_company?: string
+          referred_email?: string
+          referred_first_name?: string
+          referred_last_name?: string
+          referrer_company?: string | null
+          referrer_email?: string
+          referrer_first_name?: string
+          referrer_last_name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       scheduled_newsletters: {
         Row: {

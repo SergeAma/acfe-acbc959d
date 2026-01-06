@@ -41,11 +41,14 @@ export const ReferralDialog = ({ open, onOpenChange }: ReferralDialogProps) => {
 
       script.onload = () => {
         if (window.turnstile) {
-          window.turnstile.render('#referral-captcha-container', {
-            sitekey: TURNSTILE_SITE_KEY,
-            callback: (token: string) => setCaptchaToken(token),
-            'expired-callback': () => setCaptchaToken(null),
-          });
+          const container = document.getElementById('referral-captcha-container');
+          if (container) {
+            window.turnstile.render(container, {
+              sitekey: TURNSTILE_SITE_KEY,
+              callback: (token: string) => setCaptchaToken(token),
+              'error-callback': () => setCaptchaToken(null),
+            });
+          }
         }
       };
 
