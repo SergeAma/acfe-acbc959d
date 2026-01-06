@@ -8,9 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Loader2, ArrowLeft, User, Mail, Calendar, Search, ChevronLeft, ChevronRight, 
-  Download, UserX, UserCheck, Users 
+  Download, UserX, UserCheck, Users, Eye 
 } from 'lucide-react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -23,6 +24,7 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserStatusManager } from '@/components/admin/UserStatusManager';
+import { StudentProfileDialog } from '@/components/admin/StudentProfileDialog';
 import {
   Select,
   SelectContent,
@@ -47,6 +49,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface UserProfile {
   id: string;
@@ -56,6 +64,7 @@ interface UserProfile {
   created_at: string;
   country: string | null;
   account_status: string;
+  avatar_url: string | null;
 }
 
 const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100];
@@ -76,6 +85,8 @@ export const AdminUsers = () => {
     open: boolean;
     action: 'suspend' | 'activate' | 'delete' | null;
   }>({ open: false, action: null });
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [selectedProfileUser, setSelectedProfileUser] = useState<{ email: string; id: string } | null>(null);
   
   const filter = searchParams.get('filter') || 'all';
 
@@ -90,7 +101,7 @@ export const AdminUsers = () => {
     
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, email, full_name, role, created_at, country, account_status')
+      .select('id, email, full_name, role, created_at, country, account_status, avatar_url')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -423,7 +434,12 @@ export const AdminUsers = () => {
                           </TableCell>
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-muted-foreground" />
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={u.avatar_url || ''} alt={u.full_name || 'User'} />
+                                <AvatarFallback className="text-xs">
+                                  {u.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                                </AvatarFallback>
+                              </Avatar>
                               {u.full_name || 'Unknown'}
                             </div>
                           </TableCell>
@@ -446,13 +462,35 @@ export const AdminUsers = () => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <UserStatusManager
-                              userId={u.id}
-                              userName={u.full_name || 'Unknown'}
-                              currentRole={u.role}
-                              currentStatus={u.account_status || 'active'}
-                              onUpdate={fetchUsers}
-                            />
+                            <div className="flex items-center gap-2">
+                              <UserStatusManager
+                                userId={u.id}
+                                userName={u.full_name || 'Unknown'}
+                                currentRole={u.role}
+                                currentStatus={u.account_status || 'active'}
+                                onUpdate={fetchUsers}
+                              />
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => {
+                                        setSelectedProfileUser({ email: u.email, id: u.id });
+                                        setProfileDialogOpen(true);
+                                      }}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Quick View Profile</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -578,6 +616,16 @@ export const AdminUsers = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Student Profile Quick View Dialog */}
+      {selectedProfileUser && (
+        <StudentProfileDialog
+          open={profileDialogOpen}
+          onOpenChange={setProfileDialogOpen}
+          studentEmail={selectedProfileUser.email}
+          studentUserId={selectedProfileUser.id}
+        />
+      )}
     </div>
   );
 };
