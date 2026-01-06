@@ -25,7 +25,7 @@ export const InstitutionAuthGate = ({ institution, currentPath }: InstitutionAut
   const getAcronym = (name: string) => {
     return name
       .split(' ')
-      .filter(word => !['of', 'and', 'for'].includes(word.toLowerCase()))
+      .filter(word => word.length > 0 && !['of', 'and', 'for'].includes(word.toLowerCase()))
       .map(word => word[0])
       .join('')
       .toUpperCase()
