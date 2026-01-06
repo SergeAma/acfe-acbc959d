@@ -30,7 +30,7 @@ import {
 import { 
   Building2, Plus, Users, Calendar, Megaphone, Loader2, 
   Trash2, Mail, ExternalLink, BarChart3, CheckCircle2, XCircle,
-  Upload, Pencil, Download, FileText, RotateCcw, Send, Ban
+  Upload, Pencil, Download, FileText, RotateCcw, Send, Ban, Eye, Shield
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -40,6 +40,8 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Navigate, Link } from 'react-router-dom';
 import { InstitutionLogoEditor } from '@/components/admin/InstitutionLogoEditor';
+import { StudentProfileDialog } from '@/components/admin/StudentProfileDialog';
+import { ModeratorManagement } from '@/components/admin/ModeratorManagement';
 
 export const AdminInstitutions = () => {
   const { user, profile, loading: authLoading } = useAuth();
@@ -50,6 +52,11 @@ export const AdminInstitutions = () => {
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [isAnnouncementDialogOpen, setIsAnnouncementDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [profileDialog, setProfileDialog] = useState<{ open: boolean; email: string; userId?: string | null }>({
+    open: false,
+    email: '',
+    userId: null,
+  });
 
   // Logo editor state
   const [showLogoEditor, setShowLogoEditor] = useState(false);
@@ -713,6 +720,10 @@ export const AdminInstitutions = () => {
                           </TabsTrigger>
                           <TabsTrigger value="events">Events</TabsTrigger>
                           <TabsTrigger value="announcements">Announcements</TabsTrigger>
+                          <TabsTrigger value="moderators" className="flex items-center gap-2">
+                            <Shield className="h-3 w-3" />
+                            Moderators
+                          </TabsTrigger>
                           <TabsTrigger value="reports">Reports</TabsTrigger>
                           <TabsTrigger value="settings">Settings</TabsTrigger>
                         </TabsList>
@@ -834,6 +845,15 @@ export const AdminInstitutions = () => {
                                   </TableCell>
                                   <TableCell className="text-right">
                                     <div className="flex items-center justify-end gap-1">
+                                      {/* View profile */}
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setProfileDialog({ open: true, email: student.email, userId: student.user_id })}
+                                        title="View profile"
+                                      >
+                                        <Eye className="h-4 w-4 text-muted-foreground" />
+                                      </Button>
                                       {/* Resend invitation for pending */}
                                       {student.status === 'pending' && (
                                         <Button
@@ -1029,6 +1049,15 @@ export const AdminInstitutions = () => {
                               </div>
                             ))}
                           </div>
+                        </TabsContent>
+
+                        {/* Moderators Tab */}
+                        <TabsContent value="moderators">
+                          <ModeratorManagement
+                            institutionId={selectedInstitution.id}
+                            institutionName={selectedInstitution.name}
+                            emailDomain={selectedInstitution.email_domain}
+                          />
                         </TabsContent>
 
                         {/* Reports Tab */}
@@ -1236,6 +1265,14 @@ export const AdminInstitutions = () => {
         imgSrc={logoImgSrc}
         onSave={handleLogoSave}
         onCancel={handleCancelLogoEditor}
+      />
+
+      {/* Student Profile Dialog */}
+      <StudentProfileDialog
+        open={profileDialog.open}
+        onOpenChange={(open) => setProfileDialog({ ...profileDialog, open })}
+        studentEmail={profileDialog.email}
+        studentUserId={profileDialog.userId}
       />
 
       <Footer />

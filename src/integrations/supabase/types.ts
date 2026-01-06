@@ -1130,6 +1130,44 @@ export type Database = {
           },
         ]
       }
+      institution_broadcasts: {
+        Row: {
+          id: string
+          institution_id: string
+          message: string
+          recipient_count: number | null
+          sent_at: string | null
+          sent_by: string
+          subject: string
+        }
+        Insert: {
+          id?: string
+          institution_id: string
+          message: string
+          recipient_count?: number | null
+          sent_at?: string | null
+          sent_by: string
+          subject: string
+        }
+        Update: {
+          id?: string
+          institution_id?: string
+          message?: string
+          recipient_count?: number | null
+          sent_at?: string | null
+          sent_by?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institution_broadcasts_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       institution_events: {
         Row: {
           created_at: string | null
@@ -1202,6 +1240,82 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "institution_job_visibility_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      institution_moderators: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          email: string
+          id: string
+          institution_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          email: string
+          id?: string
+          institution_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          email?: string
+          id?: string
+          institution_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institution_moderators_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      institution_reminders: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          institution_id: string
+          is_completed: boolean | null
+          reminder_date: string
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          institution_id: string
+          is_completed?: boolean | null
+          reminder_date: string
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          institution_id?: string
+          is_completed?: boolean | null
+          reminder_date?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institution_reminders_institution_id_fkey"
             columns: ["institution_id"]
             isOneToOne: false
             referencedRelation: "institutions"
@@ -2298,6 +2412,10 @@ export type Database = {
         Returns: boolean
       }
       is_institution_member_direct: {
+        Args: { _institution_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_institution_moderator: {
         Args: { _institution_id: string; _user_id: string }
         Returns: boolean
       }
