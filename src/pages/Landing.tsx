@@ -112,36 +112,13 @@ export const Landing = () => {
         </div>
       </section>
 
-      {/* Partners Section */}
-      <section className="py-10 sm:py-12 bg-muted">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Our Partners</h2>
-          </div>
-          <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-8 md:gap-12 max-w-5xl mx-auto">
-            <a href="https://spectrogramconsulting.com/home" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
-              <img src={spectrogramLogo} alt="Spectrogram Consulting" className="h-12 sm:h-16 w-auto object-contain" />
-            </a>
-            <a href="https://teau.ac.ke" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
-              <img src={eastAfricanUniversityLogo} alt="The East African University" className="h-16 sm:h-24 w-auto object-contain" />
-            </a>
-            <a href="https://www.facebook.com/Thehonestgroupfundation/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
-              <img src={johannesburgLogo} alt="Johannesburg" className="h-16 sm:h-24 w-auto object-contain" />
-            </a>
-            <a href="https://thelearnproject.co.za/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
-              <img src={learnProjectLogo} alt="The LEARN Project" className="h-16 sm:h-24 w-auto object-contain" />
-            </a>
-          </div>
-        </div>
-      </section>
-
       {/* Innovators Incubator Section */}
-      <section className="py-12 sm:py-20 bg-background">
+      <section className="py-12 sm:py-20 bg-muted">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 bg-primary/10 px-3 sm:px-4 py-2 rounded-full mb-4 sm:mb-6">
-              <Lightbulb className="h-4 sm:h-5 w-4 sm:w-5 text-primary" />
-              <span className="text-xs sm:text-sm font-semibold text-foreground">Innovation Hub</span>
+              <Lightbulb className="h-4 sm:h-5 w-4 sm:w-5 text-white" />
+              <span className="text-xs sm:text-sm font-semibold text-white">Innovation Hub</span>
             </div>
             
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4 sm:mb-6">
@@ -191,12 +168,35 @@ export const Landing = () => {
         </div>
       </section>
 
-      {/* Support Section */}
-      <SupportSection />
-
       {/* Latest Tech News Section */}
       <TechNewsSection />
 
-      <Footer />
+      {/* Partners Section */}
+      <section className="py-10 sm:py-12 bg-muted">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Our Partners</h2>
+          </div>
+          <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-8 md:gap-12 max-w-5xl mx-auto">
+            <a href="https://spectrogramconsulting.com/home" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
+              <img src={spectrogramLogo} alt="Spectrogram Consulting" className="h-12 sm:h-16 w-auto object-contain" />
+            </a>
+            <a href="https://teau.ac.ke" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
+              <img src={eastAfricanUniversityLogo} alt="The East African University" className="h-16 sm:h-24 w-auto object-contain" />
+            </a>
+            <a href="https://www.facebook.com/Thehonestgroupfundation/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
+              <img src={johannesburgLogo} alt="Johannesburg" className="h-16 sm:h-24 w-auto object-contain" />
+            </a>
+            <a href="https://thelearnproject.co.za/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover-scale transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
+              <img src={learnProjectLogo} alt="The LEARN Project" className="h-16 sm:h-24 w-auto object-contain" />
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Support Section */}
+      <SupportSection />
+
+      <Footer className="border border-muted-foreground" />
     </div>;
 };
