@@ -1,14 +1,10 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent } from '@/components/ui/card';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { 
-  Ticket, 
   BookOpen, 
   CheckSquare, 
   FileText, 
@@ -18,14 +14,15 @@ import {
   Briefcase,
   Shield,
   Users,
-  ChevronRight
+  ChevronRight,
+  GraduationCap
 } from 'lucide-react';
 import acfeLogo from '@/assets/acfe-logo.png';
 import spectrogramLogo from '@/assets/spectrogram-logo.png';
 
 const steps = [
   { 
-    icon: Ticket, 
+    icon: GraduationCap, 
     titleKey: 'spectrogram.jobs.step1.title',
     descKey: 'spectrogram.jobs.step1.desc',
     color: 'bg-amber-500' 
@@ -58,25 +55,10 @@ const steps = [
 
 export const SpectrogramJobs = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { t } = useLanguage();
-  const [couponCode, setCouponCode] = useState('');
-  const [isValidating, setIsValidating] = useState(false);
 
-  const handleApplyCoupon = async () => {
-    if (!couponCode.trim()) {
-      toast({
-        title: t('common.error'),
-        description: 'Please enter a valid coupon code',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsValidating(true);
-    
-    // Navigate to courses with the coupon code
-    navigate(`/courses?coupon=${encodeURIComponent(couponCode.trim())}`);
+  const handleStartLearning = () => {
+    navigate('/auth?mode=signup&role=student');
   };
 
   return (
@@ -113,36 +95,15 @@ export const SpectrogramJobs = () => {
                 {t('spectrogram.jobs.subtitle')}
               </p>
 
-              {/* Coupon Code Entry */}
-              <Card className="max-w-md mx-auto shadow-lg border-2 border-primary/20">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center justify-center gap-2 text-xl">
-                    <Ticket className="h-5 w-5 text-primary" />
-                    {t('spectrogram.jobs.step1.title')}
-                  </CardTitle>
-                  <CardDescription>
-                    {t('spectrogram.jobs.step1.desc')}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Input
-                    placeholder={t('spectrogram.jobs.couponPlaceholder')}
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                    className="text-center text-lg font-mono tracking-wider"
-                    maxLength={20}
-                  />
-                  <Button 
-                    onClick={handleApplyCoupon} 
-                    className="w-full"
-                    size="lg"
-                    disabled={isValidating}
-                  >
-                    {t('spectrogram.jobs.apply')}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
+              {/* Start Learning CTA */}
+              <Button 
+                onClick={handleStartLearning} 
+                size="lg"
+                className="text-lg px-10 rounded-full"
+              >
+                {t('spectrogram.jobs.startLearning')}
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
             </div>
           </div>
         </section>
