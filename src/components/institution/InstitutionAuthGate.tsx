@@ -50,28 +50,29 @@ export const InstitutionAuthGate = ({ institution, currentPath }: InstitutionAut
       </div>
 
       <div className="relative container mx-auto px-4 py-8 lg:py-16">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           
-          {/* Header with institution branding */}
+          {/* Header with institution branding - CENTERED */}
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-4 mb-6">
-              {institution.logo_url ? (
-                <img 
-                  src={institution.logo_url} 
-                  alt={institution.name}
-                  className="h-20 w-20 lg:h-24 lg:w-24 object-contain rounded-2xl bg-white p-2 shadow-lg border"
-                />
-              ) : (
-                <div className="h-20 w-20 lg:h-24 lg:w-24 rounded-2xl bg-primary/10 flex items-center justify-center border shadow-lg">
-                  <Building2 className="h-10 w-10 text-primary" />
-                </div>
-              )}
-              <span className="text-2xl text-muted-foreground/30 font-light hidden sm:block">×</span>
-              <div className="hidden sm:block">
+            {/* Logo row - symmetric sizing */}
+            <div className="flex items-center justify-center gap-4 mb-6">
+              <div className="h-24 w-24 rounded-2xl bg-white p-3 shadow-lg border flex items-center justify-center">
+                {institution.logo_url ? (
+                  <img 
+                    src={institution.logo_url} 
+                    alt={institution.name}
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <Building2 className="h-12 w-12 text-primary" />
+                )}
+              </div>
+              <span className="text-2xl text-muted-foreground/30 font-light">×</span>
+              <div className="h-24 w-24 rounded-2xl bg-white p-3 shadow-lg border flex items-center justify-center">
                 <img 
                   src="/acfe-logo.png" 
                   alt="ACFE" 
-                  className="h-10 lg:h-12 object-contain"
+                  className="h-full w-full object-contain"
                 />
               </div>
             </div>
@@ -87,76 +88,67 @@ export const InstitutionAuthGate = ({ institution, currentPath }: InstitutionAut
             <h2 className="text-xl sm:text-2xl text-primary font-semibold mb-4">
               Career Development Centre
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg text-muted-foreground">
               Powered by <span className="font-semibold text-foreground">A Cloud For Everyone (ACFE)</span>
             </p>
           </div>
 
-          {/* Main content grid */}
-          <div className="grid lg:grid-cols-2 gap-8 items-start">
+          {/* Main content grid - equal height cards */}
+          <div className="grid lg:grid-cols-2 gap-6 items-stretch">
             
-            {/* Left: Institution info and benefits */}
-            <div className="space-y-6">
+            {/* Left column - stacked cards */}
+            <div className="flex flex-col gap-6">
               {/* Institution mission card */}
-              {institution.description && (
-                <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      {institution.logo_url && (
+              <Card className="flex-1 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+                <CardContent className="p-6 h-full flex flex-col">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="h-10 w-10 rounded-lg bg-white p-1.5 border flex items-center justify-center shrink-0">
+                      {institution.logo_url ? (
                         <img 
                           src={institution.logo_url} 
                           alt="" 
-                          className="h-10 w-10 object-contain rounded-lg bg-white p-1"
+                          className="h-full w-full object-contain"
                         />
+                      ) : (
+                        <Building2 className="h-5 w-5 text-primary" />
                       )}
-                      <div>
-                        <h3 className="font-bold text-foreground">About {acronym}</h3>
-                        <p className="text-xs text-muted-foreground">Our Mission</p>
-                      </div>
                     </div>
-                    <p className="text-muted-foreground leading-relaxed">
-                      {institution.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+                    <div className="text-center flex-1">
+                      <h3 className="font-bold text-foreground">About {acronym}</h3>
+                      <p className="text-xs text-muted-foreground">Our Mission</p>
+                    </div>
+                    <div className="w-10" /> {/* Spacer for symmetry */}
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed text-center flex-1">
+                    {institution.description || `${institution.name} has partnered with ACFE to provide students with world-class career development resources and mentorship opportunities.`}
+                  </p>
+                </CardContent>
+              </Card>
 
-              {/* Benefits list */}
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
+              {/* Benefits list card */}
+              <Card className="flex-1">
+                <CardContent className="p-6 h-full flex flex-col">
+                  <h3 className="font-bold text-foreground mb-4 flex items-center justify-center gap-2">
                     <GraduationCap className="h-5 w-5 text-primary" />
                     What You'll Get Access To
                   </h3>
-                  <ul className="space-y-4">
+                  <ul className="space-y-4 flex-1">
                     {benefits.map((benefit, index) => (
-                      <li key={index} className="flex items-start gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <li key={index} className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                           <benefit.icon className="h-4 w-4 text-primary" />
                         </div>
-                        <span className="text-foreground">{benefit.text}</span>
+                        <span className="text-foreground text-sm">{benefit.text}</span>
                       </li>
                     ))}
                   </ul>
                 </CardContent>
               </Card>
-
-              {/* Trust indicators */}
-              <div className="flex items-center justify-center lg:justify-start gap-6 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Verified Institution</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-primary" />
-                  <span>Secure Access</span>
-                </div>
-              </div>
             </div>
 
-            {/* Right: Sign up/Sign in card */}
-            <Card className="lg:sticky lg:top-8 shadow-xl border-2">
-              <CardContent className="p-8">
+            {/* Right: Sign up/Sign in card - matches left column height */}
+            <Card className="shadow-xl border-2 h-full">
+              <CardContent className="p-8 h-full flex flex-col justify-center">
                 <div className="text-center mb-8">
                   <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mx-auto mb-4 ring-4 ring-primary/10">
                     <Shield className="h-8 w-8 text-primary" />
@@ -205,8 +197,20 @@ export const InstitutionAuthGate = ({ institution, currentPath }: InstitutionAut
             </Card>
           </div>
 
-          {/* Bottom: Partnership note */}
-          <div className="mt-12 text-center">
+          {/* Trust indicators - centered */}
+          <div className="flex items-center justify-center gap-8 mt-8 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <span>Verified Institution</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-primary" />
+              <span>Secure Access</span>
+            </div>
+          </div>
+
+          {/* Bottom: Partnership note - centered */}
+          <div className="mt-10 text-center">
             <p className="text-sm text-muted-foreground">
               <span className="font-medium text-foreground">{institution.name}</span> has partnered with 
               ACFE to provide students with world-class career development resources and mentorship.
