@@ -13,6 +13,7 @@ import {
   ArrowRight, ChevronRight, Sparkles, Activity, UserPlus, Heart
 } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { SecurityAuditPanel } from '@/components/admin/SecurityAuditPanel';
 
 interface MentorRequest {
   id: string;
@@ -400,6 +401,14 @@ export const AdminDashboard = () => {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+
+            {/* System Status Section */}
+            <div className="pt-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">System Status</h2>
+              </div>
+              <SecurityAuditPanel />
             </div>
           </div>
 
