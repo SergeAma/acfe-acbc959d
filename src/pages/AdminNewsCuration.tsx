@@ -30,12 +30,15 @@ interface CuratedNews {
 export default function AdminNewsCuration() {
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'fr'>('en');
 
-  // Fetch news articles
+  // Fetch news articles for selected language
   const { data: newsData, isLoading: newsLoading, refetch: refetchNews } = useQuery({
-    queryKey: ['tech-news-admin'],
+    queryKey: ['tech-news-admin', selectedLanguage],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('fetch-tech-news');
+      const { data, error } = await supabase.functions.invoke('fetch-tech-news', {
+        body: { language: selectedLanguage }
+      });
       if (error) throw error;
       return data as { articles: NewsArticle[] };
     },
@@ -155,10 +158,28 @@ export default function AdminNewsCuration() {
               Pin or hide articles to curate the news section
             </p>
           </div>
-          <Button onClick={handleRefresh} disabled={refreshing} variant="outline">
-            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh News
-          </Button>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 border rounded-lg p-1">
+              <Button
+                size="sm"
+                variant={selectedLanguage === 'en' ? 'default' : 'ghost'}
+                onClick={() => setSelectedLanguage('en')}
+              >
+                English
+              </Button>
+              <Button
+                size="sm"
+                variant={selectedLanguage === 'fr' ? 'default' : 'ghost'}
+                onClick={() => setSelectedLanguage('fr')}
+              >
+                Français
+              </Button>
+            </div>
+            <Button onClick={handleRefresh} disabled={refreshing} variant="outline">
+              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh News
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}

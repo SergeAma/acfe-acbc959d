@@ -104,9 +104,11 @@ export const TechNewsSection = () => {
     isLoading: newsLoading,
     dataUpdatedAt
   } = useQuery({
-    queryKey: ['tech-news'],
+    queryKey: ['tech-news', language],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('fetch-tech-news');
+      const { data, error } = await supabase.functions.invoke('fetch-tech-news', {
+        body: { language }
+      });
       if (error) throw error;
       return data as { articles: NewsArticle[] };
     },
@@ -205,11 +207,23 @@ export const TechNewsSection = () => {
     return curatedData?.find(c => c.article_url === articleUrl);
   };
 
+  // Map French categories to English for filtering
+  const getCategoryForFilter = (category: string) => {
+    const categoryMap: Record<string, string> = {
+      'TOUTES LES ACTUALITÉS': 'ALL NEWS',
+      'COMPÉTENCES NUMÉRIQUES': 'DIGITAL SKILLS',
+      'INNOVATION': 'INNOVATION',
+      'PARTENARIATS': 'PARTNERSHIPS'
+    };
+    return categoryMap[category] || category;
+  };
+
   const filteredArticles = useMemo(() => {
     let filtered = allArticles.filter(article => !getCuratedStatus(article.link)?.is_hidden);
     
-    if (activeCategory !== 'ALL NEWS') {
-      filtered = filtered.filter(article => article.category === activeCategory);
+    const filterCategory = getCategoryForFilter(activeCategory);
+    if (filterCategory !== 'ALL NEWS') {
+      filtered = filtered.filter(article => article.category === filterCategory);
     }
     
     return filtered.sort((a, b) => {
