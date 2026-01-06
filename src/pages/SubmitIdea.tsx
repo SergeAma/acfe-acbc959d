@@ -37,6 +37,7 @@ export function SubmitIdea() {
     user,
     profile
   } = useAuth();
+  const { t } = useLanguage();
 
   // Honeypot field - bots will fill this, humans won't see it
   const [honeypot, setHoneypot] = useState("");
@@ -283,17 +284,16 @@ export function SubmitIdea() {
                 <CheckCircle className="h-10 w-10 text-primary" />
               </div>
               <h1 className="text-3xl font-bold text-foreground mb-4">
-                Thank You for Your Submission!
+                {t('idea_success_title')}
               </h1>
               <p className="text-lg text-muted-foreground mb-6">
-                We're excited to learn more about your idea. Our team will review your submission and 
-                <strong className="text-foreground"> get in touch within 7 days</strong>.
+                {t('idea_success_desc')}
               </p>
               <p className="text-muted-foreground mb-8">
-                In the meantime, feel free to explore our courses and resources to help develop your skills further.
+                {t('idea_success_explore')}
               </p>
               <Button asChild size="lg" className="rounded-full">
-                <a href="/courses">Explore Courses</a>
+                <a href="/courses">{t('idea_explore_courses')}</a>
               </Button>
             </div>
           </div>
@@ -313,10 +313,10 @@ export function SubmitIdea() {
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center">
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3 md:mb-4">
-                Submit Your Startup Idea
+                {t('idea_hero_title')}
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground px-2">
-                Got a vision that could transform Africa? We want to hear from you.
+                {t('idea_hero_subtitle')}
               </p>
             </div>
           </div>
@@ -331,16 +331,16 @@ export function SubmitIdea() {
                   <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                     <Rocket className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
                   </div>
-                  <h2 className="text-lg sm:text-xl font-bold text-foreground">Ready to Submit Your Idea?</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-foreground">{t('idea_gate_title')}</h2>
                   <p className="text-muted-foreground text-sm">
-                    Create an account or sign in to submit your startup idea and get access to mentorship and funding opportunities.
+                    {t('idea_gate_desc')}
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
                     <Button asChild className="rounded-full w-full sm:w-auto">
-                      <Link to="/auth">Sign Up</Link>
+                      <Link to="/auth">{t('sign_up')}</Link>
                     </Button>
                     <Button variant="outline" asChild className="rounded-full w-full sm:w-auto">
-                      <Link to="/auth">Sign In</Link>
+                      <Link to="/auth">{t('sign_in')}</Link>
                     </Button>
                   </div>
                 </CardContent>
@@ -356,11 +356,10 @@ export function SubmitIdea() {
               <div className="lg:col-span-2 order-2 lg:order-1">
                 <div className="bg-foreground text-background rounded-2xl p-6 sm:p-8 lg:sticky lg:top-24">
                   <h2 className="text-xl sm:text-2xl font-bold mb-4">
-                    Innovator Incubator
+                    {t('idea_incubator_title')}
                   </h2>
                   <p className="text-background/80 mb-6 text-sm sm:text-base">
-                    We believe in Africa's next generation of tech leaders. If you have an idea that could 
-                    make a difference, we want to support you on your journey.
+                    {t('idea_incubator_desc')}
                   </p>
                   
                   <div className="space-y-6 mb-8">
@@ -369,8 +368,8 @@ export function SubmitIdea() {
                         <DollarSign className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-semibold mb-1">Up to 1000$ Funding</h3>
-                        <p className="text-sm text-background/70">New founders are eligible for seed funding from our partner, Spectrogram Consulting.</p>
+                        <h3 className="font-semibold mb-1">{t('idea_funding_title')}</h3>
+                        <p className="text-sm text-background/70">{t('idea_funding_desc')}</p>
                       </div>
                     </div>
                     
@@ -379,9 +378,9 @@ export function SubmitIdea() {
                         <Users className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-semibold mb-1">Expert Mentorship</h3>
+                        <h3 className="font-semibold mb-1">{t('idea_mentorship_title')}</h3>
                         <p className="text-sm text-background/70">
-                          Get 1-on-1 guidance from industry experts who've built successful startups.
+                          {t('idea_mentorship_desc')}
                         </p>
                       </div>
                     </div>
@@ -391,9 +390,9 @@ export function SubmitIdea() {
                         <Lightbulb className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-semibold mb-1">Resources & Support</h3>
+                        <h3 className="font-semibold mb-1">{t('idea_resources_title')}</h3>
                         <p className="text-sm text-background/70">
-                          Access tools, training, and a community of like-minded innovators.
+                          {t('idea_resources_desc')}
                         </p>
                       </div>
                     </div>
@@ -401,8 +400,7 @@ export function SubmitIdea() {
                   
                   <div className="border-t border-background/20 pt-6">
                     <p className="text-sm text-background/60">
-                      <strong className="text-background">How it works:</strong> Submit a short video (3 min max) 
-                      describing your idea. Our team reviews all submissions and responds within 7 days.
+                      <strong className="text-background">{t('idea_how_title')}</strong> {t('idea_how_desc')}
                     </p>
                   </div>
                 </div>
@@ -412,7 +410,7 @@ export function SubmitIdea() {
               <div className="lg:col-span-3 order-1 lg:order-2">
                 <div className="bg-card rounded-2xl p-5 sm:p-8 shadow-sm border border-border">
                   <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-4 sm:mb-6">
-                    Tell Us About Your Idea
+                    {t('idea_form_title')}
                   </h2>
 
                   {/* Progress Stepper */}
