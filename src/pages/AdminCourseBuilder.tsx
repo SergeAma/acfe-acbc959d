@@ -53,6 +53,7 @@ interface Course {
   is_published: boolean;
   drip_enabled: boolean;
   drip_schedule_type: string | null;
+  drip_release_day: number | null;
   duration_weeks: number | null;
   category: string | null;
   level: string | null;
@@ -103,6 +104,7 @@ export const AdminCourseBuilder = () => {
   const [savingPrice, setSavingPrice] = useState(false);
   const [dripEnabled, setDripEnabled] = useState(false);
   const [dripScheduleType, setDripScheduleType] = useState<string>('week');
+  const [dripReleaseDay, setDripReleaseDay] = useState<number>(3); // Default Wednesday
   const [savingDripSchedule, setSavingDripSchedule] = useState(false);
   const [durationWeeks, setDurationWeeks] = useState<number | null>(null);
   const [savingDuration, setSavingDuration] = useState(false);
@@ -238,6 +240,7 @@ export const AdminCourseBuilder = () => {
     setPriceCents(courseData?.price_cents ?? 1000);
     setDripEnabled(courseData?.drip_enabled ?? false);
     setDripScheduleType(courseData?.drip_schedule_type || 'week');
+    setDripReleaseDay(courseData?.drip_release_day ?? 3);
     setDurationWeeks(courseData?.duration_weeks ?? null);
     // Handle category - check if it's a predefined category or custom
     const predefinedCategories = ['Career Learning', 'General Learning', 'Tech Jobs', 'Software Development', 'Data Science', 'Design', 'Marketing', 'Business', 'Finance', 'Leadership', 'Communication', 'Entrepreneurship', 'Personal Development'];
@@ -437,7 +440,10 @@ export const AdminCourseBuilder = () => {
     setSavingDripSchedule(true);
     const { error } = await supabase
       .from('courses')
-      .update({ drip_schedule_type: dripScheduleType })
+      .update({ 
+        drip_schedule_type: dripScheduleType,
+        drip_release_day: dripScheduleType === 'week' ? dripReleaseDay : null
+      })
       .eq('id', courseId);
 
     if (error) {
@@ -447,10 +453,15 @@ export const AdminCourseBuilder = () => {
         variant: 'destructive',
       });
     } else {
-      setCourse(prev => prev ? { ...prev, drip_schedule_type: dripScheduleType } : null);
+      setCourse(prev => prev ? { 
+        ...prev, 
+        drip_schedule_type: dripScheduleType,
+        drip_release_day: dripScheduleType === 'week' ? dripReleaseDay : null
+      } : null);
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       const scheduleLabels: Record<string, string> = {
         'module': 'by module',
-        'week': 'weekly',
+        'week': `weekly on ${dayNames[dripReleaseDay]}s`,
         'month': 'monthly'
       };
       toast({
@@ -1259,7 +1270,7 @@ export const AdminCourseBuilder = () => {
               </div>
               
               {dripEnabled && (
-                <div className="pt-3 border-t space-y-2">
+                <div className="pt-3 border-t space-y-3">
                   <Label>Release Schedule</Label>
                   <div className="flex items-center gap-3">
                     <Select value={dripScheduleType} onValueChange={setDripScheduleType}>
@@ -1272,21 +1283,50 @@ export const AdminCourseBuilder = () => {
                         <SelectItem value="month">Monthly</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Button 
-                      size="sm" 
-                      onClick={handleSaveDripSchedule}
-                      disabled={savingDripSchedule || dripScheduleType === (course?.drip_schedule_type || 'week')}
-                    >
-                      {savingDripSchedule ? (
-                        <span className="animate-spin">⏳</span>
-                      ) : (
-                        <Save className="h-4 w-4" />
-                      )}
-                    </Button>
                   </div>
+                  
+                  {dripScheduleType === 'week' && (
+                    <div className="space-y-2">
+                      <Label>Release Day</Label>
+                      <Select value={String(dripReleaseDay)} onValueChange={(val) => setDripReleaseDay(parseInt(val))}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select day" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background border">
+                          <SelectItem value="0">Sunday</SelectItem>
+                          <SelectItem value="1">Monday</SelectItem>
+                          <SelectItem value="2">Tuesday</SelectItem>
+                          <SelectItem value="3">Wednesday</SelectItem>
+                          <SelectItem value="4">Thursday</SelectItem>
+                          <SelectItem value="5">Friday</SelectItem>
+                          <SelectItem value="6">Saturday</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
+                  <Button 
+                    size="sm" 
+                    onClick={handleSaveDripSchedule}
+                    disabled={savingDripSchedule || (
+                      dripScheduleType === (course?.drip_schedule_type || 'week') &&
+                      (dripScheduleType !== 'week' || dripReleaseDay === (course?.drip_release_day ?? 3))
+                    )}
+                    className="w-full"
+                  >
+                    {savingDripSchedule ? (
+                      <span className="animate-spin">⏳</span>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Schedule
+                      </>
+                    )}
+                  </Button>
+                  
                   <p className="text-xs text-muted-foreground">
                     {dripScheduleType === 'module' && 'Content unlocks one module/section at a time as learners progress'}
-                    {dripScheduleType === 'week' && 'Content unlocks on a weekly basis from enrollment date'}
+                    {dripScheduleType === 'week' && `Content unlocks every ${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dripReleaseDay]} from enrollment`}
                     {dripScheduleType === 'month' && 'Content unlocks on a monthly basis from enrollment date'}
                   </p>
                 </div>
