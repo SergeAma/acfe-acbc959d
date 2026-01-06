@@ -156,7 +156,7 @@ export const CareerCentreLanding = () => {
               <span className="block text-xl md:text-2xl font-medium text-muted-foreground mt-2">Powered by ACFE</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-              Mis en œuvre par  par ACFE
+              Mis en œuvre par ACFE
             </p>
             <Button size="lg" onClick={() => setShowInstitutionDialog(true)} className="text-white h-14 px-8 text-lg bg-amber-600 hover:bg-amber-500">
               <Building2 className="h-5 w-5 mr-2" />
