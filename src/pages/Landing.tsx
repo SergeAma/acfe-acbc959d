@@ -29,17 +29,13 @@ export const Landing = () => {
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center px-2">
-            <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 text-white leading-tight">
-              <span className="bg-black/30 backdrop-blur-[2px] px-2 py-1 rounded inline">
-                {t('hero.title')}
-              </span>
+            <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] [text-shadow:_0_0_20px_rgba(0,0,0,0.5),_0_0_40px_rgba(0,0,0,0.3)]">
+              {t('hero.title')}
             </h1>
-            <p className="text-sm sm:text-lg md:text-xl text-white/90 mb-3 sm:mb-4 leading-relaxed">
-              <span className="bg-black/30 backdrop-blur-[2px] px-2 py-1 rounded inline">
-                {t('hero.subtitle')}
-              </span>
+            <p className="text-sm sm:text-lg md:text-xl text-white/90 mb-3 sm:mb-4 leading-relaxed drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] [text-shadow:_0_0_15px_rgba(0,0,0,0.4)]">
+              {t('hero.subtitle')}
             </p>
-            <p className="text-xs sm:text-base text-white mb-6 sm:mb-8 inline-block bg-black/40 backdrop-blur-sm px-3 py-2 rounded-lg">
+            <p className="text-xs sm:text-base text-white mb-6 sm:mb-8 inline-block bg-black/30 backdrop-blur-sm px-3 py-2 rounded-lg">
               {t('hero.context')}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
