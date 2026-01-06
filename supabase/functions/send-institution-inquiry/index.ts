@@ -5,6 +5,40 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Rate limiting
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 3;
+
+function isRateLimited(identifier: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(identifier);
+  
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(identifier, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+  
+  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return true;
+  }
+  
+  record.count++;
+  return false;
+}
+
+// HTML escape function to prevent XSS in emails
+function escapeHtml(text: string): string {
+  const htmlEntities: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  };
+  return text.replace(/[&<>"']/g, (char) => htmlEntities[char] || char);
+}
+
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[SEND-INSTITUTION-INQUIRY] ${step}${detailsStr}`);
@@ -84,7 +118,36 @@ serve(async (req) => {
 
     const body: InstitutionInquiryRequest = await req.json();
     const { institutionName, institutionType, firstName, lastName, contactEmail, contactPhone, estimatedStudents, message, turnstileToken } = body;
-    const contactName = `${firstName} ${lastName}`.trim();
+
+    // Validate and sanitize inputs
+    if (!institutionName || typeof institutionName !== 'string' || institutionName.length > 200) {
+      throw new Error("Invalid institution name");
+    }
+    if (!firstName || typeof firstName !== 'string' || firstName.length > 100) {
+      throw new Error("Invalid first name");
+    }
+    if (!lastName || typeof lastName !== 'string' || lastName.length > 100) {
+      throw new Error("Invalid last name");
+    }
+    if (!contactEmail || typeof contactEmail !== 'string' || contactEmail.length > 255) {
+      throw new Error("Invalid email");
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const trimmedEmail = contactEmail.trim().toLowerCase();
+    if (!emailRegex.test(trimmedEmail)) {
+      throw new Error("Invalid email format");
+    }
+
+    // Rate limiting by email
+    const rateLimitKey = `institution:${trimmedEmail}`;
+    if (isRateLimited(rateLimitKey)) {
+      return new Response(
+        JSON.stringify({ error: "Too many requests. Please try again later." }),
+        { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     // Verify CAPTCHA first
     if (!turnstileToken) {
@@ -104,13 +167,20 @@ serve(async (req) => {
       );
     }
 
-    if (!institutionName || !firstName || !lastName || !contactEmail) {
-      throw new Error("Missing required fields: institutionName, firstName, lastName, contactEmail");
-    }
+    // Sanitize all inputs with HTML escaping
+    const safeInstitutionName = escapeHtml(institutionName.trim().substring(0, 200));
+    const safeFirstName = escapeHtml(firstName.trim().substring(0, 100));
+    const safeLastName = escapeHtml(lastName.trim().substring(0, 100));
+    const safeContactName = `${safeFirstName} ${safeLastName}`;
+    const safeContactEmail = escapeHtml(trimmedEmail);
+    const safeInstitutionType = institutionType ? escapeHtml(institutionType.trim().substring(0, 100)) : '';
+    const safeContactPhone = contactPhone ? escapeHtml(contactPhone.trim().substring(0, 50)) : '';
+    const safeEstimatedStudents = estimatedStudents ? escapeHtml(estimatedStudents.trim().substring(0, 50)) : '';
+    const safeMessage = message ? escapeHtml(message.trim().substring(0, 2000)) : '';
 
-    logStep("Sending institution inquiry email", { institutionName, institutionType, contactEmail });
+    logStep("Sending institution inquiry email", { institutionName: safeInstitutionName, institutionType: safeInstitutionType });
 
-    // Send email to ACFE team
+    // Send email to ACFE team with escaped HTML
     const acfeEmailHtml = `
       <!DOCTYPE html>
       <html>
@@ -139,32 +209,38 @@ serve(async (req) => {
           <div class="content">
             <div class="field">
               <div class="label">Institution Name</div>
-              <div class="value">${institutionName}</div>
+              <div class="value">${safeInstitutionName}</div>
             </div>
+            ${safeInstitutionType ? `
+            <div class="field">
+              <div class="label">Institution Type</div>
+              <div class="value">${safeInstitutionType}</div>
+            </div>
+            ` : ''}
             <div class="field">
               <div class="label">Contact Person</div>
-              <div class="value">${contactName}</div>
+              <div class="value">${safeContactName}</div>
             </div>
             <div class="field">
               <div class="label">Email Address</div>
-              <div class="value"><a href="mailto:${contactEmail}">${contactEmail}</a></div>
+              <div class="value"><a href="mailto:${safeContactEmail}">${safeContactEmail}</a></div>
             </div>
-            ${contactPhone ? `
+            ${safeContactPhone ? `
             <div class="field">
               <div class="label">Phone Number</div>
-              <div class="value">${contactPhone}</div>
+              <div class="value">${safeContactPhone}</div>
             </div>
             ` : ''}
-            ${estimatedStudents ? `
+            ${safeEstimatedStudents ? `
             <div class="field">
               <div class="label">Estimated Number of Students</div>
-              <div class="value">${estimatedStudents}</div>
+              <div class="value">${safeEstimatedStudents}</div>
             </div>
             ` : ''}
-            ${message ? `
+            ${safeMessage ? `
             <div class="field">
               <div class="label">Additional Message</div>
-              <div class="value">${message}</div>
+              <div class="value">${safeMessage}</div>
             </div>
             ` : ''}
             
@@ -186,12 +262,12 @@ serve(async (req) => {
 
     await sendEmail(
       ["contact@acloudforeveryone.org"],
-      `Educational Institution Partnership Inquiry: ${institutionName}`,
+      `Educational Institution Partnership Inquiry: ${safeInstitutionName}`,
       acfeEmailHtml
     );
     logStep("ACFE team email sent");
 
-    // Send confirmation email to the institution contact
+    // Send confirmation email to the institution contact with escaped HTML
     const confirmationEmailHtml = `
       <!DOCTYPE html>
       <html>
@@ -219,9 +295,9 @@ serve(async (req) => {
             <h1>Partnership Inquiry Received</h1>
           </div>
           <div class="content">
-            <p>Dear ${contactName},</p>
+            <p>Dear ${safeContactName},</p>
             
-            <p>Thank you for expressing interest in partnering with <strong>A Cloud For Everyone (ACFE)</strong> on behalf of <strong>${institutionName}</strong>.</p>
+            <p>Thank you for expressing interest in partnering with <strong>A Cloud For Everyone (ACFE)</strong> on behalf of <strong>${safeInstitutionName}</strong>.</p>
             
             <div class="highlight">
               <p><strong>We're excited about the possibility of empowering your students with tech skills and career opportunities!</strong></p>
@@ -247,7 +323,7 @@ serve(async (req) => {
             
             <p>If you have any immediate questions, feel free to reply to this email or contact us at <a href="mailto:contact@acloudforeveryone.org">contact@acloudforeveryone.org</a>.</p>
             
-            <p>We look forward to partnering with ${institutionName} to shape the next generation of African tech talent!</p>
+            <p>We look forward to partnering with ${safeInstitutionName} to shape the next generation of African tech talent!</p>
             
             <p>Best regards,<br><strong>The ACFE Partnerships Team</strong></p>
             
@@ -262,7 +338,7 @@ serve(async (req) => {
     `;
 
     await sendEmail(
-      [contactEmail],
+      [trimmedEmail],
       "Thank you for your interest in ACFE Partnership",
       confirmationEmailHtml
     );
