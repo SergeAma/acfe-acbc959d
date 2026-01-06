@@ -454,7 +454,12 @@ export type Database = {
           section_id: string
           sort_order: number
           text_content: string | null
+          text_content_fr: string | null
           title: string
+          title_fr: string | null
+          transcription: string | null
+          transcription_fr: string | null
+          transcription_status: string | null
           updated_at: string | null
           video_url: string | null
         }
@@ -470,7 +475,12 @@ export type Database = {
           section_id: string
           sort_order?: number
           text_content?: string | null
+          text_content_fr?: string | null
           title: string
+          title_fr?: string | null
+          transcription?: string | null
+          transcription_fr?: string | null
+          transcription_status?: string | null
           updated_at?: string | null
           video_url?: string | null
         }
@@ -486,7 +496,12 @@ export type Database = {
           section_id?: string
           sort_order?: number
           text_content?: string | null
+          text_content_fr?: string | null
           title?: string
+          title_fr?: string | null
+          transcription?: string | null
+          transcription_fr?: string | null
+          transcription_status?: string | null
           updated_at?: string | null
           video_url?: string | null
         }
@@ -672,6 +687,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           description_audio_url: string | null
+          description_fr: string | null
           description_video_url: string | null
           drip_enabled: boolean | null
           duration_weeks: number | null
@@ -690,6 +706,7 @@ export type Database = {
           registration_deadline: string | null
           thumbnail_url: string | null
           title: string
+          title_fr: string | null
           updated_at: string | null
         }
         Insert: {
@@ -698,6 +715,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           description_audio_url?: string | null
+          description_fr?: string | null
           description_video_url?: string | null
           drip_enabled?: boolean | null
           duration_weeks?: number | null
@@ -716,6 +734,7 @@ export type Database = {
           registration_deadline?: string | null
           thumbnail_url?: string | null
           title: string
+          title_fr?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -724,6 +743,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           description_audio_url?: string | null
+          description_fr?: string | null
           description_video_url?: string | null
           drip_enabled?: boolean | null
           duration_weeks?: number | null
@@ -742,6 +762,7 @@ export type Database = {
           registration_deadline?: string | null
           thumbnail_url?: string | null
           title?: string
+          title_fr?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -2095,6 +2116,7 @@ export type Database = {
           id: string
           instagram_url: string | null
           linkedin_url: string | null
+          preferred_language: string | null
           profile_frame: string | null
           role: Database["public"]["Enums"]["user_role"]
           scheduled_deletion_at: string | null
@@ -2117,6 +2139,7 @@ export type Database = {
           id: string
           instagram_url?: string | null
           linkedin_url?: string | null
+          preferred_language?: string | null
           profile_frame?: string | null
           role: Database["public"]["Enums"]["user_role"]
           scheduled_deletion_at?: string | null
@@ -2139,6 +2162,7 @@ export type Database = {
           id?: string
           instagram_url?: string | null
           linkedin_url?: string | null
+          preferred_language?: string | null
           profile_frame?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           scheduled_deletion_at?: string | null
@@ -2431,6 +2455,36 @@ export type Database = {
           created_at?: string | null
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      translation_overrides: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          language: string
+          translation_key: string
+          translation_value: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          language: string
+          translation_key: string
+          translation_value: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          language?: string
+          translation_key?: string
+          translation_value?: string
+          updated_at?: string
         }
         Relationships: []
       }
