@@ -247,9 +247,9 @@ export const MySubscriptions = () => {
                 <CardContent className="py-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium">Need to make changes?</h4>
+                      <h4 className="font-medium">Want to upgrade or downgrade?</h4>
                       <p className="text-sm text-muted-foreground">
-                        Update payment method, pause, or cancel subscriptions
+                        Change your plan, update payment method, or manage billing
                       </p>
                     </div>
                     <Button variant="outline" onClick={handleManageSubscription} disabled={openingPortal}>
@@ -258,8 +258,20 @@ export const MySubscriptions = () => {
                       ) : (
                         <CreditCard className="h-4 w-4 mr-2" />
                       )}
-                      Open Billing Portal
+                      Manage Plan
                     </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-muted/30">
+                <CardContent className="py-6">
+                  <div className="text-center">
+                    <h4 className="font-medium mb-2">Upgrade or Downgrade Anytime</h4>
+                    <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                      Switch between ACFE Membership ($15/month) and Mentorship Plus ($30/month) through the billing portal. 
+                      Changes take effect at the next billing cycle, and any prorated amounts are calculated automatically.
+                    </p>
                   </div>
                 </CardContent>
               </Card>
