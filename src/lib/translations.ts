@@ -885,7 +885,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'nav.mentors': 'Mentors',
 
     // ==================== HERO SECTION ====================
-    'hero.title': 'Rejoignez 300+ apprenants accompagnés par des mentors et accélérez votre carrière en tech',
+    'hero.title': 'Rejoignez 300+ inscrits accompagnés par des mentors et accélérez votre carrière en tech',
     'hero.subtitle': 'Aucune expérience requise | Tous profils | Apprenez à tout moment',
     'hero.context': 'Formation dispensée par des experts tech qui comprennent le contexte africain.',
     'hero.dashboard': 'Aller au Tableau de Bord',
