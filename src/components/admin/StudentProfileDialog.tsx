@@ -44,6 +44,20 @@ export const StudentProfileDialog = ({
     }
   }, [studentEmail, studentUserId, open]);
 
+  // Log admin profile view for audit purposes (non-blocking)
+  useEffect(() => {
+    if (open && profileId) {
+      supabase
+        .from('admin_audit_logs')
+        .insert({
+          action: 'view_student_profile',
+          target_user_id: profileId,
+          metadata: { student_email: studentEmail }
+        })
+        .then(() => {});
+    }
+  }, [open, profileId, studentEmail]);
+
   // Fetch profile data
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['student-profile', profileId],
