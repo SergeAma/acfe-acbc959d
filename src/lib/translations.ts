@@ -1643,7 +1643,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'career_badge': 'Pour les Institutions Éducatives',
     'career_hero_title': '"Votre Institution"',
     'career_hero_highlight': 'Centre de développement professionnel',
-    'career_powered_by': 'Propulsé par ACFE',
+    'career_powered_by': 'Mis en œuvre par ACFE',
     'career_hero_subtitle': 'Donnez à vos étudiants des compétences tech prêtes pour l\'emploi, des certifications vérifiées et des voies directes vers l\'emploi grâce à notre programme de partenariat institutionnel dédié.',
     'career_partner_cta': 'Devenir Partenaire ACFE',
     'career_features_title': 'Ce que Vos Étudiants Obtiennent',
@@ -1690,7 +1690,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // ==================== INSTITUTION AUTH GATE ====================
     'inst_auth_badge': 'Programme de Partenariat Officiel',
     'inst_auth_career_centre': 'Centre de Développement de Carrière',
-    'inst_auth_powered_by': 'Propulsé par',
+    'inst_auth_powered_by': 'Mis en œuvre par',
     'inst_auth_benefit1': 'Cours exclusifs sélectionnés pour votre institution',
     'inst_auth_benefit2': 'Certifications reconnues par l\'industrie',
     'inst_auth_benefit3': 'Connectez-vous avec des mentors et des pairs',
