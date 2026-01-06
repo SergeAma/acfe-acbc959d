@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { CompanyLogos } from '@/components/CompanyLogos';
 import { MentorshipRequestDialog } from '@/components/mentorship/MentorshipRequestDialog';
 import { MentorSessionBooking } from '@/components/mentorship/MentorSessionBooking';
+import { CourseBadge } from '@/components/CourseBadge';
 import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe, ArrowLeft, Clock, BarChart, User, ChevronDown } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuth } from '@/contexts/AuthContext';
@@ -41,6 +42,12 @@ interface Course {
   level: string | null;
   duration_weeks: number | null;
   thumbnail_url: string | null;
+  is_paid: boolean;
+  institution_id: string | null;
+  institution?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 export const MentorProfile = () => {
@@ -67,7 +74,10 @@ export const MentorProfile = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('courses')
-        .select('id, title, description, category, level, duration_weeks, thumbnail_url')
+        .select(`
+          id, title, description, category, level, duration_weeks, thumbnail_url, is_paid, institution_id,
+          institution:institutions (id, name)
+        `)
         .eq('mentor_id', id)
         .eq('is_published', true)
         .order('created_at', { ascending: false });
@@ -344,9 +354,16 @@ export const MentorProfile = () => {
                 {courses.map((course) => (
                   <Card 
                     key={course.id} 
-                    className="hover:shadow-lg transition-shadow cursor-pointer"
+                    className="hover:shadow-lg transition-shadow cursor-pointer relative"
                     onClick={() => handleCourseClick(course.id)}
                   >
+                    <div className="absolute top-2 right-2 z-10">
+                      <CourseBadge
+                        isPaid={course.is_paid}
+                        institutionId={course.institution_id}
+                        institutionName={course.institution?.name}
+                      />
+                    </div>
                     {course.thumbnail_url && (
                       <div className="aspect-video w-full overflow-hidden rounded-t-lg">
                         <img 

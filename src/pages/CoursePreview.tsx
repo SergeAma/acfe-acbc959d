@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
+import { CourseBadge } from '@/components/CourseBadge';
 import { 
   BookOpen, 
   Clock, 
@@ -56,10 +57,17 @@ interface Course {
   live_url: string | null;
   registration_deadline: string | null;
   recording_url: string | null;
+  is_paid: boolean;
+  price_cents: number | null;
+  institution_id: string | null;
   mentor?: {
     full_name: string;
     bio: string | null;
   };
+  institution?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 interface ContentItem {
@@ -167,12 +175,13 @@ export const CoursePreview = () => {
 
   const fetchCourseData = async () => {
     try {
-      // Fetch course details with mentor info
+      // Fetch course details with mentor and institution info
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
         .select(`
           *,
-          mentor:profiles!courses_mentor_id_fkey(full_name, bio)
+          mentor:profiles!courses_mentor_id_fkey(full_name, bio),
+          institution:institutions(id, name)
         `)
         .eq('id', id)
         .single();
@@ -250,26 +259,31 @@ export const CoursePreview = () => {
 
     setEnrolling(true);
 
-    const { error } = await supabase
-      .from('enrollments')
-      .insert({
-        course_id: id!,
-        student_id: user.id,
-        progress: 0,
+    try {
+      // Use the checkout function for all enrollments to properly handle paid courses
+      const { data, error } = await supabase.functions.invoke('create-course-checkout', {
+        body: { courseId: id }
       });
 
-    if (error) {
+      if (error) throw error;
+
+      if (data.free) {
+        // Free enrollment completed
+        setIsEnrolled(true);
+        toast({
+          title: 'Success!',
+          description: data.message || 'You have enrolled in this course',
+        });
+      } else if (data.url) {
+        // Redirect to Stripe checkout for paid courses
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
       toast({
-        title: 'Error',
-        description: 'Failed to enroll in course',
+        title: 'Enrollment failed',
+        description: error.message || 'Failed to enroll in course',
         variant: 'destructive',
       });
-    } else {
-      toast({
-        title: 'Success!',
-        description: 'You have enrolled in this course',
-      });
-      setIsEnrolled(true);
     }
 
     setEnrolling(false);
@@ -374,7 +388,14 @@ export const CoursePreview = () => {
         <div className="mb-8">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
-              <Badge className="mb-3">{course.category}</Badge>
+              <div className="flex items-center gap-3 mb-3">
+                <Badge>{course.category}</Badge>
+                <CourseBadge
+                  isPaid={course.is_paid}
+                  institutionId={course.institution_id}
+                  institutionName={course.institution?.name}
+                />
+              </div>
               <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
               <CourseDescriptionPlayer
                 description={course.description}
@@ -569,7 +590,11 @@ export const CoursePreview = () => {
                 ) : (
                   <ChevronRight className="h-5 w-5 mr-2" />
                 )}
-                {prerequisitesMet ? 'Enroll in Course' : 'Complete Prerequisites First'}
+                {!prerequisitesMet 
+                  ? 'Complete Prerequisites First' 
+                  : course.is_paid 
+                    ? 'Buy Course' 
+                    : 'Enroll in Course'}
               </Button>
             )
           ) : (
