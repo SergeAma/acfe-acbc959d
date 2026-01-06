@@ -5,11 +5,13 @@ import { Navbar } from '@/components/Navbar';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { Loader2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
+import { useMentorContract } from '@/hooks/useMentorContract';
 
 export const Dashboard = () => {
-  const { profile, loading } = useAuth();
+  const { user, profile, loading, isActualAdmin } = useAuth();
+  const { hasSignedContract, loading: contractLoading } = useMentorContract(user?.id);
 
-  if (loading) {
+  if (loading || contractLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -20,6 +22,11 @@ export const Dashboard = () => {
   // Redirect admins to the admin dashboard
   if (profile?.role === 'admin') {
     return <Navigate to="/admin" replace />;
+  }
+
+  // Redirect mentors who haven't signed contract (unless they're an admin simulating)
+  if (profile?.role === 'mentor' && !isActualAdmin && hasSignedContract === false) {
+    return <Navigate to="/mentor-contract" replace />;
   }
 
   return (

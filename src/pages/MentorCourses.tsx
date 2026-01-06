@@ -8,8 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, BookOpen, Users, Trash2, Edit, BarChart3, LayoutGrid } from 'lucide-react';
+import { Plus, BookOpen, Users, Trash2, Edit, BarChart3, LayoutGrid, Loader2 } from 'lucide-react';
 import { CourseAnalytics } from '@/components/mentor/CourseAnalytics';
+import { useMentorContract } from '@/hooks/useMentorContract';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,15 +35,23 @@ interface Course {
 }
 
 export const MentorCourses = () => {
-  const { user, profile } = useAuth();
+  const { user, profile, isActualAdmin } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
+  const { hasSignedContract, loading: contractLoading } = useMentorContract(user?.id);
   
   const isAdmin = profile?.role === 'admin';
+
+  // Redirect mentors who haven't signed contract
+  useEffect(() => {
+    if (!contractLoading && profile?.role === 'mentor' && !isActualAdmin && hasSignedContract === false) {
+      navigate('/mentor-contract');
+    }
+  }, [contractLoading, profile, isActualAdmin, hasSignedContract, navigate]);
 
   useEffect(() => {
     if (user) {
@@ -104,6 +113,14 @@ export const MentorCourses = () => {
       setCourseToDelete(null);
     }
   };
+
+  if (contractLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
