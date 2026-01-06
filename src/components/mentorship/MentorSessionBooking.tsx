@@ -35,7 +35,7 @@ export const MentorSessionBooking = ({ mentorId, mentorName, isEmbedded = false 
   const [loading, setLoading] = useState(false);
   const [priceLoading, setPriceLoading] = useState(true);
   const [availabilityLoading, setAvailabilityLoading] = useState(true);
-  const [priceCents, setPriceCents] = useState<number>(3000);
+  const [priceCents, setPriceCents] = useState<number>(2000);
   const [enabled, setEnabled] = useState<boolean>(true);
   const [showSuccess, setShowSuccess] = useState(false);
   

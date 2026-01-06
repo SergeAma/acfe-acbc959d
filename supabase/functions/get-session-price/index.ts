@@ -25,7 +25,7 @@ serve(async (req) => {
 
     if (error || !data) {
       return new Response(JSON.stringify({ 
-        priceCents: 3000, 
+        priceCents: 2000, 
         enabled: true 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
