@@ -44,19 +44,7 @@ serve(async (req: Request) => {
       });
     }
 
-    // Check if user is admin
-    const { data: hasAdminRole } = await supabaseClient.rpc('has_role', {
-      _user_id: user.id,
-      _role: 'admin'
-    });
-
-    if (!hasAdminRole) {
-      return new Response(JSON.stringify({ error: "Forbidden: Admin only" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
+    // Check if user is admin OR a moderator for the specific institution
     const { institutionId, emails, institutionName, institutionSlug } = await req.json() as InvitationRequest;
 
     if (!institutionId || !emails || !Array.isArray(emails) || emails.length === 0) {
@@ -65,6 +53,27 @@ serve(async (req: Request) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const { data: hasAdminRole } = await supabaseClient.rpc('has_role', {
+      _user_id: user.id,
+      _role: 'admin'
+    });
+
+    // Also check if user is a moderator for this institution
+    const { data: isModerator } = await supabaseClient
+      .from('institution_moderators')
+      .select('id')
+      .eq('institution_id', institutionId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!hasAdminRole && !isModerator) {
+      return new Response(JSON.stringify({ error: "Forbidden: Admin or Moderator only" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
 
     let sentCount = 0;
     const errors: string[] = [];
