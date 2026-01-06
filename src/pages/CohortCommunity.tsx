@@ -181,7 +181,6 @@ export const CohortCommunity = () => {
 
       setNewMessage('');
     } catch (error: any) {
-      console.error('Error sending message:', error);
       toast({
         title: 'Failed to send message',
         description: error.message,

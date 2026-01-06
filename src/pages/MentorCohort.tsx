@@ -154,7 +154,7 @@ export const MentorCohort = () => {
           }
         });
       } catch (emailError) {
-        console.error('Failed to send notification:', emailError);
+        // Email notification failed, but the response was saved
       }
 
       toast({
@@ -170,7 +170,6 @@ export const MentorCohort = () => {
       setSelectedCourse('');
       refetchRequests();
     } catch (error: any) {
-      console.error('Error responding to request:', error);
       toast({
         title: 'Failed to respond',
         description: error.message,
