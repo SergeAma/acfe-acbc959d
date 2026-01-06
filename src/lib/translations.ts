@@ -1443,7 +1443,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'pricing.notesAndBookmarks': 'Fonctionnalités notes et signets',
     'pricing.mobileFriendly': 'Apprentissage adapté au mobile',
     'pricing.acfeMembership': 'Adhésion ACFE',
-    'pricing.acfeMembershipDesc': 'Tout ce dont vous avez besoin pour lancer votre carrière tech',
+    'pricing.acfeMembershipDesc': 'Tout ce dont vous avez besoin pour lancer votre carrière en tech',
     'pricing.cancelAnytime': 'Annulez à tout moment • Pas de frais cachés',
     'pricing.getStartedNow': 'Commencer Maintenant',
     'pricing.processing': 'Traitement...',
@@ -1560,7 +1560,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // ==================== PRICING PAGE ====================
     'pricing_hero_title': 'Investissez dans Votre',
-    'pricing_hero_title_highlight': 'Carrière Tech',
+    'pricing_hero_title_highlight': 'Carrière en Tech',
     'pricing_hero_subtitle': 'Un abonnement abordable débloque un accès illimité aux cours, au mentorat, à la communauté et aux opportunités de carrière conçus pour les talents tech africains.',
     'pricing_month': 'mois',
     'pricing_free_title': 'Accès Gratuit',
@@ -1575,7 +1575,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'pricing_free_f5': 'Apprentissage adapté mobile',
     'pricing_popular': 'Plus Populaire',
     'pricing_premium_title': 'Adhésion ACFE',
-    'pricing_premium_desc': 'Tout ce dont vous avez besoin pour lancer votre carrière tech',
+    'pricing_premium_desc': 'Tout ce dont vous avez besoin pour lancer votre carrière en tech',
     'pricing_cancel_anytime': 'Annulez à tout moment • Pas de frais cachés',
     'pricing_processing': 'Traitement...',
     'pricing_get_started': 'Commencer Maintenant',
