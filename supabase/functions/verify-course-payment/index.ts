@@ -146,7 +146,7 @@ serve(async (req) => {
     // Get course and user details for email
     const { data: course } = await serviceClient
       .from("courses")
-      .select("title")
+      .select("title, drip_enabled, drip_schedule_type, drip_release_day")
       .eq("id", courseId)
       .single();
 
@@ -155,6 +155,9 @@ serve(async (req) => {
       .select("full_name, email")
       .eq("id", user.id)
       .single();
+
+    // Check if drip is active (enabled and weekly schedule)
+    const isDripActive = course?.drip_enabled && course?.drip_schedule_type === 'week';
 
     // Send purchase confirmation email
     if (profile?.email && course?.title) {
@@ -172,9 +175,11 @@ serve(async (req) => {
             amount: (session.amount_total || 0) / 100,
             isSubscription: session.mode === 'subscription',
             isTrial: subscription?.status === 'trialing',
+            dripEnabled: isDripActive,
+            dripReleaseDay: course.drip_release_day ?? 3,
           }),
         });
-        logStep("Purchase confirmation email triggered");
+        logStep("Purchase confirmation email triggered", { dripEnabled: isDripActive });
       } catch (emailError) {
         logStep("Email trigger failed", { error: emailError });
       }
