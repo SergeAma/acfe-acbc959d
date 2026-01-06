@@ -809,7 +809,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'idea_gate_desc': 'Create an account or sign in to submit your startup idea and get access to mentorship and funding opportunities.',
     'idea_incubator_title': 'Innovator Incubator',
     'idea_incubator_desc': 'We believe in Africa\'s next generation of tech leaders. If you have an idea that could make a difference, we want to support you on your journey.',
-    'idea_funding_title': 'Up to 1000$ Funding',
+    'idea_funding_title': 'Up to $1000 Funding',
     'idea_funding_desc': 'New founders are eligible for seed funding from our partner, Spectrogram Consulting.',
     'idea_mentorship_title': 'Expert Mentorship',
     'idea_mentorship_desc': 'Get 1-on-1 guidance from industry experts who\'ve built successful startups.',
