@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileSignature, Shield, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { FileSignature, Shield, AlertTriangle, CheckCircle2, Loader2, Heart } from "lucide-react";
 
 const CONTRACT_CONDITIONS = [
   {
@@ -281,6 +281,21 @@ export default function MentorContractAgreement() {
                 ))}
               </div>
             </ScrollArea>
+
+            <Separator />
+
+            {/* Mission Statement */}
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <Heart className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold text-primary">Our Mission</h3>
+              </div>
+              <p className="text-sm leading-relaxed">
+                ACFE is a not-for-profit organisation. We exist because we want to make a difference. 
+                All proceeds from courses are reinvested into funding internships and sponsoring partner 
+                charities such as the LEARN Project. We hope you are here for the same purpose. If so, join us!
+              </p>
+            </div>
 
             <Separator />
 
