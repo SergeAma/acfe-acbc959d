@@ -78,7 +78,7 @@ serve(async (req) => {
       .single();
 
     // Use the stored Stripe price ID if available, otherwise use the default monthly subscription price
-    let priceId = "price_1SmhjvJv3w1nJBLYAFNBkh5g"; // Default $15/month ACFE Membership price
+    let priceId = "price_1SmiEGJv3w1nJBLYw5Wi2f4b"; // Default $15/month ACFE Membership price
     
     if (settingsData?.setting_value) {
       const settingValue = settingsData.setting_value as any;
