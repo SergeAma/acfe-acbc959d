@@ -777,8 +777,8 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // ==================== CAREER CENTRE LANDING ====================
     'career_badge': 'For Educational Institutions',
-    'career_hero_title': '"Your Institution\'s Name"',
-    'career_hero_highlight': 'Career Development Center',
+    'career_hero_title': 'Career Development Center',
+    'career_hero_highlight': '"Your Institution\'s Name"',
     'career_powered_by': 'Powered by ACFE',
     'career_hero_subtitle': 'Empower your students with job-ready tech skills, verified credentials, and direct pathways to employment through our dedicated institutional partnership program.',
     'career_partner_cta': 'Partner With ACFE',
