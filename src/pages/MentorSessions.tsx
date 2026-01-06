@@ -13,6 +13,7 @@ import { AddToCalendarButton } from '@/components/AddToCalendarButton';
 import { ArrowLeft, Calendar, Clock, Video, User, Loader2, Mail, CheckCircle, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useMentorContract } from '@/hooks/useMentorContract';
 
 interface Session {
   id: string;
@@ -35,15 +36,23 @@ interface Session {
 
 export const MentorSessions = () => {
   const navigate = useNavigate();
-  const { profile, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading, isActualAdmin } = useAuth();
   const [loading, setLoading] = useState(true);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const { hasSignedContract, loading: contractLoading } = useMentorContract(user?.id);
 
   useEffect(() => {
     if (!authLoading && profile?.role !== 'mentor' && profile?.role !== 'admin') {
       navigate('/dashboard');
     }
   }, [profile, authLoading, navigate]);
+
+  // Redirect mentors who haven't signed contract
+  useEffect(() => {
+    if (!contractLoading && profile?.role === 'mentor' && !isActualAdmin && hasSignedContract === false) {
+      navigate('/mentor-contract');
+    }
+  }, [contractLoading, profile, isActualAdmin, hasSignedContract, navigate]);
 
   useEffect(() => {
     if (profile?.id) {
@@ -110,7 +119,7 @@ export const MentorSessions = () => {
     (s.status === 'confirmed' && new Date(s.scheduled_date) < new Date(new Date().setHours(0, 0, 0, 0)))
   );
 
-  if (authLoading || loading) {
+  if (authLoading || loading || contractLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />

@@ -1627,6 +1627,69 @@ export type Database = {
           },
         ]
       }
+      mentor_contracts: {
+        Row: {
+          condition_data_privacy: boolean
+          condition_free_courses: boolean
+          condition_minimum_courses: boolean
+          condition_monthly_meetings: boolean
+          condition_no_profanity: boolean
+          condition_platform_engagement: boolean
+          condition_quarterly_events: boolean
+          condition_respect_students: boolean
+          condition_session_pricing: boolean
+          condition_support_youth: boolean
+          contract_version: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          mentor_id: string
+          signature_date: string
+          signature_name: string
+          user_agent: string | null
+        }
+        Insert: {
+          condition_data_privacy?: boolean
+          condition_free_courses?: boolean
+          condition_minimum_courses?: boolean
+          condition_monthly_meetings?: boolean
+          condition_no_profanity?: boolean
+          condition_platform_engagement?: boolean
+          condition_quarterly_events?: boolean
+          condition_respect_students?: boolean
+          condition_session_pricing?: boolean
+          condition_support_youth?: boolean
+          contract_version?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          mentor_id: string
+          signature_date?: string
+          signature_name: string
+          user_agent?: string | null
+        }
+        Update: {
+          condition_data_privacy?: boolean
+          condition_free_courses?: boolean
+          condition_minimum_courses?: boolean
+          condition_monthly_meetings?: boolean
+          condition_no_profanity?: boolean
+          condition_platform_engagement?: boolean
+          condition_quarterly_events?: boolean
+          condition_respect_students?: boolean
+          condition_session_pricing?: boolean
+          condition_support_youth?: boolean
+          contract_version?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          mentor_id?: string
+          signature_date?: string
+          signature_name?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       mentor_invitations: {
         Row: {
           accepted_at: string | null
@@ -2424,6 +2487,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      has_signed_mentor_contract: {
+        Args: { _user_id: string }
         Returns: boolean
       }
       is_course_mentor_for_content: {

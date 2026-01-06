@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Users, UserCheck, Clock, MessageSquare, BookOpen, CheckCircle, GraduationCap, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import { useMentorContract } from '@/hooks/useMentorContract';
 
 interface MentorshipRequest {
   id: string;
@@ -43,7 +44,7 @@ interface Course {
 }
 
 export const MentorCohort = () => {
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading, isActualAdmin } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedRequest, setSelectedRequest] = useState<MentorshipRequest | null>(null);
@@ -52,6 +53,7 @@ export const MentorCohort = () => {
   const [responseMessage, setResponseMessage] = useState('');
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [responding, setResponding] = useState(false);
+  const { hasSignedContract, loading: contractLoading } = useMentorContract(user?.id);
 
   // Redirect if not a mentor
   useEffect(() => {
@@ -59,6 +61,13 @@ export const MentorCohort = () => {
       navigate('/dashboard');
     }
   }, [authLoading, profile, navigate]);
+
+  // Redirect mentors who haven't signed contract
+  useEffect(() => {
+    if (!contractLoading && profile?.role === 'mentor' && !isActualAdmin && hasSignedContract === false) {
+      navigate('/mentor-contract');
+    }
+  }, [contractLoading, profile, isActualAdmin, hasSignedContract, navigate]);
 
   // Fetch mentorship requests
   const { data: requests, isLoading: requestsLoading, refetch: refetchRequests } = useQuery({
@@ -180,7 +189,7 @@ export const MentorCohort = () => {
     }
   };
 
-  if (authLoading) {
+  if (authLoading || contractLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
