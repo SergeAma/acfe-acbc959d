@@ -27,8 +27,11 @@ import {
   Eye,
   Music,
   ClipboardCheck,
-  Briefcase
+  Briefcase,
+  CalendarDays,
+  Info
 } from 'lucide-react';
+import { format, addDays, nextDay } from 'date-fns';
 import {
   Accordion,
   AccordionContent,
@@ -81,6 +84,8 @@ interface Course {
   description_video_url: string | null;
   description_audio_url: string | null;
   drip_enabled: boolean;
+  drip_schedule_type: string | null;
+  drip_release_day: number | null;
   certificate_enabled: boolean;
   mentor_name: string;
 }
@@ -96,6 +101,26 @@ const calculateReadingTime = (htmlContent: string): number => {
   const text = htmlContent.replace(/<[^>]*>/g, '').trim();
   const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
   return Math.max(1, Math.ceil(wordCount / 200));
+};
+
+// Calculate the next release date based on drip schedule
+const getNextReleaseDate = (releaseDay: number): Date => {
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0 = Sunday, 3 = Wednesday
+  
+  if (dayOfWeek === releaseDay) {
+    // If today is the release day, next release is in 7 days
+    return addDays(today, 7);
+  }
+  
+  // Find the next occurrence of the release day
+  return nextDay(today, releaseDay as 0 | 1 | 2 | 3 | 4 | 5 | 6);
+};
+
+// Get day name from day number
+const getDayName = (day: number): string => {
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  return days[day] || 'Wednesday';
 };
 
 export const CourseLearn = () => {
@@ -157,7 +182,9 @@ export const CourseLearn = () => {
           description,
           description_video_url,
           description_audio_url,
-          drip_enabled, 
+          drip_enabled,
+          drip_schedule_type,
+          drip_release_day,
           certificate_enabled,
           mentor_id
         `)
@@ -877,6 +904,44 @@ export const CourseLearn = () => {
             <ChevronRight className="h-4 w-4 ml-2" />
           </Button>
         </div>
+
+        {/* Drip Content Notification - Show after completing first lesson */}
+        {(() => {
+          const allContent = sections.flatMap(s => s.content);
+          const firstLesson = allContent[0];
+          const isFirstLessonCompleted = firstLesson?.completed;
+          const hasLockedContent = allContent.some(c => !c.available);
+          const releaseDay = course?.drip_release_day ?? 3; // Default to Wednesday (3)
+          
+          if (course?.drip_enabled && course?.drip_schedule_type === 'week' && isFirstLessonCompleted && hasLockedContent) {
+            const nextRelease = getNextReleaseDate(releaseDay);
+            const dayName = getDayName(releaseDay);
+            
+            return (
+              <Card className="border-primary/20 bg-primary/5">
+                <CardContent className="py-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 p-2 rounded-full bg-primary/10">
+                      <CalendarDays className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-foreground mb-1 flex items-center gap-2">
+                        <Info className="h-4 w-4 text-primary" />
+                        New Content Coming Soon
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        New lessons unlock every <span className="font-medium text-foreground">{dayName}</span>. 
+                        Your next content will be available on{' '}
+                        <span className="font-medium text-foreground">{format(nextRelease, 'EEEE, MMMM d')}</span>.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          }
+          return null;
+        })()}
       </div>
     );
   };
