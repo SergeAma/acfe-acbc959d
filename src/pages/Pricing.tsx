@@ -26,7 +26,7 @@ export const Pricing = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
-  const [pricePerMonth, setPricePerMonth] = useState(10);
+  const [pricePerMonth, setPricePerMonth] = useState(15);
   const [showInstitutionDialog, setShowInstitutionDialog] = useState(false);
   const [institutionLoading, setInstitutionLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
