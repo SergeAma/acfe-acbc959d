@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { LogOut, Instagram, Linkedin, Menu, X, GraduationCap } from "lucide-react";
 import {
@@ -13,23 +14,25 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NavLink } from "@/components/NavLink";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
+import { LanguageToggle } from "@/components/LanguageToggle";
 import { useUserInstitutions } from "@/hooks/useInstitution";
 import { useCountryFlag } from "@/hooks/useCountryFlag";
 import acfeLogo from "@/assets/acfe-logo.png";
 
 export const Navbar = () => {
   const { user, profile, signOut } = useAuth();
+  const { t } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { data: userInstitutions = [] } = useUserInstitutions();
   const { flag, countryName, loading: flagLoading } = useCountryFlag();
 
   const navLinks = [
-    { to: "/home", label: "Home" },
-    { to: "/partners", label: "Partners" },
-    { to: "/jobs", label: "Jobs" },
-    { to: "/pricing", label: "Pricing" },
-    { to: "/career-centre", label: "Career Centre" },
-    { to: "/startups", label: "Startups" },
+    { to: "/home", labelKey: "nav.home" },
+    { to: "/partners", labelKey: "nav.partners" },
+    { to: "/jobs", labelKey: "nav.jobs" },
+    { to: "/pricing", labelKey: "nav.pricing" },
+    { to: "/career-centre", labelKey: "nav.careerCentre" },
+    { to: "/startups", labelKey: "nav.startups" },
   ];
 
   return (
@@ -57,7 +60,7 @@ export const Navbar = () => {
               to={link.to}
               className="text-sm font-bold text-foreground hover:text-primary transition-colors"
             >
-              {link.label}
+              {t(link.labelKey)}
             </NavLink>
           ))}
 
@@ -71,53 +74,55 @@ export const Navbar = () => {
                     frame={profile?.profile_frame || 'none'}
                     size="sm"
                   />
-                  <span className="hidden lg:inline">Account</span>
+                  <span className="hidden lg:inline">{t('nav.account')}</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-popover z-[100]">
-                <DropdownMenuLabel>Account</DropdownMenuLabel>
+                <DropdownMenuLabel>{t('nav.account')}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to="/dashboard">Dashboard</Link>
+                  <Link to="/dashboard">{t('nav.dashboard')}</Link>
                 </DropdownMenuItem>
                 {userInstitutions.length > 0 && (
                   <DropdownMenuItem asChild>
                     <Link to={`/career-centre/${userInstitutions[0].institution_slug}`} className="flex items-center gap-2">
                       <GraduationCap className="h-4 w-4" />
-                      Career Centre
+                      {t('nav.careerCentre')}
                     </Link>
                   </DropdownMenuItem>
                 )}
                 {profile?.role === "student" && (
                   <DropdownMenuItem asChild>
-                    <Link to="/courses">Browse Courses</Link>
+                    <Link to="/courses">{t('nav.browseCourses')}</Link>
                   </DropdownMenuItem>
                 )}
                 {(profile?.role === "mentor" || profile?.role === "admin") && (
                   <DropdownMenuItem asChild>
-                    <Link to="/admin/courses">Manage Courses</Link>
+                    <Link to="/admin/courses">{t('nav.manageCourses')}</Link>
                   </DropdownMenuItem>
                 )}
                 {profile?.role === "admin" && (
                   <DropdownMenuItem asChild>
-                    <Link to="/admin">Admin Panel</Link>
+                    <Link to="/admin">{t('nav.adminPanel')}</Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem asChild>
-                  <Link to="/profile">Profile Settings</Link>
+                  <Link to="/profile">{t('nav.profileSettings')}</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => signOut()}>
                   <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
+                  {t('nav.signOut')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <Link to="/auth" className="text-sm font-bold text-foreground hover:text-primary transition-colors">
-              Account
+              {t('nav.account')}
             </Link>
           )}
+
+          <LanguageToggle />
 
           <div className="flex items-center gap-3">
             <button
@@ -159,7 +164,7 @@ export const Navbar = () => {
                 className="text-sm font-bold text-foreground hover:text-primary transition-colors py-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                {link.label}
+                {t(link.labelKey)}
               </NavLink>
             ))}
 
