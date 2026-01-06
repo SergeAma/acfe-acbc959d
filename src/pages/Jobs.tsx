@@ -170,10 +170,10 @@ export const Jobs = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto text-center space-y-2 sm:space-y-3">
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-              Community & Opportunities
+              {t('jobs.pageTitle')}
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Connect with learners and mentors, discover tips, events, and career opportunities
+              {t('jobs.pageSubtitle')}
             </p>
           </div>
         </div>
@@ -186,19 +186,19 @@ export const Jobs = () => {
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/60 backdrop-blur-sm">
             <Card className="max-w-md mx-4 border border-border shadow-lg">
               <CardContent className="p-8 text-center space-y-4">
-                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                   <Users className="h-8 w-8 text-primary" />
                 </div>
-                <h2 className="text-xl font-bold text-foreground">Join Our Community</h2>
+                <h2 className="text-xl font-bold text-foreground">{t('jobs.joinCommunity')}</h2>
                 <p className="text-muted-foreground text-sm">
-                  Sign up to access community posts, job opportunities, and connect with learners and mentors.
+                  {t('jobs.joinCommunityDesc')}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
                   <Button asChild className="rounded-full">
-                    <Link to="/auth">Sign Up</Link>
+                    <Link to="/auth">{t('jobs.signUp')}</Link>
                   </Button>
                   <Button variant="outline" asChild className="rounded-full">
-                    <Link to="/auth">Sign In</Link>
+                    <Link to="/auth">{t('jobs.signIn')}</Link>
                   </Button>
                 </div>
               </CardContent>
@@ -213,11 +213,11 @@ export const Jobs = () => {
             <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
               <TabsTrigger value="community" className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
-                Community
+                {t('jobs.community')}
               </TabsTrigger>
               <TabsTrigger value="jobs" className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
-                Jobs Board
+                {t('jobs.jobsBoard')}
               </TabsTrigger>
             </TabsList>
 
