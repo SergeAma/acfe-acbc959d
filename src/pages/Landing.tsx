@@ -168,9 +168,6 @@ export const Landing = () => {
         </div>
       </section>
 
-      {/* Latest Tech News Section */}
-      <TechNewsSection />
-
       {/* Partners Section */}
       <section className="py-10 sm:py-12 bg-muted">
         <div className="container mx-auto px-4">
@@ -196,6 +193,9 @@ export const Landing = () => {
 
       {/* Support Section */}
       <SupportSection />
+
+      {/* Latest Tech News Section */}
+      <TechNewsSection />
 
       <Footer />
     </div>;
