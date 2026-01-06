@@ -11,7 +11,7 @@ export const SupportSection = () => {
   const [referralOpen, setReferralOpen] = useState(false);
 
   return (
-    <section className="py-12 sm:py-20 bg-background">
+    <section className="py-12 sm:py-20 bg-muted">
       <div className="container mx-auto px-4">
         <div className="text-center mb-10 sm:mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">How You Can Support Us</h2>
