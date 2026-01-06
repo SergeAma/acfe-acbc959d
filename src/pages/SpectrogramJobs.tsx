@@ -189,20 +189,36 @@ export const SpectrogramJobs = () => {
           </div>
         </section>
 
-        {/* Contact Section */}
+        {/* FAQ Section */}
         <section className="py-12 bg-muted">
           <div className="container mx-auto px-4">
-            <div className="max-w-2xl mx-auto text-center">
-              <p className="text-muted-foreground mb-4">
-                {t('spectrogram.jobs.questions')}
-              </p>
-              <Button 
-                variant="outline" 
-                onClick={() => window.open('https://spectrogramconsulting.com/contact', '_blank')}
-              >
-                {t('spectrogram.jobs.contact')}
-                <ExternalLink className="ml-2 h-4 w-4" />
-              </Button>
+            <div className="max-w-3xl mx-auto">
+              <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8">
+                {t('spectrogram.jobs.faq.title')}
+              </h2>
+              
+              <div className="space-y-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <h3 className="font-semibold text-lg mb-2">{t('spectrogram.jobs.faq.q1')}</h3>
+                    <p className="text-muted-foreground">{t('spectrogram.jobs.faq.a1')}</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="pt-6">
+                    <h3 className="font-semibold text-lg mb-2">{t('spectrogram.jobs.faq.q2')}</h3>
+                    <p className="text-muted-foreground">{t('spectrogram.jobs.faq.a2')}</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="pt-6">
+                    <h3 className="font-semibold text-lg mb-2">{t('spectrogram.jobs.faq.q3')}</h3>
+                    <p className="text-muted-foreground">{t('spectrogram.jobs.faq.a3')}</p>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         </section>

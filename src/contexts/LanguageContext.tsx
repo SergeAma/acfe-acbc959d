@@ -155,8 +155,13 @@ const translations: Record<Language, Record<string, string>> = {
     'spectrogram.jobs.benefit1': 'Demonstrate your commitment to professional growth',
     'spectrogram.jobs.benefit2': 'Gain verified digital skills that enhance your application',
     'spectrogram.jobs.benefit3': 'Join a network of talented professionals across Africa',
-    'spectrogram.jobs.questions': 'Questions about your application?',
-    'spectrogram.jobs.contact': 'Contact Spectrogram HR',
+    'spectrogram.jobs.faq.title': 'Frequently Asked Questions',
+    'spectrogram.jobs.faq.q1': 'Do I need to pay for the course?',
+    'spectrogram.jobs.faq.a1': 'No, the course is complimentary with the code shared with you.',
+    'spectrogram.jobs.faq.q2': 'How long is the course?',
+    'spectrogram.jobs.faq.a2': 'ACFE courses are designed to be completed in under 30 minutes.',
+    'spectrogram.jobs.faq.q3': 'Is job placement guaranteed after completion?',
+    'spectrogram.jobs.faq.a3': 'No, but completing the course significantly improves your chances to get noticed not only by ACFE and Spectrogram, but also by our partner organisations.',
   },
   fr: {
     // Navigation
@@ -269,9 +274,14 @@ const translations: Record<Language, Record<string, string>> = {
     'spectrogram.jobs.whyComplete': 'Pourquoi Compléter Cette Évaluation?',
     'spectrogram.jobs.benefit1': 'Démontrez votre engagement envers la croissance professionnelle',
     'spectrogram.jobs.benefit2': 'Acquérez des compétences numériques vérifiées qui renforcent votre candidature',
-    'spectrogram.jobs.benefit3': 'Rejoignez un réseau de professionnels talentueux à travers l\'Afrique',
-    'spectrogram.jobs.questions': 'Questions sur votre candidature?',
-    'spectrogram.jobs.contact': 'Contacter les RH de Spectrogram',
+    'spectrogram.jobs.benefit3': "Rejoignez un réseau de professionnels talentueux à travers l'Afrique",
+    'spectrogram.jobs.faq.title': 'Questions Fréquemment Posées',
+    'spectrogram.jobs.faq.q1': 'Dois-je payer pour le cours?',
+    'spectrogram.jobs.faq.a1': 'Non, le cours est gratuit avec le code qui vous a été partagé.',
+    'spectrogram.jobs.faq.q2': 'Quelle est la durée du cours?',
+    'spectrogram.jobs.faq.a2': 'Les cours ACFE sont conçus pour être complétés en moins de 30 minutes.',
+    'spectrogram.jobs.faq.q3': "Un placement professionnel est-il garanti après l'achèvement?",
+    'spectrogram.jobs.faq.a3': "Non, mais compléter le cours améliore considérablement vos chances d'être remarqué non seulement par ACFE et Spectrogram, mais aussi par nos organisations partenaires.",
   },
 };
 
