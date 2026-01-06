@@ -1750,6 +1750,36 @@ export type Database = {
         }
         Relationships: []
       }
+      mentor_course_topics: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          id: string
+          mentor_id: string
+          topic_key: string
+          updated_at: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          mentor_id: string
+          topic_key: string
+          updated_at?: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          mentor_id?: string
+          topic_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mentor_invitations: {
         Row: {
           accepted_at: string | null

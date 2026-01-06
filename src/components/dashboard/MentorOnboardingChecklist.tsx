@@ -5,10 +5,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
 import { CheckCircle2, Circle, User, BookOpen, Image, FileText, ArrowRight } from 'lucide-react';
 
-interface SubChecklistItem {
+interface CourseTopicItem {
+  key: string;
   label: string;
+  completed: boolean;
 }
 
 interface ChecklistItem {
@@ -18,12 +21,20 @@ interface ChecklistItem {
   completed: boolean;
   link: string;
   icon: React.ReactNode;
-  subItems?: SubChecklistItem[];
+  courseTopics?: CourseTopicItem[];
 }
+
+const COURSE_TOPICS = [
+  { key: 'industry_entry', label: 'How you broke into your industry' },
+  { key: 'getting_started', label: 'How to get into your industry' },
+  { key: 'continuous_learning', label: 'Continuous learning to stay ahead in your industry' },
+  { key: 'career_journey', label: 'How to become you (your career journey)' }
+];
 
 export const MentorOnboardingChecklist = () => {
   const { profile, user } = useAuth();
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
+  const [courseTopics, setCourseTopics] = useState<CourseTopicItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,6 +48,22 @@ export const MentorOnboardingChecklist = () => {
         .eq('id', user.id)
         .single();
 
+      // Fetch course topic progress
+      const { data: topicProgress } = await supabase
+        .from('mentor_course_topics')
+        .select('topic_key, completed')
+        .eq('mentor_id', user.id);
+
+      const completedTopics = new Set(
+        topicProgress?.filter(t => t.completed).map(t => t.topic_key) || []
+      );
+
+      const topicsWithStatus = COURSE_TOPICS.map(topic => ({
+        ...topic,
+        completed: completedTopics.has(topic.key)
+      }));
+      setCourseTopics(topicsWithStatus);
+
       // Check profile completion
       const hasFullName = !!fullProfile?.full_name && fullProfile.full_name.trim() !== '';
       const hasBio = !!fullProfile?.bio && fullProfile.bio.trim() !== '';
@@ -49,8 +76,8 @@ export const MentorOnboardingChecklist = () => {
         .select('id, is_published')
         .eq('mentor_id', user.id);
 
-      const hasCourse = courses && courses.length > 0;
       const hasPublishedCourse = courses?.some(c => c.is_published) || false;
+      const allTopicsCompleted = topicsWithStatus.every(t => t.completed);
 
       const items: ChecklistItem[] = [
         {
@@ -88,23 +115,18 @@ export const MentorOnboardingChecklist = () => {
         {
           id: 'course',
           label: 'Build your courses',
-          description: 'Share your knowledge with the next generation',
-          completed: hasCourse,
+          description: 'Share your knowledge with the next generation by building 4 short (30 mins max) courses covering the following topics:',
+          completed: allTopicsCompleted,
           link: '/mentor/courses/new',
           icon: <BookOpen className="h-5 w-5" />,
-          subItems: [
-            { label: 'How you broke into your industry' },
-            { label: 'How to get into your industry' },
-            { label: 'Continuous learning to stay ahead in your industry' },
-            { label: 'How to become you (your career journey)' }
-          ]
+          courseTopics: topicsWithStatus
         },
         {
           id: 'publish',
           label: 'Publish a course',
           description: 'Make your course available to students',
           completed: hasPublishedCourse,
-          link: hasCourse ? `/mentor/courses/${courses?.[0]?.id}/build` : '/mentor/courses/new',
+          link: courses && courses.length > 0 ? `/mentor/courses/${courses[0].id}/build` : '/mentor/courses/new',
           icon: <ArrowRight className="h-5 w-5" />
         }
       ];
@@ -115,6 +137,52 @@ export const MentorOnboardingChecklist = () => {
 
     checkOnboardingStatus();
   }, [profile, user]);
+
+  const handleTopicToggle = async (topicKey: string, currentStatus: boolean) => {
+    if (!user) return;
+
+    const newStatus = !currentStatus;
+
+    // Optimistically update UI
+    setCourseTopics(prev => 
+      prev.map(t => t.key === topicKey ? { ...t, completed: newStatus } : t)
+    );
+
+    // Update in database
+    const { error } = await supabase
+      .from('mentor_course_topics')
+      .upsert({
+        mentor_id: user.id,
+        topic_key: topicKey,
+        completed: newStatus,
+        completed_at: newStatus ? new Date().toISOString() : null
+      }, {
+        onConflict: 'mentor_id,topic_key'
+      });
+
+    if (error) {
+      console.error('Failed to update topic progress:', error);
+      // Revert on error
+      setCourseTopics(prev => 
+        prev.map(t => t.key === topicKey ? { ...t, completed: currentStatus } : t)
+      );
+    } else {
+      // Update checklist completion status
+      setChecklist(prev => prev.map(item => {
+        if (item.id === 'course') {
+          const updatedTopics = courseTopics.map(t => 
+            t.key === topicKey ? { ...t, completed: newStatus } : t
+          );
+          return {
+            ...item,
+            completed: updatedTopics.every(t => t.completed),
+            courseTopics: updatedTopics
+          };
+        }
+        return item;
+      }));
+    }
+  };
 
   const completedCount = checklist.filter(item => item.completed).length;
   const totalCount = checklist.length;
@@ -151,13 +219,13 @@ export const MentorOnboardingChecklist = () => {
           {checklist.map((item) => (
             <div
               key={item.id}
-              className={`flex items-center gap-4 p-3 rounded-lg transition-colors ${
+              className={`flex items-start gap-4 p-3 rounded-lg transition-colors ${
                 item.completed 
                   ? 'bg-green-50 dark:bg-green-950/20' 
                   : 'bg-muted/50 hover:bg-muted'
               }`}
             >
-              <div className={`flex-shrink-0 ${item.completed ? 'text-green-600' : 'text-muted-foreground'}`}>
+              <div className={`flex-shrink-0 mt-0.5 ${item.completed ? 'text-green-600' : 'text-muted-foreground'}`}>
                 {item.completed ? (
                   <CheckCircle2 className="h-6 w-6" />
                 ) : (
@@ -169,21 +237,38 @@ export const MentorOnboardingChecklist = () => {
                   {item.label}
                 </p>
                 <p className="text-sm text-muted-foreground">{item.description}</p>
-                {item.subItems && item.subItems.length > 0 && (
-                  <ul className="mt-2 ml-4 space-y-1">
-                    {item.subItems.map((subItem, index) => (
-                      <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
-                        <span className="text-primary mt-0.5">•</span>
-                        <span>{subItem.label}</span>
+                {item.courseTopics && item.courseTopics.length > 0 && (
+                  <ul className="mt-3 space-y-2">
+                    {item.courseTopics.map((topic) => (
+                      <li key={topic.key} className="flex items-center gap-3">
+                        <Checkbox
+                          id={topic.key}
+                          checked={topic.completed}
+                          onCheckedChange={() => handleTopicToggle(topic.key, topic.completed)}
+                          className="h-4 w-4"
+                        />
+                        <label 
+                          htmlFor={topic.key}
+                          className={`text-sm cursor-pointer ${topic.completed ? 'text-green-600 line-through' : 'text-muted-foreground'}`}
+                        >
+                          {topic.label}
+                        </label>
                       </li>
                     ))}
                   </ul>
                 )}
               </div>
-              {!item.completed && (
+              {!item.completed && !item.courseTopics && (
                 <Link to={item.link}>
                   <Button size="sm" variant="outline">
                     Start
+                  </Button>
+                </Link>
+              )}
+              {item.courseTopics && !item.completed && (
+                <Link to={item.link}>
+                  <Button size="sm" variant="outline">
+                    Create
                   </Button>
                 </Link>
               )}
