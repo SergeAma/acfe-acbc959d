@@ -14,12 +14,14 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { useUserInstitutions } from "@/hooks/useInstitution";
+import { useCountryFlag } from "@/hooks/useCountryFlag";
 import acfeLogo from "@/assets/acfe-logo.png";
 
 export const Navbar = () => {
   const { user, profile, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { data: userInstitutions = [] } = useUserInstitutions();
+  const { flag, countryName, loading: flagLoading } = useCountryFlag();
 
   const navLinks = [
     { to: "/home", label: "Home" },
@@ -33,9 +35,18 @@ export const Navbar = () => {
   return (
     <nav className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
-        {/* Logo - Top Left */}
-        <Link to="/home" className="flex items-center hover:opacity-80 transition-opacity flex-shrink-0">
+        {/* Logo with Country Flag */}
+        <Link to="/home" className="flex items-center gap-2 hover:opacity-80 transition-opacity flex-shrink-0">
           <img src={acfeLogo} alt="A Cloud for Everyone" className="h-16 sm:h-24 w-auto" />
+          {!flagLoading && (
+            <span 
+              className="text-2xl sm:text-3xl" 
+              title={countryName}
+              aria-label={`Visiting from ${countryName}`}
+            >
+              {flag}
+            </span>
+          )}
         </Link>
 
         {/* Desktop Navigation */}

@@ -61,6 +61,8 @@ import { CareerCentreLanding } from "./pages/CareerCentreLanding";
 import { ModeratorDashboard } from "./pages/ModeratorDashboard";
 import MentorContractAgreement from "./pages/MentorContractAgreement";
 import LearnerAgreement from "./pages/LearnerAgreement";
+import { DonationSuccess } from "./pages/DonationSuccess";
+import { AdminDonors } from "./pages/AdminDonors";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -117,12 +119,14 @@ const App = () => (
             <Route path="/admin/pricing" element={<ProtectedRoute requiredRole="admin"><AdminPricing /></ProtectedRoute>} />
             <Route path="/admin/revenue" element={<ProtectedRoute requiredRole="admin"><AdminRevenue /></ProtectedRoute>} />
             <Route path="/admin/institutions" element={<ProtectedRoute requiredRole="admin"><AdminInstitutions /></ProtectedRoute>} />
+            <Route path="/admin/donors" element={<ProtectedRoute requiredRole="admin"><AdminDonors /></ProtectedRoute>} />
             <Route path="/admin/courses" element={<ProtectedRoute requiredRole="admin"><AdminCourses /></ProtectedRoute>} />
             <Route path="/admin/courses/:courseId/build" element={<ProtectedRoute requiredRole="admin"><AdminCourseBuilder /></ProtectedRoute>} />
             <Route path="/career-centre" element={<CareerCentreLanding />} />
             <Route path="/career-centre/:slug" element={<InstitutionCareerCentre />} />
             <Route path="/moderator/:slug" element={<ProtectedRoute><ModeratorDashboard /></ProtectedRoute>} />
             <Route path="/payment-success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
+            <Route path="/donation-success" element={<DonationSuccess />} />
             <Route path="/mentor/courses" element={<ProtectedRoute><MentorCourses /></ProtectedRoute>} />
             <Route path="/mentor/courses/new" element={<ProtectedRoute><CreateCourse /></ProtectedRoute>} />
             <Route path="/mentor/courses/:courseId/build" element={<ProtectedRoute><AdminCourseBuilder /></ProtectedRoute>} />

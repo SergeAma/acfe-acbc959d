@@ -7,11 +7,15 @@ import { Loader2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { useMentorContract } from '@/hooks/useMentorContract';
 import { useLearnerAgreement } from '@/hooks/useLearnerAgreement';
+import { useSessionTracking } from '@/hooks/useSessionTracking';
 
 export const Dashboard = () => {
   const { user, profile, loading, isActualAdmin } = useAuth();
   const { hasSignedContract, loading: contractLoading } = useMentorContract(user?.id);
   const { hasSignedAgreement, isLoading: agreementLoading, isProfileComplete } = useLearnerAgreement();
+  
+  // Track session for login sharing prevention
+  useSessionTracking(user?.id);
 
   if (loading || contractLoading || agreementLoading) {
     return (
