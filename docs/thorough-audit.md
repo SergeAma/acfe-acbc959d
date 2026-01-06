@@ -248,13 +248,13 @@ return new Response(JSON.stringify({ error: error.message }), ...)
 
 ## Recommended Fix Order
 
-### Phase 1 (Critical) - No remaining critical issues
+### Phase 1 (Critical) - ✅ COMPLETED
 All critical issues have been addressed.
 
-### Phase 2 (High Priority) - Estimated: 2-3 hours
-1. Enable Leaked Password Protection in Supabase Dashboard (manual)
-2. Remove/conditionally compile console.log statements
-3. Add admin action audit logging
+### Phase 2 (High Priority) - ✅ COMPLETED
+1. ✅ Enable Leaked Password Protection in Supabase Dashboard (manual - pending user action)
+2. ✅ Removed console.log statements that logged user/profile data in AuthContext
+3. ✅ Added admin_audit_logs table and logging for admin profile views
 
 ### Phase 3 (Medium Priority) - Estimated: 4-6 hours
 1. Consolidate duplicate `is_institution_member` functions
