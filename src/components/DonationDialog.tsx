@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Heart, DollarSign, Building2 } from 'lucide-react';
+import { PhoneInput } from '@/components/ui/phone-input';
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
 
@@ -24,10 +26,69 @@ declare global {
   }
 }
 
+const AFRICAN_COUNTRIES = [
+  { code: 'DZ', name: 'Algeria', flag: '🇩🇿' },
+  { code: 'AO', name: 'Angola', flag: '🇦🇴' },
+  { code: 'BJ', name: 'Benin', flag: '🇧🇯' },
+  { code: 'BW', name: 'Botswana', flag: '🇧🇼' },
+  { code: 'BF', name: 'Burkina Faso', flag: '🇧🇫' },
+  { code: 'BI', name: 'Burundi', flag: '🇧🇮' },
+  { code: 'CV', name: 'Cabo Verde', flag: '🇨🇻' },
+  { code: 'CM', name: 'Cameroon', flag: '🇨🇲' },
+  { code: 'CF', name: 'Central African Republic', flag: '🇨🇫' },
+  { code: 'TD', name: 'Chad', flag: '🇹🇩' },
+  { code: 'KM', name: 'Comoros', flag: '🇰🇲' },
+  { code: 'CG', name: 'Congo', flag: '🇨🇬' },
+  { code: 'CD', name: 'DR Congo', flag: '🇨🇩' },
+  { code: 'DJ', name: 'Djibouti', flag: '🇩🇯' },
+  { code: 'EG', name: 'Egypt', flag: '🇪🇬' },
+  { code: 'GQ', name: 'Equatorial Guinea', flag: '🇬🇶' },
+  { code: 'ER', name: 'Eritrea', flag: '🇪🇷' },
+  { code: 'SZ', name: 'Eswatini', flag: '🇸🇿' },
+  { code: 'ET', name: 'Ethiopia', flag: '🇪🇹' },
+  { code: 'GA', name: 'Gabon', flag: '🇬🇦' },
+  { code: 'GM', name: 'Gambia', flag: '🇬🇲' },
+  { code: 'GH', name: 'Ghana', flag: '🇬🇭' },
+  { code: 'GN', name: 'Guinea', flag: '🇬🇳' },
+  { code: 'GW', name: 'Guinea-Bissau', flag: '🇬🇼' },
+  { code: 'CI', name: 'Ivory Coast', flag: '🇨🇮' },
+  { code: 'KE', name: 'Kenya', flag: '🇰🇪' },
+  { code: 'LS', name: 'Lesotho', flag: '🇱🇸' },
+  { code: 'LR', name: 'Liberia', flag: '🇱🇷' },
+  { code: 'LY', name: 'Libya', flag: '🇱🇾' },
+  { code: 'MG', name: 'Madagascar', flag: '🇲🇬' },
+  { code: 'MW', name: 'Malawi', flag: '🇲🇼' },
+  { code: 'ML', name: 'Mali', flag: '🇲🇱' },
+  { code: 'MR', name: 'Mauritania', flag: '🇲🇷' },
+  { code: 'MU', name: 'Mauritius', flag: '🇲🇺' },
+  { code: 'MA', name: 'Morocco', flag: '🇲🇦' },
+  { code: 'MZ', name: 'Mozambique', flag: '🇲🇿' },
+  { code: 'NA', name: 'Namibia', flag: '🇳🇦' },
+  { code: 'NE', name: 'Niger', flag: '🇳🇪' },
+  { code: 'NG', name: 'Nigeria', flag: '🇳🇬' },
+  { code: 'RW', name: 'Rwanda', flag: '🇷🇼' },
+  { code: 'ST', name: 'São Tomé and Príncipe', flag: '🇸🇹' },
+  { code: 'SN', name: 'Senegal', flag: '🇸🇳' },
+  { code: 'SC', name: 'Seychelles', flag: '🇸🇨' },
+  { code: 'SL', name: 'Sierra Leone', flag: '🇸🇱' },
+  { code: 'SO', name: 'Somalia', flag: '🇸🇴' },
+  { code: 'ZA', name: 'South Africa', flag: '🇿🇦' },
+  { code: 'SS', name: 'South Sudan', flag: '🇸🇸' },
+  { code: 'SD', name: 'Sudan', flag: '🇸🇩' },
+  { code: 'TZ', name: 'Tanzania', flag: '🇹🇿' },
+  { code: 'TG', name: 'Togo', flag: '🇹🇬' },
+  { code: 'TN', name: 'Tunisia', flag: '🇹🇳' },
+  { code: 'UG', name: 'Uganda', flag: '🇺🇬' },
+  { code: 'ZM', name: 'Zambia', flag: '🇿🇲' },
+  { code: 'ZW', name: 'Zimbabwe', flag: '🇿🇼' },
+];
+
 const donationSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(50),
   lastName: z.string().min(1, 'Last name is required').max(50),
   email: z.string().email('Please enter a valid email'),
+  country: z.string().min(1, 'Country is required'),
+  phone: z.string().min(8, 'Phone number is required'),
   company: z.string().max(100).optional(),
   reason: z.string().min(1, 'Please share why you want to support us').max(500, 'Maximum 500 characters'),
   amount: z.number().min(10, 'Minimum donation is $10').max(10000, 'Maximum donation is $10,000'),
@@ -57,6 +118,8 @@ export const DonationDialog = ({ open, onOpenChange }: DonationDialogProps) => {
       firstName: '',
       lastName: '',
       email: '',
+      country: '',
+      phone: '',
       company: '',
       reason: '',
       amount: 10,
@@ -142,6 +205,8 @@ export const DonationDialog = ({ open, onOpenChange }: DonationDialogProps) => {
           firstName: data.firstName,
           lastName: data.lastName,
           email: data.email,
+          country: data.country,
+          phone: data.phone,
           company: data.company || null,
           reason: data.reason,
           amountCents: Math.round(data.amount * 100),
@@ -222,6 +287,50 @@ export const DonationDialog = ({ open, onOpenChange }: DonationDialogProps) => {
                   <FormLabel>Email <span className="text-destructive">*</span></FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="john@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="country"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Country <span className="text-destructive">*</span></FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your country" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="max-h-[200px]">
+                      {AFRICAN_COUNTRIES.map((country) => (
+                        <SelectItem key={country.code} value={country.code}>
+                          {country.flag} {country.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone <span className="text-destructive">*</span></FormLabel>
+                  <FormControl>
+                    <PhoneInput
+                      id="donor-phone"
+                      value={field.value}
+                      onChange={field.onChange}
+                      required
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
