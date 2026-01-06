@@ -14,7 +14,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Upload, CheckCircle, Video, Lightbulb, DollarSign, Users, Rocket, Save } from "lucide-react";
 import { FormProgressStepper } from "@/components/FormProgressStepper";
 import { Confetti } from "@/components/Confetti";
-
 const STORAGE_KEY = "acfe-idea-submission-draft";
 
 // Minimum time (in seconds) user must spend on form before submitting
@@ -82,7 +81,6 @@ export function SubmitIdea() {
   useEffect(() => {
     const hasContent = Object.values(formData).some(v => v.trim().length > 0);
     if (!hasContent) return;
-
     const timer = setTimeout(() => {
       saveToStorage();
     }, 1000); // Save 1 second after user stops typing
@@ -107,13 +105,27 @@ export function SubmitIdea() {
   // Calculate form progress steps
   const formSteps = useMemo(() => {
     const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
-    return [
-      { id: 'fullName', label: 'Full Name', isComplete: formData.fullName.trim().length > 0 },
-      { id: 'email', label: 'Email', isComplete: isValidEmail },
-      { id: 'ideaTitle', label: 'Idea Name', isComplete: formData.ideaTitle.trim().length > 0 },
-      { id: 'ideaDescription', label: 'Description', isComplete: formData.ideaDescription.trim().length >= MIN_DESCRIPTION_LENGTH },
-      { id: 'video', label: 'Video', isComplete: videoFile !== null },
-    ];
+    return [{
+      id: 'fullName',
+      label: 'Full Name',
+      isComplete: formData.fullName.trim().length > 0
+    }, {
+      id: 'email',
+      label: 'Email',
+      isComplete: isValidEmail
+    }, {
+      id: 'ideaTitle',
+      label: 'Idea Name',
+      isComplete: formData.ideaTitle.trim().length > 0
+    }, {
+      id: 'ideaDescription',
+      label: 'Description',
+      isComplete: formData.ideaDescription.trim().length >= MIN_DESCRIPTION_LENGTH
+    }, {
+      id: 'video',
+      label: 'Video',
+      isComplete: videoFile !== null
+    }];
   }, [formData, videoFile]);
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const {
@@ -243,7 +255,7 @@ export function SubmitIdea() {
         // Don't fail the whole submission if email fails
       }
       setUploadProgress(100);
-      
+
       // Clear saved draft and trigger confetti
       clearSavedDraft();
       setShowConfetti(true);
@@ -356,8 +368,8 @@ export function SubmitIdea() {
                         <DollarSign className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-semibold mb-1">Up to $1000 Funding</h3>
-                        <p className="text-sm text-background/70">New founders are eligible for up to $1000 in seed funding from our partner, Spectrogram Consulting.</p>
+                        <h3 className="font-semibold mb-1">Up to 1000$ Funding</h3>
+                        <p className="text-sm text-background/70">New founders are eligible for seed funding from our partner, Spectrogram Consulting.</p>
                       </div>
                     </div>
                     
@@ -496,12 +508,10 @@ export function SubmitIdea() {
                       <p className="text-center sm:text-left">
                         By submitting, you agree to our terms of service and privacy policy.
                       </p>
-                      {lastSaved && (
-                        <p className="flex items-center gap-1 text-primary/70 shrink-0">
+                      {lastSaved && <p className="flex items-center gap-1 text-primary/70 shrink-0">
                           <Save className="h-3 w-3" />
                           Draft saved
-                        </p>
-                      )}
+                        </p>}
                     </div>
                   </form>
                 </div>
