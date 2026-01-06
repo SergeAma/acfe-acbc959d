@@ -65,6 +65,7 @@ import MentorContractAgreement from "./pages/MentorContractAgreement";
 import LearnerAgreement from "./pages/LearnerAgreement";
 import { DonationSuccess } from "./pages/DonationSuccess";
 import { AdminDonors } from "./pages/AdminDonors";
+import { AdminTranslations } from "./pages/AdminTranslations";
 
 const queryClient = new QueryClient();
 
@@ -125,6 +126,7 @@ const App = () => (
               <Route path="/admin/revenue" element={<ProtectedRoute requiredRole="admin"><AdminRevenue /></ProtectedRoute>} />
               <Route path="/admin/institutions" element={<ProtectedRoute requiredRole="admin"><AdminInstitutions /></ProtectedRoute>} />
               <Route path="/admin/donors" element={<ProtectedRoute requiredRole="admin"><AdminDonors /></ProtectedRoute>} />
+              <Route path="/admin/translations" element={<ProtectedRoute requiredRole="admin"><AdminTranslations /></ProtectedRoute>} />
               <Route path="/admin/courses" element={<ProtectedRoute requiredRole="admin"><AdminCourses /></ProtectedRoute>} />
               <Route path="/admin/courses/:courseId/build" element={<ProtectedRoute requiredRole="admin"><AdminCourseBuilder /></ProtectedRoute>} />
               <Route path="/career-centre" element={<CareerCentreLanding />} />

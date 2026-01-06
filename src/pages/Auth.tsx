@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Globe } from 'lucide-react';
 import { z } from 'zod';
 import acfeIcon from '@/assets/acfe-icon.png';
 import { Navbar } from '@/components/Navbar';
@@ -61,6 +62,7 @@ export const Auth = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, signIn, signUp, resetPassword, updatePassword } = useAuth();
+  const { setLanguage } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'signin' | 'signup' | 'forgot' | 'reset'>(
     searchParams.get('mode') === 'signup' ? 'signup' : 
@@ -96,6 +98,7 @@ export const Auth = () => {
     portfolioLinks: '',
     mentorPledge: false,
     rememberMe: false,
+    preferredLanguage: 'en' as 'en' | 'fr',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -170,9 +173,12 @@ export const Auth = () => {
           isMentorSignup,
           formData.university,
           isMentorSignup ? formData.mentorBio : undefined,
-          isMentorSignup ? formData.portfolioLinks : undefined
+          isMentorSignup ? formData.portfolioLinks : undefined,
+          formData.preferredLanguage
         );
         if (!error) {
+          // Update the language context with user's preference
+          setLanguage(formData.preferredLanguage);
           navigate(redirectUrl, { replace: true });
           return; // Exit early, don't set loading to false
         }
@@ -441,6 +447,35 @@ export const Auth = () => {
                       </div>
                     ))}
                   </div>
+                </div>
+
+                {/* Language Preference Selection */}
+                <div className="space-y-3 p-4 bg-muted/50 rounded-lg border">
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-muted-foreground" />
+                    <Label className="text-sm font-medium">Preferred Language</Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Choose the language for your account, emails, and content where available.
+                  </p>
+                  <RadioGroup
+                    value={formData.preferredLanguage}
+                    onValueChange={(value: 'en' | 'fr') => setFormData({ ...formData, preferredLanguage: value })}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="en" id="lang-en" />
+                      <Label htmlFor="lang-en" className="cursor-pointer flex items-center gap-2">
+                        <span className="text-lg">🇬🇧</span> English
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="fr" id="lang-fr" />
+                      <Label htmlFor="lang-fr" className="cursor-pointer flex items-center gap-2">
+                        <span className="text-lg">🇫🇷</span> Français
+                      </Label>
+                    </div>
+                  </RadioGroup>
                 </div>
 
                 <div className="flex items-start space-x-2">
