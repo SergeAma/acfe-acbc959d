@@ -94,6 +94,26 @@ export const translations: Record<Language, Record<string, string>> = {
     'footer.newsletter': 'Subscribe to Newsletter',
     'footer.newsletterPlaceholder': 'Enter your email',
     'footer.subscribe': 'Subscribe',
+    'footer.initiativeBy': 'ACFE is an initiative by',
+    'footer.contactUs': 'Contact Us',
+
+    // ==================== NEWS SECTION ====================
+    'news.latestInsights': 'Latest Insights',
+    'news.title': 'Africa Digital News & Innovation',
+    'news.updated': 'Updated',
+    'news.allNews': 'ALL NEWS',
+    'news.digitalSkills': 'DIGITAL SKILLS',
+    'news.innovation': 'INNOVATION',
+    'news.partnerships': 'PARTNERSHIPS',
+    'news.showing': 'Showing',
+    'news.of': 'of',
+    'news.articles': 'articles',
+    'news.noArticles': 'No news articles available at the moment. Check back soon!',
+    'news.noCategory': 'No articles found for this category. Try selecting a different category.',
+    'news.weeklyDigest': 'Weekly Africa Tech Digest',
+    'news.weeklyDigestDesc': 'Get curated insights on African startups, VC deals, and tech trends delivered to your inbox every week.',
+    'news.noSpam': 'No spam. Unsubscribe anytime. We respect your privacy.',
+    'news.subscribing': 'Subscribing...',
 
     // ==================== AUTH ====================
     'auth.welcome': 'Welcome',
@@ -421,12 +441,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'spectrogram.jobs.faq.a3': 'No, but completing the course significantly improves your chances to get noticed not only by ACFE and Spectrogram, but also by our partner organisations.',
     'spectrogram.jobs.journeyTitle': 'Your Journey to Success',
 
-    // ==================== NEWS SECTION ====================
-    'news.title': 'Latest Tech News',
-    'news.subtitle': 'Stay updated with the latest in African tech',
+    // ==================== NEWS SECTION (additional) ====================
     'news.readMore': 'Read More',
     'news.viewAll': 'View All News',
-    'news.noNews': 'No news articles available',
 
     // ==================== COOKIES ====================
     'cookies.title': 'Cookie Consent',
@@ -568,8 +585,28 @@ export const translations: Record<Language, Record<string, string>> = {
     'footer.newsletter': "S'abonner à la Newsletter",
     'footer.newsletterPlaceholder': 'Entrez votre email',
     'footer.subscribe': "S'abonner",
+    'footer.initiativeBy': 'ACFE est une initiative de',
+    'footer.contactUs': 'Nous Contacter',
 
-    // ==================== AUTH ====================
+    // ==================== NEWS SECTION ====================
+    'news.latestInsights': 'Dernières Actualités',
+    'news.title': 'Actualités et Innovation Numériques en Afrique',
+    'news.updated': 'Mis à jour',
+    'news.allNews': 'TOUTES LES ACTUALITÉS',
+    'news.digitalSkills': 'COMPÉTENCES NUMÉRIQUES',
+    'news.innovation': 'INNOVATION',
+    'news.partnerships': 'PARTENARIATS',
+    'news.showing': 'Affichage',
+    'news.of': 'sur',
+    'news.articles': 'articles',
+    'news.noArticles': 'Aucun article disponible pour le moment. Revenez bientôt!',
+    'news.noCategory': 'Aucun article trouvé pour cette catégorie. Essayez une autre catégorie.',
+    'news.weeklyDigest': 'Digest Tech Africain Hebdomadaire',
+    'news.weeklyDigestDesc': 'Recevez des analyses sur les startups africaines, les deals VC et les tendances tech chaque semaine.',
+    'news.noSpam': 'Pas de spam. Désabonnez-vous à tout moment.',
+    'news.subscribing': 'Inscription en cours...',
+    'news.readMore': 'Lire la Suite',
+    'news.viewAll': 'Voir Toutes les Actualités',
     'auth.welcome': 'Bienvenue',
     'auth.signIn': 'Se Connecter',
     'auth.signUp': "S'Inscrire",
@@ -895,11 +932,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'spectrogram.jobs.faq.a3': "Non, mais compléter le cours améliore considérablement vos chances d'être remarqué non seulement par ACFE et Spectrogram, mais aussi par nos organisations partenaires.",
     'spectrogram.jobs.journeyTitle': 'Votre Parcours vers le Succès',
 
-    // ==================== NEWS SECTION ====================
-    'news.title': 'Dernières Actualités Tech',
-    'news.subtitle': 'Restez informé des dernières nouvelles de la tech africaine',
-    'news.readMore': 'Lire la Suite',
-    'news.viewAll': 'Voir Toutes les Actualités',
+    // ==================== NEWS SECTION (additional) ====================
     'news.noNews': 'Aucun article disponible',
 
     // ==================== COOKIES ====================

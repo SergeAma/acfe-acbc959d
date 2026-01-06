@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
 import { Instagram, Linkedin, Mail } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import acfeLogo from "@/assets/acfe-logo.png";
 import spectrogramLogo from "@/assets/spectrogram-logo.png";
 
 export const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const { t } = useLanguage();
 
   return (
     <footer className="border-t border-border bg-muted/30">
@@ -16,11 +18,11 @@ export const Footer = () => {
               <img src={acfeLogo} alt="A Cloud for Everyone" className="h-16 w-auto" />
             </Link>
             <p className="text-muted-foreground text-sm max-w-md">
-              Empowering African youth with job-ready digital skills through mentorship and practical training.
+              {t('footer.tagline')}
             </p>
             <div className="mt-4 pt-4 border-t border-border/50">
               <p className="text-muted-foreground text-xs mb-2">
-                ACFE is an initiative by
+                {t('footer.initiativeBy')}
               </p>
               <a 
                 href="https://spectrogramconsulting.com/home" 
@@ -41,26 +43,26 @@ export const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Quick Links</h4>
+            <h4 className="font-semibold text-foreground mb-4">{t('footer.quickLinks')}</h4>
             <ul className="space-y-2">
               <li>
                 <Link to="/home" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Home
+                  {t('nav.home')}
                 </Link>
               </li>
               <li>
                 <Link to="/partners" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Partners
+                  {t('nav.partners')}
                 </Link>
               </li>
               <li>
                 <Link to="/jobs" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Jobs
+                  {t('nav.jobs')}
                 </Link>
               </li>
               <li>
                 <Link to="/courses" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Courses
+                  {t('nav.courses')}
                 </Link>
               </li>
             </ul>
@@ -68,16 +70,16 @@ export const Footer = () => {
 
           {/* Legal */}
           <div className="lg:hidden">
-            <h4 className="font-semibold text-foreground mb-4">Legal</h4>
+            <h4 className="font-semibold text-foreground mb-4">{t('footer.legal')}</h4>
             <ul className="space-y-2">
               <li>
                 <Link to="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Privacy Policy
+                  {t('footer.privacy')}
                 </Link>
               </li>
               <li>
                 <Link to="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Terms of Service
+                  {t('footer.terms')}
                 </Link>
               </li>
             </ul>
@@ -85,7 +87,7 @@ export const Footer = () => {
 
           {/* Contact */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Contact Us</h4>
+            <h4 className="font-semibold text-foreground mb-4">{t('footer.contactUs')}</h4>
             <ul className="space-y-3">
               <li>
                 <a
@@ -121,14 +123,14 @@ export const Footer = () => {
         {/* Copyright */}
         <div className="border-t border-border mt-8 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            © {currentYear} A Cloud for Everyone. All rights reserved.
+            © {currentYear} A Cloud for Everyone. {t('footer.rights')}
           </p>
           <div className="hidden lg:flex items-center gap-6">
             <Link to="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-              Privacy Policy
+              {t('footer.privacy')}
             </Link>
             <Link to="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-              Terms of Service
+              {t('footer.terms')}
             </Link>
           </div>
         </div>

@@ -5,18 +5,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Heart, Users, ArrowRight, Handshake } from 'lucide-react';
 import { DonationDialog } from '@/components/DonationDialog';
 import { ReferralDialog } from '@/components/ReferralDialog';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const SupportSection = () => {
   const [donationOpen, setDonationOpen] = useState(false);
   const [referralOpen, setReferralOpen] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <section className="py-12 sm:py-20 bg-muted">
       <div className="container mx-auto px-4">
         <div className="text-center mb-10 sm:mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">How You Can Support Us</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">{t('support.title')}</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Join us in empowering African youth with digital skills. Your support helps us sponsor more internships and expand our reach.
+            {t('support.desc')}
           </p>
         </div>
 
@@ -28,15 +30,14 @@ export const SupportSection = () => {
                 <Users className="h-7 w-7 text-secondary" />
               </div>
               <h3 className="text-xl font-bold mb-3 group-hover:text-secondary transition-colors text-center">
-                Volunteer as a Mentor
+                {t('support.volunteer.title')}
               </h3>
               <p className="text-muted-foreground flex-1 mb-6 text-center">
-                Share your expertise and guide the next generation of African tech talent. 
-                Help students navigate their career paths and develop practical skills.
+                {t('support.volunteer.desc')}
               </p>
               <Link to="/auth?mode=signup&role=mentor" className="w-full">
                 <Button variant="outline" className="w-full group/btn">
-                  Become a Mentor
+                  {t('support.volunteer.cta')}
                   <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
                 </Button>
               </Link>
@@ -50,18 +51,17 @@ export const SupportSection = () => {
                 <Heart className="h-7 w-7 text-primary" />
               </div>
               <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors text-center">
-                Make a Monthly Donation
+                {t('support.donate.title')}
               </h3>
               <p className="text-muted-foreground flex-1 mb-6 text-center">
-                Your recurring contribution helps us sponsor more internships through Spectrogram Consulting 
-                and provide resources to learners across Africa.
+                {t('support.donate.desc')}
               </p>
               <Button 
                 onClick={() => setDonationOpen(true)} 
                 className="w-full bg-primary hover:bg-primary/90"
               >
                 <Heart className="mr-2 h-4 w-4" />
-                Donate Now (Starting $10/month)
+                {t('support.donate.cta')}
               </Button>
             </CardContent>
           </Card>
@@ -73,11 +73,10 @@ export const SupportSection = () => {
                 <Handshake className="h-7 w-7 text-accent-foreground" />
               </div>
               <h3 className="text-xl font-bold mb-3 group-hover:text-accent-foreground transition-colors text-center">
-                Introduce Us to Partners
+                {t('support.partner.title')}
               </h3>
               <p className="text-muted-foreground flex-1 mb-6 text-center">
-                Know an educational institution or potential sponsor? Help us connect with organizations 
-                that share our vision for empowering African youth.
+                {t('support.partner.desc')}
               </p>
               <Button 
                 onClick={() => setReferralOpen(true)} 
@@ -85,7 +84,7 @@ export const SupportSection = () => {
                 className="w-full"
               >
                 <Handshake className="mr-2 h-4 w-4" />
-                Recommend
+                {t('support.partner.cta')}
               </Button>
             </CardContent>
           </Card>
