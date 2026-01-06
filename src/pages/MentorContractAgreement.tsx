@@ -217,7 +217,7 @@ export default function MentorContractAgreement() {
                 <p className="font-medium text-amber-800 dark:text-amber-200">Binding Agreement</p>
                 <p className="text-amber-700 dark:text-amber-300 mt-1">
                   This is a binding contractual agreement between you and A Cloud for Everyone (ACFE). 
-                  By signing below, you agree to uphold these standards throughout your mentorship.
+                  By signing below, you agree to uphold these standards throughout your role as mentor with ACFE.
                 </p>
               </div>
             </div>
