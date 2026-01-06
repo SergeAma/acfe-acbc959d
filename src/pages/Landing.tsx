@@ -140,8 +140,8 @@ export const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 bg-primary/10 px-3 sm:px-4 py-2 rounded-full mb-4 sm:mb-6">
-              <Lightbulb className="h-4 sm:h-5 w-4 sm:w-5 text-white" />
-              <span className="text-xs sm:text-sm font-semibold text-white">Innovation Hub</span>
+              <Lightbulb className="h-4 sm:h-5 w-4 sm:w-5 text-primary" />
+              <span className="text-xs sm:text-sm font-semibold text-foreground">Innovation Hub</span>
             </div>
             
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4 sm:mb-6">
