@@ -272,7 +272,7 @@ export const StudentProfileDialog = ({
             </div>
 
             {/* Social Links */}
-            {(profile.linkedin_url || profile.twitter_url || profile.github_url || profile.website_url) && (
+            {(profile.linkedin_url || profile.twitter_url || profile.instagram_url || profile.github_url || profile.website_url) && (
               <div>
                 <h4 className="text-sm font-medium mb-2">Links</h4>
                 <div className="flex flex-wrap gap-3">
@@ -284,6 +284,11 @@ export const StudentProfileDialog = ({
                   {profile.twitter_url && (
                     <a href={profile.twitter_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
                       Twitter
+                    </a>
+                  )}
+                  {profile.instagram_url && (
+                    <a href={profile.instagram_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                      Instagram
                     </a>
                   )}
                   {profile.github_url && (
@@ -301,8 +306,11 @@ export const StudentProfileDialog = ({
             )}
 
             {/* Account Info */}
-            <div className="pt-4 border-t text-xs text-muted-foreground">
+            <div className="pt-4 border-t space-y-1 text-xs text-muted-foreground">
               <p>Member since {profile.created_at ? format(new Date(profile.created_at), 'MMMM yyyy') : 'Unknown'}</p>
+              <p>Account Status: <span className={profile.account_status === 'active' ? 'text-green-600' : 'text-orange-600'}>{profile.account_status}</span></p>
+              {profile.preferred_language && <p>Preferred Language: {profile.preferred_language === 'fr' ? 'French' : 'English'}</p>}
+              {profile.profile_frame && <p>Profile Frame: {profile.profile_frame}</p>}
             </div>
           </div>
         )}
