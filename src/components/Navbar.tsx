@@ -36,7 +36,8 @@ export const Navbar = () => {
   ];
 
   return (
-    <nav className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
+    <>
+    <nav className="border-b border-border bg-background/95 backdrop-blur-sm fixed top-0 left-0 right-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
         {/* Logo with Country Flag */}
         <Link to="/home" className="flex items-center gap-2 hover:opacity-80 transition-opacity flex-shrink-0">
@@ -153,9 +154,9 @@ export const Navbar = () => {
         </button>
       </div>
 
-      {/* Mobile Navigation Menu */}
+      {/* Mobile Navigation Menu - Overlay */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-border bg-background">
+        <div className="md:hidden fixed inset-0 top-16 sm:top-20 z-40 bg-background/95 backdrop-blur-md overflow-y-auto">
           <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
             {navLinks.map((link) => (
               <NavLink
@@ -267,5 +268,8 @@ export const Navbar = () => {
         </div>
       )}
     </nav>
+    {/* Spacer for fixed navbar */}
+    <div className="h-16 sm:h-20" />
+    </>
   );
 };
