@@ -14,6 +14,7 @@ import acfeLogo from '@/assets/acfe-logo.png';
 import { MapPin, Clock, Lightbulb, Calendar, Gift, Users, MessageSquare, Send, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -77,7 +78,16 @@ export const Jobs = () => {
   const [newPostContent, setNewPostContent] = useState('');
   const [newPostType, setNewPostType] = useState<string>('tip');
   const { user, profile } = useAuth();
+  const { t, language } = useLanguage();
   const queryClient = useQueryClient();
+  
+  // Translated post type labels
+  const translatedPostTypeLabels = {
+    tip: language === 'fr' ? 'Astuces' : 'Tips & Tricks',
+    event: language === 'fr' ? 'Événements' : 'Events',
+    offer: language === 'fr' ? 'Offres' : 'Offers',
+    network: language === 'fr' ? 'Réseautage' : 'Networking'
+  };
 
   // Fetch community posts
   const { data: posts = [], isLoading: postsLoading } = useQuery({

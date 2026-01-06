@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, CheckCircle, Video, Lightbulb, DollarSign, Users, Rocket, Save } from "lucide-react";
 import { FormProgressStepper } from "@/components/FormProgressStepper";
