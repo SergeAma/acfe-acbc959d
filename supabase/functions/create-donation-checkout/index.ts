@@ -7,7 +7,55 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const logStep = (step: string, details?: any) => {
+// Rate limiting map (in production, use Redis or similar)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 5;
+
+function isRateLimited(identifier: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(identifier);
+  
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(identifier, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+  
+  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return true;
+  }
+  
+  record.count++;
+  return false;
+}
+
+async function verifyTurnstile(token: string): Promise<boolean> {
+  const secretKey = Deno.env.get("TURNSTILE_SECRET_KEY");
+  if (!secretKey) {
+    console.error("TURNSTILE_SECRET_KEY not configured");
+    return false;
+  }
+
+  try {
+    const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        secret: secretKey,
+        response: token,
+      }),
+    });
+
+    const data = await response.json();
+    console.log("Turnstile verification result:", data.success);
+    return data.success === true;
+  } catch (error) {
+    console.error("Turnstile verification error:", error);
+    return false;
+  }
+}
+
+const logStep = (step: string, details?: Record<string, unknown>) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[CREATE-DONATION-CHECKOUT] ${step}${detailsStr}`);
 };
@@ -20,42 +68,90 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
+    const { firstName, lastName, email, amountCents, captchaToken } = await req.json();
+    
+    // Input validation with length limits
+    if (!firstName || typeof firstName !== 'string' || firstName.length > 100) {
+      throw new Error("Invalid first name");
+    }
+    if (!lastName || typeof lastName !== 'string' || lastName.length > 100) {
+      throw new Error("Invalid last name");
+    }
+    if (!email || typeof email !== 'string' || email.length > 255) {
+      throw new Error("Invalid email");
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      throw new Error("Invalid email format");
+    }
+    
+    if (!amountCents || typeof amountCents !== 'number') {
+      throw new Error("Invalid amount");
+    }
+    
+    if (amountCents < 1000 || amountCents > 1000000) {
+      throw new Error("Donation amount must be between $10 and $10,000");
+    }
+
+    // Rate limiting by email
+    const rateLimitKey = `donation:${email.toLowerCase().trim()}`;
+    if (isRateLimited(rateLimitKey)) {
+      return new Response(JSON.stringify({ error: "Too many requests. Please try again later." }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 429,
+      });
+    }
+
+    // Verify CAPTCHA token
+    if (!captchaToken || typeof captchaToken !== 'string') {
+      return new Response(JSON.stringify({ error: "Please complete the security verification" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+
+    const isCaptchaValid = await verifyTurnstile(captchaToken);
+    if (!isCaptchaValid) {
+      return new Response(JSON.stringify({ error: "Security verification failed. Please try again." }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+    logStep("CAPTCHA verified successfully");
+
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+    if (!stripeKey) throw new Error("Payment configuration error");
 
-    const { firstName, lastName, email, amountCents } = await req.json();
-    logStep("Request data received", { firstName, lastName, email, amountCents });
+    const sanitizedFirstName = firstName.trim().substring(0, 100);
+    const sanitizedLastName = lastName.trim().substring(0, 100);
+    const sanitizedEmail = email.trim().toLowerCase().substring(0, 255);
 
-    if (!firstName || !lastName || !email || !amountCents) {
-      throw new Error("Missing required fields");
-    }
-
-    if (amountCents < 1000) {
-      throw new Error("Minimum donation is $10");
-    }
+    logStep("Request validated", { email: sanitizedEmail, amountCents });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
     // Check if customer exists
-    const customers = await stripe.customers.list({ email, limit: 1 });
+    const customers = await stripe.customers.list({ email: sanitizedEmail, limit: 1 });
     let customerId: string | undefined;
     
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
-      logStep("Found existing customer", { customerId });
+      logStep("Found existing customer");
     } else {
       // Create new customer
       const customer = await stripe.customers.create({
-        email,
-        name: `${firstName} ${lastName}`,
+        email: sanitizedEmail,
+        name: `${sanitizedFirstName} ${sanitizedLastName}`,
         metadata: {
           source: 'donation',
-          first_name: firstName,
-          last_name: lastName,
+          first_name: sanitizedFirstName,
+          last_name: sanitizedLastName,
         }
       });
       customerId = customer.id;
-      logStep("Created new customer", { customerId });
+      logStep("Created new customer");
     }
 
     // Create a recurring price for this donation amount
@@ -68,7 +164,7 @@ serve(async (req) => {
         description: `Monthly donation of $${(amountCents / 100).toFixed(2)} to support A Cloud For Everyone`,
       },
     });
-    logStep("Created price", { priceId: price.id });
+    logStep("Created price");
 
     const origin = req.headers.get("origin") || "https://acloudforeveryone.org";
 
@@ -81,18 +177,18 @@ serve(async (req) => {
       cancel_url: `${origin}/home`,
       metadata: {
         donation: 'true',
-        first_name: firstName,
-        last_name: lastName,
+        first_name: sanitizedFirstName,
+        last_name: sanitizedLastName,
       },
       subscription_data: {
         metadata: {
           donation: 'true',
-          first_name: firstName,
-          last_name: lastName,
+          first_name: sanitizedFirstName,
+          last_name: sanitizedLastName,
         }
       }
     });
-    logStep("Created checkout session", { sessionId: session.id });
+    logStep("Created checkout session");
 
     // Store donation record
     const supabaseClient = createClient(
@@ -102,9 +198,9 @@ serve(async (req) => {
     );
 
     await supabaseClient.from('donations').insert({
-      first_name: firstName,
-      last_name: lastName,
-      email,
+      first_name: sanitizedFirstName,
+      last_name: sanitizedLastName,
+      email: sanitizedEmail,
       amount_cents: amountCents,
       stripe_customer_id: customerId,
       stripe_checkout_session_id: session.id,
@@ -116,9 +212,12 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
-  } catch (error: any) {
-    logStep("ERROR", { message: error.message });
-    return new Response(JSON.stringify({ error: error.message }), {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "An error occurred";
+    logStep("ERROR", { message: errorMessage });
+    
+    // Return generic error to client (don't expose internal details)
+    return new Response(JSON.stringify({ error: "Failed to process donation. Please try again." }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

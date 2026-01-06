@@ -34,6 +34,28 @@ async function verifySignature(data: string, signature: string, secret: string):
   return signature === expectedSignature;
 }
 
+// Log admin action to audit trail
+async function logAdminAudit(
+  supabaseUrl: string,
+  supabaseKey: string,
+  adminId: string,
+  action: string,
+  targetUserId: string,
+  metadata?: Record<string, unknown>
+): Promise<void> {
+  try {
+    const client = createClient(supabaseUrl, supabaseKey);
+    await client.from('admin_audit_logs').insert({
+      admin_id: adminId,
+      action,
+      target_user_id: targetUserId,
+      metadata: metadata || {},
+    });
+  } catch (error) {
+    console.error("Failed to log admin audit:", error);
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("Handle mentor action function called");
   
@@ -166,6 +188,13 @@ const handler = async (req: Request): Promise<Response> => {
         .update({ role: 'mentor' })
         .eq('id', request.user_id);
 
+      // Log to admin audit trail
+      await logAdminAudit(supabaseUrl, supabaseServiceKey, adminId, 'mentor_approved', request.user_id, {
+        request_id: requestId,
+        user_name: userName,
+        user_email: userEmail,
+      });
+
       // Send approval email to user
       if (userEmail) {
         const approvalHtml = `
@@ -252,6 +281,13 @@ const handler = async (req: Request): Promise<Response> => {
         })
         .eq('id', requestId);
 
+      // Log to admin audit trail
+      await logAdminAudit(supabaseUrl, supabaseServiceKey, adminId, 'mentor_rejected', request.user_id, {
+        request_id: requestId,
+        user_name: userName,
+        user_email: userEmail,
+      });
+
       // Send rejection email to user
       if (userEmail) {
         const rejectionHtml = `
@@ -325,9 +361,9 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-  } catch (error: any) {
-    console.error("Error in handle-mentor-action function:", error);
-    return new Response(generateHtmlResponse('error', `An error occurred: ${error.message}`), {
+  } catch (error: unknown) {
+    console.error("Error in handle-mentor-action function");
+    return new Response(generateHtmlResponse('error', 'An error occurred processing this request'), {
       status: 500,
       headers: { 'Content-Type': 'text/html' },
     });
