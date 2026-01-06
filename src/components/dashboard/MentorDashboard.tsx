@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +24,7 @@ interface Course {
 
 export const MentorDashboard = () => {
   const { profile } = useAuth();
+  const { t } = useLanguage();
   const [courses, setCourses] = useState<Course[]>([]);
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -70,20 +72,20 @@ export const MentorDashboard = () => {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold mb-2">Mentor Dashboard</h1>
-          <p className="text-muted-foreground text-lg">Manage your courses and students</p>
+          <h1 className="text-4xl font-bold mb-2">{t('mentorDashboard.title')}</h1>
+          <p className="text-muted-foreground text-lg">{t('mentorDashboard.subtitle')}</p>
         </div>
         <div className="flex gap-3">
           <Link to="/mentor/sessions">
             <Button size="lg" variant="outline">
               <Video className="h-5 w-5 mr-2" />
-              1:1 Sessions
+              {t('mentorDashboard.sessions')}
             </Button>
           </Link>
           <Link to="/mentor/cohort">
             <Button size="lg" variant="outline" className="relative">
               <UsersRound className="h-5 w-5 mr-2" />
-              My Cohort
+              {t('mentorDashboard.myCohort')}
               {pendingRequestCount > 0 && (
                 <Badge 
                   variant="destructive" 
@@ -97,7 +99,7 @@ export const MentorDashboard = () => {
           <Link to="/mentor/courses/new">
             <Button size="lg">
               <PlusCircle className="h-5 w-5 mr-2" />
-              Create New Course
+              {t('mentorDashboard.createCourse')}
             </Button>
         </Link>
         </div>
@@ -107,38 +109,38 @@ export const MentorDashboard = () => {
       <div className="grid md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('mentorDashboard.totalCourses')}</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{courses.length}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {courses.filter(c => c.is_published).length} published
+              {courses.filter(c => c.is_published).length} {t('mentorDashboard.published')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('mentorDashboard.totalStudents')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{totalStudents}</div>
-            <p className="text-xs text-muted-foreground mt-1">Across all courses</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('studentDashboard.acrossAllCourses')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Engagement</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('mentorDashboard.engagement')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
               {courses.length > 0 ? Math.round(totalStudents / courses.length) : 0}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Avg students per course</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('mentorDashboard.avgStudentsPerCourse')}</p>
           </CardContent>
         </Card>
       </div>
@@ -152,24 +154,24 @@ export const MentorDashboard = () => {
       {/* My Courses */}
       <div>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">My Courses</h2>
+          <h2 className="text-2xl font-bold">{t('mentorDashboard.myCourses')}</h2>
           <Link to="/mentor/courses">
-            <Button variant="outline">View All Courses</Button>
+            <Button variant="outline">{t('mentorDashboard.viewAllCourses')}</Button>
           </Link>
         </div>
 
         {loading ? (
-          <div className="text-center py-8 text-muted-foreground">Loading your courses...</div>
+          <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
         ) : courses.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-xl font-semibold mb-2">No courses yet</h3>
-              <p className="text-muted-foreground mb-4">Create your first course to start teaching</p>
+              <h3 className="text-xl font-semibold mb-2">{t('mentorDashboard.noCoursesYet')}</h3>
+              <p className="text-muted-foreground mb-4">{t('mentorDashboard.createFirstCourse')}</p>
               <Link to="/mentor/courses/new">
                 <Button>
                   <PlusCircle className="h-4 w-4 mr-2" />
-                  Create Course
+                  {t('mentorDashboard.createCourse')}
                 </Button>
               </Link>
             </CardContent>
@@ -183,11 +185,11 @@ export const MentorDashboard = () => {
                     <CardTitle className="line-clamp-2 flex-1">{course.title}</CardTitle>
                     {course.is_published ? (
                       <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded ml-2">
-                        Published
+                        {t('mentorDashboard.published')}
                       </span>
                     ) : (
                       <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded ml-2">
-                        Draft
+                        {t('mentorDashboard.draft')}
                       </span>
                     )}
                   </div>
@@ -200,12 +202,12 @@ export const MentorDashboard = () => {
                   <div className="flex items-center justify-between text-sm mb-4">
                     <div className="flex items-center text-muted-foreground">
                       <Users className="h-4 w-4 mr-1" />
-                      {course.enrollments[0]?.count || 0} students
+                      {course.enrollments[0]?.count || 0} {t('courses.students')}
                     </div>
                   </div>
                   <Link to={`/mentor/courses/${course.id}/build`}>
                     <Button variant="outline" className="w-full">
-                      Build Course
+                      {t('mentorDashboard.buildCourse')}
                     </Button>
                   </Link>
                 </CardContent>
