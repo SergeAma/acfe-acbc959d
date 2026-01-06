@@ -29,8 +29,12 @@ export const Landing = () => {
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 text-white leading-tight">
-              {t('hero.title')}
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 text-white leading-tight flex flex-wrap justify-center gap-x-2 gap-y-1">
+              {t('hero.title').split(' ').map((word, index) => (
+                <span key={index} className="bg-black/20 backdrop-blur-[2px] px-1 rounded">
+                  {word}
+                </span>
+              ))}
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-white/90 mb-3 sm:mb-4 leading-relaxed">
               {t('hero.subtitle')}
