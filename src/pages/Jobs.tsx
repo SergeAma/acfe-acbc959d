@@ -11,12 +11,13 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import acfeLogo from '@/assets/acfe-logo.png';
-import { MapPin, Clock, Lightbulb, Calendar, Gift, Users, MessageSquare, Send, Loader2 } from 'lucide-react';
+import { MapPin, Clock, Lightbulb, Calendar, Gift, Users, MessageSquare, Send, Loader2, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
+import { moderateContent, sanitizeUserContent } from '@/lib/content-moderation';
 
 const postTypeIcons = {
   tip: Lightbulb,
@@ -151,6 +152,19 @@ export const Jobs = () => {
     if (trimmedContent.length > 2000) {
       toast.error('Post content must be less than 2000 characters.');
       return;
+    }
+    
+    // Content moderation check
+    const moderationResult = moderateContent(trimmedContent);
+    if (!moderationResult.isAllowed) {
+      toast.error('Your post contains inappropriate content. Please revise and try again.', {
+        icon: <AlertTriangle className="h-4 w-4" />,
+      });
+      return;
+    }
+    
+    if (moderationResult.hasWarnings) {
+      toast.warning('Your post may contain sensitive language. Please review before posting.');
     }
     
     createPostMutation.mutate({ content: trimmedContent, type: newPostType });
