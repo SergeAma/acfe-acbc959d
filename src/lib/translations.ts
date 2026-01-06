@@ -696,7 +696,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // ==================== PRICING PAGE ====================
     'pricing_hero_title': 'Invest in Your',
-    'pricing_hero_title_highlight': 'Tech Future',
+    'pricing_hero_title_highlight': 'Tech Career',
     'pricing_hero_subtitle': 'One affordable membership unlocks unlimited access to courses, mentorship, community, and career opportunities designed for African tech talent.',
     'pricing_month': 'month',
     'pricing_free_title': 'Free Access',
@@ -1560,7 +1560,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // ==================== PRICING PAGE ====================
     'pricing_hero_title': 'Investissez dans Votre',
-    'pricing_hero_title_highlight': 'Avenir Tech',
+    'pricing_hero_title_highlight': 'Carrière Tech',
     'pricing_hero_subtitle': 'Un abonnement abordable débloque un accès illimité aux cours, au mentorat, à la communauté et aux opportunités de carrière conçus pour les talents tech africains.',
     'pricing_month': 'mois',
     'pricing_free_title': 'Accès Gratuit',
