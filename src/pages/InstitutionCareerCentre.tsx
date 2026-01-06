@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { 
-  Building2, Calendar, Briefcase, Award, 
+  Building2, Calendar, Award, 
   ExternalLink, Loader2, Shield, GraduationCap, 
   CheckCircle2, Users, Sparkles, ArrowRight, BookOpen,
   TrendingUp, Megaphone, Clock
@@ -27,6 +27,8 @@ import { useCareerReadiness } from '@/hooks/useCareerReadiness';
 import { toast } from 'sonner';
 import { format, isPast } from 'date-fns';
 import { stripHtml } from '@/lib/html-utils';
+import { InstitutionAuthGate } from '@/components/institution/InstitutionAuthGate';
+import { InstitutionMembershipGate } from '@/components/institution/InstitutionMembershipGate';
 
 interface Course {
   id: string;
@@ -48,7 +50,6 @@ interface Enrollment {
 export const InstitutionCareerCentre = () => {
   const { slug } = useParams<{ slug: string }>();
   const { user, profile, loading: authLoading } = useAuth();
-  const queryClient = useQueryClient();
   const [isCreatingSpectrogram, setIsCreatingSpectrogram] = useState(false);
 
   const { data: institution, isLoading: institutionLoading } = useInstitutionBySlug(slug);
@@ -71,7 +72,6 @@ export const InstitutionCareerCentre = () => {
   // Refetch membership after claim attempt completes (success or not)
   useEffect(() => {
     if (claimInvitation.isSuccess) {
-      // Always refetch to get the latest status from DB
       refetchMembership();
     }
   }, [claimInvitation.isSuccess, refetchMembership]);
@@ -147,6 +147,17 @@ export const InstitutionCareerCentre = () => {
     }
   };
 
+  // Generate institution acronym for display
+  const getAcronym = (name: string) => {
+    return name
+      .split(' ')
+      .filter(word => !['the', 'of', 'and', 'for'].includes(word.toLowerCase()))
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 4);
+  };
+
   // Loading states - include claim attempt in loading
   const isClaimingInvitation = claimInvitation.isPending;
   
@@ -163,39 +174,17 @@ export const InstitutionCareerCentre = () => {
     return <Navigate to="/not-found" replace />;
   }
 
-  // Auth gate - must be logged in
   const currentPath = `/career-centre/${slug}`;
-  
+  const acronym = getAcronym(institution.name);
+
+  // Auth gate - must be logged in (branded experience)
   if (!user) {
     return (
-      <div className="min-h-screen bg-background">
+      <>
         <Navbar />
-        <div className="container mx-auto px-4 py-16">
-          <Card className="max-w-md mx-auto">
-            <CardContent className="p-8 text-center space-y-4">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                <Shield className="h-8 w-8 text-primary" />
-              </div>
-              <h2 className="text-xl font-bold">Access Restricted</h2>
-              <p className="text-muted-foreground text-sm">
-                Sign in to access the {institution.name} Career Centre.
-              </p>
-              <p className="text-muted-foreground text-xs">
-                Use the same email address that received your invitation.
-              </p>
-              <div className="flex flex-col gap-3 pt-2">
-                <Button asChild className="rounded-full">
-                  <Link to={`/auth?redirect=${encodeURIComponent(currentPath)}`}>Sign In</Link>
-                </Button>
-                <Button variant="outline" asChild className="rounded-full">
-                  <Link to={`/auth?mode=signup&redirect=${encodeURIComponent(currentPath)}`}>Create Account</Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <InstitutionAuthGate institution={institution} currentPath={currentPath} />
         <Footer />
-      </div>
+      </>
     );
   }
 
@@ -203,29 +192,11 @@ export const InstitutionCareerCentre = () => {
   const isAdmin = profile?.role === 'admin';
   if (!membershipLoading && !membership && !isAdmin) {
     return (
-      <div className="min-h-screen bg-background">
+      <>
         <Navbar />
-        <div className="container mx-auto px-4 py-16">
-          <Card className="max-w-lg mx-auto">
-            <CardContent className="p-8 text-center space-y-4">
-              <div className="h-16 w-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto">
-                <Shield className="h-8 w-8 text-amber-500" />
-              </div>
-              <h2 className="text-xl font-bold">Membership Required</h2>
-              <p className="text-muted-foreground text-sm">
-                This Career Centre is exclusively for verified students of <strong>{institution.name}</strong>.
-              </p>
-              <p className="text-muted-foreground text-sm">
-                If you're a student, please contact your institution to request access using your institutional email address.
-              </p>
-              <Button variant="outline" asChild className="rounded-full">
-                <Link to="/dashboard">Return to Dashboard</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        <InstitutionMembershipGate institution={institution} />
         <Footer />
-      </div>
+      </>
     );
   }
 
@@ -248,24 +219,41 @@ export const InstitutionCareerCentre = () => {
         { label: institution.name }
       ]} />
 
-      {/* Branded Header Section */}
-      <section className="border-b border-border py-8 bg-gradient-to-b from-muted/50 to-background">
-        <div className="container mx-auto px-4">
+      {/* Branded Header Section with institution colors */}
+      <section className="relative border-b border-border py-8 bg-gradient-to-br from-primary/5 via-background to-muted/30 overflow-hidden">
+        {/* Decorative accent using institution branding */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary/50 to-transparent" />
+        <div className="absolute -top-20 -right-20 w-60 h-60 bg-primary/5 rounded-full blur-3xl" />
+        
+        <div className="container mx-auto px-4 relative">
           <div className="max-w-6xl mx-auto">
             <div className="flex items-start gap-6">
-              {institution.logo_url ? (
-                <img 
-                  src={institution.logo_url} 
-                  alt={institution.name}
-                  className="h-16 w-16 sm:h-20 sm:w-20 object-contain rounded-xl bg-background p-2 border shadow-sm"
-                />
-              ) : (
-                <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl bg-primary/10 flex items-center justify-center border">
-                  <Building2 className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
-                </div>
-              )}
+              {/* Institution logo with accent ring */}
+              <div className="relative">
+                {institution.logo_url ? (
+                  <div className="relative">
+                    <img 
+                      src={institution.logo_url} 
+                      alt={institution.name}
+                      className="h-20 w-20 sm:h-24 sm:w-24 object-contain rounded-2xl bg-white p-2 border-2 border-primary/20 shadow-lg"
+                    />
+                    <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-primary flex items-center justify-center">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-primary-foreground" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border-2 border-primary/20 shadow-lg">
+                    <Building2 className="h-10 w-10 sm:h-12 sm:w-12 text-primary" />
+                  </div>
+                )}
+              </div>
+              
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
+                    <Shield className="h-3 w-3 mr-1" />
+                    {acronym} Partner
+                  </Badge>
                   {membership?.status === 'active' ? (
                     <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
                       <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -281,9 +269,15 @@ export const InstitutionCareerCentre = () => {
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
                   Welcome back, {profile?.full_name?.split(' ')[0] || 'Student'}!
                 </h1>
-                <p className="text-muted-foreground mt-1">
-                  {institution.name} Career Development Centre
+                <p className="text-muted-foreground mt-1 flex items-center gap-2">
+                  <span className="font-medium text-primary">{institution.name}</span>
+                  <span>Career Development Centre</span>
                 </p>
+                {institution.description && (
+                  <p className="text-sm text-muted-foreground mt-2 max-w-2xl line-clamp-2">
+                    {institution.description}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -295,62 +289,72 @@ export const InstitutionCareerCentre = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto space-y-8">
             
-            {/* Stats Cards */}
+            {/* Stats Cards with institution-themed accents */}
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card>
+              <Card className="border-l-4 border-l-primary hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium">Active Courses</CardTitle>
-                  <BookOpen className="h-4 w-4 text-muted-foreground" />
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <BookOpen className="h-4 w-4 text-primary" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{inProgressEnrollments.length}</div>
+                  <div className="text-3xl font-bold text-primary">{inProgressEnrollments.length}</div>
                   <p className="text-xs text-muted-foreground mt-1">Currently learning</p>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="border-l-4 border-l-green-500 hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium">Avg Progress</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <div className="h-8 w-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                    <TrendingUp className="h-4 w-4 text-green-500" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{avgProgress}%</div>
+                  <div className="text-3xl font-bold text-green-500">{avgProgress}%</div>
                   <p className="text-xs text-muted-foreground mt-1">Across all courses</p>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="border-l-4 border-l-amber-500 hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium">Certificates</CardTitle>
-                  <Award className="h-4 w-4 text-muted-foreground" />
+                  <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                    <Award className="h-4 w-4 text-amber-500" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{careerReadiness?.certificates || 0}</div>
+                  <div className="text-3xl font-bold text-amber-500">{careerReadiness?.certificates || 0}</div>
                   <p className="text-xs text-muted-foreground mt-1">Earned</p>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="border-l-4 border-l-blue-500 hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Institution Events</CardTitle>
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">{acronym} Events</CardTitle>
+                  <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                    <Calendar className="h-4 w-4 text-blue-500" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{upcomingEvents.length}</div>
+                  <div className="text-3xl font-bold text-blue-500">{upcomingEvents.length}</div>
                   <p className="text-xs text-muted-foreground mt-1">Upcoming</p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Institution Announcements */}
+            {/* Institution Announcements with branded styling */}
             {announcements.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-bold flex items-center gap-2">
-                    <Megaphone className="h-5 w-5 text-primary" />
-                    {institution.name} Announcements
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Megaphone className="h-4 w-4 text-primary" />
+                    </div>
+                    <span>{acronym} Announcements</span>
                   </h2>
                 </div>
                 <div className="space-y-3">
                   {announcements.slice(0, 3).map(announcement => (
-                    <Card key={announcement.id} className={announcement.is_pinned ? 'border-primary/30 bg-primary/5' : ''}>
+                    <Card key={announcement.id} className={`transition-all hover:shadow-md ${announcement.is_pinned ? 'border-primary/30 bg-gradient-to-r from-primary/5 to-transparent' : ''}`}>
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
                           {announcement.is_pinned && (
@@ -360,7 +364,7 @@ export const InstitutionCareerCentre = () => {
                             <div className="flex items-center gap-2 mb-1">
                               <h3 className="font-semibold text-foreground">{announcement.title}</h3>
                               {announcement.is_pinned && (
-                                <Badge variant="outline" className="text-xs">Pinned</Badge>
+                                <Badge className="text-xs bg-primary/10 text-primary border-primary/20">Pinned</Badge>
                               )}
                             </div>
                             <p className="text-sm text-muted-foreground">{announcement.content}</p>
@@ -376,45 +380,55 @@ export const InstitutionCareerCentre = () => {
               </div>
             )}
 
-            {/* Section: Exclusive to Institution */}
+            {/* Section: Exclusive to Institution - enhanced styling */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-xl font-bold flex items-center gap-2">
-                    <Building2 className="h-5 w-5 text-primary" />
-                    Exclusive to {institution.name}
-                  </h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Courses and events available through your institution's partnership with ACFE
-                  </p>
+                <div className="flex items-center gap-3">
+                  {institution.logo_url && (
+                    <img 
+                      src={institution.logo_url} 
+                      alt="" 
+                      className="h-8 w-8 object-contain rounded-lg bg-white p-0.5 border"
+                    />
+                  )}
+                  <div>
+                    <h2 className="text-xl font-bold flex items-center gap-2">
+                      Exclusive to {acronym}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Content available through your institution's partnership with ACFE
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {/* Exclusive Courses */}
+              {/* Exclusive Courses with branded cards */}
               {exclusiveCourses.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                  <h3 className="text-sm font-semibold text-primary uppercase tracking-wide mb-3">
                     Exclusive Courses
                   </h3>
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {exclusiveCourses.map(course => (
-                      <Card key={course.id} className="hover:shadow-md transition-shadow border-primary/20 bg-primary/5">
+                      <Card key={course.id} className="hover:shadow-lg transition-all border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent group">
                         <CardContent className="p-4">
                           <div className="aspect-video rounded-lg bg-muted mb-3 overflow-hidden relative">
                             {course.thumbnail_url ? (
                               <img 
                                 src={course.thumbnail_url} 
                                 alt={course.title}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
                                 <BookOpen className="h-8 w-8 text-muted-foreground" />
                               </div>
                             )}
-                            <Badge className="absolute top-2 left-2 text-xs bg-primary">
-                              EXCLUSIVE
-                            </Badge>
+                            <div className="absolute top-2 left-2 flex items-center gap-1">
+                              <Badge className="text-xs bg-primary shadow-sm">
+                                {acronym} EXCLUSIVE
+                              </Badge>
+                            </div>
                           </div>
                           <h4 className="font-semibold text-foreground line-clamp-1 mb-1">{course.title}</h4>
                           {course.description && (
@@ -438,25 +452,25 @@ export const InstitutionCareerCentre = () => {
               {/* Exclusive Events */}
               {upcomingEvents.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-                    Upcoming Events
+                  <h3 className="text-sm font-semibold text-blue-500 uppercase tracking-wide mb-3">
+                    Upcoming {acronym} Events
                   </h3>
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {upcomingEvents.map(event => (
-                      <Card key={event.id} className="hover:shadow-md transition-shadow">
+                      <Card key={event.id} className="hover:shadow-md transition-shadow border-l-4 border-l-blue-500">
                         <CardContent className="p-4">
                           <div className="flex items-center gap-3 mb-3">
-                            <div className="h-12 w-12 rounded-lg bg-primary/10 flex flex-col items-center justify-center shrink-0">
-                              <span className="text-lg font-bold text-primary leading-none">
+                            <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/5 flex flex-col items-center justify-center shrink-0 border border-blue-500/20">
+                              <span className="text-xl font-bold text-blue-500 leading-none">
                                 {format(new Date(event.event_date!), 'd')}
                               </span>
-                              <span className="text-xs text-primary uppercase">
+                              <span className="text-xs text-blue-500 uppercase font-medium">
                                 {format(new Date(event.event_date!), 'MMM')}
                               </span>
                             </div>
                             <div className="flex-1 min-w-0">
                               <h4 className="font-semibold text-foreground truncate">{event.title}</h4>
-                              <Badge variant="outline" className="text-xs mt-1">
+                              <Badge variant="outline" className="text-xs mt-1 bg-blue-500/10 text-blue-600 border-blue-500/20">
                                 <Clock className="h-3 w-3 mr-1" />
                                 {format(new Date(event.event_date!), 'h:mm a')}
                               </Badge>
@@ -482,11 +496,13 @@ export const InstitutionCareerCentre = () => {
 
               {/* Empty state if no exclusive content */}
               {exclusiveCourses.length === 0 && upcomingEvents.length === 0 && (
-                <Card>
+                <Card className="border-dashed border-2 border-primary/20">
                   <CardContent className="p-8 text-center">
-                    <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-muted-foreground">No exclusive content available yet.</p>
-                    <p className="text-sm text-muted-foreground mt-1">Check back soon for courses and events!</p>
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                      <Building2 className="h-8 w-8 text-primary" />
+                    </div>
+                    <p className="text-foreground font-medium">No exclusive content yet</p>
+                    <p className="text-sm text-muted-foreground mt-1">Check back soon for {acronym} courses and events!</p>
                   </CardContent>
                 </Card>
               )}
@@ -497,8 +513,8 @@ export const InstitutionCareerCentre = () => {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-xl font-bold flex items-center gap-2">
-                    <GraduationCap className="h-5 w-5 text-primary" />
-                    Courses Available to All ACFE Learners
+                    <GraduationCap className="h-5 w-5 text-muted-foreground" />
+                    ACFE Course Catalog
                   </h2>
                   <p className="text-sm text-muted-foreground mt-1">
                     Continue your learning journey with our full catalog
@@ -512,12 +528,12 @@ export const InstitutionCareerCentre = () => {
               {/* In Progress Courses */}
               {inProgressEnrollments.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                  <h3 className="text-sm font-semibold text-green-500 uppercase tracking-wide mb-3">
                     Continue Learning
                   </h3>
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {inProgressEnrollments.slice(0, 3).map(enrollment => (
-                      <Card key={enrollment.id} className="hover:shadow-md transition-shadow">
+                      <Card key={enrollment.id} className="hover:shadow-md transition-shadow border-l-4 border-l-green-500">
                         <CardContent className="p-4">
                           <div className="aspect-video rounded-lg bg-muted mb-3 overflow-hidden">
                             {enrollment.course.thumbnail_url ? (
@@ -537,9 +553,9 @@ export const InstitutionCareerCentre = () => {
                           </h4>
                           <div className="flex items-center gap-2 mb-3">
                             <Progress value={enrollment.progress} className="flex-1 h-2" />
-                            <span className="text-xs text-muted-foreground">{enrollment.progress}%</span>
+                            <span className="text-xs font-medium text-green-500">{enrollment.progress}%</span>
                           </div>
-                          <Button size="sm" asChild className="w-full">
+                          <Button size="sm" asChild className="w-full bg-green-500 hover:bg-green-600">
                             <Link to={`/courses/${enrollment.course.id}/learn`}>
                               Continue Learning
                             </Link>
@@ -615,17 +631,24 @@ export const InstitutionCareerCentre = () => {
               )}
             </div>
 
-            {/* Talent Network CTA */}
-            <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-              <CardContent className="p-6">
+            {/* Talent Network CTA with institution branding */}
+            <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-2 border-primary/20 overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl" />
+              <CardContent className="p-6 relative">
                 <div className="flex items-start gap-4">
-                  <div className="h-14 w-14 rounded-xl bg-primary/20 flex items-center justify-center shrink-0">
-                    <Users className="h-7 w-7 text-primary" />
+                  <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
+                    <Users className="h-8 w-8 text-primary" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-foreground">Join the Talent Network</h3>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-lg font-bold text-foreground">Join the Talent Network</h3>
+                      {institution.logo_url && (
+                        <img src={institution.logo_url} alt="" className="h-5 w-5 object-contain rounded" />
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Create your Spectrogram Consulting talent profile to be discovered by employers and access exclusive job opportunities.
+                      Create your Spectrogram Consulting talent profile to be discovered by employers. 
+                      As a {acronym} student, you'll have priority access to exclusive opportunities.
                     </p>
                     <div className="mt-4">
                       {careerReadiness?.spectrogramProfileCreated ? (
