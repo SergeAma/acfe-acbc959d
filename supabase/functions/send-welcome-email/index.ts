@@ -39,6 +39,7 @@ interface WelcomeEmailRequest {
   role: 'student' | 'mentor';
   wants_mentor?: boolean;
   user_id?: string;
+  preferred_language?: 'en' | 'fr';
 }
 
 // Text-based ACFE header for reliable email rendering
@@ -66,8 +67,8 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, first_name, role, wants_mentor, user_id }: WelcomeEmailRequest = await req.json();
-    
+    const { email, first_name, role, wants_mentor, user_id, preferred_language = 'en' }: WelcomeEmailRequest = await req.json();
+    const lang = preferred_language;
     // Input validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || typeof email !== 'string' || !emailRegex.test(email) || email.length > 254) {
@@ -118,7 +119,40 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (wants_mentor) {
       // Email for users who want to become mentors
-      subject = `Welcome to A Cloud for Everyone, ${firstName}! 🎓`;
+      subject = lang === 'fr' 
+        ? `Bienvenue sur A Cloud for Everyone, ${firstName}! 🎓`
+        : `Welcome to A Cloud for Everyone, ${firstName}! 🎓`;
+      
+      const content = lang === 'fr' ? {
+        greeting: `Bonjour et bienvenue <strong>${firstName}</strong>,`,
+        intro: "Bienvenue sur A Cloud for Everyone (ACFE)! Nous sommes ravis de vous accueillir dans notre communauté et enthousiastes de voir que vous souhaitez devenir mentor.",
+        applicationTitle: "📋 À propos de votre candidature mentor",
+        applicationDesc: "Tous les comptes commencent comme comptes apprenant pour s'assurer que chacun comprend notre plateforme. Nous avons reçu votre intérêt pour devenir mentor, et notre équipe examinera votre candidature prochainement.",
+        nextStepsTitle: "🎯 Prochaines étapes?",
+        step1: "Notre équipe examinera votre candidature dans <strong>3-5 jours ouvrables</strong>",
+        step2: "Vous recevrez une notification par email avec notre décision",
+        step3: "Une fois approuvé, vous pourrez créer des cours et accompagner les étudiants",
+        step4: "En attendant, explorez notre plateforme en tant qu'apprenant!",
+        thankYou: "🚀 Merci de vous engager pour accompagner la prochaine génération de talents tech. Vos connaissances et votre expérience peuvent façonner des avenirs à travers l'Afrique.",
+        exploreCta: "Explorer les Cours",
+        tagline: "Il y a un cloud pour tout le monde!",
+        team: "L'Équipe ACFE"
+      } : {
+        greeting: `Hello and welcome <strong>${firstName}</strong>,`,
+        intro: "Welcome to A Cloud for Everyone (ACFE)! We're thrilled to have you join our community and excited to see that you're interested in becoming a mentor.",
+        applicationTitle: "📋 About Your Mentor Application",
+        applicationDesc: "All accounts start as learner accounts to ensure everyone understands our platform. We've received your interest in becoming a mentor, and our team will review your application shortly.",
+        nextStepsTitle: "🎯 What happens next?",
+        step1: "Our team will review your application within <strong>3-5 business days</strong>",
+        step2: "You'll receive an email notification with our decision",
+        step3: "Once approved, you'll get access to create courses and mentor students",
+        step4: "In the meantime, explore our platform as a learner!",
+        thankYou: "🚀 Thank you for stepping forward to mentor the next generation of tech talent. Your knowledge and experience can help shape futures across Africa.",
+        exploreCta: "Explore Courses",
+        tagline: "There's a cloud for everyone!",
+        team: "The ACFE Team"
+      };
+
       htmlContent = `
 <!DOCTYPE html>
 <html>
@@ -132,40 +166,40 @@ const handler = async (req: Request): Promise<Response> => {
     
     <!-- Main content -->
     <div style="background-color: #ffffff; padding: 32px; border-radius: 0 0 12px 12px;">
-      <h1 style="margin: 0 0 20px 0; font-size: 24px; color: #18181b;">Hello and welcome <strong>${firstName}</strong>,</h1>
+      <h1 style="margin: 0 0 20px 0; font-size: 24px; color: #18181b;">${content.greeting}</h1>
       
       <p style="margin: 0 0 20px 0; line-height: 1.6; color: #3f3f46;">
-        Welcome to A Cloud for Everyone (ACFE)! We're thrilled to have you join our community and excited to see that you're interested in becoming a mentor.
+        ${content.intro}
       </p>
       
       <div style="background-color: #f0fdf4; border-radius: 8px; padding: 20px; margin: 25px 0; border-left: 4px solid #4a5d4a;">
-        <h3 style="margin: 0 0 10px 0; font-size: 16px; color: #166534;">📋 About Your Mentor Application</h3>
+        <h3 style="margin: 0 0 10px 0; font-size: 16px; color: #166534;">${content.applicationTitle}</h3>
         <p style="margin: 0; line-height: 1.6; font-size: 14px; color: #3f3f46;">
-          All accounts start as learner accounts to ensure everyone understands our platform. We've received your interest in becoming a mentor, and our team will review your application shortly.
+          ${content.applicationDesc}
         </p>
       </div>
       
-      <h2 style="margin: 30px 0 15px 0; font-size: 20px; color: #18181b;">🎯 What happens next?</h2>
+      <h2 style="margin: 30px 0 15px 0; font-size: 20px; color: #18181b;">${content.nextStepsTitle}</h2>
       <ul style="margin: 0 0 20px 0; padding-left: 0; list-style: none; color: #3f3f46;">
-        <li style="margin-bottom: 8px;">✔️ Our team will review your application within <strong>3-5 business days</strong></li>
-        <li style="margin-bottom: 8px;">✔️ You'll receive an email notification with our decision</li>
-        <li style="margin-bottom: 8px;">✔️ Once approved, you'll get access to create courses and mentor students</li>
-        <li style="margin-bottom: 8px;">✔️ In the meantime, explore our platform as a learner!</li>
+        <li style="margin-bottom: 8px;">✔️ ${content.step1}</li>
+        <li style="margin-bottom: 8px;">✔️ ${content.step2}</li>
+        <li style="margin-bottom: 8px;">✔️ ${content.step3}</li>
+        <li style="margin-bottom: 8px;">✔️ ${content.step4}</li>
       </ul>
       
       <p style="margin: 20px 0; line-height: 1.6; color: #3f3f46;">
-        🚀 Thank you for stepping forward to mentor the next generation of tech talent. Your knowledge and experience can help shape futures across Africa.
+        ${content.thankYou}
       </p>
       
       <div style="text-align: center; margin: 30px 0;">
-        <a href="https://www.acloudforeveryone.org/courses" style="display: inline-block; background-color: #4a5d4a; color: #ffffff; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 6px;">Explore Courses</a>
+        <a href="https://www.acloudforeveryone.org/courses" style="display: inline-block; background-color: #4a5d4a; color: #ffffff; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 6px;">${content.exploreCta}</a>
       </div>
       
-      <p style="margin: 30px 0 10px 0; font-weight: bold; font-size: 18px; color: #18181b;">There's a cloud for everyone!</p>
+      <p style="margin: 30px 0 10px 0; font-weight: bold; font-size: 18px; color: #18181b;">${content.tagline}</p>
       
       <p style="margin: 20px 0; color: #3f3f46;">
-        With gratitude,<br>
-        <strong>The ACFE Team</strong><br>
+        ${lang === 'fr' ? 'Cordialement' : 'With gratitude'},<br>
+        <strong>${content.team}</strong><br>
         📧 contact@acloudforeveryone.org
       </p>
     </div>
@@ -375,7 +409,38 @@ const handler = async (req: Request): Promise<Response> => {
       `;
     } else {
       // Standard student welcome email
-      subject = `Welcome to A Cloud for Everyone, ${firstName}! 🎓`;
+      subject = lang === 'fr'
+        ? `Bienvenue sur A Cloud for Everyone, ${firstName}! 🎓`
+        : `Welcome to A Cloud for Everyone, ${firstName}! 🎓`;
+      
+      const content = lang === 'fr' ? {
+        greeting: `Bonjour et bienvenue <strong>${firstName}</strong>,`,
+        intro: "Bienvenue sur A Cloud for Everyone (ACFE)! Nous sommes ravis de vous accueillir dans notre communauté d'apprenants qui développent les compétences numériques nécessaires pour prospérer dans le monde technologique d'aujourd'hui.",
+        journey: "Votre parcours pour devenir opérationnel dans le cloud, les données, l'IA, la cybersécurité et plus commence maintenant. Notre plateforme vous connecte avec des mentors expérimentés et des cours pratiques conçus spécifiquement pour la jeunesse africaine.",
+        gettingStartedTitle: "🎯 Pour Commencer:",
+        step1: "Parcourez notre catalogue de cours et inscrivez-vous aux cours qui correspondent à vos objectifs",
+        step2: "Connectez-vous avec des mentors qui peuvent guider votre parcours d'apprentissage",
+        step3: "Complétez votre profil pour aider les mentors à comprendre votre parcours",
+        step4: "Vous avez une idée de startup? Soumettez-la via notre Incubateur d'Innovateurs pour du mentorat et jusqu'à 500$ de financement!",
+        future: "🚀 L'avenir numérique est là—et vous faites maintenant partie du mouvement qui le rend plus accessible à travers l'Afrique.",
+        exploreCta: "Explorer les Cours",
+        tagline: "Il y a un cloud pour tout le monde!",
+        team: "L'Équipe ACFE"
+      } : {
+        greeting: `Hello and welcome <strong>${firstName}</strong>,`,
+        intro: "Welcome to A Cloud for Everyone (ACFE)! We're thrilled to have you join our community of learners building the digital skills needed to thrive in today's tech-driven world.",
+        journey: "Your journey to becoming job-ready in cloud, data, AI, cybersecurity and more starts now. Our platform connects you with experienced mentors and practical courses designed specifically for African youth.",
+        gettingStartedTitle: "🎯 Getting Started:",
+        step1: "Browse our course catalog and enroll in courses that match your goals",
+        step2: "Connect with mentors who can guide your learning journey",
+        step3: "Complete your profile to help mentors understand your background",
+        step4: "Have a startup idea? Submit it through our Innovator Incubator for mentorship and up to $500 funding!",
+        future: "🚀 The digital future is here—and you're now part of the movement making it more accessible across Africa.",
+        exploreCta: "Explore Courses",
+        tagline: "There's a cloud for everyone!",
+        team: "The ACFE Team"
+      };
+
       htmlContent = `
 <!DOCTYPE html>
 <html>
@@ -389,37 +454,37 @@ const handler = async (req: Request): Promise<Response> => {
     
     <!-- Main content -->
     <div style="background-color: #ffffff; padding: 32px; border-radius: 0 0 12px 12px;">
-      <h1 style="margin: 0 0 20px 0; font-size: 24px; color: #18181b;">Hello and welcome <strong>${firstName}</strong>,</h1>
+      <h1 style="margin: 0 0 20px 0; font-size: 24px; color: #18181b;">${content.greeting}</h1>
       
       <p style="margin: 0 0 20px 0; line-height: 1.6; color: #3f3f46;">
-        Welcome to A Cloud for Everyone (ACFE)! We're thrilled to have you join our community of learners building the digital skills needed to thrive in today's tech-driven world.
+        ${content.intro}
       </p>
       
       <p style="margin: 0 0 20px 0; line-height: 1.6; color: #3f3f46;">
-        Your journey to becoming job-ready in cloud, data, AI, cybersecurity and more starts now. Our platform connects you with experienced mentors and practical courses designed specifically for African youth.
+        ${content.journey}
       </p>
       
-      <h2 style="margin: 30px 0 15px 0; font-size: 20px; color: #18181b;">🎯 Getting Started:</h2>
+      <h2 style="margin: 30px 0 15px 0; font-size: 20px; color: #18181b;">${content.gettingStartedTitle}</h2>
       <ul style="margin: 0 0 20px 0; padding-left: 0; list-style: none; color: #3f3f46;">
-        <li style="margin-bottom: 8px;">✔️ Browse our course catalog and enroll in courses that match your goals</li>
-        <li style="margin-bottom: 8px;">✔️ Connect with mentors who can guide your learning journey</li>
-        <li style="margin-bottom: 8px;">✔️ Complete your profile to help mentors understand your background</li>
-        <li style="margin-bottom: 8px;">✔️ Have a startup idea? Submit it through our Innovator Incubator for mentorship and up to $500 funding!</li>
+        <li style="margin-bottom: 8px;">✔️ ${content.step1}</li>
+        <li style="margin-bottom: 8px;">✔️ ${content.step2}</li>
+        <li style="margin-bottom: 8px;">✔️ ${content.step3}</li>
+        <li style="margin-bottom: 8px;">✔️ ${content.step4}</li>
       </ul>
       
       <p style="margin: 20px 0; line-height: 1.6; color: #3f3f46;">
-        🚀 The digital future is here—and you're now part of the movement making it more accessible across Africa.
+        ${content.future}
       </p>
       
       <div style="text-align: center; margin: 30px 0;">
-        <a href="https://www.acloudforeveryone.org/courses" style="display: inline-block; background-color: #4a5d4a; color: #ffffff; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 6px;">Explore Courses</a>
+        <a href="https://www.acloudforeveryone.org/courses" style="display: inline-block; background-color: #4a5d4a; color: #ffffff; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 6px;">${content.exploreCta}</a>
       </div>
       
-      <p style="margin: 30px 0 10px 0; font-weight: bold; font-size: 18px; color: #18181b;">There's a cloud for everyone!</p>
+      <p style="margin: 30px 0 10px 0; font-weight: bold; font-size: 18px; color: #18181b;">${content.tagline}</p>
       
       <p style="margin: 20px 0; color: #3f3f46;">
-        With gratitude,<br>
-        <strong>The ACFE Team</strong><br>
+        ${lang === 'fr' ? 'Cordialement' : 'With gratitude'},<br>
+        <strong>${content.team}</strong><br>
         📧 contact@acloudforeveryone.org
       </p>
     </div>

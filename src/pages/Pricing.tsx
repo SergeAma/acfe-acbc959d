@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Check, Sparkles, BookOpen, Video, Users, Award, Calendar, Briefcase, MessageSquare, BookMarked, Loader2, Zap, Globe, GraduationCap, Building2 } from 'lucide-react';
