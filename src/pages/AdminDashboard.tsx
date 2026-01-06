@@ -10,7 +10,7 @@ import {
   Loader2, CheckCircle, XCircle, Clock, UserX, UserCheck, 
   Users, GraduationCap, TrendingUp, Mail, Settings, BookOpen,
   Send, Lightbulb, Newspaper, BarChart3, Building2, CreditCard,
-  ArrowRight, ChevronRight, Sparkles, Activity, UserPlus
+  ArrowRight, ChevronRight, Sparkles, Activity, UserPlus, Heart
 } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
 
@@ -37,6 +37,7 @@ const quickActionCategories = [
       { label: 'Revenue Analytics', icon: TrendingUp, path: '/admin/revenue' },
       { label: 'Learner Analytics', icon: BarChart3, path: '/admin/learner-analytics' },
       { label: 'Pricing Settings', icon: CreditCard, path: '/admin/pricing' },
+      { label: 'Donor Management', icon: Heart, path: '/admin/donors' },
     ]
   },
   {

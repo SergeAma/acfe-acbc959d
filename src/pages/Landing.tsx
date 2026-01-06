@@ -7,6 +7,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { TechNewsSection } from '@/components/TechNewsSection';
 import { HeroVideoBackground } from '@/components/HeroVideoBackground';
+import { SupportSection } from '@/components/SupportSection';
 import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png';
 import johannesburgLogo from '@/assets/johannesburg-logo.png';
 import spectrogramLogo from '@/assets/spectrogram-logo.png';
@@ -192,6 +193,9 @@ export const Landing = () => {
           </div>
         </div>
       </section>
+
+      {/* Support Section */}
+      <SupportSection />
 
       <Footer />
     </div>;
