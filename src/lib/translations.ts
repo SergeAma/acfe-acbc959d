@@ -20,7 +20,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'nav.mentors': 'Mentors',
 
     // ==================== HERO SECTION ====================
-    'hero.title': 'Join 300+ Learners and Master a Career-Boosting Digital Skill!',
+    'hero.title': 'Join a mentor-led community of over 300 learners to accelerate your career in tech.',
     'hero.subtitle': 'Zero experience required | Any background | Learn Anytime',
     'hero.context': 'Training delivered by tech experts who understand the African context.',
     'hero.dashboard': 'Go to Dashboard',
