@@ -223,28 +223,40 @@ export const Pricing = () => {
         {/* Pricing Cards */}
         <section className="py-12 md:py-16">
           <div className="container mx-auto px-4">
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto items-stretch">
               {/* Free Tier */}
-              <Card className="relative overflow-hidden border border-border">
-                <CardHeader className="text-center pt-10 pb-6">
-                  <CardTitle className="text-2xl mb-2">{t('pricing_free_title')}</CardTitle>
-                  <CardDescription className="text-base">
-                    {t('pricing_free_desc')}
-                  </CardDescription>
-                  <div className="mt-6">
+              <Card className="relative overflow-hidden border border-border flex flex-col h-full">
+                {/* Badge placeholder for alignment */}
+                <div className="h-7" />
+                <CardHeader className="text-center pt-4 pb-6 flex-shrink-0">
+                  {/* Title - fixed height */}
+                  <div className="h-8 flex items-center justify-center">
+                    <CardTitle className="text-2xl">{t('pricing_free_title')}</CardTitle>
+                  </div>
+                  {/* Description - fixed height */}
+                  <div className="h-12 flex items-center justify-center">
+                    <CardDescription className="text-base">
+                      {t('pricing_free_desc')}
+                    </CardDescription>
+                  </div>
+                  {/* Price - fixed height */}
+                  <div className="h-16 flex items-baseline justify-center mt-4">
                     <span className="text-5xl font-bold">$0</span>
                     <span className="text-muted-foreground text-lg">/{t('pricing_month')}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {t('pricing_no_card')}
-                  </p>
+                  {/* Subtext - fixed height */}
+                  <div className="h-6 flex items-center justify-center mt-2">
+                    <p className="text-sm text-muted-foreground">
+                      {t('pricing_no_card')}
+                    </p>
+                  </div>
                 </CardHeader>
-                <CardContent className="pb-8">
-                  <Button size="lg" variant="outline" className="w-full mb-6 text-lg h-14" onClick={() => navigate('/auth')}>
+                <CardContent className="pb-8 flex flex-col flex-1">
+                  <Button size="lg" variant="outline" className="w-full mb-6 text-lg h-14 flex-shrink-0" onClick={() => navigate('/auth')}>
                     {t('pricing_create_free')}
                   </Button>
                   
-                  <div className="space-y-3">
+                  <div className="space-y-3 flex-1">
                     <p className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
                       {t('pricing_included')}
                     </p>
@@ -261,25 +273,37 @@ export const Pricing = () => {
               </Card>
 
               {/* Premium Tier - $15 */}
-              <Card className="relative overflow-hidden border-2 border-primary shadow-xl">
+              <Card className="relative overflow-hidden border-2 border-primary shadow-xl flex flex-col h-full">
                 <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-4 py-1 text-sm font-medium rounded-bl-lg">
                   {t('pricing_popular')}
                 </div>
-                <CardHeader className="text-center pt-10 pb-6">
-                  <CardTitle className="text-2xl mb-2">{t('pricing_premium_title')}</CardTitle>
-                  <CardDescription className="text-base">
-                    {t('pricing_premium_desc')}
-                  </CardDescription>
-                  <div className="mt-6">
+                {/* Badge placeholder for alignment */}
+                <div className="h-7" />
+                <CardHeader className="text-center pt-4 pb-6 flex-shrink-0">
+                  {/* Title - fixed height */}
+                  <div className="h-8 flex items-center justify-center">
+                    <CardTitle className="text-2xl">{t('pricing_premium_title')}</CardTitle>
+                  </div>
+                  {/* Description - fixed height */}
+                  <div className="h-12 flex items-center justify-center">
+                    <CardDescription className="text-base">
+                      {t('pricing_premium_desc')}
+                    </CardDescription>
+                  </div>
+                  {/* Price - fixed height */}
+                  <div className="h-16 flex items-baseline justify-center mt-4">
                     <span className="text-5xl font-bold">${pricePerMonth}</span>
                     <span className="text-muted-foreground text-lg">/{t('pricing_month')}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {t('pricing_cancel_anytime')}
-                  </p>
+                  {/* Subtext - fixed height */}
+                  <div className="h-6 flex items-center justify-center mt-2">
+                    <p className="text-sm text-muted-foreground">
+                      {t('pricing_cancel_anytime')}
+                    </p>
+                  </div>
                 </CardHeader>
-                <CardContent className="pb-8">
-                  <Button size="lg" className="w-full mb-6 text-lg h-14" onClick={() => handleSubscribe('membership')} disabled={loading && loadingTier === 'membership'}>
+                <CardContent className="pb-8 flex flex-col flex-1">
+                  <Button size="lg" className="w-full mb-6 text-lg h-14 flex-shrink-0" onClick={() => handleSubscribe('membership')} disabled={loading && loadingTier === 'membership'}>
                     {loading && loadingTier === 'membership' ? (
                       <>
                         <Loader2 className="h-5 w-5 mr-2 animate-spin" />
@@ -293,7 +317,7 @@ export const Pricing = () => {
                     )}
                   </Button>
                   
-                  <div className="space-y-3">
+                  <div className="space-y-3 flex-1">
                     <p className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
                       {t('pricing_everything_plus')}
                     </p>
@@ -310,28 +334,40 @@ export const Pricing = () => {
               </Card>
 
               {/* Mentorship Plus Tier - $30 */}
-              <Card className="relative overflow-hidden border-2 border-secondary/50 bg-gradient-to-b from-secondary/10 to-background dark:from-secondary/20 dark:to-background">
+              <Card className="relative overflow-hidden border-2 border-secondary/50 bg-gradient-to-b from-secondary/10 to-background dark:from-secondary/20 dark:to-background flex flex-col h-full">
                 <div className="absolute top-0 right-0 bg-secondary text-secondary-foreground px-4 py-1 text-sm font-medium rounded-bl-lg">
                   <Users className="h-4 w-4 inline-block mr-1" />
                   1:1 Mentorship
                 </div>
-                <CardHeader className="text-center pt-10 pb-6">
-                  <CardTitle className="text-2xl mb-2">{t('pricing_mentorship_title')}</CardTitle>
-                  <CardDescription className="text-base">
-                    {t('pricing_mentorship_desc')}
-                  </CardDescription>
-                  <div className="mt-6">
+                {/* Badge placeholder for alignment */}
+                <div className="h-7" />
+                <CardHeader className="text-center pt-4 pb-6 flex-shrink-0">
+                  {/* Title - fixed height */}
+                  <div className="h-8 flex items-center justify-center">
+                    <CardTitle className="text-2xl">{t('pricing_mentorship_title')}</CardTitle>
+                  </div>
+                  {/* Description - fixed height */}
+                  <div className="h-12 flex items-center justify-center">
+                    <CardDescription className="text-base">
+                      {t('pricing_mentorship_desc')}
+                    </CardDescription>
+                  </div>
+                  {/* Price - fixed height */}
+                  <div className="h-16 flex items-baseline justify-center mt-4">
                     <span className="text-5xl font-bold text-secondary">$30</span>
                     <span className="text-muted-foreground text-lg">/{t('pricing_month')}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {t('pricing_cancel_anytime')}
-                  </p>
+                  {/* Subtext - fixed height */}
+                  <div className="h-6 flex items-center justify-center mt-2">
+                    <p className="text-sm text-muted-foreground">
+                      {t('pricing_cancel_anytime')}
+                    </p>
+                  </div>
                 </CardHeader>
-                <CardContent className="pb-8">
+                <CardContent className="pb-8 flex flex-col flex-1">
                   <Button 
                     size="lg" 
-                    className="w-full mb-6 text-lg h-14 bg-secondary hover:bg-secondary/90 text-secondary-foreground" 
+                    className="w-full mb-6 text-lg h-14 bg-secondary hover:bg-secondary/90 text-secondary-foreground flex-shrink-0" 
                     onClick={() => handleSubscribe('mentorship_plus')} 
                     disabled={loading && loadingTier === 'mentorship_plus'}
                   >
@@ -348,7 +384,7 @@ export const Pricing = () => {
                     )}
                   </Button>
                   
-                  <div className="space-y-3">
+                  <div className="space-y-3 flex-1">
                     <p className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
                       {t('pricing_everything_membership_plus')}
                     </p>
@@ -365,35 +401,47 @@ export const Pricing = () => {
               </Card>
 
               {/* Educational Institution Tier */}
-              <Card className="relative overflow-hidden border-2 border-amber-500/50 bg-gradient-to-b from-amber-50/50 to-background dark:from-amber-950/20 dark:to-background">
+              <Card className="relative overflow-hidden border-2 border-amber-500/50 bg-gradient-to-b from-amber-50/50 to-background dark:from-amber-950/20 dark:to-background flex flex-col h-full">
                 <div className="absolute top-0 right-0 bg-amber-500 text-white px-4 py-1 text-sm font-medium rounded-bl-lg">
                   <GraduationCap className="h-4 w-4 inline-block mr-1" />
                   {t('pricing_institutions')}
                 </div>
-                <CardHeader className="text-center pt-10 pb-6">
-                  <CardTitle className="text-2xl mb-2">{t('pricing_edu_title')}</CardTitle>
-                  <CardDescription className="text-base">
-                    {t('pricing_edu_desc')}
-                  </CardDescription>
-                  <div className="mt-6">
+                {/* Badge placeholder for alignment */}
+                <div className="h-7" />
+                <CardHeader className="text-center pt-4 pb-6 flex-shrink-0">
+                  {/* Title - fixed height */}
+                  <div className="h-8 flex items-center justify-center">
+                    <CardTitle className="text-2xl">{t('pricing_edu_title')}</CardTitle>
+                  </div>
+                  {/* Description - fixed height */}
+                  <div className="h-12 flex items-center justify-center">
+                    <CardDescription className="text-base">
+                      {t('pricing_edu_desc')}
+                    </CardDescription>
+                  </div>
+                  {/* Price - fixed height */}
+                  <div className="h-16 flex items-baseline justify-center mt-4">
                     <span className="text-3xl font-bold text-amber-600">{t('pricing_custom')}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {t('pricing_tailored')}
-                  </p>
+                  {/* Subtext - fixed height */}
+                  <div className="h-6 flex items-center justify-center mt-2">
+                    <p className="text-sm text-muted-foreground">
+                      {t('pricing_tailored')}
+                    </p>
+                  </div>
                 </CardHeader>
-                <CardContent className="pb-8">
+                <CardContent className="pb-8 flex flex-col flex-1">
                   <Button 
                     size="lg" 
                     variant="outline" 
-                    className="w-full mb-6 text-lg h-14 border-amber-500 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/50" 
+                    className="w-full mb-6 text-lg h-14 border-amber-500 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/50 flex-shrink-0" 
                     onClick={() => setShowInstitutionDialog(true)}
                   >
                     <Building2 className="h-5 w-5 mr-2" />
                     {t('pricing_contact_team')}
                   </Button>
                   
-                  <div className="space-y-3">
+                  <div className="space-y-3 flex-1">
                     <p className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
                       {t('pricing_everything_membership')}
                     </p>
