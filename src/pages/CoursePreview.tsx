@@ -65,6 +65,7 @@ interface Course {
   mentor?: {
     full_name: string;
     bio: string | null;
+    avatar_url: string | null;
   };
   institution?: {
     id: string;
@@ -183,7 +184,7 @@ export const CoursePreview = () => {
         .from('courses')
         .select(`
           *,
-          mentor:profiles!courses_mentor_id_fkey(full_name, bio),
+          mentor:profiles!courses_mentor_id_fkey(full_name, bio, avatar_url),
           institution:institutions(id, name)
         `)
         .eq('id', id)
@@ -439,12 +440,22 @@ export const CoursePreview = () => {
           {course.mentor && (
             <Card className="mb-6">
               <CardHeader>
-                <div className="flex items-center gap-3">
-                  <User className="h-5 w-5 text-primary" />
+                <div className="flex items-center gap-4">
+                  {course.mentor.avatar_url ? (
+                    <img 
+                      src={course.mentor.avatar_url} 
+                      alt={course.mentor.full_name || 'Mentor'} 
+                      className="h-12 w-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                      <User className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  )}
                   <div>
                     <CardTitle className="text-lg">Taught by {course.mentor.full_name}</CardTitle>
                     {course.mentor.bio && (
-                      <p className="text-sm text-muted-foreground mt-1">{course.mentor.bio}</p>
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{course.mentor.bio}</p>
                     )}
                   </div>
                 </div>
