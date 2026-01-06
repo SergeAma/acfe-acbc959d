@@ -32,10 +32,10 @@ const handler = async (req: Request): Promise<Response> => {
     let failedCount = 0;
 
     for (const student of students || []) {
-      // Check for enrolled courses with progress
+      // Check for enrolled courses with progress and drip info
       const { data: enrollments } = await supabase
         .from('enrollments')
-        .select('id, progress, courses(title)')
+        .select('id, progress, courses(title, drip_enabled, drip_schedule_type, drip_release_day)')
         .eq('student_id', student.id);
 
       // Check if student is part of an institution
@@ -49,12 +49,31 @@ const handler = async (req: Request): Promise<Response> => {
       const inProgressCourses = enrollments?.filter(e => (e.progress || 0) < 100) || [];
       const hasInstitution = (institutionMembership?.length || 0) > 0;
 
+      // Get day name for drip schedule
+      const getDayName = (day: number): string => {
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        return days[day] || 'Wednesday';
+      };
+
       // Build personalized reminder content
       const reminders: string[] = [];
       
       if (inProgressCourses.length > 0) {
         const courseNames = inProgressCourses.slice(0, 2).map(e => (e.courses as any)?.title).filter(Boolean);
-        reminders.push(`📚 Continue your learning journey! You have ${inProgressCourses.length} course(s) in progress${courseNames.length > 0 ? `: ${courseNames.join(', ')}` : ''}.`);
+        
+        // Check if any course has drip content enabled
+        const dripCourse = inProgressCourses.find(e => {
+          const course = e.courses as any;
+          return course?.drip_enabled && course?.drip_schedule_type === 'week';
+        });
+        
+        if (dripCourse) {
+          const course = dripCourse.courses as any;
+          const dayName = getDayName(course.drip_release_day ?? 3);
+          reminders.push(`📚 You have ${inProgressCourses.length} course(s) in progress. New content unlocks every <strong>${dayName}</strong> - check back regularly!`);
+        } else {
+          reminders.push(`📚 Continue your learning journey! You have ${inProgressCourses.length} course(s) in progress${courseNames.length > 0 ? `: ${courseNames.join(', ')}` : ''}.`);
+        }
       } else if (!hasEnrollments) {
         reminders.push(`🎓 Discover new courses from industry mentors and start your learning journey today!`);
       }

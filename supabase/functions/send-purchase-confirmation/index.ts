@@ -14,6 +14,9 @@ interface PurchaseEmailRequest {
   courseTitle: string;
   amount: number;
   isSubscription: boolean;
+  isTrial?: boolean;
+  dripEnabled?: boolean;
+  dripReleaseDay?: number; // 0-6, Sunday-Saturday
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -22,16 +25,32 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, firstName, courseTitle, amount, isSubscription }: PurchaseEmailRequest = await req.json();
+    const { email, firstName, courseTitle, amount, isSubscription, isTrial, dripEnabled, dripReleaseDay }: PurchaseEmailRequest = await req.json();
 
     console.log(`[SEND-PURCHASE-CONFIRMATION] Sending to ${email} for course: ${courseTitle}`);
 
     const currentYear = new Date().getFullYear();
 
+    // Get day name for drip schedule
+    const getDayName = (day: number): string => {
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      return days[day] || 'Wednesday';
+    };
+
     const subscriptionNote = isSubscription 
       ? `<p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
-           This is a monthly subscription at $${amount.toFixed(2)}/month. You can cancel anytime from your dashboard.
+           ${isTrial ? 'Your free trial has started!' : `This is a monthly subscription at $${amount.toFixed(2)}/month.`} You can manage your subscription anytime from your dashboard.
          </p>`
+      : '';
+
+    // Drip content note - show if drip is enabled
+    const dripNote = dripEnabled 
+      ? `<div style="background-color: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+           <h4 style="color: #92400e; margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">📅 Content Schedule</h4>
+           <p style="color: #78350f; margin: 0; font-size: 14px; line-height: 1.5;">
+             Your first lesson is available now! After that, new lessons unlock every <strong>${getDayName(dripReleaseDay ?? 3)}</strong> from your enrollment date. This paced approach helps you absorb the material better.
+           </p>
+         </div>`
       : '';
 
     const emailResponse = await resend.emails.send({
@@ -64,11 +83,13 @@ const handler = async (req: Request): Promise<Response> => {
                 Thank you for subscribing to <strong>${courseTitle}</strong>! Your payment of <strong>$${amount.toFixed(2)}</strong> has been processed successfully.
               </p>
               
+              ${dripNote}
+              
               <div style="background-color: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
                 <h3 style="color: #166534; margin: 0 0 12px 0; font-size: 16px;">What's next?</h3>
                 <ul style="color: #166534; margin: 0; padding-left: 20px; line-height: 1.8;">
-                  <li>Access your course from the Dashboard</li>
-                  <li>Complete lessons at your own pace</li>
+                  <li>Access your first lesson from the Dashboard</li>
+                  <li>${dripEnabled ? 'New lessons unlock weekly - check back regularly!' : 'Complete lessons at your own pace'}</li>
                   <li>Earn your certificate upon completion</li>
                 </ul>
               </div>

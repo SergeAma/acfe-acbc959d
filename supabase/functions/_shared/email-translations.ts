@@ -144,6 +144,20 @@ export const emailTranslations: Record<EmailLanguage, Record<string, string>> = 
     'idea.submitted.step1': 'Our team will review your submission',
     'idea.submitted.step2': 'You may be contacted for additional information',
     'idea.submitted.step3': 'Selected ideas will receive mentorship and support',
+
+    // Purchase/Enrollment
+    'purchase.subject': 'Welcome to your new course!',
+    'purchase.title': 'Payment Confirmed!',
+    'purchase.intro': 'Thank you for enrolling. Your payment has been processed successfully.',
+    'purchase.dripSchedule': 'Content Schedule',
+    'purchase.dripExplanation': 'Your first lesson is available now! After that, new lessons unlock every',
+    'purchase.dripBenefit': 'This paced approach helps you absorb the material better.',
+    'purchase.nextSteps': "What's next?",
+    'purchase.step1': 'Access your first lesson from the Dashboard',
+    'purchase.step2Drip': 'New lessons unlock weekly - check back regularly!',
+    'purchase.step2Self': 'Complete lessons at your own pace',
+    'purchase.step3': 'Earn your certificate upon completion',
+    'purchase.cta': 'Start Learning Now',
   },
 
   fr: {
@@ -281,6 +295,20 @@ export const emailTranslations: Record<EmailLanguage, Record<string, string>> = 
     'idea.submitted.step1': 'Notre équipe examinera votre soumission',
     'idea.submitted.step2': 'Vous pourriez être contacté pour des informations supplémentaires',
     'idea.submitted.step3': 'Les idées sélectionnées recevront du mentorat et du soutien',
+
+    // Purchase/Enrollment
+    'purchase.subject': 'Bienvenue dans votre nouveau cours!',
+    'purchase.title': 'Paiement Confirmé!',
+    'purchase.intro': 'Merci de vous être inscrit. Votre paiement a été traité avec succès.',
+    'purchase.dripSchedule': 'Calendrier du Contenu',
+    'purchase.dripExplanation': 'Votre première leçon est disponible maintenant! Ensuite, de nouvelles leçons se débloquent chaque',
+    'purchase.dripBenefit': 'Cette approche progressive vous aide à mieux assimiler le contenu.',
+    'purchase.nextSteps': 'Prochaines étapes?',
+    'purchase.step1': 'Accédez à votre première leçon depuis le Tableau de Bord',
+    'purchase.step2Drip': 'De nouvelles leçons se débloquent chaque semaine - revenez régulièrement!',
+    'purchase.step2Self': 'Complétez les leçons à votre rythme',
+    'purchase.step3': 'Obtenez votre certificat à la fin',
+    'purchase.cta': 'Commencer à Apprendre',
   },
 };
 
