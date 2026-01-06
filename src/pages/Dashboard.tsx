@@ -11,7 +11,7 @@ import { useLearnerAgreement } from '@/hooks/useLearnerAgreement';
 export const Dashboard = () => {
   const { user, profile, loading, isActualAdmin } = useAuth();
   const { hasSignedContract, loading: contractLoading } = useMentorContract(user?.id);
-  const { hasSignedAgreement, isLoading: agreementLoading } = useLearnerAgreement();
+  const { hasSignedAgreement, isLoading: agreementLoading, isProfileComplete } = useLearnerAgreement();
 
   if (loading || contractLoading || agreementLoading) {
     return (
@@ -31,9 +31,16 @@ export const Dashboard = () => {
     return <Navigate to="/mentor-contract" replace />;
   }
 
-  // Redirect users who haven't signed learner agreement (unless admin)
-  if (!isActualAdmin && hasSignedAgreement === false) {
-    return <Navigate to="/learner-agreement" replace />;
+  // For students: first check profile completion, then agreement
+  if (profile?.role === 'student' && !isActualAdmin) {
+    // If profile incomplete, redirect to profile page
+    if (!isProfileComplete) {
+      return <Navigate to="/profile" replace />;
+    }
+    // If profile complete but agreement not signed, redirect to agreement
+    if (hasSignedAgreement === false) {
+      return <Navigate to="/learner-agreement" replace />;
+    }
   }
 
   return (

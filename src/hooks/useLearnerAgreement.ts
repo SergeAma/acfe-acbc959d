@@ -7,6 +7,9 @@ export function useLearnerAgreement() {
   const [hasSignedAgreement, setHasSignedAgreement] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Check if profile is complete (has full_name)
+  const isProfileComplete = !!profile?.full_name;
+
   useEffect(() => {
     const checkAgreement = async () => {
       if (!user) {
@@ -14,9 +17,16 @@ export function useLearnerAgreement() {
         return;
       }
 
-      // Admins don't need to sign learner agreement
-      if (profile?.role === 'admin') {
+      // Admins and mentors don't need to sign learner agreement
+      if (profile?.role === 'admin' || profile?.role === 'mentor') {
         setHasSignedAgreement(true);
+        setIsLoading(false);
+        return;
+      }
+
+      // If profile is incomplete, don't check agreement yet
+      if (!isProfileComplete) {
+        setHasSignedAgreement(null);
         setIsLoading(false);
         return;
       }
@@ -39,7 +49,7 @@ export function useLearnerAgreement() {
     };
 
     checkAgreement();
-  }, [user, profile?.role]);
+  }, [user, profile?.role, isProfileComplete]);
 
-  return { hasSignedAgreement, isLoading };
+  return { hasSignedAgreement, isLoading, isProfileComplete };
 }
