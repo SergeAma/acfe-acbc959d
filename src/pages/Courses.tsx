@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Navbar } from '@/components/Navbar';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +36,7 @@ interface Course {
 
 export const Courses = () => {
   const { user, profile } = useAuth();
+  const { t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const mentorFilter = searchParams.get('mentor');
   
@@ -136,7 +138,7 @@ export const Courses = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <PageBreadcrumb items={[{ label: "Courses" }]} />
+      <PageBreadcrumb items={[{ label: t('nav.courses') }]} />
       
       {/* Main Content Section */}
       <div className="container mx-auto px-4 py-4 relative">
@@ -148,16 +150,16 @@ export const Courses = () => {
                 <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                   <GraduationCap className="h-8 w-8 text-primary" />
                 </div>
-                <h2 className="text-xl font-bold text-foreground">Access Our Courses</h2>
+                <h2 className="text-xl font-bold text-foreground">{t('courses.title')}</h2>
                 <p className="text-muted-foreground text-sm">
-                  Sign up to explore our course catalog and start your learning journey with expert mentors.
+                  {t('courses.subtitle')}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
                   <Button asChild className="rounded-full">
-                    <Link to="/auth">Sign Up</Link>
+                    <Link to="/auth">{t('auth.signUp')}</Link>
                   </Button>
                   <Button variant="outline" asChild className="rounded-full">
-                    <Link to="/auth">Sign In</Link>
+                    <Link to="/auth">{t('auth.signIn')}</Link>
                   </Button>
                 </div>
               </CardContent>
@@ -168,22 +170,22 @@ export const Courses = () => {
         {/* Blurred content for non-authenticated users */}
         <div className={!user ? 'blur-sm pointer-events-none select-none' : ''}>
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-2">Explore Courses</h1>
-          <p className="text-muted-foreground text-base sm:text-lg">Find the perfect course to advance your skills</p>
+          <h1 className="text-3xl sm:text-4xl font-bold mb-2">{t('courses.title')}</h1>
+          <p className="text-muted-foreground text-base sm:text-lg">{t('courses.subtitle')}</p>
         </div>
 
         {/* Mentor Filter Banner */}
         {mentorFilter && mentorName && (
           <div className="mb-6 p-4 bg-primary/10 rounded-lg flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Showing courses by:</span>
+              <span className="text-sm text-muted-foreground">{t('courses.mentorBy')}:</span>
               <Badge variant="secondary" className="text-base">
                 {mentorName}
               </Badge>
             </div>
             <Button variant="ghost" size="sm" onClick={clearMentorFilter}>
               <X className="h-4 w-4 mr-1" />
-              Clear filter
+              {t('courses.filter')}
             </Button>
           </div>
         )}
@@ -193,7 +195,7 @@ export const Courses = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search courses..."
+              placeholder={t('courses.search')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9"
@@ -201,10 +203,10 @@ export const Courses = () => {
           </div>
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger>
-              <SelectValue placeholder="Category" />
+              <SelectValue placeholder={t('courses.filterByCategory')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="all">{t('courses.allCategories')}</SelectItem>
               {categories.map((category) => (
                 <SelectItem key={category} value={category}>
                   {category}
@@ -214,10 +216,10 @@ export const Courses = () => {
           </Select>
           <Select value={levelFilter} onValueChange={setLevelFilter}>
             <SelectTrigger>
-              <SelectValue placeholder="Level" />
+              <SelectValue placeholder={t('courses.filterByLevel')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Levels</SelectItem>
+              <SelectItem value="all">{t('courses.allLevels')}</SelectItem>
               {levels.map((level) => (
                 <SelectItem key={level} value={level}>
                   {level}
@@ -229,18 +231,18 @@ export const Courses = () => {
 
         {/* Courses Grid */}
         {loading ? (
-          <div className="text-center py-12 text-muted-foreground">Loading courses...</div>
+          <div className="text-center py-12 text-muted-foreground">{t('common.loading')}</div>
         ) : filteredCourses.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-xl font-semibold mb-2">No courses found</h3>
+              <h3 className="text-xl font-semibold mb-2">{t('courses.noCourses')}</h3>
               <p className="text-muted-foreground">
-                {mentorFilter ? 'This mentor has no published courses yet.' : 'Try adjusting your filters'}
+                {mentorFilter ? t('courses.noCoursesDesc') : t('courses.noCoursesDesc')}
               </p>
               {mentorFilter && (
                 <Button variant="outline" className="mt-4" onClick={clearMentorFilter}>
-                  View all courses
+                  {t('common.viewAll')}
                 </Button>
               )}
             </CardContent>
@@ -284,11 +286,11 @@ export const Courses = () => {
                     {stripHtml(course.description)}
                   </p>
                   <div className="flex items-center justify-between text-sm mb-4">
-                    <span className="text-muted-foreground">By {course.mentor?.full_name}</span>
-                    <span className="text-muted-foreground">{course.duration_weeks} weeks</span>
+                    <span className="text-muted-foreground">{t('courses.mentorBy')} {course.mentor?.full_name}</span>
+                    <span className="text-muted-foreground">{course.duration_weeks} {t('courses.weeks')}</span>
                   </div>
                   <Link to={`/courses/${course.id}`}>
-                    <Button className="w-full">View Course</Button>
+                    <Button className="w-full">{t('courses.viewDetails')}</Button>
                   </Link>
                 </CardContent>
               </Card>
