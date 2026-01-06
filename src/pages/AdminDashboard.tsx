@@ -205,7 +205,7 @@ export const AdminDashboard = () => {
     setProcessingId(null);
   };
 
-  const handleRevokeMentor = async (userId: string) => {
+  const handleRevokeMentor = async (userId: string, requestId: string) => {
     setProcessingId(userId);
     
     // Update profiles table to set role back to student
@@ -221,11 +221,18 @@ export const AdminDashboard = () => {
         variant: "destructive",
       });
     } else {
-      // Also update user_roles table
+      // Delete the mentor role from user_roles (not update)
       await supabase
         .from('user_roles')
-        .update({ role: 'student' })
-        .eq('user_id', userId);
+        .delete()
+        .eq('user_id', userId)
+        .eq('role', 'mentor');
+      
+      // Update the request status to 'revoked' so UI shows Reinstate button
+      await supabase
+        .from('mentor_role_requests')
+        .update({ status: 'revoked', reviewed_at: new Date().toISOString() })
+        .eq('id', requestId);
       
       toast({
         title: "Mentor role revoked",
@@ -254,6 +261,12 @@ export const AdminDashboard = () => {
         variant: "destructive",
       });
     } else {
+      // Update the request status back to 'approved'
+      await supabase
+        .from('mentor_role_requests')
+        .update({ status: 'approved', reviewed_at: new Date().toISOString() })
+        .eq('user_id', userId);
+      
       toast({
         title: "Mentor reinstated",
         description: "User has been granted mentor role again.",
@@ -388,6 +401,7 @@ export const AdminDashboard = () => {
                           variant={
                             request.status === 'approved' ? 'default' : 
                             request.status === 'rejected' ? 'destructive' : 
+                            request.status === 'revoked' ? 'destructive' :
                             'secondary'
                           }
                           className="flex items-center gap-1 shrink-0"
@@ -395,6 +409,7 @@ export const AdminDashboard = () => {
                           {request.status === 'pending' && <Clock className="h-3 w-3" />}
                           {request.status === 'approved' && <CheckCircle className="h-3 w-3" />}
                           {request.status === 'rejected' && <XCircle className="h-3 w-3" />}
+                          {request.status === 'revoked' && <UserX className="h-3 w-3" />}
                           {request.status}
                         </Badge>
                       </div>
@@ -437,7 +452,7 @@ export const AdminDashboard = () => {
                       )}
                       {request.status === 'approved' && (
                         <Button
-                          onClick={() => handleRevokeMentor(request.user_id)}
+                          onClick={() => handleRevokeMentor(request.user_id, request.id)}
                           disabled={processingId === request.user_id}
                           variant="outline"
                           size="sm"
@@ -451,7 +466,7 @@ export const AdminDashboard = () => {
                           <span className="ml-2 hidden sm:inline">Revoke</span>
                         </Button>
                       )}
-                      {request.status === 'rejected' && (
+                      {(request.status === 'rejected' || request.status === 'revoked') && (
                         <Button
                           onClick={() => handleReinstateMentor(request.user_id)}
                           disabled={processingId === request.user_id}
