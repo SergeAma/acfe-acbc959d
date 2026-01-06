@@ -47,8 +47,8 @@ export const StudentProfileDialog = ({
   // Log admin profile view for audit purposes (non-blocking)
   useEffect(() => {
     if (open && profileId) {
-      supabase
-        .from('admin_audit_logs')
+      // Use type assertion as the table was just created
+      (supabase.from('admin_audit_logs' as any) as any)
         .insert({
           action: 'view_student_profile',
           target_user_id: profileId,
