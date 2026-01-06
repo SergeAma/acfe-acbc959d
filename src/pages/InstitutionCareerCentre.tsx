@@ -151,7 +151,7 @@ export const InstitutionCareerCentre = () => {
   const getAcronym = (name: string) => {
     return name
       .split(' ')
-      .filter(word => !['the', 'of', 'and', 'for'].includes(word.toLowerCase()))
+      .filter(word => !['of', 'and', 'for'].includes(word.toLowerCase()))
       .map(word => word[0])
       .join('')
       .toUpperCase()
