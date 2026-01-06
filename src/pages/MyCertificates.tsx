@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Navbar } from '@/components/Navbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,7 @@ interface CertificateData {
 export const MyCertificates = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [certificates, setCertificates] = useState<CertificateData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCertificate, setSelectedCertificate] = useState<CertificateData | null>(null);
@@ -139,25 +141,25 @@ export const MyCertificates = () => {
         <Button variant="ghost" asChild className="mb-6">
           <Link to="/dashboard">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
+            {t('certificates.backToDashboard')}
           </Link>
         </Button>
 
         <div className="flex items-center gap-3 mb-8">
           <Award className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold">My Certificates</h1>
+          <h1 className="text-3xl font-bold">{t('certificates.title')}</h1>
         </div>
 
         {certificates.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <Award className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <h3 className="text-lg font-semibold mb-2">No certificates yet</h3>
+              <h3 className="text-lg font-semibold mb-2">{t('certificates.noCertificates')}</h3>
               <p className="text-muted-foreground mb-4">
-                Complete a course to earn your first certificate
+                {t('certificates.completeCourse')}
               </p>
               <Button asChild>
-                <Link to="/courses">Browse Courses</Link>
+                <Link to="/courses">{t('certificates.browseCourses')}</Link>
               </Button>
             </CardContent>
           </Card>
@@ -174,13 +176,13 @@ export const MyCertificates = () => {
                       <div>
                         <h3 className="font-semibold text-lg">{cert.course.title}</h3>
                         <p className="text-sm text-muted-foreground">
-                          Instructed by {cert.course.mentor_name}
+                          {t('certificates.instructedBy')} {cert.course.mentor_name}
                         </p>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Issued on {format(new Date(cert.issued_at), 'MMMM d, yyyy')}
+                          {t('certificates.issuedOn')} {format(new Date(cert.issued_at), 'MMMM d, yyyy')}
                         </p>
                         <p className="text-xs text-muted-foreground font-mono mt-2">
-                          Certificate ID: {cert.certificate_number}
+                          {t('certificates.certificateId')}: {cert.certificate_number}
                         </p>
                       </div>
                     </div>
@@ -191,7 +193,7 @@ export const MyCertificates = () => {
                         onClick={() => setSelectedCertificate(cert)}
                       >
                         <ExternalLink className="h-4 w-4 mr-2" />
-                        View
+                        {t('certificates.view')}
                       </Button>
                     </div>
                   </div>
@@ -206,7 +208,7 @@ export const MyCertificates = () => {
       <Dialog open={!!selectedCertificate} onOpenChange={() => setSelectedCertificate(null)}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Certificate of Completion</DialogTitle>
+            <DialogTitle>{t('certificates.certificateOfCompletion')}</DialogTitle>
           </DialogHeader>
           {selectedCertificate && (
             <CourseCertificate
