@@ -154,7 +154,7 @@ export const CareerCentreLanding = () => {
               {t('career_badge')}
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-              {t('career_hero_title')} <span className="text-amber-700">{t('career_hero_highlight')}</span>
+              <span className="text-amber-700">{t('career_hero_highlight')}</span> {t('career_hero_title')}
               <span className="block text-xl md:text-2xl font-medium text-muted-foreground mt-2">{t('career_powered_by')}</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
