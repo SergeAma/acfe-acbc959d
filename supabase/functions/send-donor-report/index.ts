@@ -62,7 +62,7 @@ serve(async (req) => {
           
           <p style="font-size: 12px; color: #666; text-align: center;">
             You're receiving this because you're a valued ACFE donor.<br>
-            A Cloud For Everyone • Empowering Africa's Tech Future
+            A Cloud For Everyone • Empowering Africa's Tech Career
           </p>
         </body>
         </html>

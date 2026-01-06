@@ -62,7 +62,7 @@ serve(async (req) => {
         
         <p style="font-size: 12px; color: #666; text-align: center;">
           You can manage your donation at any time through the Stripe customer portal.<br>
-          A Cloud For Everyone • Empowering Africa's Tech Future
+          A Cloud For Everyone • Empowering Africa's Tech Career
         </p>
       </body>
       </html>
