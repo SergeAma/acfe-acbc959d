@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -42,6 +43,7 @@ interface MentorshipRequest {
 
 export const StudentDashboard = () => {
   const { profile } = useAuth();
+  const { t } = useLanguage();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [mentorshipRequests, setMentorshipRequests] = useState<MentorshipRequest[]>([]);
   const [mentorProfiles, setMentorProfiles] = useState<Record<string, { full_name: string; avatar_url: string }>>({});
@@ -133,26 +135,26 @@ export const StudentDashboard = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-4xl font-bold mb-2">Welcome back, {profile?.full_name}!</h1>
-        <p className="text-muted-foreground text-lg">Continue your learning journey</p>
+        <h1 className="text-4xl font-bold mb-2">{t('dashboard.welcome')}, {profile?.full_name}!</h1>
+        <p className="text-muted-foreground text-lg">{t('studentDashboard.continueJourney')}</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Active Courses</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('studentDashboard.activeCourses')}</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{enrollments.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">Enrolled and learning</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('studentDashboard.enrolledLearning')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Avg Progress</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('studentDashboard.avgProgress')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -161,21 +163,21 @@ export const StudentDashboard = () => {
                 ? Math.round(enrollments.reduce((acc, e) => acc + e.progress, 0) / enrollments.length)
                 : 0}%
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Across all courses</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('studentDashboard.acrossAllCourses')}</p>
           </CardContent>
         </Card>
 
         <Link to="/certificates">
           <Card className="hover:shadow-md transition-shadow cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Certificates</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('dashboard.certificates')}</CardTitle>
               <Award className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
                 {enrollments.filter(e => e.progress === 100).length}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Courses completed</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('studentDashboard.coursesCompleted')}</p>
             </CardContent>
           </Card>
         </Link>
@@ -191,15 +193,15 @@ export const StudentDashboard = () => {
                   <Building2 className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-foreground">Career Development Centre</h3>
+                  <h3 className="font-semibold text-foreground">{t('studentDashboard.careerCentre')}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Access exclusive opportunities from {userInstitutions[0].institution_name}
+                    {t('studentDashboard.accessOpportunities')} {userInstitutions[0].institution_name}
                   </p>
                 </div>
               </div>
               <Link to={`/career-centre/${userInstitutions[0].institution_slug}`}>
                 <Button variant="outline" size="sm" className="rounded-full">
-                  Access Centre
+                  {t('studentDashboard.accessCentre')}
                 </Button>
               </Link>
             </div>
@@ -213,7 +215,7 @@ export const StudentDashboard = () => {
         <Link to="/subscriptions">
           <Button variant="outline" size="sm">
             <CreditCard className="h-4 w-4 mr-2" />
-            Manage Subscriptions
+            {t('studentDashboard.manageSubscriptions')}
           </Button>
         </Link>
       </div>
@@ -221,11 +223,11 @@ export const StudentDashboard = () => {
       {/* Mentorship Requests Section */}
       <div>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">My Mentorship Requests</h2>
+          <h2 className="text-2xl font-bold">{t('studentDashboard.myMentorshipRequests')}</h2>
           <Link to="/mentors">
             <Button variant="outline">
               <UserCheck className="h-4 w-4 mr-2" />
-              Find a Mentor
+              {t('studentDashboard.findMentor')}
             </Button>
           </Link>
         </div>
@@ -234,10 +236,10 @@ export const StudentDashboard = () => {
           <Card>
             <CardContent className="py-8 text-center">
               <UserCheck className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">No mentorship requests yet</h3>
-              <p className="text-muted-foreground mb-4">Connect with a mentor to accelerate your growth</p>
+              <h3 className="text-lg font-semibold mb-2">{t('studentDashboard.noMentorshipRequests')}</h3>
+              <p className="text-muted-foreground mb-4">{t('studentDashboard.connectWithMentor')}</p>
               <Link to="/mentors">
-                <Button>Browse Mentors</Button>
+                <Button>{t('studentDashboard.browseMentors')}</Button>
               </Link>
             </CardContent>
           </Card>
@@ -256,7 +258,7 @@ export const StudentDashboard = () => {
                           {mentorProfiles[request.mentor_id]?.full_name || 'Mentor'}
                         </CardTitle>
                         <p className="text-xs text-muted-foreground">
-                          Requested {new Date(request.created_at).toLocaleDateString()}
+                          {t('studentDashboard.requested')} {new Date(request.created_at).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
@@ -269,8 +271,8 @@ export const StudentDashboard = () => {
                       {request.status === 'accepted' && <UserCheck className="h-3 w-3 mr-1" />}
                       {request.status === 'course_required' && <BookOpenCheck className="h-3 w-3 mr-1" />}
                       {request.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
-                      {request.status === 'accepted' ? 'Accepted' : 
-                       request.status === 'course_required' ? 'Course Required' : 'Pending'}
+                      {request.status === 'accepted' ? t('studentDashboard.accepted') : 
+                       request.status === 'course_required' ? t('studentDashboard.courseRequired') : t('studentDashboard.pending')}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -283,7 +285,7 @@ export const StudentDashboard = () => {
                       <Link to={`/cohort/community?mentor=${request.mentor_id}`}>
                         <Button size="sm" className="w-full">
                           <MessageSquare className="h-4 w-4 mr-2" />
-                          Join Cohort Community
+                          {t('studentDashboard.joinCohort')}
                         </Button>
                       </Link>
                     </div>
@@ -291,7 +293,7 @@ export const StudentDashboard = () => {
                   {request.status === 'course_required' && request.course_to_complete && (
                     <div className="space-y-3">
                       <p className="text-sm text-muted-foreground">
-                        Complete the following course to join the cohort:
+                        {t('studentDashboard.completeCourseToJoin')}
                       </p>
                       <Link to={`/courses/${request.course_to_complete.id}`}>
                         <Button size="sm" variant="outline" className="w-full">
@@ -303,7 +305,7 @@ export const StudentDashboard = () => {
                   )}
                   {request.status === 'pending' && (
                     <p className="text-sm text-muted-foreground">
-                      Waiting for mentor's response...
+                      {t('studentDashboard.waitingForResponse')}
                     </p>
                   )}
                 </CardContent>
@@ -322,25 +324,25 @@ export const StudentDashboard = () => {
       {/* In Progress Courses */}
       <div>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">In Progress</h2>
+          <h2 className="text-2xl font-bold">{t('dashboard.inProgress')}</h2>
           <Link to="/courses">
             <Button variant="outline">
               <Library className="h-4 w-4 mr-2" />
-              Browse More Courses
+              {t('studentDashboard.browseMoreCourses')}
             </Button>
           </Link>
         </div>
 
         {loading ? (
-          <div className="text-center py-8 text-muted-foreground">Loading your courses...</div>
+          <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
         ) : enrollments.filter(e => e.progress > 0 && e.progress < 100).length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center">
               <BookOpen className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">No courses in progress</h3>
-              <p className="text-muted-foreground mb-4">Start a course to see your progress here</p>
+              <h3 className="text-lg font-semibold mb-2">{t('studentDashboard.noCoursesInProgress')}</h3>
+              <p className="text-muted-foreground mb-4">{t('studentDashboard.startCourseToSeeProgress')}</p>
               <Link to="/courses">
-                <Button>Explore Courses</Button>
+                <Button>{t('features.courses.title')}</Button>
               </Link>
             </CardContent>
           </Card>
@@ -354,7 +356,7 @@ export const StudentDashboard = () => {
                   <div className="absolute top-2 right-2 z-10">
                     <Badge className="bg-primary text-primary-foreground">
                       <CreditCard className="h-3 w-3 mr-1" />
-                      Subscribed
+                      {t('studentDashboard.subscribed')}
                     </Badge>
                   </div>
                 )}
@@ -375,14 +377,14 @@ export const StudentDashboard = () => {
                   </p>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Progress</span>
+                      <span className="text-muted-foreground">{t('studentDashboard.progress')}</span>
                       <span className="font-medium">{enrollment.progress}%</span>
                     </div>
                     <Progress value={enrollment.progress} className="h-2" />
                   </div>
                   <Link to={`/courses/${enrollment.course.id}/learn`}>
                     <Button className="w-full mt-4">
-                      Continue Learning
+                      {t('courses.continue')}
                     </Button>
                   </Link>
                 </CardContent>
@@ -396,11 +398,11 @@ export const StudentDashboard = () => {
       {/* Completed Courses */}
       <div>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">Completed Courses</h2>
+          <h2 className="text-2xl font-bold">{t('dashboard.completedCourses')}</h2>
           <Link to="/certificates">
             <Button variant="outline">
               <Award className="h-4 w-4 mr-2" />
-              View Certificates
+              {t('studentDashboard.viewCertificates')}
             </Button>
           </Link>
         </div>
@@ -409,8 +411,8 @@ export const StudentDashboard = () => {
           <Card>
             <CardContent className="py-8 text-center">
               <Award className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">No completed courses yet</h3>
-              <p className="text-muted-foreground">Complete a course to earn your certificate</p>
+              <h3 className="text-lg font-semibold mb-2">{t('studentDashboard.noCompletedCourses')}</h3>
+              <p className="text-muted-foreground">{t('studentDashboard.completeCourseForCertificate')}</p>
             </CardContent>
           </Card>
         ) : (
@@ -422,7 +424,7 @@ export const StudentDashboard = () => {
                     <CardTitle className="line-clamp-1">{enrollment.course.title}</CardTitle>
                     <Badge variant="default" className="bg-green-500">
                       <Award className="h-3 w-3 mr-1" />
-                      Completed
+                      {t('studentDashboard.completed')}
                     </Badge>
                   </div>
                   <div className="flex gap-2 mt-2">
