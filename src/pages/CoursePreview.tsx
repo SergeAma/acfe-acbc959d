@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
+import { Input } from '@/components/ui/input';
+import { Ticket } from 'lucide-react';
 import { CourseBadge } from '@/components/CourseBadge';
 import { 
   BookOpen, 
@@ -106,6 +108,7 @@ export const CoursePreview = () => {
   const [leavingCourse, setLeavingCourse] = useState(false);
   const [prerequisites, setPrerequisites] = useState<PrerequisiteCourse[]>([]);
   const [prerequisitesMet, setPrerequisitesMet] = useState(true);
+  const [promoCode, setPromoCode] = useState('');
 
   useEffect(() => {
     if (id) {
@@ -262,7 +265,7 @@ export const CoursePreview = () => {
     try {
       // Use the checkout function for all enrollments to properly handle paid courses
       const { data, error } = await supabase.functions.invoke('create-course-checkout', {
-        body: { courseId: id }
+        body: { courseId: id, promoCode: promoCode.trim() || undefined }
       });
 
       if (error) throw error;
@@ -579,23 +582,40 @@ export const CoursePreview = () => {
                 </Button>
               </div>
             ) : (
-              <Button 
-                size="lg" 
-                onClick={handleEnroll} 
-                disabled={enrolling || !prerequisitesMet} 
-                className="w-full md:w-auto"
-              >
-                {enrolling ? (
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                ) : (
-                  <ChevronRight className="h-5 w-5 mr-2" />
+              <div className="space-y-4">
+                {/* Promo Code Input for Paid Courses */}
+                {course.is_paid && (
+                  <div className="flex gap-2 max-w-md">
+                    <div className="relative flex-1">
+                      <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="text"
+                        placeholder="Enter promo code (optional)"
+                        value={promoCode}
+                        onChange={(e) => setPromoCode(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
                 )}
-                {!prerequisitesMet 
-                  ? 'Complete Prerequisites First' 
-                  : course.is_paid 
-                    ? 'Buy Course' 
-                    : 'Enroll in Course'}
-              </Button>
+                <Button 
+                  size="lg" 
+                  onClick={handleEnroll} 
+                  disabled={enrolling || !prerequisitesMet} 
+                  className="w-full md:w-auto"
+                >
+                  {enrolling ? (
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  ) : (
+                    <ChevronRight className="h-5 w-5 mr-2" />
+                  )}
+                  {!prerequisitesMet 
+                    ? 'Complete Prerequisites First' 
+                    : course.is_paid 
+                      ? 'Buy Course' 
+                      : 'Enroll in Course'}
+                </Button>
+              </div>
             )
           ) : (
             <Button size="lg" onClick={() => navigate('/auth')} className="w-full md:w-auto">
