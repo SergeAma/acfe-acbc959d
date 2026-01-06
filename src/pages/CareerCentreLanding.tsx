@@ -14,10 +14,8 @@ import { Check, GraduationCap, Building2, Users, Briefcase, Award, BarChart3, Me
 import { PhoneInput } from '@/components/ui/phone-input';
 import { AutocompleteInput } from '@/components/ui/autocomplete-input';
 import { AFRICAN_UNIVERSITIES } from '@/data/universities';
-import { useLanguage } from '@/contexts/LanguageContext';
 const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
 export const CareerCentreLanding = () => {
-  const { t } = useLanguage();
   const [showInstitutionDialog, setShowInstitutionDialog] = useState(false);
   const [institutionLoading, setInstitutionLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -119,28 +117,28 @@ export const CareerCentreLanding = () => {
   };
   const features = [{
     icon: Users,
-    title: t('career_feature_env'),
-    description: t('career_feature_env_desc')
+    title: "Gated Student Environment",
+    description: "Private, branded career centre exclusively for your institution's students"
   }, {
     icon: Briefcase,
-    title: t('career_feature_jobs'),
-    description: t('career_feature_jobs_desc')
+    title: "Job Opportunity Surfacing",
+    description: "Curated job postings aligned with your students' completed courses and skills"
   }, {
     icon: Award,
-    title: t('career_feature_profiles'),
-    description: t('career_feature_profiles_desc')
+    title: "Spectrogram Talent Profiles",
+    description: "Graduates automatically create verified talent profiles for employer discovery"
   }, {
     icon: BarChart3,
-    title: t('career_feature_reporting'),
-    description: t('career_feature_reporting_desc')
+    title: "Institutional Reporting",
+    description: "Track participation, certifications, and job application outcomes"
   }, {
     icon: MessageSquare,
-    title: t('career_feature_discuss'),
-    description: t('career_feature_discuss_desc')
+    title: "Focused Discussions",
+    description: "Signal-dense conversations around events, courses, and career opportunities"
   }, {
     icon: Globe,
-    title: t('career_feature_africa'),
-    description: t('career_feature_africa_desc')
+    title: "Africa-Focused Training",
+    description: "Content designed specifically for African youth with locally relevant career paths"
   }];
   return <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
@@ -151,18 +149,18 @@ export const CareerCentreLanding = () => {
           <div className="container mx-auto px-4 text-center">
             <div className="inline-flex items-center gap-2 bg-stone-200 dark:bg-stone-800/30 text-stone-700 dark:text-stone-400 px-4 py-2 rounded-full text-sm font-medium mb-6">
               <GraduationCap className="h-4 w-4" />
-              {t('career_badge')}
+              For Educational Institutions
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-              <span className="text-amber-700">{t('career_hero_highlight')}</span> {t('career_hero_title')}
-              <span className="block text-xl md:text-2xl font-medium text-muted-foreground mt-2">{t('career_powered_by')}</span>
+              "Your Institution" <span className="text-amber-700">Career Development Center</span>
+              <span className="block text-xl md:text-2xl font-medium text-muted-foreground mt-2">Powered by ACFE</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-              {t('career_hero_subtitle')}
+              Mis en œuvre par  par ACFE
             </p>
             <Button size="lg" onClick={() => setShowInstitutionDialog(true)} className="text-white h-14 px-8 text-lg bg-amber-600 hover:bg-amber-500">
               <Building2 className="h-5 w-5 mr-2" />
-              {t('career_partner_cta')}
+              Partner With ACFE
             </Button>
           </div>
         </section>
@@ -172,10 +170,10 @@ export const CareerCentreLanding = () => {
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                {t('career_features_title')}
+                What Your Students Get
               </h2>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                {t('career_features_subtitle')}
+                A private, branded environment designed to accelerate career outcomes for your graduates.
               </p>
             </div>
 
@@ -198,13 +196,14 @@ export const CareerCentreLanding = () => {
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                {t('career_cta_title')}
+                Ready to Transform Your Students' Careers?
               </h2>
               <p className="text-muted-foreground text-lg mb-8">
-                {t('career_cta_subtitle')}
+                Join leading African institutions already partnering with ACFE to provide 
+                world-class tech education and career pathways for their students.
               </p>
               <Button size="lg" onClick={() => setShowInstitutionDialog(true)} className="text-white h-14 px-8 text-lg bg-amber-600 hover:bg-amber-500">
-                {t('career_cta_button')}
+                Get Started Today
               </Button>
             </div>
           </div>
@@ -219,10 +218,10 @@ export const CareerCentreLanding = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <GraduationCap className="h-5 w-5 text-stone-600" />
-              {t('career_dialog_title')}
+              Partner With ACFE
             </DialogTitle>
             <DialogDescription>
-              {t('career_dialog_desc')}
+              Tell us about your institution and we'll create a tailored partnership proposal.
             </DialogDescription>
           </DialogHeader>
           
