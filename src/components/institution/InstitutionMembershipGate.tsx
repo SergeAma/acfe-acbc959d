@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Shield, Building2, Mail, ArrowLeft, HelpCircle } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Institution {
   id: string;
@@ -17,6 +18,8 @@ interface InstitutionMembershipGateProps {
 }
 
 export const InstitutionMembershipGate = ({ institution }: InstitutionMembershipGateProps) => {
+  const { t } = useLanguage();
+  
   // Generate institution acronym from name
   const getAcronym = (name: string) => {
     return name
@@ -59,14 +62,14 @@ export const InstitutionMembershipGate = ({ institution }: InstitutionMembership
             
             <Badge variant="outline" className="mb-4 px-3 py-1 text-xs bg-amber-500/10 text-amber-600 border-amber-500/20">
               <Shield className="h-3 w-3 mr-1.5" />
-              Membership Required
+              {t('inst_gate_membership_required')}
             </Badge>
             
             <h1 className="text-2xl font-bold text-foreground mb-2">
-              {institution.name} Career Centre
+              {institution.name} {t('inst_gate_career_centre')}
             </h1>
             <p className="text-muted-foreground">
-              Exclusive access for verified {acronym} students
+              {t('inst_gate_exclusive')} {acronym} {t('inst_gate_students')}
             </p>
           </div>
 
@@ -79,10 +82,10 @@ export const InstitutionMembershipGate = ({ institution }: InstitutionMembership
 
               <div>
                 <h2 className="text-xl font-bold text-foreground mb-3">
-                  Verification Needed
+                  {t('inst_gate_verification_title')}
                 </h2>
                 <p className="text-muted-foreground leading-relaxed">
-                  This Career Centre is exclusively for verified students of{' '}
+                  {t('inst_gate_verification_desc')}{' '}
                   <strong className="text-foreground">{institution.name}</strong>.
                 </p>
               </div>
@@ -98,11 +101,10 @@ export const InstitutionMembershipGate = ({ institution }: InstitutionMembership
               <div className="bg-primary/5 rounded-lg p-4 space-y-2">
                 <div className="flex items-center gap-2 text-sm">
                   <Mail className="h-4 w-4 text-primary shrink-0" />
-                  <span className="text-foreground font-medium">How to get access:</span>
+                  <span className="text-foreground font-medium">{t('inst_gate_how_access')}</span>
                 </div>
                 <p className="text-sm text-muted-foreground text-left">
-                  Contact your institution's career services or administration to request an invitation 
-                  using your official institutional email address.
+                  {t('inst_gate_contact_admin')}
                 </p>
               </div>
 
@@ -110,13 +112,13 @@ export const InstitutionMembershipGate = ({ institution }: InstitutionMembership
                 <Button variant="outline" asChild className="rounded-full">
                   <Link to="/dashboard">
                     <ArrowLeft className="h-4 w-4 mr-2" />
-                    Return to Dashboard
+                    {t('inst_gate_return')}
                   </Link>
                 </Button>
                 <Button variant="ghost" asChild size="sm" className="text-muted-foreground">
                   <Link to="/career-centre">
                     <HelpCircle className="h-4 w-4 mr-2" />
-                    Learn about Career Centres
+                    {t('inst_gate_learn_more')}
                   </Link>
                 </Button>
               </div>
@@ -125,8 +127,7 @@ export const InstitutionMembershipGate = ({ institution }: InstitutionMembership
 
           {/* Footer note */}
           <p className="text-xs text-center text-muted-foreground mt-6">
-            If you believe you should have access, please ensure you're logged in with the same email 
-            address that received your invitation.
+            {t('inst_gate_footer')}
           </p>
         </div>
       </div>

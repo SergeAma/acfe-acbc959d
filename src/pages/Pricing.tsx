@@ -24,6 +24,7 @@ const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
 export const Pricing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [pricePerMonth, setPricePerMonth] = useState(10);
   const [showInstitutionDialog, setShowInstitutionDialog] = useState(false);
@@ -177,15 +178,15 @@ export const Pricing = () => {
   };
 
   const benefits = [
-    { icon: BookOpen, title: "Unlimited Course Access", description: "Access all crash courses and learning materials uploaded by seasoned mentors across various tech domains" },
-    { icon: Video, title: "Monthly Live Q&A Sessions", description: "Join exclusive monthly live mentoring sessions with industry experts to get your questions answered in real-time" },
-    { icon: Users, title: "1:1 Expert Sessions", description: "Book personalized one-on-one time with world-leading tech experts for career guidance and skill development" },
-    { icon: Briefcase, title: "Job Opportunities", description: "Access exclusive job postings and career opportunities through our founding partner, Spectrogram Consulting" },
-    { icon: MessageSquare, title: "Community Access", description: "Connect with fellow learners, mentors, and industry professionals in our vibrant community forums" },
-    { icon: Award, title: "Verified Certificates", description: "Earn industry-recognized certificates upon course completion to showcase your skills to employers" },
-    { icon: Calendar, title: "Continuous New Content", description: "New crash courses and learning materials are continuously added by our network of seasoned mentors" },
-    { icon: BookMarked, title: "Notes & Bookmarks", description: "Take notes and bookmark important lessons to create your personalized learning reference library" },
-    { icon: Globe, title: "Africa-Focused Training", description: "Content designed specifically for African youth with locally relevant examples and career paths" },
+    { icon: BookOpen, title: t('pricing_benefit_courses'), description: t('pricing_benefit_courses_desc') },
+    { icon: Video, title: t('pricing_benefit_qa'), description: t('pricing_benefit_qa_desc') },
+    { icon: Users, title: t('pricing_benefit_sessions'), description: t('pricing_benefit_sessions_desc') },
+    { icon: Briefcase, title: t('pricing_benefit_jobs'), description: t('pricing_benefit_jobs_desc') },
+    { icon: MessageSquare, title: t('pricing_benefit_community'), description: t('pricing_benefit_community_desc') },
+    { icon: Award, title: t('pricing_benefit_certs'), description: t('pricing_benefit_certs_desc') },
+    { icon: Calendar, title: t('pricing_benefit_content'), description: t('pricing_benefit_content_desc') },
+    { icon: BookMarked, title: t('pricing_benefit_notes'), description: t('pricing_benefit_notes_desc') },
+    { icon: Globe, title: t('pricing_benefit_africa'), description: t('pricing_benefit_africa_desc') },
   ];
 
   return (
@@ -197,11 +198,10 @@ export const Pricing = () => {
         <section className="py-16 md:py-24 bg-gradient-to-b from-primary/5 to-background">
           <div className="container mx-auto px-4 text-center">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-              Invest in Your <span className="text-primary">Tech Future</span>
+              {t('pricing_hero_title')} <span className="text-primary">{t('pricing_hero_title_highlight')}</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-              One affordable membership unlocks unlimited access to courses, mentorship, 
-              community, and career opportunities designed for African tech talent.
+              {t('pricing_hero_subtitle')}
             </p>
           </div>
         </section>
@@ -213,28 +213,28 @@ export const Pricing = () => {
               {/* Free Tier */}
               <Card className="relative overflow-hidden border border-border">
                 <CardHeader className="text-center pt-10 pb-6">
-                  <CardTitle className="text-2xl mb-2">Free Access</CardTitle>
+                  <CardTitle className="text-2xl mb-2">{t('pricing_free_title')}</CardTitle>
                   <CardDescription className="text-base">
-                    Get started with basic features
+                    {t('pricing_free_desc')}
                   </CardDescription>
                   <div className="mt-6">
                     <span className="text-5xl font-bold">$0</span>
-                    <span className="text-muted-foreground text-lg">/month</span>
+                    <span className="text-muted-foreground text-lg">/{t('pricing_month')}</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-2">
-                    No credit card required
+                    {t('pricing_no_card')}
                   </p>
                 </CardHeader>
                 <CardContent className="pb-8">
                   <Button size="lg" variant="outline" className="w-full mb-6 text-lg h-14" onClick={() => navigate('/auth')}>
-                    Create Free Account
+                    {t('pricing_create_free')}
                   </Button>
                   
                   <div className="space-y-3">
                     <p className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                      What's included:
+                      {t('pricing_included')}
                     </p>
-                    {["Limited access to courses", "Community & job opportunities", "Verified completion certificates", "Notes & bookmarks features", "Mobile-friendly learning"].map((feature, index) => (
+                    {[t('pricing_free_f1'), t('pricing_free_f2'), t('pricing_free_f3'), t('pricing_free_f4'), t('pricing_free_f5')].map((feature, index) => (
                       <div key={index} className="flex items-center gap-3">
                         <div className="flex-shrink-0 h-5 w-5 rounded-full bg-muted flex items-center justify-center">
                           <Check className="h-3 w-3 text-muted-foreground" />
@@ -249,19 +249,19 @@ export const Pricing = () => {
               {/* Premium Tier */}
               <Card className="relative overflow-hidden border-2 border-primary shadow-xl">
                 <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-4 py-1 text-sm font-medium rounded-bl-lg">
-                  Most Popular
+                  {t('pricing_popular')}
                 </div>
                 <CardHeader className="text-center pt-10 pb-6">
-                  <CardTitle className="text-2xl mb-2">ACFE Membership</CardTitle>
+                  <CardTitle className="text-2xl mb-2">{t('pricing_premium_title')}</CardTitle>
                   <CardDescription className="text-base">
-                    Everything you need to launch your tech career
+                    {t('pricing_premium_desc')}
                   </CardDescription>
                   <div className="mt-6">
                     <span className="text-5xl font-bold">${pricePerMonth}</span>
-                    <span className="text-muted-foreground text-lg">/month</span>
+                    <span className="text-muted-foreground text-lg">/{t('pricing_month')}</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Cancel anytime • No hidden fees
+                    {t('pricing_cancel_anytime')}
                   </p>
                 </CardHeader>
                 <CardContent className="pb-8">
@@ -269,21 +269,21 @@ export const Pricing = () => {
                     {loading ? (
                       <>
                         <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                        Processing...
+                        {t('pricing_processing')}
                       </>
                     ) : (
                       <>
                         <Zap className="h-5 w-5 mr-2" />
-                        Get Started Now
+                        {t('pricing_get_started')}
                       </>
                     )}
                   </Button>
                   
                   <div className="space-y-3">
                     <p className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                      Everything in Free, plus:
+                      {t('pricing_everything_plus')}
                     </p>
-                    {["Unlimited access to all courses", "Monthly live Q&A mentoring sessions", "Book 1:1 time with tech experts", "Continuous new crash courses", "Priority community support"].map((feature, index) => (
+                    {[t('pricing_prem_f1'), t('pricing_prem_f2'), t('pricing_prem_f3'), t('pricing_prem_f4'), t('pricing_prem_f5')].map((feature, index) => (
                       <div key={index} className="flex items-center gap-3">
                         <div className="flex-shrink-0 h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
                           <Check className="h-3 w-3 text-green-700" />
@@ -299,18 +299,18 @@ export const Pricing = () => {
               <Card className="relative overflow-hidden border-2 border-amber-500/50 bg-gradient-to-b from-amber-50/50 to-background dark:from-amber-950/20 dark:to-background">
                 <div className="absolute top-0 right-0 bg-amber-500 text-white px-4 py-1 text-sm font-medium rounded-bl-lg">
                   <GraduationCap className="h-4 w-4 inline-block mr-1" />
-                  Institutions
+                  {t('pricing_institutions')}
                 </div>
                 <CardHeader className="text-center pt-10 pb-6">
-                  <CardTitle className="text-2xl mb-2">Educational Partners</CardTitle>
+                  <CardTitle className="text-2xl mb-2">{t('pricing_edu_title')}</CardTitle>
                   <CardDescription className="text-base">
-                    Empower your students with tech skills
+                    {t('pricing_edu_desc')}
                   </CardDescription>
                   <div className="mt-6">
-                    <span className="text-3xl font-bold text-amber-600">Custom Pricing</span>
+                    <span className="text-3xl font-bold text-amber-600">{t('pricing_custom')}</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Tailored to your institution's needs
+                    {t('pricing_tailored')}
                   </p>
                 </CardHeader>
                 <CardContent className="pb-8">
@@ -321,20 +321,14 @@ export const Pricing = () => {
                     onClick={() => setShowInstitutionDialog(true)}
                   >
                     <Building2 className="h-5 w-5 mr-2" />
-                    Contact ACFE Team
+                    {t('pricing_contact_team')}
                   </Button>
                   
                   <div className="space-y-3">
                     <p className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                      Everything in Membership, plus:
+                      {t('pricing_everything_membership')}
                     </p>
-                    {[
-                      "Bespoke pricing for your institution",
-                      "Tailored enablement events",
-                      "Topic-driven mentorship at scale",
-                      "Dedicated ACFE Career Centre",
-                      "Spectrogram talent profiles for graduates"
-                    ].map((feature, index) => (
+                    {[t('pricing_edu_f1'), t('pricing_edu_f2'), t('pricing_edu_f3'), t('pricing_edu_f4'), t('pricing_edu_f5')].map((feature, index) => (
                       <div key={index} className="flex items-center gap-3">
                         <div className="flex-shrink-0 h-5 w-5 rounded-full bg-amber-100 flex items-center justify-center">
                           <Check className="h-3 w-3 text-amber-700" />
@@ -354,10 +348,10 @@ export const Pricing = () => {
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Everything You Get With ACFE Membership
+                {t('pricing_benefits_title')}
               </h2>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                We've packed incredible value into one simple membership to accelerate your tech journey
+                {t('pricing_benefits_subtitle')}
               </p>
             </div>
 
@@ -381,21 +375,21 @@ export const Pricing = () => {
         <section className="py-16 md:py-20">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto text-center">
-              <Badge variant="outline" className="mb-4">Founding Partner</Badge>
+              <Badge variant="outline" className="mb-4">{t('pricing_partner_badge')}</Badge>
               <h2 className="text-2xl md:text-3xl font-bold mb-4">
-                Career Support from Spectrogram Consulting
+                {t('pricing_partner_title')}
               </h2>
               <p className="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto">
-                Our founding partner, Spectrogram Consulting, provides exclusive job opportunities, career guidance, and up to $1000 in funding support for innovative ideas through our Innovators Incubator program.
+                {t('pricing_partner_desc')}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button variant="outline" onClick={() => navigate('/jobs')}>
                   <Briefcase className="h-4 w-4 mr-2" />
-                  View Job Opportunities
+                  {t('pricing_view_jobs')}
                 </Button>
                 <Button variant="outline" onClick={() => navigate('/submit-idea')}>
                   <Sparkles className="h-4 w-4 mr-2" />
-                  Submit Your Startup Idea
+                  {t('pricing_submit_idea')}
                 </Button>
               </div>
             </div>
@@ -407,17 +401,17 @@ export const Pricing = () => {
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto">
               <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">
-                Frequently Asked Questions
+                {t('pricing_faq_title')}
               </h2>
               
               <div className="space-y-6">
                 {[
-                  { q: "Can I cancel anytime?", a: "Yes! You can cancel your subscription at any time from your dashboard. You'll continue to have access until the end of your current billing period." },
-                  { q: "Do I get access to all courses?", a: "Absolutely. Your ACFE membership gives you unlimited access to every course on the platform, including all new courses added in the future." },
-                  { q: "How do 1:1 sessions with experts work?", a: "Mentors set their availability, and you can book time slots directly from their profile. Session pricing is standardized across the platform for transparency." },
-                  { q: "Are the certificates recognized?", a: "Yes, each certificate includes a unique verification code that employers can use to verify your achievement on our public verification page." },
-                  { q: "Is this designed for African learners?", a: "Yes! ACFE was built specifically for African youth. Our courses, examples, and career paths are tailored to the African tech ecosystem and job market." },
-                  { q: "How does the Educational Institution partnership work?", a: "We work with universities, colleges, and high schools across Africa to provide bespoke pricing, dedicated career centres, and tailored mentorship programs for their students. Contact us to learn more!" }
+                  { q: t('pricing_faq_q1'), a: t('pricing_faq_a1') },
+                  { q: t('pricing_faq_q2'), a: t('pricing_faq_a2') },
+                  { q: t('pricing_faq_q3'), a: t('pricing_faq_a3') },
+                  { q: t('pricing_faq_q4'), a: t('pricing_faq_a4') },
+                  { q: t('pricing_faq_q5'), a: t('pricing_faq_a5') },
+                  { q: t('pricing_faq_q6'), a: t('pricing_faq_a6') }
                 ].map((faq, index) => (
                   <div key={index} className="bg-background rounded-lg p-6 border border-border">
                     <h3 className="font-semibold text-lg mb-2">{faq.q}</h3>
@@ -433,21 +427,21 @@ export const Pricing = () => {
         <section className="py-16 md:py-24">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Ready to Start Your Tech Journey?
+              {t('pricing_cta_title')}
             </h2>
             <p className="text-muted-foreground text-lg mb-8 max-w-xl mx-auto">
-              Join thousands of African learners building job-ready tech skills with ACFE.
+              {t('pricing_cta_subtitle')}
             </p>
             <Button size="lg" className="text-lg h-14 px-8" onClick={handleSubscribe} disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Processing...
+                  {t('pricing_processing')}
                 </>
               ) : (
                 <>
                   <Zap className="h-5 w-5 mr-2" />
-                  Get ACFE Membership for ${pricePerMonth}/month
+                  {t('pricing_cta_button')} ${pricePerMonth}/{t('pricing_month')}
                 </>
               )}
             </Button>

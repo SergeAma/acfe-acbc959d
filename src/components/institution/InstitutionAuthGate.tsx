@@ -6,6 +6,7 @@ import {
   Shield, GraduationCap, Award, Users, Building2, 
   CheckCircle, ArrowRight, Sparkles, BookOpen
 } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Institution {
   id: string;
@@ -21,6 +22,8 @@ interface InstitutionAuthGateProps {
 }
 
 export const InstitutionAuthGate = ({ institution, currentPath }: InstitutionAuthGateProps) => {
+  const { t } = useLanguage();
+  
   // Generate institution acronym from name
   const getAcronym = (name: string) => {
     return name
@@ -35,10 +38,10 @@ export const InstitutionAuthGate = ({ institution, currentPath }: InstitutionAut
   const acronym = getAcronym(institution.name);
 
   const benefits = [
-    { icon: BookOpen, text: 'Exclusive courses curated for your institution' },
-    { icon: Award, text: 'Industry-recognized certifications' },
-    { icon: Users, text: 'Connect with mentors and peers' },
-    { icon: Sparkles, text: 'Access the Talent Network for career opportunities' },
+    { icon: BookOpen, text: t('inst_auth_benefit1') },
+    { icon: Award, text: t('inst_auth_benefit2') },
+    { icon: Users, text: t('inst_auth_benefit3') },
+    { icon: Sparkles, text: t('inst_auth_benefit4') },
   ];
 
   return (
@@ -79,17 +82,17 @@ export const InstitutionAuthGate = ({ institution, currentPath }: InstitutionAut
             
             <Badge variant="outline" className="mb-4 px-4 py-1.5 text-sm bg-primary/5 border-primary/20">
               <Shield className="h-3.5 w-3.5 mr-2" />
-              Official Partnership Program
+              {t('inst_auth_badge')}
             </Badge>
             
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
               {institution.name}
             </h1>
             <h2 className="text-xl sm:text-2xl text-primary font-semibold mb-4">
-              Career Development Centre
+              {t('inst_auth_career_centre')}
             </h2>
             <p className="text-lg text-muted-foreground">
-              Powered by <span className="font-semibold text-foreground">A Cloud For Everyone (ACFE)</span>
+              {t('inst_auth_powered_by')} <span className="font-semibold text-foreground">A Cloud For Everyone (ACFE)</span>
             </p>
           </div>
 
@@ -114,13 +117,13 @@ export const InstitutionAuthGate = ({ institution, currentPath }: InstitutionAut
                       )}
                     </div>
                     <div className="text-center flex-1">
-                      <h3 className="font-bold text-foreground">About {acronym}</h3>
-                      <p className="text-xs text-muted-foreground">Our Mission</p>
+                      <h3 className="font-bold text-foreground">{t('inst_auth_about')} {acronym}</h3>
+                      <p className="text-xs text-muted-foreground">{t('inst_auth_mission')}</p>
                     </div>
                     <div className="w-10" /> {/* Spacer for symmetry */}
                   </div>
                   <p className="text-muted-foreground leading-relaxed text-center flex-1">
-                    {institution.description || `${institution.name} has partnered with ACFE to provide students with world-class career development resources and mentorship opportunities.`}
+                    {institution.description || `${institution.name} ${t('inst_auth_default_desc')}`}
                   </p>
                 </CardContent>
               </Card>
@@ -130,7 +133,7 @@ export const InstitutionAuthGate = ({ institution, currentPath }: InstitutionAut
                 <CardContent className="p-6 h-full flex flex-col">
                   <h3 className="font-bold text-foreground mb-4 flex items-center justify-center gap-2">
                     <GraduationCap className="h-5 w-5 text-primary" />
-                    What You'll Get Access To
+                    {t('inst_auth_access_title')}
                   </h3>
                   <ul className="space-y-4 flex-1">
                     {benefits.map((benefit, index) => (
@@ -154,17 +157,17 @@ export const InstitutionAuthGate = ({ institution, currentPath }: InstitutionAut
                     <Shield className="h-8 w-8 text-primary" />
                   </div>
                   <h3 className="text-xl font-bold text-foreground mb-2">
-                    Join {acronym}'s Career Centre
+                    {t('inst_auth_join')} {acronym}{t('inst_auth_join_suffix')}
                   </h3>
                   <p className="text-muted-foreground">
-                    Use your institutional email to access exclusive resources
+                    {t('inst_auth_use_email')}
                   </p>
                 </div>
 
                 <div className="space-y-4">
                   <Button asChild size="lg" className="w-full rounded-full text-base h-12">
                     <Link to={`/auth?mode=signup&redirect=${encodeURIComponent(currentPath)}`}>
-                      Create Your Account
+                      {t('inst_auth_create_account')}
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </Link>
                   </Button>
@@ -175,23 +178,23 @@ export const InstitutionAuthGate = ({ institution, currentPath }: InstitutionAut
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
                       <span className="bg-card px-2 text-muted-foreground">
-                        Already have an account?
+                        {t('inst_auth_already_account')}
                       </span>
                     </div>
                   </div>
                   
                   <Button variant="outline" asChild size="lg" className="w-full rounded-full text-base h-12">
                     <Link to={`/auth?redirect=${encodeURIComponent(currentPath)}`}>
-                      Sign In
+                      {t('sign_in')}
                     </Link>
                   </Button>
                 </div>
 
                 <p className="text-xs text-center text-muted-foreground mt-6">
-                  By signing up, you agree to our{' '}
-                  <Link to="/terms" className="underline hover:text-foreground">Terms of Service</Link>
-                  {' '}and{' '}
-                  <Link to="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>
+                  {t('inst_auth_agree')}
+                  <Link to="/terms" className="underline hover:text-foreground">{t('terms_of_service')}</Link>
+                  {' '}{t('and')}{' '}
+                  <Link to="/privacy" className="underline hover:text-foreground">{t('privacy_policy')}</Link>
                 </p>
               </CardContent>
             </Card>
@@ -201,19 +204,18 @@ export const InstitutionAuthGate = ({ institution, currentPath }: InstitutionAut
           <div className="flex items-center justify-center gap-8 mt-8 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-500" />
-              <span>Verified Institution</span>
+              <span>{t('inst_auth_verified')}</span>
             </div>
             <div className="flex items-center gap-2">
               <Shield className="h-4 w-4 text-primary" />
-              <span>Secure Access</span>
+              <span>{t('inst_auth_secure')}</span>
             </div>
           </div>
 
           {/* Bottom: Partnership note - centered */}
           <div className="mt-10 text-center">
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{institution.name}</span> has partnered with 
-              ACFE to provide students with world-class career development resources and mentorship.
+              <span className="font-medium text-foreground">{institution.name}</span> {t('inst_auth_partnership')}
             </p>
           </div>
         </div>
