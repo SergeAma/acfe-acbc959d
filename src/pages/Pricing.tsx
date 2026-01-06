@@ -209,7 +209,7 @@ export const Pricing = () => {
         {/* Pricing Cards */}
         <section className="py-12 md:py-16">
           <div className="container mx-auto px-4">
-            <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
               {/* Free Tier */}
               <Card className="relative overflow-hidden border border-border">
                 <CardHeader className="text-center pt-10 pb-6">
@@ -246,7 +246,7 @@ export const Pricing = () => {
                 </CardContent>
               </Card>
 
-              {/* Premium Tier */}
+              {/* Premium Tier - $15 */}
               <Card className="relative overflow-hidden border-2 border-primary shadow-xl">
                 <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-4 py-1 text-sm font-medium rounded-bl-lg">
                   {t('pricing_popular')}
@@ -283,10 +283,65 @@ export const Pricing = () => {
                     <p className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
                       {t('pricing_everything_plus')}
                     </p>
-                    {[t('pricing_prem_f1'), t('pricing_prem_f2'), t('pricing_prem_f3'), t('pricing_prem_f4'), t('pricing_prem_f5')].map((feature, index) => (
+                    {[t('pricing_prem_f1'), t('pricing_prem_f2'), t('pricing_prem_f3'), t('pricing_prem_f4')].map((feature, index) => (
                       <div key={index} className="flex items-center gap-3">
                         <div className="flex-shrink-0 h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
                           <Check className="h-3 w-3 text-green-700" />
+                        </div>
+                        <span className="text-sm">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Mentorship Plus Tier - $30 */}
+              <Card className="relative overflow-hidden border-2 border-purple-500/50 bg-gradient-to-b from-purple-50/50 to-background dark:from-purple-950/20 dark:to-background">
+                <div className="absolute top-0 right-0 bg-purple-500 text-white px-4 py-1 text-sm font-medium rounded-bl-lg">
+                  <Users className="h-4 w-4 inline-block mr-1" />
+                  1:1 Mentorship
+                </div>
+                <CardHeader className="text-center pt-10 pb-6">
+                  <CardTitle className="text-2xl mb-2">{t('pricing_mentorship_title')}</CardTitle>
+                  <CardDescription className="text-base">
+                    {t('pricing_mentorship_desc')}
+                  </CardDescription>
+                  <div className="mt-6">
+                    <span className="text-5xl font-bold text-purple-600">$30</span>
+                    <span className="text-muted-foreground text-lg">/{t('pricing_month')}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {t('pricing_cancel_anytime')}
+                  </p>
+                </CardHeader>
+                <CardContent className="pb-8">
+                  <Button 
+                    size="lg" 
+                    className="w-full mb-6 text-lg h-14 bg-purple-600 hover:bg-purple-700" 
+                    onClick={handleSubscribe} 
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                        {t('pricing_processing')}
+                      </>
+                    ) : (
+                      <>
+                        <Users className="h-5 w-5 mr-2" />
+                        {t('pricing_get_started')}
+                      </>
+                    )}
+                  </Button>
+                  
+                  <div className="space-y-3">
+                    <p className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                      {t('pricing_everything_membership_plus')}
+                    </p>
+                    {[t('pricing_mentorship_f1'), t('pricing_mentorship_f2'), t('pricing_mentorship_f3'), t('pricing_mentorship_f4')].map((feature, index) => (
+                      <div key={index} className="flex items-center gap-3">
+                        <div className="flex-shrink-0 h-5 w-5 rounded-full bg-purple-100 flex items-center justify-center">
+                          <Check className="h-3 w-3 text-purple-700" />
                         </div>
                         <span className="text-sm">{feature}</span>
                       </div>
