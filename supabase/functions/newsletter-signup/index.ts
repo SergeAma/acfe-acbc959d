@@ -6,6 +6,28 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Rate limiting map (in production, use Redis or similar)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 5;
+
+function isRateLimited(identifier: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(identifier);
+  
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(identifier, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+  
+  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return true;
+  }
+  
+  record.count++;
+  return false;
+}
+
 async function verifyTurnstile(token: string): Promise<boolean> {
   const secretKey = Deno.env.get("TURNSTILE_SECRET_KEY");
   if (!secretKey) {
@@ -41,8 +63,37 @@ serve(async (req: Request): Promise<Response> => {
   try {
     const { email, turnstileToken } = await req.json();
 
-    // Verify CAPTCHA first
-    if (!turnstileToken) {
+    // Input validation
+    if (!email || typeof email !== 'string' || email.length > 255) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const trimmedEmail = email.trim().toLowerCase();
+    
+    if (!emailRegex.test(trimmedEmail)) {
+      console.error("Invalid email format");
+      return new Response(
+        JSON.stringify({ error: "Invalid email format" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Rate limiting by email
+    const rateLimitKey = `newsletter:${trimmedEmail}`;
+    if (isRateLimited(rateLimitKey)) {
+      return new Response(
+        JSON.stringify({ error: "Too many requests. Please try again later." }),
+        { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Verify CAPTCHA
+    if (!turnstileToken || typeof turnstileToken !== 'string') {
       console.error("Missing CAPTCHA token");
       return new Response(
         JSON.stringify({ error: "Please complete the CAPTCHA verification" }),
@@ -59,17 +110,6 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email.trim())) {
-      console.error("Invalid email format:", email);
-      return new Response(
-        JSON.stringify({ error: "Invalid email format" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-
-    const trimmedEmail = email.trim().toLowerCase();
     console.log("Processing newsletter signup for:", trimmedEmail);
 
     // Use service role to insert contact (bypasses RLS)
@@ -88,26 +128,26 @@ serve(async (req: Request): Promise<Response> => {
     if (insertError) {
       // Handle duplicate email gracefully (unique constraint violation)
       if (insertError.code === "23505") {
-        console.log("Email already subscribed:", trimmedEmail);
+        console.log("Email already subscribed");
         return new Response(
           JSON.stringify({ success: true, alreadySubscribed: true }),
           { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
       console.error("Insert error:", insertError);
-      throw insertError;
+      throw new Error("Failed to subscribe");
     }
 
-    console.log("Contact created successfully for:", trimmedEmail);
+    console.log("Contact created successfully");
 
     // Send welcome email
     try {
       await supabaseAdmin.functions.invoke("send-newsletter-welcome", {
         body: { email: trimmedEmail }
       });
-      console.log("Welcome email triggered for:", trimmedEmail);
+      console.log("Welcome email triggered");
     } catch (emailError) {
-      console.error("Failed to send welcome email:", emailError);
+      console.error("Failed to send welcome email");
       // Don't fail the signup if email fails
     }
 
@@ -115,10 +155,10 @@ serve(async (req: Request): Promise<Response> => {
       JSON.stringify({ success: true }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
-  } catch (error: any) {
-    console.error("Newsletter signup error:", error);
+  } catch (error: unknown) {
+    console.error("Newsletter signup error");
     return new Response(
-      JSON.stringify({ error: error.message || "Failed to subscribe" }),
+      JSON.stringify({ error: "Failed to subscribe. Please try again." }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
