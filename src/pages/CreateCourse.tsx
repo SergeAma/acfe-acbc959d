@@ -138,13 +138,29 @@ export const CreateCourse = () => {
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="category">Category *</Label>
-                  <Input
-                    id="category"
-                    placeholder="e.g., Programming, Design"
+                  <Select
                     value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    required
-                  />
+                    onValueChange={(value: string) => setFormData({ ...formData, category: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-64">
+                      <SelectItem value="Career Learning">Career Learning</SelectItem>
+                      <SelectItem value="General Learning">General Learning</SelectItem>
+                      <SelectItem value="Tech Jobs">Tech Jobs</SelectItem>
+                      <SelectItem value="Software Development">Software Development</SelectItem>
+                      <SelectItem value="Data Science">Data Science</SelectItem>
+                      <SelectItem value="Design">Design</SelectItem>
+                      <SelectItem value="Marketing">Marketing</SelectItem>
+                      <SelectItem value="Business">Business</SelectItem>
+                      <SelectItem value="Finance">Finance</SelectItem>
+                      <SelectItem value="Leadership">Leadership</SelectItem>
+                      <SelectItem value="Communication">Communication</SelectItem>
+                      <SelectItem value="Entrepreneurship">Entrepreneurship</SelectItem>
+                      <SelectItem value="Personal Development">Personal Development</SelectItem>
+                    </SelectContent>
+                  </Select>
                   {errors.category && <p className="text-sm text-destructive">{errors.category}</p>}
                 </div>
 
