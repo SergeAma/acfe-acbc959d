@@ -3,29 +3,32 @@ import { Footer } from '@/components/Footer';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { Button } from '@/components/ui/button';
 import { Mail } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import spectrogramLogo from '@/assets/spectrogram-logo.png';
 import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png';
 import johannesburgLogo from '@/assets/johannesburg-logo.png';
 import learnProjectLogo from '@/assets/learn-project-logo.png';
 
 export const Partners = () => {
+  const { t } = useLanguage();
+  
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <PageBreadcrumb items={[{ label: "Partners" }]} />
+      <PageBreadcrumb items={[{ label: t('nav.partners') }]} />
       
       <div className="container mx-auto px-4 py-8 sm:py-12">
         <div className="text-center mb-10 sm:mb-16">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 text-foreground">
-            Our Partners
+            {t('partners.pageTitle')}
           </h1>
           <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto">
-            Join leading organizations committed to empowering African youth with digital skills
+            {t('partners.pageSubtitle')}
           </p>
           <Button asChild size="lg">
             <a href="mailto:contact@acloudforeveryone.org?subject=Partnership%20Inquiry%20with%20ACFE">
               <Mail className="h-5 w-5 mr-2" />
-              Become a Partner
+              {t('partners.becomePartner')}
             </a>
           </Button>
         </div>
@@ -34,7 +37,7 @@ export const Partners = () => {
           {/* Spectrogram Consulting - Featured Partner */}
           <div className="bg-card rounded-lg p-6 sm:p-8 shadow-lg border-2 border-primary/20">
             <div className="flex flex-col items-center mb-6">
-              <span className="text-xs uppercase tracking-wider text-primary font-semibold mb-4">Featured Partner</span>
+              <span className="text-xs uppercase tracking-wider text-primary font-semibold mb-4">{t('partners.title')}</span>
               <a 
                 href="https://spectrogramconsulting.com/home" 
                 target="_blank" 
@@ -49,10 +52,7 @@ export const Partners = () => {
               </a>
             </div>
             <p className="text-lg text-foreground/90 leading-relaxed text-center">
-              Spectrogram Consulting is the founding partner behind A Cloud for Everyone. Their mission is to provide 
-              discreet, expert counsel that enables leaders to navigate complexity and achieve sustainable, scalable 
-              growth in an ever-changing business landscape. Through this partnership, Spectrogram Consulting supports 
-              ACFE's vision of empowering African youth with job-ready digital skills.
+              {t('partners.spectrogram.desc')}
             </p>
           </div>
 
@@ -68,10 +68,7 @@ export const Partners = () => {
               </a>
             </div>
             <p className="text-lg text-foreground/90 leading-relaxed text-center">
-              We're proud to announce our new partnership with The East African University (TEAU) in Kenya. 
-              Through this collaboration, we'll work together to accelerate digital skills training and modernize 
-              curriculum development, with a focus on scalable tech mentorship. Our shared goal is clear: to ensure 
-              students graduate with the skills, confidence, and industry exposure needed to thrive in today's digital economy.
+              {t('partners.teau.desc')}
             </p>
           </div>
 
@@ -88,11 +85,7 @@ export const Partners = () => {
               <h2 className="text-2xl font-bold text-foreground mb-4">JOHUSTLEBURG</h2>
             </div>
             <p className="text-lg text-foreground/90 leading-relaxed text-center">
-              A Cloud for Everyone (ACFE) has partnered with community builders at Honest Travel's ohustleburg 
-              Foundation to revolutionize the perception of travel and tourism in Africa. Their joint ambition is to transform 
-              their Johannesburg hub into a powerhouse of digital education and entrepreneurship in the heart of 
-              Maboneng. Over the next five years, they aim to equip 10,000 students with the skills needed to succeed in the 
-              global job market, transforming Maboneng into a center for youth education. Join us on this transformative journey!
+              {t('partners.johannesburg.desc')}
             </p>
           </div>
 
@@ -108,13 +101,7 @@ export const Partners = () => {
               </a>
             </div>
             <p className="text-lg text-foreground/90 leading-relaxed text-center">
-              The LEARN Project (Let's Educate A Rainbow Nation) is a South African non-profit trust based in Durban, 
-              KwaZulu Natal, dedicated to uplifting education through the power of books and literacy. To date, LEARN 
-              has donated nearly 100,000 books, established 30 school libraries, and placed over 350 book corners in 
-              schools and organisations. Believing that "Readers Make Leaders and Leaders Build Nations," their work 
-              has earned recognition from The Department of Education and numerous awards for excellence. Through this 
-              partnership, ACFE and The LEARN Project will work together to expand access to digital skills education 
-              alongside literacy initiatives.
+              {t('partners.learn.desc')}
             </p>
           </div>
         </div>

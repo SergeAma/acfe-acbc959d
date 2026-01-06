@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
@@ -33,6 +34,7 @@ interface MentorProfile {
 export const Mentors = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -129,7 +131,7 @@ export const Mentors = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <PageBreadcrumb items={[{ label: "Mentors" }]} />
+      <PageBreadcrumb items={[{ label: t('nav.mentors') }]} />
       
       <main className="container mx-auto px-4 py-12">
         {/* Auth prompt banner for unauthenticated users */}
@@ -138,23 +140,23 @@ export const Mentors = () => {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
               <div>
                 <h2 className="text-base sm:text-lg font-semibold text-foreground mb-1">
-                  Ready to start learning?
+                  {t('hero.startLearning')}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Create a free account to enroll in courses and connect with mentors.
+                  {t('mentors.subtitle')}
                 </p>
               </div>
               <div className="flex gap-3 w-full sm:w-auto">
                 <Link to="/auth?mode=login" className="flex-1 sm:flex-initial">
                   <Button variant="outline" size="sm" className="w-full sm:w-auto">
                     <LogIn className="h-4 w-4 mr-2" />
-                    Log in
+                    {t('auth.signIn')}
                   </Button>
                 </Link>
                 <Link to="/auth?mode=signup&role=student" className="flex-1 sm:flex-initial">
                   <Button size="sm" className="w-full sm:w-auto">
                     <UserPlus className="h-4 w-4 mr-2" />
-                    Sign up free
+                    {t('auth.signUp')}
                   </Button>
                 </Link>
               </div>
@@ -163,9 +165,9 @@ export const Mentors = () => {
         )}
 
         <div className="text-center mb-8 sm:mb-12">
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-3 sm:mb-4">Our Mentors</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-3 sm:mb-4">{t('mentors.title')}</h1>
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-2">
-            Learn from experienced professionals who are passionate about sharing their knowledge and empowering the next generation of African tech talent.
+            {t('mentors.subtitle')}
           </p>
         </div>
 
@@ -175,7 +177,7 @@ export const Mentors = () => {
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search mentors by name..."
+              placeholder={t('mentors.search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -187,10 +189,10 @@ export const Mentors = () => {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Filter className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-foreground">Filter by skills:</span>
+                <span className="text-sm font-medium text-foreground">{t('mentors.filter')}:</span>
                 {hasFilters && (
                   <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 px-2 text-xs">
-                    Clear all <X className="h-3 w-3 ml-1" />
+                    {t('common.close')} <X className="h-3 w-3 ml-1" />
                   </Button>
                 )}
               </div>
@@ -216,7 +218,7 @@ export const Mentors = () => {
           {/* Filter Results Count */}
           {hasFilters && (
             <p className="text-sm text-muted-foreground">
-              Showing {filteredMentors.length} mentor{filteredMentors.length !== 1 ? 's' : ''} matching your filters
+              {t('news.showing')} {filteredMentors.length} {filteredMentors.length !== 1 ? t('nav.mentors').toLowerCase() : t('nav.mentors').toLowerCase().slice(0, -1)}
             </p>
           )}
         </div>
@@ -251,12 +253,12 @@ export const Mentors = () => {
           <div className="text-center py-12">
             <p className="text-muted-foreground">
               {selectedSkills.length > 0 
-                ? "No mentors match the selected skills. Try adjusting your filters."
-                : "No mentors available yet. Check back soon!"}
+                ? t('mentors.noMentorsDesc')
+                : t('mentors.noMentors')}
             </p>
             {selectedSkills.length > 0 && (
               <Button variant="outline" size="sm" onClick={clearFilters} className="mt-4">
-                Clear filters
+                {t('common.close')}
               </Button>
             )}
           </div>

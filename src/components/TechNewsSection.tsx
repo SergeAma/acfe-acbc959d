@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
 
@@ -18,7 +19,8 @@ interface NewsArticle {
   category?: string;
 }
 
-const NEWS_CATEGORIES = ['ALL NEWS', 'DIGITAL SKILLS', 'INNOVATION', 'PARTNERSHIPS'] as const;
+const NEWS_CATEGORIES_EN = ['ALL NEWS', 'DIGITAL SKILLS', 'INNOVATION', 'PARTNERSHIPS'] as const;
+const NEWS_CATEGORIES_FR = ['TOUTES LES ACTUALITÉS', 'COMPÉTENCES NUMÉRIQUES', 'INNOVATION', 'PARTENARIATS'] as const;
 
 // Curated Unsplash images for tech/Africa news
 const CATEGORY_IMAGES = {
@@ -53,7 +55,9 @@ const getArticleImage = (category: string, index: number) => {
 };
 
 export const TechNewsSection = () => {
-  const [activeCategory, setActiveCategory] = useState<string>('ALL NEWS');
+  const { t, language } = useLanguage();
+  const NEWS_CATEGORIES = language === 'fr' ? NEWS_CATEGORIES_FR : NEWS_CATEGORIES_EN;
+  const [activeCategory, setActiveCategory] = useState<string>(NEWS_CATEGORIES[0]);
   const [email, setEmail] = useState('');
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -298,15 +302,15 @@ export const TechNewsSection = () => {
         {/* Header */}
         <div className="mb-6 sm:mb-8">
           <span className="text-xs font-semibold tracking-wider text-primary uppercase mb-2 block">
-            Latest Insights
+            {t('news.latestInsights')}
           </span>
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 sm:gap-4">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground leading-tight italic">
-              Africa Digital News & Innovation
+              {t('news.title')}
             </h2>
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <RefreshCw className="h-4 w-4" />
-              <span>Updated {getTimeSinceUpdate()}</span>
+              <span>{t('news.updated')} {getTimeSinceUpdate()}</span>
             </div>
           </div>
         </div>
@@ -351,9 +355,9 @@ export const TechNewsSection = () => {
         ) : (
           <div className="text-center py-12 bg-card rounded-xl mb-8 border border-border">
             <p className="text-muted-foreground">
-              {activeCategory === 'ALL NEWS'
-                ? 'No news articles available at the moment. Check back soon!'
-                : `No articles found for "${activeCategory}". Try selecting a different category.`}
+              {activeCategory === NEWS_CATEGORIES[0]
+                ? t('news.noArticles')
+                : t('news.noCategory')}
             </p>
           </div>
         )}
@@ -361,7 +365,7 @@ export const TechNewsSection = () => {
         {/* Article Count */}
         {filteredArticles.length > 0 && (
           <p className="text-center text-muted-foreground text-sm mb-12">
-            Showing {Math.min(filteredArticles.length, 9)} of {allArticles.length} articles
+            {t('news.showing')} {Math.min(filteredArticles.length, 9)} {t('news.of')} {allArticles.length} {t('news.articles')}
           </p>
         )}
 
@@ -373,10 +377,10 @@ export const TechNewsSection = () => {
             </div>
             <div className="flex-1 text-center sm:text-left">
               <h3 className="text-lg sm:text-xl font-bold text-foreground mb-1">
-                Weekly Africa Tech Digest
+                {t('news.weeklyDigest')}
               </h3>
               <p className="text-muted-foreground text-sm">
-                Get curated insights on African startups, VC deals, and tech trends delivered to your inbox every week.
+                {t('news.weeklyDigestDesc')}
               </p>
             </div>
           </div>
@@ -385,7 +389,7 @@ export const TechNewsSection = () => {
             <div className="flex flex-col sm:flex-row gap-3">
               <Input
                 type="email"
-                placeholder="Enter your email"
+                placeholder={t('auth.emailPlaceholder')}
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="flex-1 bg-background"
@@ -396,13 +400,13 @@ export const TechNewsSection = () => {
                 disabled={isSubscribing || !turnstileToken}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground whitespace-nowrap"
               >
-                {isSubscribing ? 'Subscribing...' : 'Subscribe'}
+                {isSubscribing ? t('news.subscribing') : t('footer.subscribe')}
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
             <div ref={turnstileRef} className="mt-4" />
             <p className="text-xs text-muted-foreground mt-3">
-              No spam. Unsubscribe anytime. We respect your privacy.
+              {t('news.noSpam')}
             </p>
           </form>
         </div>
