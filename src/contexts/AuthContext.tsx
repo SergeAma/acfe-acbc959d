@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
 export type ProfileFrame = 'none' | 'hiring' | 'open_to_work' | 'looking_for_cofounder';
+export type SimulatableRole = 'admin' | 'mentor' | 'student' | 'institution_moderator' | null;
 
 interface Profile {
   id: string;
@@ -33,6 +34,12 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   updatePassword: (newPassword: string) => Promise<{ error: any }>;
+  // Role simulation for admins
+  simulatedRole: SimulatableRole;
+  setSimulatedRole: (role: SimulatableRole) => void;
+  effectiveRole: 'admin' | 'mentor' | 'student';
+  isSimulating: boolean;
+  isActualAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,11 +50,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [simulatedRole, setSimulatedRoleState] = useState<SimulatableRole>(null);
   const { toast } = useToast();
   
   // Track last profile fetch to prevent rapid re-fetches
   const lastProfileFetchRef = React.useRef<{ userId: string; timestamp: number } | null>(null);
   const profileFetchInProgressRef = React.useRef<string | null>(null);
+
+  // Check if user is actually an admin (not simulated)
+  const isActualAdmin = profile?.role === 'admin';
+
+  // Only admins can set a simulated role
+  const setSimulatedRole = (role: SimulatableRole) => {
+    if (!isActualAdmin) {
+      console.warn('Only admins can simulate roles');
+      return;
+    }
+    setSimulatedRoleState(role);
+    if (role) {
+      toast({
+        title: `Viewing as ${role === 'institution_moderator' ? 'Institution Moderator' : role.charAt(0).toUpperCase() + role.slice(1)}`,
+        description: 'You are now viewing the app as this role. Click the role switcher to exit.',
+      });
+    } else {
+      toast({
+        title: 'Returned to Admin View',
+        description: 'You are now viewing as your actual admin role.',
+      });
+    }
+  };
+
+  // Effective role considers simulation (for UI purposes only)
+  const effectiveRole: 'admin' | 'mentor' | 'student' = 
+    isActualAdmin && simulatedRole && simulatedRole !== 'institution_moderator' 
+      ? simulatedRole 
+      : (profile?.role || 'student');
+
+  const isSimulating = isActualAdmin && simulatedRole !== null;
 
   const fetchProfile = async (userId: string, force = false) => {
     // Prevent duplicate/rapid fetches for the same user
@@ -161,6 +200,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(null);
           setUser(null);
           setProfile(null);
+          setSimulatedRoleState(null); // Clear simulation on sign out
           lastProfileFetchRef.current = null;
           setLoading(false);
           return;
@@ -303,6 +343,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    setSimulatedRoleState(null); // Clear simulation
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
@@ -356,7 +397,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signIn, signUp, signOut, refreshProfile, resetPassword, updatePassword }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      profile, 
+      loading, 
+      signIn, 
+      signUp, 
+      signOut, 
+      refreshProfile, 
+      resetPassword, 
+      updatePassword,
+      simulatedRole,
+      setSimulatedRole,
+      effectiveRole,
+      isSimulating,
+      isActualAdmin,
+    }}>
       {children}
     </AuthContext.Provider>
   );

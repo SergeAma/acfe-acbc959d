@@ -7,6 +7,7 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CookieConsent } from "@/components/CookieConsent";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AdminRoleSwitcher } from "@/components/admin/AdminRoleSwitcher";
 import { Landing } from "./pages/Landing";
 import { Auth } from "./pages/Auth";
 import { Dashboard } from "./pages/Dashboard";
@@ -134,6 +135,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <AdminRoleSwitcher />
           <CookieConsent />
         </BrowserRouter>
       </AuthProvider>
