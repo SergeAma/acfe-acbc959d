@@ -13,7 +13,8 @@ interface NewsArticle {
 }
 
 // RSS feeds focused on African digital skills, education, and tech innovation
-const RSS_FEEDS = [
+// English feeds
+const RSS_FEEDS_EN = [
   // African Tech News & Innovation
   { url: 'https://techcrunch.com/tag/africa/feed/', source: 'TechCrunch Africa', category: 'INNOVATION' },
   { url: 'https://disrupt-africa.com/feed/', source: 'Disrupt Africa', category: 'INNOVATION' },
@@ -39,7 +40,6 @@ const RSS_FEEDS = [
   // Business, Partnerships & Investment
   { url: 'https://african.business/feed/', source: 'African Business', category: 'PARTNERSHIPS' },
   { url: 'https://www.economist.com/middle-east-and-africa/rss.xml', source: 'The Economist', category: 'PARTNERSHIPS' },
-  { url: 'https://www.jeuneafrique.com/feed/', source: 'Jeune Afrique', category: 'PARTNERSHIPS' },
   { url: 'https://www.howwemadeitinafrica.com/feed/', source: 'How We Made It In Africa', category: 'PARTNERSHIPS' },
   { url: 'https://www.theafricareport.com/feed/', source: 'The Africa Report', category: 'PARTNERSHIPS' },
   { url: 'https://www.businessdailyafrica.com/bd/rss', source: 'Business Daily Africa', category: 'PARTNERSHIPS' },
@@ -53,7 +53,30 @@ const RSS_FEEDS = [
   
   // Research & Reports
   { url: 'https://www.mckinsey.com/industries/technology-media-and-telecommunications/our-insights/rss.xml', source: 'McKinsey Tech', category: 'INNOVATION' },
-  { url: 'https://a]au.int/rss.xml', source: 'African Union', category: 'PARTNERSHIPS' },
+  { url: 'https://itweb.africa/feed/', source: 'ITWeb Africa', category: 'DIGITAL SKILLS' },
+];
+
+// French feeds for Francophone Africa
+const RSS_FEEDS_FR = [
+  // Francophone African Tech News
+  { url: 'https://afriqueitnews.com/feed/', source: 'Afrique IT News', category: 'INNOVATION' },
+  { url: 'https://techinafrica.fr/feed/', source: 'Tech In Africa FR', category: 'INNOVATION' },
+  { url: 'https://techafrika.net/feed/', source: 'Tech Afrika', category: 'INNOVATION' },
+  { url: 'https://www.africanews.com/fr/feed/', source: 'Africanews', category: 'INNOVATION' },
+  { url: 'https://www.forbesafrique.com/technologie/feed/', source: 'Forbes Afrique', category: 'INNOVATION' },
+  { url: 'https://ceoafrique.com/technologie/feed/', source: 'CEO Afrique', category: 'INNOVATION' },
+  { url: 'https://itweb.africa/feed/', source: 'ITWeb Africa', category: 'DIGITAL SKILLS' },
+  
+  // French-language Pan-African News
+  { url: 'https://www.jeuneafrique.com/feed/', source: 'Jeune Afrique', category: 'PARTNERSHIPS' },
+  { url: 'https://www.rfi.fr/fr/afrique/rss', source: 'RFI Afrique', category: 'PARTNERSHIPS' },
+  { url: 'https://www.lemonde.fr/afrique/rss_full.xml', source: 'Le Monde Afrique', category: 'PARTNERSHIPS' },
+  { url: 'https://fr.unesco.org/news/rss.xml', source: 'UNESCO FR', category: 'DIGITAL SKILLS' },
+  
+  // Francophone Tech & Business
+  { url: 'https://www.agenceecofin.com/a-la-une.rss', source: 'Agence Ecofin', category: 'PARTNERSHIPS' },
+  { url: 'https://www.financialafrik.com/feed/', source: 'Financial Afrik', category: 'PARTNERSHIPS' },
+  { url: 'https://digital-africa.co/feed/', source: 'Digital Africa', category: 'INNOVATION' },
 ];
 
 // Decode HTML entities
@@ -211,23 +234,33 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('Fetching digital skills news from RSS feeds');
+    // Get language from request body or default to 'en'
+    let language = 'en';
+    try {
+      const body = await req.json();
+      language = body?.language || 'en';
+    } catch {
+      // No body or invalid JSON, use default
+    }
+    
+    const feeds = language === 'fr' ? RSS_FEEDS_FR : RSS_FEEDS_EN;
+    console.log(`Fetching ${language} digital skills news from RSS feeds`);
     
     // Fetch all RSS feeds in parallel
     const allArticles = await Promise.all(
-      RSS_FEEDS.map(feed => parseRSSFeed(feed.url, feed.source, feed.category))
+      feeds.map(feed => parseRSSFeed(feed.url, feed.source, feed.category))
     );
     
     // Flatten and sort by date
     const articles = allArticles
       .flat()
-      .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())
-      .slice(0, 7); // Get top 7 most recent articles (1 featured + 6 list)
+      .sort((a: NewsArticle, b: NewsArticle) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())
+      .slice(0, 15); // Get top 15 most recent articles
     
-    console.log(`Returning ${articles.length} articles`);
+    console.log(`Returning ${articles.length} ${language} articles`);
     
     return new Response(
-      JSON.stringify({ articles }),
+      JSON.stringify({ articles, language }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
