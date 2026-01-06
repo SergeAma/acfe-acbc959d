@@ -60,6 +60,7 @@ import { AdminInstitutions } from "./pages/AdminInstitutions";
 import { CareerCentreLanding } from "./pages/CareerCentreLanding";
 import { ModeratorDashboard } from "./pages/ModeratorDashboard";
 import MentorContractAgreement from "./pages/MentorContractAgreement";
+import LearnerAgreement from "./pages/LearnerAgreement";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -134,6 +135,7 @@ const App = () => (
             <Route path="/subscriptions" element={<ProtectedRoute><MySubscriptions /></ProtectedRoute>} />
             <Route path="/mentor-application-status" element={<ProtectedRoute><MentorApplicationStatus /></ProtectedRoute>} />
             <Route path="/mentor-contract" element={<ProtectedRoute><MentorContractAgreement /></ProtectedRoute>} />
+            <Route path="/learner-agreement" element={<ProtectedRoute><LearnerAgreement /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
