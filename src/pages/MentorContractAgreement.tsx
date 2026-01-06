@@ -27,7 +27,7 @@ const CONTRACT_CONDITIONS = [
   {
     id: "condition_session_pricing",
     title: "1:1 Mentoring Session Pricing",
-    description: "I agree to receive a $50 fee per 1:1 mentoring session requests from students, minus a 10% ACFE administrative fee."
+    description: "I agree to receive a $30 fee per 1:1 mentoring session requests from students, minus a 10% ACFE administrative fee."
   },
   {
     id: "condition_minimum_courses",
