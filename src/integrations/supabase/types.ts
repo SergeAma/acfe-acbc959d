@@ -1477,6 +1477,63 @@ export type Database = {
         }
         Relationships: []
       }
+      learner_agreements: {
+        Row: {
+          agreement_version: string
+          condition_good_conduct: boolean
+          condition_no_liability_behavior: boolean
+          condition_no_liability_external: boolean
+          condition_no_sharing: boolean
+          condition_non_refundable: boolean
+          condition_promotional_rights: boolean
+          condition_respect_privacy: boolean
+          condition_zero_tolerance: boolean
+          created_at: string
+          id: string
+          ip_address: string | null
+          signature_date: string
+          signature_name: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          agreement_version?: string
+          condition_good_conduct?: boolean
+          condition_no_liability_behavior?: boolean
+          condition_no_liability_external?: boolean
+          condition_no_sharing?: boolean
+          condition_non_refundable?: boolean
+          condition_promotional_rights?: boolean
+          condition_respect_privacy?: boolean
+          condition_zero_tolerance?: boolean
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          signature_date?: string
+          signature_name: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          agreement_version?: string
+          condition_good_conduct?: boolean
+          condition_no_liability_behavior?: boolean
+          condition_no_liability_external?: boolean
+          condition_no_sharing?: boolean
+          condition_non_refundable?: boolean
+          condition_promotional_rights?: boolean
+          condition_respect_privacy?: boolean
+          condition_zero_tolerance?: boolean
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          signature_date?: string
+          signature_name?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       learner_analytics: {
         Row: {
           completed: boolean | null
@@ -1635,6 +1692,7 @@ export type Database = {
           condition_monthly_meetings: boolean
           condition_no_profanity: boolean
           condition_platform_engagement: boolean
+          condition_promotional_rights: boolean
           condition_quarterly_events: boolean
           condition_respect_students: boolean
           condition_session_pricing: boolean
@@ -1655,6 +1713,7 @@ export type Database = {
           condition_monthly_meetings?: boolean
           condition_no_profanity?: boolean
           condition_platform_engagement?: boolean
+          condition_promotional_rights?: boolean
           condition_quarterly_events?: boolean
           condition_respect_students?: boolean
           condition_session_pricing?: boolean
@@ -1675,6 +1734,7 @@ export type Database = {
           condition_monthly_meetings?: boolean
           condition_no_profanity?: boolean
           condition_platform_engagement?: boolean
+          condition_promotional_rights?: boolean
           condition_quarterly_events?: boolean
           condition_respect_students?: boolean
           condition_session_pricing?: boolean
@@ -2508,6 +2568,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      has_signed_learner_agreement: {
+        Args: { _user_id: string }
         Returns: boolean
       }
       has_signed_mentor_contract: {
