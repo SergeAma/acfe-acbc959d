@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, effectiveRole, isActualAdmin } = useAuth();
 
   if (loading) {
     return (
@@ -22,7 +22,9 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
     return <Navigate to="/auth" replace />;
   }
 
-  if (requiredRole && profile?.role !== requiredRole) {
+  // Admins can always access all routes (they might be simulating a role)
+  // This ensures admins can test any page regardless of simulated role
+  if (requiredRole && !isActualAdmin && profile?.role !== requiredRole) {
     return <Navigate to="/" replace />;
   }
 
