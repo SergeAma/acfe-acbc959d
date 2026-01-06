@@ -21,7 +21,7 @@ export const SupportSection = () => {
         <div className="grid sm:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
           {/* Volunteer as Mentor */}
           <Card className="border-2 hover:border-secondary transition-all duration-300 group h-full">
-            <CardContent className="pt-6 h-full flex flex-col">
+            <CardContent className="pt-6 h-full flex flex-col items-center text-center">
               <div className="h-14 w-14 rounded-xl bg-secondary/20 flex items-center justify-center mb-5 group-hover:bg-secondary/30 transition-colors">
                 <Users className="h-7 w-7 text-secondary" />
               </div>
@@ -32,7 +32,7 @@ export const SupportSection = () => {
                 Share your expertise and guide the next generation of African tech talent. 
                 Help students navigate their career paths and develop practical skills.
               </p>
-              <Link to="/auth?mode=signup&role=mentor">
+              <Link to="/auth?mode=signup&role=mentor" className="w-full">
                 <Button variant="outline" className="w-full group/btn">
                   Become a Mentor
                   <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
@@ -43,7 +43,7 @@ export const SupportSection = () => {
 
           {/* Monthly Donation */}
           <Card className="border-2 hover:border-primary transition-all duration-300 group h-full">
-            <CardContent className="pt-6 h-full flex flex-col">
+            <CardContent className="pt-6 h-full flex flex-col items-center text-center">
               <div className="h-14 w-14 rounded-xl bg-primary/20 flex items-center justify-center mb-5 group-hover:bg-primary/30 transition-colors">
                 <Heart className="h-7 w-7 text-primary" />
               </div>
