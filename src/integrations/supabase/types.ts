@@ -1892,6 +1892,27 @@ export type Database = {
           },
         ]
       }
+      platform_moderators: {
+        Row: {
+          created_at: string
+          granted_by: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       platform_settings: {
         Row: {
           created_at: string
@@ -2513,6 +2534,7 @@ export type Database = {
         Args: { _institution_id: string; _user_id: string }
         Returns: boolean
       }
+      is_platform_moderator: { Args: { _user_id: string }; Returns: boolean }
       reinstate_mentor: {
         Args: { _admin_id: string; _user_id: string }
         Returns: boolean
