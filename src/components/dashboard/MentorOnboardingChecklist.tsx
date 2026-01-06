@@ -7,6 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { CheckCircle2, Circle, User, BookOpen, Image, FileText, ArrowRight } from 'lucide-react';
 
+interface SubChecklistItem {
+  label: string;
+}
+
 interface ChecklistItem {
   id: string;
   label: string;
@@ -14,6 +18,7 @@ interface ChecklistItem {
   completed: boolean;
   link: string;
   icon: React.ReactNode;
+  subItems?: SubChecklistItem[];
 }
 
 export const MentorOnboardingChecklist = () => {
@@ -82,11 +87,17 @@ export const MentorOnboardingChecklist = () => {
         },
         {
           id: 'course',
-          label: 'Create your first course',
-          description: 'Start sharing your knowledge',
+          label: 'Build your courses',
+          description: 'Share your knowledge with the next generation',
           completed: hasCourse,
           link: '/mentor/courses/new',
-          icon: <BookOpen className="h-5 w-5" />
+          icon: <BookOpen className="h-5 w-5" />,
+          subItems: [
+            { label: 'How you broke into your industry' },
+            { label: 'How to get into your industry' },
+            { label: 'Continuous learning to stay ahead in your industry' },
+            { label: 'How to become you (your career journey)' }
+          ]
         },
         {
           id: 'publish',
@@ -158,6 +169,16 @@ export const MentorOnboardingChecklist = () => {
                   {item.label}
                 </p>
                 <p className="text-sm text-muted-foreground">{item.description}</p>
+                {item.subItems && item.subItems.length > 0 && (
+                  <ul className="mt-2 ml-4 space-y-1">
+                    {item.subItems.map((subItem, index) => (
+                      <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
+                        <span className="text-primary mt-0.5">•</span>
+                        <span>{subItem.label}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
               {!item.completed && (
                 <Link to={item.link}>
