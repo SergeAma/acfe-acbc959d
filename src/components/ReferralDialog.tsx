@@ -4,11 +4,70 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, UserPlus, Building2 } from 'lucide-react';
+import { PhoneInput } from '@/components/ui/phone-input';
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
+
+const AFRICAN_COUNTRIES = [
+  { code: 'DZ', name: 'Algeria', flag: '🇩🇿' },
+  { code: 'AO', name: 'Angola', flag: '🇦🇴' },
+  { code: 'BJ', name: 'Benin', flag: '🇧🇯' },
+  { code: 'BW', name: 'Botswana', flag: '🇧🇼' },
+  { code: 'BF', name: 'Burkina Faso', flag: '🇧🇫' },
+  { code: 'BI', name: 'Burundi', flag: '🇧🇮' },
+  { code: 'CV', name: 'Cabo Verde', flag: '🇨🇻' },
+  { code: 'CM', name: 'Cameroon', flag: '🇨🇲' },
+  { code: 'CF', name: 'Central African Republic', flag: '🇨🇫' },
+  { code: 'TD', name: 'Chad', flag: '🇹🇩' },
+  { code: 'KM', name: 'Comoros', flag: '🇰🇲' },
+  { code: 'CG', name: 'Congo', flag: '🇨🇬' },
+  { code: 'CD', name: 'DR Congo', flag: '🇨🇩' },
+  { code: 'DJ', name: 'Djibouti', flag: '🇩🇯' },
+  { code: 'EG', name: 'Egypt', flag: '🇪🇬' },
+  { code: 'GQ', name: 'Equatorial Guinea', flag: '🇬🇶' },
+  { code: 'ER', name: 'Eritrea', flag: '🇪🇷' },
+  { code: 'SZ', name: 'Eswatini', flag: '🇸🇿' },
+  { code: 'ET', name: 'Ethiopia', flag: '🇪🇹' },
+  { code: 'GA', name: 'Gabon', flag: '🇬🇦' },
+  { code: 'GM', name: 'Gambia', flag: '🇬🇲' },
+  { code: 'GH', name: 'Ghana', flag: '🇬🇭' },
+  { code: 'GN', name: 'Guinea', flag: '🇬🇳' },
+  { code: 'GW', name: 'Guinea-Bissau', flag: '🇬🇼' },
+  { code: 'CI', name: 'Ivory Coast', flag: '🇨🇮' },
+  { code: 'KE', name: 'Kenya', flag: '🇰🇪' },
+  { code: 'LS', name: 'Lesotho', flag: '🇱🇸' },
+  { code: 'LR', name: 'Liberia', flag: '🇱🇷' },
+  { code: 'LY', name: 'Libya', flag: '🇱🇾' },
+  { code: 'MG', name: 'Madagascar', flag: '🇲🇬' },
+  { code: 'MW', name: 'Malawi', flag: '🇲🇼' },
+  { code: 'ML', name: 'Mali', flag: '🇲🇱' },
+  { code: 'MR', name: 'Mauritania', flag: '🇲🇷' },
+  { code: 'MU', name: 'Mauritius', flag: '🇲🇺' },
+  { code: 'MA', name: 'Morocco', flag: '🇲🇦' },
+  { code: 'MZ', name: 'Mozambique', flag: '🇲🇿' },
+  { code: 'NA', name: 'Namibia', flag: '🇳🇦' },
+  { code: 'NE', name: 'Niger', flag: '🇳🇪' },
+  { code: 'NG', name: 'Nigeria', flag: '🇳🇬' },
+  { code: 'RW', name: 'Rwanda', flag: '🇷🇼' },
+  { code: 'ST', name: 'São Tomé and Príncipe', flag: '🇸🇹' },
+  { code: 'SN', name: 'Senegal', flag: '🇸🇳' },
+  { code: 'SC', name: 'Seychelles', flag: '🇸🇨' },
+  { code: 'SL', name: 'Sierra Leone', flag: '🇸🇱' },
+  { code: 'SO', name: 'Somalia', flag: '🇸🇴' },
+  { code: 'ZA', name: 'South Africa', flag: '🇿🇦' },
+  { code: 'SS', name: 'South Sudan', flag: '🇸🇸' },
+  { code: 'SD', name: 'Sudan', flag: '🇸🇩' },
+  { code: 'TZ', name: 'Tanzania', flag: '🇹🇿' },
+  { code: 'TG', name: 'Togo', flag: '🇹🇬' },
+  { code: 'TN', name: 'Tunisia', flag: '🇹🇳' },
+  { code: 'UG', name: 'Uganda', flag: '🇺🇬' },
+  { code: 'ZM', name: 'Zambia', flag: '🇿🇲' },
+  { code: 'ZW', name: 'Zimbabwe', flag: '🇿🇼' },
+];
 
 interface ReferralDialogProps {
   open: boolean;
@@ -24,12 +83,16 @@ export const ReferralDialog = ({ open, onOpenChange }: ReferralDialogProps) => {
   const [referrerLastName, setReferrerLastName] = useState('');
   const [referrerEmail, setReferrerEmail] = useState('');
   const [referrerCompany, setReferrerCompany] = useState('');
+  const [referrerCountry, setReferrerCountry] = useState('');
+  const [referrerPhone, setReferrerPhone] = useState('');
   
   // Referred (person/institution being recommended)
   const [referredFirstName, setReferredFirstName] = useState('');
   const [referredLastName, setReferredLastName] = useState('');
   const [referredCompany, setReferredCompany] = useState('');
   const [referredEmail, setReferredEmail] = useState('');
+  const [referredCountry, setReferredCountry] = useState('');
+  const [referredPhone, setReferredPhone] = useState('');
 
   useEffect(() => {
     if (open) {
@@ -64,10 +127,14 @@ export const ReferralDialog = ({ open, onOpenChange }: ReferralDialogProps) => {
     setReferrerLastName('');
     setReferrerEmail('');
     setReferrerCompany('');
+    setReferrerCountry('');
+    setReferrerPhone('');
     setReferredFirstName('');
     setReferredLastName('');
     setReferredCompany('');
     setReferredEmail('');
+    setReferredCountry('');
+    setReferredPhone('');
     setCaptchaToken(null);
   };
 
@@ -89,12 +156,16 @@ export const ReferralDialog = ({ open, onOpenChange }: ReferralDialogProps) => {
             lastName: referrerLastName,
             email: referrerEmail,
             company: referrerCompany,
+            country: referrerCountry,
+            phone: referrerPhone,
           },
           referred: {
             firstName: referredFirstName,
             lastName: referredLastName,
             company: referredCompany,
             email: referredEmail,
+            country: referredCountry,
+            phone: referredPhone,
           },
           captchaToken,
         },
@@ -117,10 +188,14 @@ export const ReferralDialog = ({ open, onOpenChange }: ReferralDialogProps) => {
     referrerFirstName && 
     referrerLastName && 
     referrerEmail && 
+    referrerCountry &&
+    referrerPhone &&
     referredFirstName && 
     referredLastName && 
     referredCompany && 
     referredEmail && 
+    referredCountry &&
+    referredPhone &&
     captchaToken;
 
   return (
@@ -185,6 +260,32 @@ export const ReferralDialog = ({ open, onOpenChange }: ReferralDialogProps) => {
                 placeholder="Your company (optional)"
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="referrer-country">Country *</Label>
+              <Select value={referrerCountry} onValueChange={setReferrerCountry} required>
+                <SelectTrigger id="referrer-country">
+                  <SelectValue placeholder="Select your country" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px]">
+                  {AFRICAN_COUNTRIES.map((country) => (
+                    <SelectItem key={country.code} value={country.code}>
+                      {country.flag} {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="referrer-phone">Phone *</Label>
+              <PhoneInput
+                id="referrer-phone"
+                value={referrerPhone}
+                onChange={setReferrerPhone}
+                required
+              />
+            </div>
           </div>
 
           <Separator className="my-6" />
@@ -239,6 +340,32 @@ export const ReferralDialog = ({ open, onOpenChange }: ReferralDialogProps) => {
                 onChange={(e) => setReferredEmail(e.target.value)}
                 required
                 placeholder="contact@institution.com"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="referred-country">Country *</Label>
+              <Select value={referredCountry} onValueChange={setReferredCountry} required>
+                <SelectTrigger id="referred-country">
+                  <SelectValue placeholder="Select country" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px]">
+                  {AFRICAN_COUNTRIES.map((country) => (
+                    <SelectItem key={country.code} value={country.code}>
+                      {country.flag} {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="referred-phone">Phone *</Label>
+              <PhoneInput
+                id="referred-phone"
+                value={referredPhone}
+                onChange={setReferredPhone}
+                required
               />
             </div>
           </div>
