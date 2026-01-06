@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart, Users, ArrowRight } from 'lucide-react';
+import { Heart, Users, ArrowRight, Handshake } from 'lucide-react';
 import { DonationDialog } from '@/components/DonationDialog';
+import { ReferralDialog } from '@/components/ReferralDialog';
 
 export const SupportSection = () => {
   const [donationOpen, setDonationOpen] = useState(false);
+  const [referralOpen, setReferralOpen] = useState(false);
 
   return (
     <section className="py-12 sm:py-20 bg-background">
@@ -18,17 +20,17 @@ export const SupportSection = () => {
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
           {/* Volunteer as Mentor */}
           <Card className="border-2 hover:border-secondary transition-all duration-300 group h-full">
             <CardContent className="pt-6 h-full flex flex-col items-center text-center">
               <div className="h-14 w-14 rounded-xl bg-secondary/20 flex items-center justify-center mb-5 group-hover:bg-secondary/30 transition-colors">
                 <Users className="h-7 w-7 text-secondary" />
               </div>
-              <h3 className="text-xl font-bold mb-3 group-hover:text-secondary transition-colors">
+              <h3 className="text-xl font-bold mb-3 group-hover:text-secondary transition-colors text-center">
                 Volunteer as a Mentor
               </h3>
-              <p className="text-muted-foreground flex-1 mb-6">
+              <p className="text-muted-foreground flex-1 mb-6 text-center">
                 Share your expertise and guide the next generation of African tech talent. 
                 Help students navigate their career paths and develop practical skills.
               </p>
@@ -47,10 +49,10 @@ export const SupportSection = () => {
               <div className="h-14 w-14 rounded-xl bg-primary/20 flex items-center justify-center mb-5 group-hover:bg-primary/30 transition-colors">
                 <Heart className="h-7 w-7 text-primary" />
               </div>
-              <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors">
+              <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors text-center">
                 Make a Monthly Donation
               </h3>
-              <p className="text-muted-foreground flex-1 mb-6">
+              <p className="text-muted-foreground flex-1 mb-6 text-center">
                 Your recurring contribution helps us sponsor more internships through Spectrogram Consulting 
                 and provide resources to learners across Africa.
               </p>
@@ -63,10 +65,35 @@ export const SupportSection = () => {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Recommend Institution/Sponsor */}
+          <Card className="border-2 hover:border-accent transition-all duration-300 group h-full sm:col-span-2 lg:col-span-1">
+            <CardContent className="pt-6 h-full flex flex-col items-center text-center">
+              <div className="h-14 w-14 rounded-xl bg-accent/20 flex items-center justify-center mb-5 group-hover:bg-accent/30 transition-colors">
+                <Handshake className="h-7 w-7 text-accent-foreground" />
+              </div>
+              <h3 className="text-xl font-bold mb-3 group-hover:text-accent-foreground transition-colors text-center">
+                Introduce Us to Partners
+              </h3>
+              <p className="text-muted-foreground flex-1 mb-6 text-center">
+                Know an educational institution or potential sponsor? Help us connect with organizations 
+                that share our vision for empowering African youth.
+              </p>
+              <Button 
+                onClick={() => setReferralOpen(true)} 
+                variant="outline"
+                className="w-full"
+              >
+                <Handshake className="mr-2 h-4 w-4" />
+                Recommend
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
       <DonationDialog open={donationOpen} onOpenChange={setDonationOpen} />
+      <ReferralDialog open={referralOpen} onOpenChange={setReferralOpen} />
     </section>
   );
 };
