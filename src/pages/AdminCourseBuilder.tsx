@@ -52,6 +52,7 @@ interface Course {
   price_cents: number;
   is_published: boolean;
   drip_enabled: boolean;
+  drip_schedule_type: string | null;
   duration_weeks: number | null;
   category: string | null;
   level: string | null;
@@ -101,9 +102,12 @@ export const AdminCourseBuilder = () => {
   const [priceCents, setPriceCents] = useState<number>(1000);
   const [savingPrice, setSavingPrice] = useState(false);
   const [dripEnabled, setDripEnabled] = useState(false);
+  const [dripScheduleType, setDripScheduleType] = useState<string>('week');
+  const [savingDripSchedule, setSavingDripSchedule] = useState(false);
   const [durationWeeks, setDurationWeeks] = useState<number | null>(null);
   const [savingDuration, setSavingDuration] = useState(false);
   const [category, setCategory] = useState<string>('');
+  const [customCategory, setCustomCategory] = useState<string>('');
   const [savingCategory, setSavingCategory] = useState(false);
   const [level, setLevel] = useState<string>('');
   const [savingLevel, setSavingLevel] = useState(false);
@@ -233,8 +237,18 @@ export const AdminCourseBuilder = () => {
     setIsPaid(courseData?.is_paid ?? false);
     setPriceCents(courseData?.price_cents ?? 1000);
     setDripEnabled(courseData?.drip_enabled ?? false);
+    setDripScheduleType(courseData?.drip_schedule_type || 'week');
     setDurationWeeks(courseData?.duration_weeks ?? null);
-    setCategory(courseData?.category || '');
+    // Handle category - check if it's a predefined category or custom
+    const predefinedCategories = ['Career Learning', 'General Learning', 'Tech Jobs', 'Software Development', 'Data Science', 'Design', 'Marketing', 'Business', 'Finance', 'Leadership', 'Communication', 'Entrepreneurship', 'Personal Development'];
+    const savedCategory = courseData?.category || '';
+    if (predefinedCategories.includes(savedCategory) || savedCategory === '') {
+      setCategory(savedCategory);
+      setCustomCategory('');
+    } else {
+      setCategory('Other');
+      setCustomCategory(savedCategory);
+    }
     setLevel(courseData?.level || '');
     setIsPublished(courseData?.is_published ?? false);
     // Live course settings
@@ -417,6 +431,36 @@ export const AdminCourseBuilder = () => {
     }
   };
 
+  const handleSaveDripSchedule = async () => {
+    if (!courseId) return;
+    
+    setSavingDripSchedule(true);
+    const { error } = await supabase
+      .from('courses')
+      .update({ drip_schedule_type: dripScheduleType })
+      .eq('id', courseId);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update drip schedule',
+        variant: 'destructive',
+      });
+    } else {
+      setCourse(prev => prev ? { ...prev, drip_schedule_type: dripScheduleType } : null);
+      const scheduleLabels: Record<string, string> = {
+        'module': 'by module',
+        'week': 'weekly',
+        'month': 'monthly'
+      };
+      toast({
+        title: 'Success',
+        description: `Content will be released ${scheduleLabels[dripScheduleType] || dripScheduleType}`,
+      });
+    }
+    setSavingDripSchedule(false);
+  };
+
   const handleDurationChange = async () => {
     if (!courseId) return;
     
@@ -446,9 +490,12 @@ export const AdminCourseBuilder = () => {
     if (!courseId) return;
     
     setSavingCategory(true);
+    // If "Other" is selected, use the custom category value
+    const categoryToSave = category === 'Other' ? customCategory : category;
+    
     const { error } = await supabase
       .from('courses')
-      .update({ category: category || null })
+      .update({ category: categoryToSave || null })
       .eq('id', courseId);
 
     if (error) {
@@ -458,7 +505,7 @@ export const AdminCourseBuilder = () => {
         variant: 'destructive',
       });
     } else {
-      setCourse(prev => prev ? { ...prev, category: category || null } : null);
+      setCourse(prev => prev ? { ...prev, category: categoryToSave || null } : null);
       toast({
         title: 'Success',
         description: 'Course category updated',
@@ -1210,6 +1257,40 @@ export const AdminCourseBuilder = () => {
                   onCheckedChange={handleDripToggle}
                 />
               </div>
+              
+              {dripEnabled && (
+                <div className="pt-3 border-t space-y-2">
+                  <Label>Release Schedule</Label>
+                  <div className="flex items-center gap-3">
+                    <Select value={dripScheduleType} onValueChange={setDripScheduleType}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Select schedule" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border">
+                        <SelectItem value="module">By Module</SelectItem>
+                        <SelectItem value="week">Weekly</SelectItem>
+                        <SelectItem value="month">Monthly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      size="sm" 
+                      onClick={handleSaveDripSchedule}
+                      disabled={savingDripSchedule || dripScheduleType === (course?.drip_schedule_type || 'week')}
+                    >
+                      {savingDripSchedule ? (
+                        <span className="animate-spin">⏳</span>
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {dripScheduleType === 'module' && 'Content unlocks one module/section at a time as learners progress'}
+                    {dripScheduleType === 'week' && 'Content unlocks on a weekly basis from enrollment date'}
+                    {dripScheduleType === 'month' && 'Content unlocks on a monthly basis from enrollment date'}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -1278,13 +1359,18 @@ export const AdminCourseBuilder = () => {
                 Help students find your course
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
               <div className="flex items-center gap-3">
-                <Select value={category} onValueChange={setCategory}>
+                <Select value={category} onValueChange={(val) => {
+                  setCategory(val);
+                  if (val !== 'Other') setCustomCategory('');
+                }}>
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
-                  <SelectContent className="bg-background border">
+                  <SelectContent className="bg-background border max-h-64">
+                    <SelectItem value="Career Learning">Career Learning</SelectItem>
+                    <SelectItem value="General Learning">General Learning</SelectItem>
                     <SelectItem value="Tech Jobs">Tech Jobs</SelectItem>
                     <SelectItem value="Software Development">Software Development</SelectItem>
                     <SelectItem value="Data Science">Data Science</SelectItem>
@@ -1293,13 +1379,16 @@ export const AdminCourseBuilder = () => {
                     <SelectItem value="Business">Business</SelectItem>
                     <SelectItem value="Finance">Finance</SelectItem>
                     <SelectItem value="Leadership">Leadership</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    <SelectItem value="Communication">Communication</SelectItem>
+                    <SelectItem value="Entrepreneurship">Entrepreneurship</SelectItem>
+                    <SelectItem value="Personal Development">Personal Development</SelectItem>
+                    <SelectItem value="Other">Other (Custom)</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button 
                   size="sm" 
                   onClick={handleSaveCategory}
-                  disabled={savingCategory || category === (course?.category || '')}
+                  disabled={savingCategory || (category === 'Other' ? !customCategory : !category)}
                 >
                   {savingCategory ? (
                     <span className="animate-spin">⏳</span>
@@ -1308,6 +1397,19 @@ export const AdminCourseBuilder = () => {
                   )}
                 </Button>
               </div>
+              
+              {category === 'Other' && (
+                <div className="space-y-2">
+                  <Label htmlFor="custom-category">Custom Category</Label>
+                  <Input
+                    id="custom-category"
+                    value={customCategory}
+                    onChange={(e) => setCustomCategory(e.target.value)}
+                    placeholder="Enter your custom category..."
+                    className="w-full"
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
 

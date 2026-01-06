@@ -690,6 +690,7 @@ export type Database = {
           description_fr: string | null
           description_video_url: string | null
           drip_enabled: boolean | null
+          drip_schedule_type: string | null
           duration_weeks: number | null
           id: string
           institution_id: string | null
@@ -718,6 +719,7 @@ export type Database = {
           description_fr?: string | null
           description_video_url?: string | null
           drip_enabled?: boolean | null
+          drip_schedule_type?: string | null
           duration_weeks?: number | null
           id?: string
           institution_id?: string | null
@@ -746,6 +748,7 @@ export type Database = {
           description_fr?: string | null
           description_video_url?: string | null
           drip_enabled?: boolean | null
+          drip_schedule_type?: string | null
           duration_weeks?: number | null
           id?: string
           institution_id?: string | null
