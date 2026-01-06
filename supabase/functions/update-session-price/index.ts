@@ -59,7 +59,7 @@ serve(async (req) => {
       .eq('setting_key', 'mentorship_session_price')
       .single();
 
-    const currentValue = (currentSettings?.setting_value || { price_cents: 3000, enabled: true }) as { price_cents: number; enabled: boolean };
+    const currentValue = (currentSettings?.setting_value || { price_cents: 2000, enabled: true }) as { price_cents: number; enabled: boolean };
 
     const newSettings = {
       price_cents: priceCents !== undefined ? priceCents : currentValue.price_cents,

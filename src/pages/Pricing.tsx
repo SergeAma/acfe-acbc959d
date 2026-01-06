@@ -296,8 +296,8 @@ export const Pricing = () => {
               </Card>
 
               {/* Mentorship Plus Tier - $30 */}
-              <Card className="relative overflow-hidden border-2 border-purple-500/50 bg-gradient-to-b from-purple-50/50 to-background dark:from-purple-950/20 dark:to-background">
-                <div className="absolute top-0 right-0 bg-purple-500 text-white px-4 py-1 text-sm font-medium rounded-bl-lg">
+              <Card className="relative overflow-hidden border-2 border-primary/50 bg-gradient-to-b from-primary/5 to-background dark:from-primary/10 dark:to-background">
+                <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-4 py-1 text-sm font-medium rounded-bl-lg">
                   <Users className="h-4 w-4 inline-block mr-1" />
                   1:1 Mentorship
                 </div>
@@ -307,7 +307,7 @@ export const Pricing = () => {
                     {t('pricing_mentorship_desc')}
                   </CardDescription>
                   <div className="mt-6">
-                    <span className="text-5xl font-bold text-purple-600">$30</span>
+                    <span className="text-5xl font-bold text-primary">$30</span>
                     <span className="text-muted-foreground text-lg">/{t('pricing_month')}</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-2">
@@ -317,7 +317,7 @@ export const Pricing = () => {
                 <CardContent className="pb-8">
                   <Button 
                     size="lg" 
-                    className="w-full mb-6 text-lg h-14 bg-purple-600 hover:bg-purple-700" 
+                    className="w-full mb-6 text-lg h-14" 
                     onClick={handleSubscribe} 
                     disabled={loading}
                   >
@@ -340,8 +340,8 @@ export const Pricing = () => {
                     </p>
                     {[t('pricing_mentorship_f1'), t('pricing_mentorship_f2'), t('pricing_mentorship_f3'), t('pricing_mentorship_f4')].map((feature, index) => (
                       <div key={index} className="flex items-center gap-3">
-                        <div className="flex-shrink-0 h-5 w-5 rounded-full bg-purple-100 flex items-center justify-center">
-                          <Check className="h-3 w-3 text-purple-700" />
+                        <div className="flex-shrink-0 h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center">
+                          <Check className="h-3 w-3 text-primary" />
                         </div>
                         <span className="text-sm">{feature}</span>
                       </div>
