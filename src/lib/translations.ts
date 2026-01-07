@@ -19,6 +19,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'nav.courses': 'Courses',
     'nav.mentors': 'Mentors',
 
+    // ==================== NOTIFICATIONS ====================
+    'notifications.title': 'Notifications',
+    'notifications.markAllRead': 'Mark all read',
+    'notifications.empty': 'No notifications yet',
+
     // ==================== HERO SECTION ====================
     'hero.title': 'Join our mentor-led community of 300+ learners and accelerate your career in tech.',
     'hero.subtitle': 'Zero experience required | Any background | Learn Anytime',
@@ -890,6 +895,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'nav.signOut': 'Déconnexion',
     'nav.courses': 'Cours',
     'nav.mentors': 'Mentors',
+
+    // ==================== NOTIFICATIONS ====================
+    'notifications.title': 'Notifications',
+    'notifications.markAllRead': 'Tout marquer comme lu',
+    'notifications.empty': 'Aucune notification',
 
     // ==================== HERO SECTION ====================
     'hero.title': 'Rejoignez nos 300+ inscrits accompagnés par des mentors et accélérez votre carrière en tech',
