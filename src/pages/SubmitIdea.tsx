@@ -15,6 +15,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Upload, CheckCircle, Video, Lightbulb, DollarSign, Users, Rocket, Save } from "lucide-react";
 import { FormProgressStepper } from "@/components/FormProgressStepper";
 import { Confetti } from "@/components/Confetti";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { AutocompleteInput } from "@/components/ui/autocomplete-input";
+import { COUNTRY_NAMES, GLOBAL_CITIES } from "@/data";
 const STORAGE_KEY = "acfe-idea-submission-draft";
 
 // Minimum time (in seconds) user must spend on form before submitting
@@ -52,6 +55,8 @@ export function SubmitIdea() {
             fullName: parsed.fullName || "",
             email: parsed.email || "",
             phone: parsed.phone || "",
+            country: parsed.country || "",
+            city: parsed.city || "",
             ideaTitle: parsed.ideaTitle || "",
             ideaDescription: parsed.ideaDescription || "",
             startupWebsite: parsed.startupWebsite || ""
@@ -65,6 +70,8 @@ export function SubmitIdea() {
       fullName: "",
       email: "",
       phone: "",
+      country: "",
+      city: "",
       ideaTitle: "",
       ideaDescription: "",
       startupWebsite: ""
@@ -78,6 +85,7 @@ export function SubmitIdea() {
         ...prev,
         fullName: profile.full_name || prev.fullName,
         email: profile.email || prev.email,
+        country: profile.country || prev.country,
         phone: prev.phone // Keep phone from draft if any
       }));
     }
@@ -467,9 +475,39 @@ export function SubmitIdea() {
                       </div>
                     </div>
 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="country">Country *</Label>
+                        <AutocompleteInput
+                          id="country"
+                          value={formData.country}
+                          onChange={(value) => setFormData(prev => ({ ...prev, country: value }))}
+                          suggestions={COUNTRY_NAMES}
+                          placeholder="Select your country"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="city">City *</Label>
+                        <AutocompleteInput
+                          id="city"
+                          value={formData.city}
+                          onChange={(value) => setFormData(prev => ({ ...prev, city: value }))}
+                          suggestions={GLOBAL_CITIES}
+                          placeholder="Select your city"
+                          required
+                        />
+                      </div>
+                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number *</Label>
-                      <Input id="phone" name="phone" type="tel" placeholder="+254 7XX XXX XXX" value={formData.phone} onChange={handleInputChange} required />
+                      <PhoneInput 
+                        id="phone" 
+                        value={formData.phone} 
+                        onChange={(value) => setFormData(prev => ({ ...prev, phone: value }))} 
+                        required 
+                      />
                     </div>
 
                     <div className="space-y-2">
