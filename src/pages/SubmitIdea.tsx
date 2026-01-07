@@ -468,8 +468,8 @@ export function SubmitIdea() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number (Optional)</Label>
-                      <Input id="phone" name="phone" type="tel" placeholder="+254 7XX XXX XXX" value={formData.phone} onChange={handleInputChange} />
+                      <Label htmlFor="phone">Phone Number *</Label>
+                      <Input id="phone" name="phone" type="tel" placeholder="+254 7XX XXX XXX" value={formData.phone} onChange={handleInputChange} required />
                     </div>
 
                     <div className="space-y-2">
