@@ -218,7 +218,7 @@ export const MentorApplicationStatus = () => {
               {request.reason && (
                 <div className="space-y-2">
                   <h3 className="font-medium">Your Application</h3>
-                  <div className="bg-muted/30 rounded-lg p-4 text-sm whitespace-pre-wrap">
+                  <div className="bg-muted/30 rounded-lg p-4 text-sm whitespace-pre-wrap break-words overflow-hidden">
                     {request.reason}
                   </div>
                 </div>
