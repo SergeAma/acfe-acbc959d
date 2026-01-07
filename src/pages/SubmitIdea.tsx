@@ -126,17 +126,19 @@ export function SubmitIdea() {
     formLoadTime.current = Date.now();
   }, []);
 
+  // URL validation helper
+  const isValidUrl = (url: string) => {
+    if (!url.trim()) return false;
+    try {
+      new URL(url.startsWith('http') ? url : `https://${url}`);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   // Calculate form progress steps (only show editable fields for logged-in users)
   const formSteps = useMemo(() => {
-    const isValidUrl = (url: string) => {
-      if (!url.trim()) return false;
-      try {
-        new URL(url.startsWith('http') ? url : `https://${url}`);
-        return true;
-      } catch {
-        return false;
-      }
-    };
     
     return [{
       id: 'ideaTitle',
@@ -149,7 +151,7 @@ export function SubmitIdea() {
     }, {
       id: 'startupWebsite',
       label: 'Website',
-      isComplete: isValidUrl(formData.startupWebsite)
+      isComplete: !formData.startupWebsite.trim() || isValidUrl(formData.startupWebsite)
     }, {
       id: 'video',
       label: 'Video',
@@ -608,7 +610,7 @@ export function SubmitIdea() {
                         </p>
                       </div>}
 
-                    <Button type="submit" size="lg" className="w-full rounded-full" disabled={isSubmitting || !videoFile || formData.ideaDescription.trim().length < MIN_DESCRIPTION_LENGTH || !formData.startupWebsite.trim()}>
+                    <Button type="submit" size="lg" className="w-full rounded-full" disabled={isSubmitting || !videoFile || formData.ideaDescription.trim().length < MIN_DESCRIPTION_LENGTH || (formData.startupWebsite.trim() && !isValidUrl(formData.startupWebsite))}>
                       {isSubmitting ? "Submitting..." : "Submit Your Idea"}
                     </Button>
                     
