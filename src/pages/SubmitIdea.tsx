@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, CheckCircle, Video, Lightbulb, DollarSign, Users, Rocket, Save } from "lucide-react";
+import { Upload, CheckCircle, Video, Lightbulb, DollarSign, Users, Rocket, Save, Camera } from "lucide-react";
 import { FormProgressStepper } from "@/components/FormProgressStepper";
 import { Confetti } from "@/components/Confetti";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -568,35 +568,30 @@ export function SubmitIdea() {
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {/* Record Video Option */}
-                          <div 
+                          <label 
                             className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors border-border hover:border-primary/50 hover:bg-muted/50"
-                            onClick={() => {
-                              const input = document.createElement('input');
-                              input.type = 'file';
-                              input.accept = 'video/*';
-                              input.capture = 'user';
-                              input.onchange = (e) => {
-                                const file = (e.target as HTMLInputElement).files?.[0];
-                                if (file) handleVideoSelect(file);
-                              };
-                              input.click();
-                            }}
                           >
-                            <Video className="h-10 w-10 text-muted-foreground mx-auto" />
+                            <input 
+                              type="file" 
+                              accept="video/*" 
+                              capture="environment"
+                              className="hidden" 
+                              onChange={handleVideoInputChange} 
+                            />
+                            <Camera className="h-10 w-10 text-muted-foreground mx-auto" />
                             <p className="font-medium text-foreground mt-2">Record Video</p>
                             <p className="text-sm text-muted-foreground">Use your camera</p>
-                          </div>
+                          </label>
                           
                           {/* Upload Video Option */}
-                          <div 
+                          <label 
                             className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors border-border hover:border-primary/50 hover:bg-muted/50"
-                            onClick={() => fileInputRef.current?.click()}
                           >
-                            <input ref={fileInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoInputChange} />
+                            <input type="file" accept="video/*" className="hidden" onChange={handleVideoInputChange} />
                             <Upload className="h-10 w-10 text-muted-foreground mx-auto" />
                             <p className="font-medium text-foreground mt-2">Upload Video</p>
                             <p className="text-sm text-muted-foreground">MP4, MOV, WebM up to 100MB</p>
-                          </div>
+                          </label>
                         </div>
                       )}
                     </div>
