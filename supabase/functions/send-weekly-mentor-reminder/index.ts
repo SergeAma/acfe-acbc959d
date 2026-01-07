@@ -1,12 +1,38 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildCanonicalEmail, EmailLanguage } from "../_shared/email-template.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+const translations = {
+  en: {
+    subject: 'Your Weekly Mentor Update',
+    headline: 'Your Weekly Update',
+    body: (name: string) => `<p>Hi ${name}!</p><p>Here's your weekly update from A Cloud for Everyone. Your mentorship makes a real difference in shaping the next generation of African tech talent.</p>`,
+    impact_title: 'This Week:',
+    unpublished: (count: number) => `You have ${count} unpublished course(s) waiting to be completed.`,
+    pending: (count: number) => `You have ${count} pending mentorship request(s) awaiting your response.`,
+    cohort: (count: number) => `Your cohort of ${count} student(s) is waiting for your engagement. Share insights, post updates, or schedule a live session!`,
+    default: 'Check in with your students and keep building your impact as a mentor!',
+    cta: 'Go to Dashboard',
+  },
+  fr: {
+    subject: 'Votre Mise à Jour Hebdomadaire de Mentor',
+    headline: 'Votre Mise à Jour Hebdomadaire',
+    body: (name: string) => `<p>Bonjour ${name}!</p><p>Voici votre mise à jour hebdomadaire de A Cloud for Everyone. Votre mentorat fait une réelle différence dans la formation de la prochaine génération de talents tech africains.</p>`,
+    impact_title: 'Cette Semaine:',
+    unpublished: (count: number) => `Vous avez ${count} cours non publiés en attente d'être complétés.`,
+    pending: (count: number) => `Vous avez ${count} demande(s) de mentorat en attente de votre réponse.`,
+    cohort: (count: number) => `Votre cohorte de ${count} étudiant(s) attend votre engagement. Partagez des idées, publiez des mises à jour, ou planifiez une session en direct!`,
+    default: 'Restez en contact avec vos étudiants et continuez à développer votre impact en tant que mentor!',
+    cta: 'Aller au Tableau de Bord',
+  },
 };
 
 const handler = async (req: Request): Promise<Response> => {
@@ -19,10 +45,9 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get all mentors with their profile info
     const { data: mentors, error: mentorsError } = await supabase
       .from('profiles')
-      .select('id, email, full_name')
+      .select('id, email, full_name, preferred_language')
       .eq('role', 'mentor')
       .eq('account_status', 'active');
 
@@ -32,21 +57,18 @@ const handler = async (req: Request): Promise<Response> => {
     let failedCount = 0;
 
     for (const mentor of mentors || []) {
-      // Check if mentor has incomplete courses (unpublished)
       const { data: unpublishedCourses } = await supabase
         .from('courses')
         .select('id')
         .eq('mentor_id', mentor.id)
         .eq('is_published', false);
 
-      // Check for pending mentorship requests
       const { data: pendingRequests } = await supabase
         .from('mentorship_requests')
         .select('id')
         .eq('mentor_id', mentor.id)
         .eq('status', 'pending');
 
-      // Check if mentor has a cohort with recent activity
       const { data: cohortStudents } = await supabase
         .from('enrollments')
         .select('id, courses!inner(mentor_id)')
@@ -56,73 +78,48 @@ const handler = async (req: Request): Promise<Response> => {
       const hasPendingRequests = (pendingRequests?.length || 0) > 0;
       const hasCohort = (cohortStudents?.length || 0) > 0;
 
-      // Build personalized reminder content
+      const language: EmailLanguage = mentor.preferred_language === 'fr' ? 'fr' : 'en';
+      const t = translations[language];
+
       const reminders: string[] = [];
       
       if (hasUnfinishedCourses) {
-        reminders.push(`📚 You have ${unpublishedCourses?.length} unpublished course(s) waiting to be completed.`);
+        reminders.push(t.unpublished(unpublishedCourses?.length || 0));
       }
       
       if (hasPendingRequests) {
-        reminders.push(`📩 You have ${pendingRequests?.length} pending mentorship request(s) awaiting your response.`);
+        reminders.push(t.pending(pendingRequests?.length || 0));
       }
       
       if (hasCohort) {
-        reminders.push(`👥 Your cohort of ${cohortStudents?.length} student(s) is waiting for your engagement. Share insights, post updates, or schedule a live session!`);
+        reminders.push(t.cohort(cohortStudents?.length || 0));
       }
 
-      // If no specific reminders, send general engagement reminder
       if (reminders.length === 0) {
-        reminders.push(`🌟 Check in with your students and keep building your impact as a mentor!`);
+        reminders.push(t.default);
       }
 
       const firstName = mentor.full_name?.split(' ')[0] || 'Mentor';
 
       try {
+        const htmlContent = buildCanonicalEmail({
+          headline: t.headline,
+          body_primary: t.body(firstName),
+          impact_block: {
+            title: t.impact_title,
+            items: reminders,
+          },
+          primary_cta: {
+            label: t.cta,
+            url: 'https://acloudforeveryone.org/dashboard',
+          },
+        }, language);
+
         await resend.emails.send({
           from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
           to: [mentor.email],
-          subject: "Your Weekly Mentor Update",
-          html: `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="text-align: center; margin-bottom: 30px;">
-    <img src="https://mefwbcbnctqjxrwldmjm.supabase.co/storage/v1/object/public/email-assets/acfe-logo-email.png" alt="A Cloud for Everyone" style="max-width: 200px; height: auto;" />
-  </div>
-  
-  <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 20px;">Hi ${firstName}! 👋</h1>
-  
-  <p style="margin-bottom: 20px;">Here's your weekly update from A Cloud for Everyone:</p>
-  
-  <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-    ${reminders.map(r => `<p style="margin: 10px 0;">${r}</p>`).join('')}
-  </div>
-  
-  <p style="margin-bottom: 20px;">Your mentorship makes a real difference in shaping the next generation of African tech talent.</p>
-  
-  <div style="text-align: center; margin: 30px 0;">
-    <a href="https://acloudforeveryone.org/dashboard" style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">Go to Dashboard</a>
-  </div>
-  
-  <p style="color: #666; font-size: 14px; margin-top: 30px;">
-    Best regards,<br>
-    The ACFE Team
-  </p>
-  
-  <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-  
-  <p style="color: #999; font-size: 12px; text-align: center;">
-    A Cloud for Everyone<br>
-    <a href="mailto:contact@acloudforeveryone.org" style="color: #999;">contact@acloudforeveryone.org</a>
-  </p>
-</body>
-</html>
-          `,
+          subject: t.subject,
+          html: htmlContent,
         });
         sentCount++;
       } catch (emailError) {
@@ -135,19 +132,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     return new Response(
       JSON.stringify({ success: true, sent: sentCount, failed: failedCount }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: any) {
     console.error("Error in send-weekly-mentor-reminder:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };

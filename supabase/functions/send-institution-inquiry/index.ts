@@ -1,13 +1,16 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { Resend } from "https://esm.sh/resend@2.0.0";
+import { buildCanonicalEmail } from "../_shared/email-template.ts";
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Rate limiting
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 3;
 
 function isRateLimited(identifier: string): boolean {
@@ -27,7 +30,6 @@ function isRateLimited(identifier: string): boolean {
   return false;
 }
 
-// HTML escape function to prevent XSS in emails
 function escapeHtml(text: string): string {
   const htmlEntities: Record<string, string> = {
     '&': '&amp;',
@@ -67,10 +69,7 @@ async function verifyTurnstile(token: string): Promise<boolean> {
     const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        secret: secretKey,
-        response: token,
-      }),
+      body: new URLSearchParams({ secret: secretKey, response: token }),
     });
 
     const data = await response.json();
@@ -80,32 +79,6 @@ async function verifyTurnstile(token: string): Promise<boolean> {
     logStep("Turnstile verification error", { error });
     return false;
   }
-}
-
-async function sendEmail(to: string[], subject: string, html: string) {
-  const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-  if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY is not set");
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: "ACFE Platform <noreply@acloudforeveryone.org>",
-      to,
-      subject,
-      html,
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to send email: ${error}`);
-  }
-
-  return response.json();
 }
 
 serve(async (req) => {
@@ -119,7 +92,6 @@ serve(async (req) => {
     const body: InstitutionInquiryRequest = await req.json();
     const { institutionName, institutionType, firstName, lastName, contactEmail, contactPhone, estimatedStudents, message, turnstileToken } = body;
 
-    // Validate and sanitize inputs
     if (!institutionName || typeof institutionName !== 'string' || institutionName.length > 200) {
       throw new Error("Invalid institution name");
     }
@@ -133,14 +105,12 @@ serve(async (req) => {
       throw new Error("Invalid email");
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const trimmedEmail = contactEmail.trim().toLowerCase();
     if (!emailRegex.test(trimmedEmail)) {
       throw new Error("Invalid email format");
     }
 
-    // Rate limiting by email
     const rateLimitKey = `institution:${trimmedEmail}`;
     if (isRateLimited(rateLimitKey)) {
       return new Response(
@@ -149,7 +119,6 @@ serve(async (req) => {
       );
     }
 
-    // Verify CAPTCHA first
     if (!turnstileToken) {
       logStep("Missing CAPTCHA token");
       return new Response(
@@ -167,7 +136,6 @@ serve(async (req) => {
       );
     }
 
-    // Sanitize all inputs with HTML escaping
     const safeInstitutionName = escapeHtml(institutionName.trim().substring(0, 200));
     const safeFirstName = escapeHtml(firstName.trim().substring(0, 100));
     const safeLastName = escapeHtml(lastName.trim().substring(0, 100));
@@ -178,170 +146,67 @@ serve(async (req) => {
     const safeEstimatedStudents = estimatedStudents ? escapeHtml(estimatedStudents.trim().substring(0, 50)) : '';
     const safeMessage = message ? escapeHtml(message.trim().substring(0, 2000)) : '';
 
-    logStep("Sending institution inquiry email", { institutionName: safeInstitutionName, institutionType: safeInstitutionType });
+    logStep("Sending institution inquiry email", { institutionName: safeInstitutionName });
 
-    // Send email to ACFE team with escaped HTML
-    const acfeEmailHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #7c6f5b 0%, #a69783 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-          .header h1 { color: white; margin: 0; font-size: 24px; }
-          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
-          .field { margin-bottom: 20px; }
-          .label { font-weight: bold; color: #7c6f5b; margin-bottom: 5px; }
-          .value { padding: 10px; background: white; border-radius: 4px; border-left: 3px solid #7c6f5b; }
-          .benefits { background: #fff; padding: 20px; border-radius: 8px; margin-top: 20px; }
-          .benefits h3 { color: #7c6f5b; margin-top: 0; }
-          .benefits ul { padding-left: 20px; }
-          .benefits li { margin-bottom: 10px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>🎓 New Educational Institution Inquiry</h1>
-          </div>
-          <div class="content">
-            <div class="field">
-              <div class="label">Institution Name</div>
-              <div class="value">${safeInstitutionName}</div>
-            </div>
-            ${safeInstitutionType ? `
-            <div class="field">
-              <div class="label">Institution Type</div>
-              <div class="value">${safeInstitutionType}</div>
-            </div>
-            ` : ''}
-            <div class="field">
-              <div class="label">Contact Person</div>
-              <div class="value">${safeContactName}</div>
-            </div>
-            <div class="field">
-              <div class="label">Email Address</div>
-              <div class="value"><a href="mailto:${safeContactEmail}">${safeContactEmail}</a></div>
-            </div>
-            ${safeContactPhone ? `
-            <div class="field">
-              <div class="label">Phone Number</div>
-              <div class="value">${safeContactPhone}</div>
-            </div>
-            ` : ''}
-            ${safeEstimatedStudents ? `
-            <div class="field">
-              <div class="label">Estimated Number of Students</div>
-              <div class="value">${safeEstimatedStudents}</div>
-            </div>
-            ` : ''}
-            ${safeMessage ? `
-            <div class="field">
-              <div class="label">Additional Message</div>
-              <div class="value">${safeMessage}</div>
-            </div>
-            ` : ''}
-            
-            <div class="benefits">
-              <h3>Partnership Benefits Requested:</h3>
-              <ul>
-                <li><strong>Bespoke Pricing</strong> - Custom pricing tailored to the institution's needs</li>
-                <li><strong>Tailored Enablement Events</strong> - Co-organized events for students</li>
-                <li><strong>Topic-Driven Mentorship at Scale</strong> - Structured mentorship programs</li>
-                <li><strong>Dedicated ACFE Career Centre</strong> - Private career development space for students</li>
-                <li><strong>Spectrogram Talent Profiles</strong> - Automatic talent account creation for graduates</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+    // Email to ACFE team (internal notification - use simple format)
+    const acfeEmailHtml = buildCanonicalEmail({
+      headline: 'New Educational Institution Inquiry',
+      body_primary: `<p>A new institution partnership inquiry has been received.</p>
+        <p><strong>Institution:</strong> ${safeInstitutionName}${safeInstitutionType ? ` (${safeInstitutionType})` : ''}</p>
+        <p><strong>Contact:</strong> ${safeContactName}</p>
+        <p><strong>Email:</strong> ${safeContactEmail}</p>
+        ${safeContactPhone ? `<p><strong>Phone:</strong> ${safeContactPhone}</p>` : ''}
+        ${safeEstimatedStudents ? `<p><strong>Estimated Students:</strong> ${safeEstimatedStudents}</p>` : ''}
+        ${safeMessage ? `<p><strong>Message:</strong> ${safeMessage}</p>` : ''}`,
+      impact_block: {
+        title: 'Partnership Benefits Requested:',
+        items: [
+          'Bespoke Pricing - Custom pricing tailored to the institution\'s needs',
+          'Tailored Enablement Events - Co-organized events for students',
+          'Topic-Driven Mentorship at Scale - Structured mentorship programs',
+          'Dedicated ACFE Career Centre - Private career development space',
+          'Spectrogram Talent Profiles - Automatic talent account creation for graduates',
+        ],
+      },
+    }, 'en');
 
-    await sendEmail(
-      ["contact@acloudforeveryone.org"],
-      `Educational Institution Partnership Inquiry: ${safeInstitutionName}`,
-      acfeEmailHtml
-    );
+    await resend.emails.send({
+      from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
+      to: ["contact@acloudforeveryone.org"],
+      subject: `Educational Institution Partnership Inquiry: ${safeInstitutionName}`,
+      html: acfeEmailHtml,
+    });
     logStep("ACFE team email sent");
 
-    // Send confirmation email to the institution contact with escaped HTML
-    const confirmationEmailHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #7c6f5b 0%, #a69783 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-          .header h1 { color: white; margin: 0; font-size: 24px; }
-          .logo { margin-bottom: 10px; }
-          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
-          .highlight { background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #7c6f5b; }
-          .benefits { background: #fff; padding: 20px; border-radius: 8px; margin-top: 20px; }
-          .benefits h3 { color: #7c6f5b; margin-top: 0; }
-          .benefits ul { padding-left: 20px; }
-          .benefits li { margin-bottom: 12px; }
-          .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <img src="https://acloudforeveryone.org/acfe-logo-email.png" alt="ACFE" width="150" class="logo">
-            <h1>Partnership Inquiry Received</h1>
-          </div>
-          <div class="content">
-            <p>Dear ${safeContactName},</p>
-            
-            <p>Thank you for expressing interest in partnering with <strong>A Cloud For Everyone (ACFE)</strong> on behalf of <strong>${safeInstitutionName}</strong>.</p>
-            
-            <div class="highlight">
-              <p><strong>We're excited about the possibility of empowering your students with tech skills and career opportunities!</strong></p>
-              <p>A member of our partnerships team will reach out to you within 2-3 business days to discuss how we can tailor our platform to meet your institution's needs.</p>
-            </div>
-            
-            <div class="benefits">
-              <h3>What Your Students Will Get:</h3>
-              <ul>
-                <li><strong>Bespoke Pricing</strong> - Custom pricing structures designed for educational institutions</li>
-                <li><strong>Tailored Enablement Events</strong> - Co-organized workshops, hackathons, and career fairs exclusively for your students</li>
-                <li><strong>Topic-Driven Mentorship at Scale</strong> - Structured mentorship programs with industry experts matched to your curriculum</li>
-                <li><strong>Dedicated ACFE Career Centre</strong> - A private career development space branded for your institution, where students can:
-                  <ul>
-                    <li>Interact within a gated community dedicated to your institution</li>
-                    <li>Apply to exclusive ACFE job opportunities</li>
-                    <li>Access upcoming co-organized events and special courses</li>
-                  </ul>
-                </li>
-                <li><strong>Spectrogram Consulting Talent Profiles</strong> - Upon course completion, students automatically get connected to our founding partner's talent network for job opportunities</li>
-              </ul>
-            </div>
-            
-            <p>If you have any immediate questions, feel free to reply to this email or contact us at <a href="mailto:contact@acloudforeveryone.org">contact@acloudforeveryone.org</a>.</p>
-            
-            <p>We look forward to partnering with ${safeInstitutionName} to shape the next generation of African tech talent!</p>
-            
-            <p>Best regards,<br><strong>The ACFE Partnerships Team</strong></p>
-            
-            <div class="footer">
-              <p>A Cloud For Everyone | Empowering African Tech Talent</p>
-              <p><a href="https://acloudforeveryone.org">acloudforeveryone.org</a></p>
-            </div>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+    // Confirmation email to the institution contact
+    const confirmationHtml = buildCanonicalEmail({
+      headline: 'Partnership Inquiry Received',
+      body_primary: `<p>Dear ${safeContactName},</p>
+        <p>Thank you for expressing interest in partnering with <strong>A Cloud For Everyone (ACFE)</strong> on behalf of <strong>${safeInstitutionName}</strong>.</p>
+        <p>We're excited about the possibility of empowering your students with tech skills and career opportunities!</p>
+        <p>A member of our partnerships team will reach out to you within 2-3 business days to discuss how we can tailor our platform to meet your institution's needs.</p>`,
+      impact_block: {
+        title: 'What Your Students Will Get:',
+        items: [
+          'Bespoke Pricing - Custom pricing structures designed for educational institutions',
+          'Tailored Enablement Events - Co-organized workshops, hackathons, and career fairs',
+          'Topic-Driven Mentorship at Scale - Structured mentorship with industry experts',
+          'Dedicated ACFE Career Centre - A private career development space for your students',
+          'Spectrogram Talent Profiles - Connection to our founding partner\'s talent network',
+        ],
+      },
+      primary_cta: {
+        label: 'Visit Our Platform',
+        url: 'https://acloudforeveryone.org',
+      },
+    }, 'en');
 
-    await sendEmail(
-      [trimmedEmail],
-      "Thank you for your interest in ACFE Partnership",
-      confirmationEmailHtml
-    );
+    await resend.emails.send({
+      from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
+      to: [trimmedEmail],
+      subject: "Thank you for your interest in ACFE Partnership",
+      html: confirmationHtml,
+    });
     logStep("Confirmation email sent to institution");
 
     return new Response(JSON.stringify({ 

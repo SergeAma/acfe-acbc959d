@@ -1,12 +1,13 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { buildCanonicalEmail, EmailLanguage } from "../_shared/email-template.ts";
 
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface CourseCompletionRequest {
@@ -14,6 +15,23 @@ interface CourseCompletionRequest {
   courseId: string;
   courseTitle: string;
 }
+
+const translations = {
+  en: {
+    subject: (student: string, course: string) => `${student} completed "${course}" - Review their mentorship request`,
+    headline: 'Course Completed!',
+    body: (student: string, course: string) => `<p>Hi there,</p><p><strong>${student}</strong> has successfully completed the course you recommended:</p><p style="font-size: 18px; font-weight: bold; color: #4B5C4B;">${course}</p><p>They previously applied to join your mentorship cohort. You can now reconsider their request and accept them into your cohort.</p>`,
+    impact_title: 'About the Student:',
+    cta: 'Review Request',
+  },
+  fr: {
+    subject: (student: string, course: string) => `${student} a terminé "${course}" - Examinez sa demande de mentorat`,
+    headline: 'Cours Terminé!',
+    body: (student: string, course: string) => `<p>Bonjour,</p><p><strong>${student}</strong> a terminé avec succès le cours que vous avez recommandé:</p><p style="font-size: 18px; font-weight: bold; color: #4B5C4B;">${course}</p><p>Il/Elle avait précédemment postulé pour rejoindre votre cohorte de mentorat. Vous pouvez maintenant reconsidérer sa demande et l'accepter dans votre cohorte.</p>`,
+    impact_title: 'À propos de l\'étudiant:',
+    cta: 'Examiner la Demande',
+  },
+};
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -27,7 +45,6 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Find mentorship requests with course_required status for this course
     const { data: requests, error: requestsError } = await supabase
       .from("mentorship_requests")
       .select("id, mentor_id, student_bio, career_ambitions")
@@ -47,7 +64,6 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Get student info
     const { data: studentProfile } = await supabase
       .from("profiles")
       .select("full_name, email")
@@ -55,16 +71,13 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     const studentName = studentProfile?.full_name || "A student";
-    const currentYear = new Date().getFullYear();
 
-    // Send notification to each mentor
     let emailsSent = 0;
     
     for (const request of requests) {
-      // Get mentor's email from profiles table using service role
       const { data: mentorData } = await supabase
         .from("profiles")
-        .select("email, full_name")
+        .select("email, full_name, preferred_language")
         .eq("id", request.mentor_id)
         .single();
 
@@ -73,82 +86,42 @@ const handler = async (req: Request): Promise<Response> => {
         continue;
       }
 
-      const mentorName = mentorData.full_name || "Mentor";
+      const language: EmailLanguage = (mentorData.preferred_language === 'fr' ? 'fr' : 'en');
+      const t = translations[language];
 
-      const emailHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5;">
-          <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-            <!-- ACFE Text Header -->
-            <div style="text-align: center; margin-bottom: 0; background-color: #3f3f3f; padding: 24px; border-radius: 12px 12px 0 0;">
-              <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin-bottom: 4px;">ACFE</div>
-              <div style="font-size: 12px; color: #d4d4d4; letter-spacing: 2px; text-transform: uppercase;">A Cloud for Everyone</div>
-            </div>
-            
-            <div style="background-color: #ffffff; padding: 32px; border-radius: 0 0 12px 12px;">
-              <h1 style="margin: 0 0 20px 0; font-size: 24px; color: #18181b;">🎓 Course Completed!</h1>
-              
-              <p style="color: #3f3f46;">Hi ${mentorName},</p>
-              <p style="color: #3f3f46; line-height: 1.6;"><strong>${studentName}</strong> has successfully completed the course you recommended:</p>
-              
-              <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4a5d4a;">
-                <h3 style="margin: 0; color: #166534;">${courseTitle}</h3>
-              </div>
+      const items = [];
+      if (request.student_bio) {
+        items.push(`<strong>Bio:</strong> ${request.student_bio}`);
+      }
+      if (request.career_ambitions) {
+        items.push(`<strong>${language === 'fr' ? 'Ambitions de carrière' : 'Career Ambitions'}:</strong> ${request.career_ambitions}`);
+      }
 
-              <p style="color: #3f3f46; line-height: 1.6;">They previously applied to join your mentorship cohort. You can now reconsider their request and accept them into your cohort.</p>
-
-              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h4 style="margin: 0 0 10px 0; color: #18181b;">About the Student:</h4>
-                <p style="margin: 5px 0; color: #3f3f46;"><strong>Bio:</strong> ${request.student_bio}</p>
-                <p style="margin: 5px 0; color: #3f3f46;"><strong>Career Ambitions:</strong> ${request.career_ambitions}</p>
-              </div>
-
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="https://acloudforeveryone.org/mentor/cohort" style="background: #4a5d4a; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
-                  Review Request
-                </a>
-              </div>
-
-              <p style="color: #666; font-size: 14px; text-align: center; margin-top: 24px;">Keep inspiring the next generation of tech leaders!</p>
-            </div>
-            
-            <!-- Footer -->
-            <div style="text-align: center; padding: 24px;">
-              <div style="font-size: 18px; font-weight: 700; color: #3f3f3f; letter-spacing: 2px; margin-bottom: 8px;">ACFE</div>
-              <p style="font-size: 12px; color: #71717a; margin: 0;">
-                © ${currentYear} A Cloud for Everyone. All rights reserved.
-              </p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `;
-
-      const res = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${RESEND_API_KEY}`,
+      const htmlContent = buildCanonicalEmail({
+        headline: t.headline,
+        body_primary: t.body(studentName, courseTitle),
+        impact_block: items.length > 0 ? {
+          title: t.impact_title,
+          items,
+        } : undefined,
+        primary_cta: {
+          label: t.cta,
+          url: 'https://acloudforeveryone.org/mentor/cohort',
         },
-        body: JSON.stringify({
-          from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
-          to: [mentorData.email],
-          subject: `${studentName} completed "${courseTitle}" - Review their mentorship request`,
-          html: emailHtml,
-        }),
+      }, language);
+
+      const { error: emailError } = await resend.emails.send({
+        from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
+        to: [mentorData.email],
+        subject: t.subject(studentName, courseTitle),
+        html: htmlContent,
       });
 
-      if (res.ok) {
+      if (!emailError) {
         emailsSent++;
         console.log(`Email sent to mentor: ${mentorData.email}`);
       } else {
-        const error = await res.text();
-        console.error(`Failed to send email to ${mentorData.email}:`, error);
+        console.error(`Failed to send email to ${mentorData.email}:`, emailError);
       }
     }
 
