@@ -20,9 +20,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'nav.mentors': 'Mentors',
 
     // ==================== NOTIFICATIONS ====================
-    'notifications.title': 'Notifications',
-    'notifications.markAllRead': 'Mark all read',
-    'notifications.empty': 'No notifications yet',
+  'notifications.title': 'Action Required',
+  'notifications.empty': 'No pending actions',
 
     // ==================== HERO SECTION ====================
     'hero.title': 'Join our mentor-led community of 300+ learners and accelerate your career in tech.',
@@ -897,9 +896,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'nav.mentors': 'Mentors',
 
     // ==================== NOTIFICATIONS ====================
-    'notifications.title': 'Notifications',
-    'notifications.markAllRead': 'Tout marquer comme lu',
-    'notifications.empty': 'Aucune notification',
+    'notifications.title': 'Action requise',
+    'notifications.empty': 'Aucune action en attente',
 
     // ==================== HERO SECTION ====================
     'hero.title': 'Rejoignez nos 300+ inscrits accompagnés par des mentors et accélérez votre carrière en tech',
