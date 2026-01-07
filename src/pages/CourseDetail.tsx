@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth, ProfileFrame } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
@@ -20,6 +20,7 @@ interface Course {
   duration_weeks: number;
   is_paid: boolean;
   price_cents: number;
+  mentor_id: string;
   mentor: {
     full_name: string;
     bio: string;
@@ -358,25 +359,27 @@ export const CourseDetail = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <ProfileAvatar
-                    src={course.mentor?.avatar_url}
-                    name={course.mentor?.full_name}
-                    frame={course.mentor?.profile_frame || 'none'}
-                    size="md"
-                  />
-                  <div>
-                    <h3 className="font-semibold">Your Mentor</h3>
-                    <p className="text-sm text-muted-foreground">{course.mentor?.full_name}</p>
+            <Link to={`/mentors/${course.mentor_id}`} className="block">
+              <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <ProfileAvatar
+                      src={course.mentor?.avatar_url}
+                      name={course.mentor?.full_name}
+                      frame={course.mentor?.profile_frame || 'none'}
+                      size="md"
+                    />
+                    <div>
+                      <h3 className="font-semibold">Your Mentor</h3>
+                      <p className="text-sm text-muted-foreground">{course.mentor?.full_name}</p>
+                    </div>
                   </div>
-                </div>
-                {course.mentor?.bio && (
-                  <p className="text-sm text-muted-foreground">{course.mentor.bio}</p>
-                )}
-              </CardContent>
-            </Card>
+                  {course.mentor?.bio && (
+                    <p className="text-sm text-muted-foreground">{course.mentor.bio}</p>
+                  )}
+                </CardContent>
+              </Card>
+            </Link>
           </div>
         </div>
       </div>
