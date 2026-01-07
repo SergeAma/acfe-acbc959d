@@ -166,8 +166,7 @@ export function SubmitIdea() {
       [name]: value
     }));
   };
-  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleVideoSelect = (file: File | null) => {
     if (file) {
       // Check file size (max 100MB)
       if (file.size > 100 * 1024 * 1024) {
@@ -189,6 +188,9 @@ export function SubmitIdea() {
       }
       setVideoFile(file);
     }
+  };
+  const handleVideoInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleVideoSelect(e.target.files?.[0] || null);
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -552,31 +554,51 @@ export function SubmitIdea() {
                         and why you're the right person to build it.
                       </p>
                       
-                      <div className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${videoFile ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/50"}`} onClick={() => fileInputRef.current?.click()}>
-                        <input ref={fileInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoSelect} />
-                        
-                        {videoFile ? <div className="space-y-2">
-                            <Video className="h-12 w-12 text-primary mx-auto" />
-                            <p className="font-medium text-foreground">{videoFile.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
-                            </p>
-                            <Button type="button" variant="outline" size="sm" onClick={e => {
-                            e.stopPropagation();
-                            setVideoFile(null);
-                          }}>
-                              Remove
-                            </Button>
-                          </div> : <div className="space-y-2">
-                            <Upload className="h-12 w-12 text-muted-foreground mx-auto" />
-                            <p className="font-medium text-foreground">
-                              Click to upload your video
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              MP4, MOV, or WebM up to 100MB
-                            </p>
-                          </div>}
-                      </div>
+                      {videoFile ? (
+                        <div className="border-2 border-primary rounded-xl p-8 text-center bg-primary/5">
+                          <Video className="h-12 w-12 text-primary mx-auto" />
+                          <p className="font-medium text-foreground mt-2">{videoFile.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
+                          </p>
+                          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => setVideoFile(null)}>
+                            Remove
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Record Video Option */}
+                          <div 
+                            className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors border-border hover:border-primary/50 hover:bg-muted/50"
+                            onClick={() => {
+                              const input = document.createElement('input');
+                              input.type = 'file';
+                              input.accept = 'video/*';
+                              input.capture = 'user';
+                              input.onchange = (e) => {
+                                const file = (e.target as HTMLInputElement).files?.[0];
+                                if (file) handleVideoSelect(file);
+                              };
+                              input.click();
+                            }}
+                          >
+                            <Video className="h-10 w-10 text-muted-foreground mx-auto" />
+                            <p className="font-medium text-foreground mt-2">Record Video</p>
+                            <p className="text-sm text-muted-foreground">Use your camera</p>
+                          </div>
+                          
+                          {/* Upload Video Option */}
+                          <div 
+                            className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors border-border hover:border-primary/50 hover:bg-muted/50"
+                            onClick={() => fileInputRef.current?.click()}
+                          >
+                            <input ref={fileInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoInputChange} />
+                            <Upload className="h-10 w-10 text-muted-foreground mx-auto" />
+                            <p className="font-medium text-foreground mt-2">Upload Video</p>
+                            <p className="text-sm text-muted-foreground">MP4, MOV, WebM up to 100MB</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Progress Bar */}
