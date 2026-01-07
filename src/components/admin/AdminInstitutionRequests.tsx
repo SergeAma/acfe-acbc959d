@@ -112,14 +112,29 @@ export const AdminInstitutionRequests = () => {
           throw cohortError;
         }
       }
+
+      // Send email notification to the mentor
+      try {
+        await supabase.functions.invoke('send-institution-request-response', {
+          body: {
+            mentor_id: request?.mentor_id,
+            mentor_email: request?.mentor_profile?.email,
+            mentor_name: request?.mentor_profile?.full_name || 'Mentor',
+            institution_name: request?.institution?.name || 'the institution',
+            request_type: request?.request_type,
+            status: action === 'approve' ? 'approved' : 'rejected',
+            admin_response: response || undefined,
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send mentor notification:', emailError);
+      }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['admin-institution-requests'] });
       toast({
         title: variables.action === 'approve' ? 'Request approved!' : 'Request rejected',
-        description: variables.action === 'approve' 
-          ? 'The mentor has been granted access.'
-          : 'The mentor has been notified.',
+        description: 'The mentor has been notified via email.',
       });
       setResponseDialogOpen(false);
       setSelectedRequest(null);

@@ -70,7 +70,7 @@ export const InstitutionPartnersSection = () => {
 
   // Submit request mutation
   const submitRequest = useMutation({
-    mutationFn: async ({ institutionId, type, reasonText }: { institutionId: string; type: 'exclusive_content' | 'cohort_mentoring'; reasonText: string }) => {
+    mutationFn: async ({ institutionId, type, reasonText, institutionName }: { institutionId: string; type: 'exclusive_content' | 'cohort_mentoring'; reasonText: string; institutionName: string }) => {
       const { error } = await supabase
         .from('mentor_institution_requests')
         .insert({
@@ -81,6 +81,27 @@ export const InstitutionPartnersSection = () => {
         });
       
       if (error) throw error;
+
+      // Notify admins about the new request
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, email')
+          .eq('id', user?.id)
+          .single();
+
+        await supabase.functions.invoke('send-institution-request-notification', {
+          body: {
+            mentor_name: profile?.full_name || 'Unknown Mentor',
+            mentor_email: profile?.email || '',
+            institution_name: institutionName,
+            request_type: type,
+            reason: reasonText,
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send admin notification:', emailError);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mentor-institution-requests'] });
@@ -269,6 +290,7 @@ export const InstitutionPartnersSection = () => {
                     institutionId: selectedInstitution.id,
                     type: requestType,
                     reasonText: reason,
+                    institutionName: selectedInstitution.name,
                   });
                 }
               }}
