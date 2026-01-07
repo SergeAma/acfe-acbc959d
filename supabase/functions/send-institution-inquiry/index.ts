@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
-import { buildCanonicalEmail } from "../_shared/email-template.ts";
+import { buildCanonicalEmail, EmailLanguage } from "../_shared/email-template.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -56,7 +56,37 @@ interface InstitutionInquiryRequest {
   estimatedStudents?: string;
   message?: string;
   turnstileToken: string;
+  language?: EmailLanguage;
 }
+
+const translations = {
+  en: {
+    confirmSubject: "Thank you for your interest in ACFE Partnership",
+    confirmHeadline: "Partnership Inquiry Received",
+    confirmIntro: (name: string, institution: string) => 
+      `<p>Dear ${name},</p><p>Thank you for expressing interest in partnering with <strong>A Cloud For Everyone (ACFE)</strong> on behalf of <strong>${institution}</strong>.</p><p>We're excited about the possibility of empowering your students with tech skills and career opportunities!</p><p>A member of our partnerships team will reach out to you within 2-3 business days to discuss how we can tailor our platform to meet your institution's needs.</p>`,
+    impactTitle: "What Your Students Will Get:",
+    item1: "Bespoke Pricing - Custom pricing structures designed for educational institutions",
+    item2: "Tailored Enablement Events - Co-organized workshops, hackathons, and career fairs",
+    item3: "Topic-Driven Mentorship at Scale - Structured mentorship with industry experts",
+    item4: "Dedicated ACFE Career Centre - A private career development space for your students",
+    item5: "Spectrogram Talent Profiles - Connection to our founding partner's talent network",
+    cta: "Visit Our Platform",
+  },
+  fr: {
+    confirmSubject: "Merci pour votre intérêt au partenariat ACFE",
+    confirmHeadline: "Demande de Partenariat Reçue",
+    confirmIntro: (name: string, institution: string) => 
+      `<p>Cher ${name},</p><p>Merci d'avoir exprimé votre intérêt pour un partenariat avec <strong>A Cloud For Everyone (ACFE)</strong> au nom de <strong>${institution}</strong>.</p><p>Nous sommes enthousiastes à l'idée d'aider vos étudiants à acquérir des compétences tech et des opportunités de carrière!</p><p>Un membre de notre équipe de partenariats vous contactera dans les 2-3 jours ouvrables pour discuter de la façon dont nous pouvons adapter notre plateforme aux besoins de votre institution.</p>`,
+    impactTitle: "Ce Que Vos Étudiants Obtiendront:",
+    item1: "Tarification Sur Mesure - Structures tarifaires personnalisées pour les établissements d'enseignement",
+    item2: "Événements d'Activation Personnalisés - Ateliers, hackathons et salons de l'emploi co-organisés",
+    item3: "Mentorat Thématique à Grande Échelle - Mentorat structuré avec des experts de l'industrie",
+    item4: "Centre de Carrière ACFE Dédié - Un espace de développement de carrière privé pour vos étudiants",
+    item5: "Profils de Talents Spectrogram - Connexion au réseau de talents de notre partenaire fondateur",
+    cta: "Visiter Notre Plateforme",
+  },
+};
 
 async function verifyTurnstile(token: string): Promise<boolean> {
   const secretKey = Deno.env.get("TURNSTILE_SECRET_KEY");
@@ -90,7 +120,10 @@ serve(async (req) => {
     logStep("Function started");
 
     const body: InstitutionInquiryRequest = await req.json();
-    const { institutionName, institutionType, firstName, lastName, contactEmail, contactPhone, estimatedStudents, message, turnstileToken } = body;
+    const { institutionName, institutionType, firstName, lastName, contactEmail, contactPhone, estimatedStudents, message, turnstileToken, language = 'en' } = body;
+
+    const lang: EmailLanguage = language === 'fr' ? 'fr' : 'en';
+    const t = translations[lang];
 
     if (!institutionName || typeof institutionName !== 'string' || institutionName.length > 200) {
       throw new Error("Invalid institution name");
@@ -148,7 +181,7 @@ serve(async (req) => {
 
     logStep("Sending institution inquiry email", { institutionName: safeInstitutionName });
 
-    // Email to ACFE team (internal notification - use simple format)
+    // Email to ACFE team (internal notification - always English)
     const acfeEmailHtml = buildCanonicalEmail({
       headline: 'New Educational Institution Inquiry',
       body_primary: `<p>A new institution partnership inquiry has been received.</p>
@@ -157,7 +190,8 @@ serve(async (req) => {
         <p><strong>Email:</strong> ${safeContactEmail}</p>
         ${safeContactPhone ? `<p><strong>Phone:</strong> ${safeContactPhone}</p>` : ''}
         ${safeEstimatedStudents ? `<p><strong>Estimated Students:</strong> ${safeEstimatedStudents}</p>` : ''}
-        ${safeMessage ? `<p><strong>Message:</strong> ${safeMessage}</p>` : ''}`,
+        ${safeMessage ? `<p><strong>Message:</strong> ${safeMessage}</p>` : ''}
+        <p><strong>Language Preference:</strong> ${lang.toUpperCase()}</p>`,
       impact_block: {
         title: 'Partnership Benefits Requested:',
         items: [
@@ -178,33 +212,24 @@ serve(async (req) => {
     });
     logStep("ACFE team email sent");
 
-    // Confirmation email to the institution contact
+    // Confirmation email to the institution contact (in their preferred language)
     const confirmationHtml = buildCanonicalEmail({
-      headline: 'Partnership Inquiry Received',
-      body_primary: `<p>Dear ${safeContactName},</p>
-        <p>Thank you for expressing interest in partnering with <strong>A Cloud For Everyone (ACFE)</strong> on behalf of <strong>${safeInstitutionName}</strong>.</p>
-        <p>We're excited about the possibility of empowering your students with tech skills and career opportunities!</p>
-        <p>A member of our partnerships team will reach out to you within 2-3 business days to discuss how we can tailor our platform to meet your institution's needs.</p>`,
+      headline: t.confirmHeadline,
+      body_primary: t.confirmIntro(safeContactName, safeInstitutionName),
       impact_block: {
-        title: 'What Your Students Will Get:',
-        items: [
-          'Bespoke Pricing - Custom pricing structures designed for educational institutions',
-          'Tailored Enablement Events - Co-organized workshops, hackathons, and career fairs',
-          'Topic-Driven Mentorship at Scale - Structured mentorship with industry experts',
-          'Dedicated ACFE Career Centre - A private career development space for your students',
-          'Spectrogram Talent Profiles - Connection to our founding partner\'s talent network',
-        ],
+        title: t.impactTitle,
+        items: [t.item1, t.item2, t.item3, t.item4, t.item5],
       },
       primary_cta: {
-        label: 'Visit Our Platform',
+        label: t.cta,
         url: 'https://acloudforeveryone.org',
       },
-    }, 'en');
+    }, lang);
 
     await resend.emails.send({
       from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
       to: [trimmedEmail],
-      subject: "Thank you for your interest in ACFE Partnership",
+      subject: t.confirmSubject,
       html: confirmationHtml,
     });
     logStep("Confirmation email sent to institution");
