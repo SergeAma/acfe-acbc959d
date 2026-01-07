@@ -673,7 +673,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'submitIdea.fullNamePlaceholder': 'Your full name',
     'submitIdea.email': 'Email Address',
     'submitIdea.emailPlaceholder': 'you@example.com',
-    'submitIdea.phone': 'Phone Number (Optional)',
+    'submitIdea.phone': 'Phone Number',
     'submitIdea.phonePlaceholder': '+254 7XX XXX XXX',
     'submitIdea.ideaTitle': 'Name Your Idea',
     'submitIdea.ideaTitlePlaceholder': 'Give your idea a catchy name',
