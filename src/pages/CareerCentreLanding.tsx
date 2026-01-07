@@ -27,7 +27,6 @@ export const CareerCentreLanding = () => {
     institutionName: '',
     institutionType: '',
     firstName: '',
-    lastName: '',
     contactEmail: '',
     contactPhone: '',
     estimatedStudents: '',
@@ -70,7 +69,7 @@ export const CareerCentreLanding = () => {
   }, [showInstitutionDialog]);
   const handleInstitutionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!institutionForm.institutionName || !institutionForm.institutionType || !institutionForm.firstName || !institutionForm.lastName || !institutionForm.contactEmail || !institutionForm.contactPhone || !institutionForm.estimatedStudents || !institutionForm.message) {
+    if (!institutionForm.institutionName || !institutionForm.institutionType || !institutionForm.firstName || !institutionForm.contactEmail || !institutionForm.contactPhone || !institutionForm.estimatedStudents || !institutionForm.message) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -99,7 +98,6 @@ export const CareerCentreLanding = () => {
         institutionName: '',
         institutionType: '',
         firstName: '',
-        lastName: '',
         contactEmail: '',
         contactPhone: '',
         estimatedStudents: '',
@@ -253,57 +251,46 @@ export const CareerCentreLanding = () => {
                 </SelectContent>
               </Select>
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="firstName">First Name *</Label>
+                <Label htmlFor="firstName">Your Name *</Label>
                 <Input id="firstName" value={institutionForm.firstName} onChange={e => setInstitutionForm(prev => ({
                 ...prev,
                 firstName: e.target.value
-              }))} placeholder="First name" className="mt-1" />
+              }))} placeholder="First name" className="mt-1" required />
               </div>
               <div>
-                <Label htmlFor="lastName">Last Name *</Label>
-                <Input id="lastName" value={institutionForm.lastName} onChange={e => setInstitutionForm(prev => ({
+                <Label htmlFor="contactEmail">Email Address *</Label>
+                <Input id="contactEmail" type="email" value={institutionForm.contactEmail} onChange={e => setInstitutionForm(prev => ({
                 ...prev,
-                lastName: e.target.value
-              }))} placeholder="Last name" className="mt-1" />
+                contactEmail: e.target.value
+              }))} placeholder="you@institution.edu" className="mt-1" required />
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="contactEmail">Work Email *</Label>
-              <Input id="contactEmail" type="email" value={institutionForm.contactEmail} onChange={e => setInstitutionForm(prev => ({
-              ...prev,
-              contactEmail: e.target.value
-            }))} placeholder="you@institution.edu" className="mt-1" />
-            </div>
-
-            <div>
-              <Label htmlFor="contactPhone">Phone Number *</Label>
-              <PhoneInput value={institutionForm.contactPhone} onChange={value => setInstitutionForm(prev => ({
-              ...prev,
-              contactPhone: value || ''
-            }))} id="contactPhone" className="mt-1" />
-            </div>
-
-            <div>
-              <Label htmlFor="estimatedStudents">Estimated Number of Students *</Label>
-              <Select value={institutionForm.estimatedStudents} onValueChange={value => setInstitutionForm(prev => ({
-              ...prev,
-              estimatedStudents: value
-            }))}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select range" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1-100">1 - 100</SelectItem>
-                  <SelectItem value="101-500">101 - 500</SelectItem>
-                  <SelectItem value="501-1000">501 - 1,000</SelectItem>
-                  <SelectItem value="1001-5000">1,001 - 5,000</SelectItem>
-                  <SelectItem value="5000+">5,000+</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="contactPhone">Phone Number *</Label>
+                <PhoneInput value={institutionForm.contactPhone} onChange={value => setInstitutionForm(prev => ({
+                ...prev,
+                contactPhone: value || ''
+                }))} id="contactPhone" className="mt-1" required />
+              </div>
+              <div>
+                <Label htmlFor="estimatedStudents">Estimated Students *</Label>
+                <Input 
+                  id="estimatedStudents" 
+                  type="number" 
+                  value={institutionForm.estimatedStudents} 
+                  onChange={e => setInstitutionForm(prev => ({
+                    ...prev,
+                    estimatedStudents: e.target.value
+                  }))} 
+                  placeholder="e.g. 500" 
+                  className="mt-1" 
+                  required 
+                />
+              </div>
             </div>
 
             <div>

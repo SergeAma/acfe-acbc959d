@@ -50,7 +50,7 @@ interface InstitutionInquiryRequest {
   institutionName: string;
   institutionType: string;
   firstName: string;
-  lastName: string;
+  lastName?: string;
   contactEmail: string;
   contactPhone?: string;
   estimatedStudents?: string;
@@ -120,7 +120,7 @@ serve(async (req) => {
     logStep("Function started");
 
     const body: InstitutionInquiryRequest = await req.json();
-    const { institutionName, institutionType, firstName, lastName, contactEmail, contactPhone, estimatedStudents, message, turnstileToken, language = 'en' } = body;
+    const { institutionName, institutionType, firstName, lastName = '', contactEmail, contactPhone, estimatedStudents, message, turnstileToken, language = 'en' } = body;
 
     const lang: EmailLanguage = language === 'fr' ? 'fr' : 'en';
     const t = translations[lang];
@@ -129,9 +129,9 @@ serve(async (req) => {
       throw new Error("Invalid institution name");
     }
     if (!firstName || typeof firstName !== 'string' || firstName.length > 100) {
-      throw new Error("Invalid first name");
+      throw new Error("Invalid name");
     }
-    if (!lastName || typeof lastName !== 'string' || lastName.length > 100) {
+    if (lastName && (typeof lastName !== 'string' || lastName.length > 100)) {
       throw new Error("Invalid last name");
     }
     if (!contactEmail || typeof contactEmail !== 'string' || contactEmail.length > 255) {
@@ -171,8 +171,8 @@ serve(async (req) => {
 
     const safeInstitutionName = escapeHtml(institutionName.trim().substring(0, 200));
     const safeFirstName = escapeHtml(firstName.trim().substring(0, 100));
-    const safeLastName = escapeHtml(lastName.trim().substring(0, 100));
-    const safeContactName = `${safeFirstName} ${safeLastName}`;
+    const safeLastName = lastName ? escapeHtml(lastName.trim().substring(0, 100)) : '';
+    const safeContactName = safeLastName ? `${safeFirstName} ${safeLastName}` : safeFirstName;
     const safeContactEmail = escapeHtml(trimmedEmail);
     const safeInstitutionType = institutionType ? escapeHtml(institutionType.trim().substring(0, 100)) : '';
     const safeContactPhone = contactPhone ? escapeHtml(contactPhone.trim().substring(0, 50)) : '';
