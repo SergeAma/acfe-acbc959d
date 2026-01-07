@@ -297,11 +297,11 @@ export const CourseLearn = () => {
 
       // Fetch lesson progress (skip for mentor preview mode)
       let progressMap = new Map<string, boolean>();
-      if (enrollmentId && enrollmentId !== 'preview-mode') {
+      if (currentEnrollmentId && currentEnrollmentId !== 'preview-mode') {
         const { data: progressData } = await supabase
           .from('lesson_progress')
           .select('content_id, completed')
-          .eq('enrollment_id', enrollmentId);
+          .eq('enrollment_id', currentEnrollmentId);
         progressMap = new Map(progressData?.map(p => [p.content_id, p.completed]) || []);
       }
 
