@@ -220,6 +220,190 @@ export const StudentDashboard = () => {
         </Link>
       </div>
 
+      {/* In Progress Courses - Priority visibility */}
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">{t('dashboard.inProgress')}</h2>
+          <Link to="/courses">
+            <Button variant="outline">
+              <Library className="h-4 w-4 mr-2" />
+              {t('studentDashboard.browseMoreCourses')}
+            </Button>
+          </Link>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
+        ) : enrollments.filter(e => e.progress > 0 && e.progress < 100).length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center">
+              <BookOpen className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">{t('studentDashboard.noCoursesInProgress')}</h3>
+              <p className="text-muted-foreground mb-4">{t('studentDashboard.startCourseToSeeProgress')}</p>
+              <Link to="/courses">
+                <Button>{t('features.courses.title')}</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-6">
+            {enrollments.filter(e => e.progress > 0 && e.progress < 100).map((enrollment) => {
+              const isSubscribed = subscribedCourseIds.includes(enrollment.course.id);
+              return (
+              <Card key={enrollment.id} className={`hover:shadow-lg transition-shadow relative ${isSubscribed ? 'ring-2 ring-primary' : ''}`}>
+                {isSubscribed && (
+                  <div className="absolute top-2 right-2 z-10">
+                    <Badge className="bg-primary text-primary-foreground">
+                      <CreditCard className="h-3 w-3 mr-1" />
+                      {t('studentDashboard.subscribed')}
+                    </Badge>
+                  </div>
+                )}
+                <CardHeader>
+                  <CardTitle className="line-clamp-1">{enrollment.course.title}</CardTitle>
+                  <div className="flex gap-2 mt-2">
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                      {enrollment.course.category}
+                    </span>
+                    <span className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded">
+                      {enrollment.course.level}
+                    </span>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                    {stripHtml(enrollment.course.description)}
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">{t('studentDashboard.progress')}</span>
+                      <span className="font-medium">{enrollment.progress}%</span>
+                    </div>
+                    <Progress value={enrollment.progress} className="h-2" />
+                  </div>
+                  <Link to={`/courses/${enrollment.course.id}/learn`}>
+                    <Button className="w-full mt-4">
+                      {t('courses.continue')}
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Not Started Courses - Second priority */}
+      {enrollments.filter(e => e.progress === 0).length > 0 && (
+        <div>
+          <h2 className="text-2xl font-bold mb-6">Not Started</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {enrollments.filter(e => e.progress === 0).map((enrollment) => {
+              const isSubscribed = subscribedCourseIds.includes(enrollment.course.id);
+              return (
+              <Card key={enrollment.id} className={`hover:shadow-lg transition-shadow relative ${isSubscribed ? 'ring-2 ring-primary' : ''}`}>
+                {isSubscribed && (
+                  <div className="absolute top-2 right-2 z-10">
+                    <Badge className="bg-primary text-primary-foreground">
+                      <CreditCard className="h-3 w-3 mr-1" />
+                      Subscribed
+                    </Badge>
+                  </div>
+                )}
+                <CardHeader>
+                  <CardTitle className="line-clamp-1">{enrollment.course.title}</CardTitle>
+                  <div className="flex gap-2 mt-2">
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                      {enrollment.course.category}
+                    </span>
+                    <span className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded">
+                      {enrollment.course.level}
+                    </span>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                    {stripHtml(enrollment.course.description)}
+                  </p>
+                  <Link to={`/courses/${enrollment.course.id}/learn`}>
+                    <Button className="w-full">
+                      Start Learning
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Completed Courses */}
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">{t('dashboard.completedCourses')}</h2>
+          <Link to="/certificates">
+            <Button variant="outline">
+              <Award className="h-4 w-4 mr-2" />
+              {t('studentDashboard.viewCertificates')}
+            </Button>
+          </Link>
+        </div>
+
+        {enrollments.filter(e => e.progress === 100).length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center">
+              <Award className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">{t('studentDashboard.noCompletedCourses')}</h3>
+              <p className="text-muted-foreground">{t('studentDashboard.completeCourseForCertificate')}</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-6">
+            {enrollments.filter(e => e.progress === 100).map((enrollment) => (
+              <Card key={enrollment.id} className="hover:shadow-lg transition-shadow border-green-200 dark:border-green-800">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="line-clamp-1">{enrollment.course.title}</CardTitle>
+                    <Badge variant="default" className="bg-green-500">
+                      <Award className="h-3 w-3 mr-1" />
+                      {t('studentDashboard.completed')}
+                    </Badge>
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                      {enrollment.course.category}
+                    </span>
+                    <span className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded">
+                      {enrollment.course.level}
+                    </span>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                    {stripHtml(enrollment.course.description)}
+                  </p>
+                  <div className="flex gap-2">
+                    <Link to={`/courses/${enrollment.course.id}/learn`} className="flex-1">
+                      <Button variant="outline" className="w-full">
+                        Review Course
+                      </Button>
+                    </Link>
+                    <Link to="/certificates">
+                      <Button>
+                        <Award className="h-4 w-4 mr-2" />
+                        Certificate
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Mentorship Requests Section */}
       <div>
         <div className="flex items-center justify-between mb-6">
@@ -320,190 +504,6 @@ export const StudentDashboard = () => {
 
       {/* My Startup Ideas Submissions */}
       <MySubmissions />
-
-      {/* In Progress Courses */}
-      <div>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">{t('dashboard.inProgress')}</h2>
-          <Link to="/courses">
-            <Button variant="outline">
-              <Library className="h-4 w-4 mr-2" />
-              {t('studentDashboard.browseMoreCourses')}
-            </Button>
-          </Link>
-        </div>
-
-        {loading ? (
-          <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
-        ) : enrollments.filter(e => e.progress > 0 && e.progress < 100).length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center">
-              <BookOpen className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">{t('studentDashboard.noCoursesInProgress')}</h3>
-              <p className="text-muted-foreground mb-4">{t('studentDashboard.startCourseToSeeProgress')}</p>
-              <Link to="/courses">
-                <Button>{t('features.courses.title')}</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid md:grid-cols-2 gap-6">
-            {enrollments.filter(e => e.progress > 0 && e.progress < 100).map((enrollment) => {
-              const isSubscribed = subscribedCourseIds.includes(enrollment.course.id);
-              return (
-              <Card key={enrollment.id} className={`hover:shadow-lg transition-shadow relative ${isSubscribed ? 'ring-2 ring-primary' : ''}`}>
-                {isSubscribed && (
-                  <div className="absolute top-2 right-2 z-10">
-                    <Badge className="bg-primary text-primary-foreground">
-                      <CreditCard className="h-3 w-3 mr-1" />
-                      {t('studentDashboard.subscribed')}
-                    </Badge>
-                  </div>
-                )}
-                <CardHeader>
-                  <CardTitle className="line-clamp-1">{enrollment.course.title}</CardTitle>
-                  <div className="flex gap-2 mt-2">
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                      {enrollment.course.category}
-                    </span>
-                    <span className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded">
-                      {enrollment.course.level}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {stripHtml(enrollment.course.description)}
-                  </p>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">{t('studentDashboard.progress')}</span>
-                      <span className="font-medium">{enrollment.progress}%</span>
-                    </div>
-                    <Progress value={enrollment.progress} className="h-2" />
-                  </div>
-                  <Link to={`/courses/${enrollment.course.id}/learn`}>
-                    <Button className="w-full mt-4">
-                      {t('courses.continue')}
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Completed Courses */}
-      <div>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">{t('dashboard.completedCourses')}</h2>
-          <Link to="/certificates">
-            <Button variant="outline">
-              <Award className="h-4 w-4 mr-2" />
-              {t('studentDashboard.viewCertificates')}
-            </Button>
-          </Link>
-        </div>
-
-        {enrollments.filter(e => e.progress === 100).length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center">
-              <Award className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">{t('studentDashboard.noCompletedCourses')}</h3>
-              <p className="text-muted-foreground">{t('studentDashboard.completeCourseForCertificate')}</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid md:grid-cols-2 gap-6">
-            {enrollments.filter(e => e.progress === 100).map((enrollment) => (
-              <Card key={enrollment.id} className="hover:shadow-lg transition-shadow border-green-200 dark:border-green-800">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="line-clamp-1">{enrollment.course.title}</CardTitle>
-                    <Badge variant="default" className="bg-green-500">
-                      <Award className="h-3 w-3 mr-1" />
-                      {t('studentDashboard.completed')}
-                    </Badge>
-                  </div>
-                  <div className="flex gap-2 mt-2">
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                      {enrollment.course.category}
-                    </span>
-                    <span className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded">
-                      {enrollment.course.level}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {stripHtml(enrollment.course.description)}
-                  </p>
-                  <div className="flex gap-2">
-                    <Link to={`/courses/${enrollment.course.id}/learn`} className="flex-1">
-                      <Button variant="outline" className="w-full">
-                        Review Course
-                      </Button>
-                    </Link>
-                    <Link to="/certificates">
-                      <Button>
-                        <Award className="h-4 w-4 mr-2" />
-                        Certificate
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Not Started Courses */}
-      {enrollments.filter(e => e.progress === 0).length > 0 && (
-        <div>
-          <h2 className="text-2xl font-bold mb-6">Not Started</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {enrollments.filter(e => e.progress === 0).map((enrollment) => {
-              const isSubscribed = subscribedCourseIds.includes(enrollment.course.id);
-              return (
-              <Card key={enrollment.id} className={`hover:shadow-lg transition-shadow relative ${isSubscribed ? 'ring-2 ring-primary' : ''}`}>
-                {isSubscribed && (
-                  <div className="absolute top-2 right-2 z-10">
-                    <Badge className="bg-primary text-primary-foreground">
-                      <CreditCard className="h-3 w-3 mr-1" />
-                      Subscribed
-                    </Badge>
-                  </div>
-                )}
-                <CardHeader>
-                  <CardTitle className="line-clamp-1">{enrollment.course.title}</CardTitle>
-                  <div className="flex gap-2 mt-2">
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                      {enrollment.course.category}
-                    </span>
-                    <span className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded">
-                      {enrollment.course.level}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {stripHtml(enrollment.course.description)}
-                  </p>
-                  <Link to={`/courses/${enrollment.course.id}/learn`}>
-                    <Button className="w-full">
-                      Start Learning
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
