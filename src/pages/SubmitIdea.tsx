@@ -53,7 +53,8 @@ export function SubmitIdea() {
             email: parsed.email || "",
             phone: parsed.phone || "",
             ideaTitle: parsed.ideaTitle || "",
-            ideaDescription: parsed.ideaDescription || ""
+            ideaDescription: parsed.ideaDescription || "",
+            startupWebsite: parsed.startupWebsite || ""
           };
         } catch {
           // Invalid JSON, use defaults
@@ -65,9 +66,22 @@ export function SubmitIdea() {
       email: "",
       phone: "",
       ideaTitle: "",
-      ideaDescription: ""
+      ideaDescription: "",
+      startupWebsite: ""
     };
   });
+
+  // Pre-populate form with user profile data when logged in
+  useEffect(() => {
+    if (user && profile) {
+      setFormData(prev => ({
+        ...prev,
+        fullName: profile.full_name || prev.fullName,
+        email: profile.email || prev.email,
+        phone: prev.phone // Keep phone from draft if any
+      }));
+    }
+  }, [user, profile]);
 
   // Auto-save form data to localStorage
   const saveToStorage = useCallback(() => {
@@ -104,18 +118,19 @@ export function SubmitIdea() {
     formLoadTime.current = Date.now();
   }, []);
 
-  // Calculate form progress steps
+  // Calculate form progress steps (only show editable fields for logged-in users)
   const formSteps = useMemo(() => {
-    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
+    const isValidUrl = (url: string) => {
+      if (!url.trim()) return false;
+      try {
+        new URL(url.startsWith('http') ? url : `https://${url}`);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+    
     return [{
-      id: 'fullName',
-      label: 'Full Name',
-      isComplete: formData.fullName.trim().length > 0
-    }, {
-      id: 'email',
-      label: 'Email',
-      isComplete: isValidEmail
-    }, {
       id: 'ideaTitle',
       label: 'Idea Name',
       isComplete: formData.ideaTitle.trim().length > 0
@@ -123,6 +138,10 @@ export function SubmitIdea() {
       id: 'ideaDescription',
       label: 'Description',
       isComplete: formData.ideaDescription.trim().length >= MIN_DESCRIPTION_LENGTH
+    }, {
+      id: 'startupWebsite',
+      label: 'Website',
+      isComplete: isValidUrl(formData.startupWebsite)
     }, {
       id: 'video',
       label: 'Video',
@@ -417,14 +436,34 @@ export function SubmitIdea() {
                   <FormProgressStepper steps={formSteps} className="mb-6" />
                   
                   <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Pre-filled user info (read-only for logged in users) */}
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="fullName">Full Name *</Label>
-                        <Input id="fullName" name="fullName" placeholder="Your full name" value={formData.fullName} onChange={handleInputChange} required />
+                        <Input 
+                          id="fullName" 
+                          name="fullName" 
+                          placeholder="Your full name" 
+                          value={formData.fullName} 
+                          onChange={handleInputChange} 
+                          required 
+                          readOnly={!!user}
+                          className={user ? "bg-muted cursor-not-allowed" : ""}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="email">Email Address *</Label>
-                        <Input id="email" name="email" type="email" placeholder="you@example.com" value={formData.email} onChange={handleInputChange} required />
+                        <Input 
+                          id="email" 
+                          name="email" 
+                          type="email" 
+                          placeholder="you@example.com" 
+                          value={formData.email} 
+                          onChange={handleInputChange} 
+                          required 
+                          readOnly={!!user}
+                          className={user ? "bg-muted cursor-not-allowed" : ""}
+                        />
                       </div>
                     </div>
 
@@ -443,6 +482,22 @@ export function SubmitIdea() {
                       <Textarea id="ideaDescription" name="ideaDescription" placeholder="Briefly describe what problem you're solving and how... (minimum 50 characters)" rows={4} value={formData.ideaDescription} onChange={handleInputChange} required minLength={MIN_DESCRIPTION_LENGTH} />
                       <p className="text-xs text-muted-foreground">
                         {formData.ideaDescription.length}/{MIN_DESCRIPTION_LENGTH} characters minimum
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="startupWebsite">Startup Website *</Label>
+                      <Input 
+                        id="startupWebsite" 
+                        name="startupWebsite" 
+                        type="url" 
+                        placeholder="https://yourproject.com" 
+                        value={formData.startupWebsite} 
+                        onChange={handleInputChange} 
+                        required 
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Your startup's website, landing page, or social media page
                       </p>
                     </div>
 
@@ -499,7 +554,7 @@ export function SubmitIdea() {
                         </p>
                       </div>}
 
-                    <Button type="submit" size="lg" className="w-full rounded-full" disabled={isSubmitting || !videoFile || formData.ideaDescription.trim().length < MIN_DESCRIPTION_LENGTH}>
+                    <Button type="submit" size="lg" className="w-full rounded-full" disabled={isSubmitting || !videoFile || formData.ideaDescription.trim().length < MIN_DESCRIPTION_LENGTH || !formData.startupWebsite.trim()}>
                       {isSubmitting ? "Submitting..." : "Submit Your Idea"}
                     </Button>
                     
