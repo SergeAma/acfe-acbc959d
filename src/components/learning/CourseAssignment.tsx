@@ -305,7 +305,7 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
       setSubmission(result.data);
       toast({ title: 'Success', description: 'Assignment submitted for review' });
       
-      // Send email notification to mentor
+      // Send email notifications
       try {
         const { data: courseData } = await supabase
           .from('courses')
@@ -320,10 +320,20 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
           .single();
         
         if (courseData) {
+          // Send notification to mentor
           await supabase.functions.invoke('send-assignment-submission-notification', {
             body: {
               mentorId: courseData.mentor_id,
               studentName: studentProfile?.full_name || 'A student',
+              courseTitle: courseData.title,
+              assignmentTitle: assignment.title,
+            }
+          });
+          
+          // Send confirmation to student
+          await supabase.functions.invoke('send-assignment-pending-confirmation', {
+            body: {
+              studentId: user.id,
               courseTitle: courseData.title,
               assignmentTitle: assignment.title,
             }
@@ -363,8 +373,8 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
                 <Clock className="h-8 w-8 text-amber-600" />
               </div>
               <CardTitle>Assignment Submitted</CardTitle>
-              <CardDescription>
-                Your assignment is being reviewed by your mentor. You'll be notified once it's approved.
+              <CardDescription className="text-center max-w-md">
+                Your assignment is being reviewed by your mentor. You can expect a response within <strong>48 hours</strong>. You'll receive an email notification once it's reviewed.
               </CardDescription>
             </div>
           ) : (
