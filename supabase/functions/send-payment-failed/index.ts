@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { buildCanonicalEmail, getSubTranslation, EmailLanguage } from "../_shared/email-template.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -13,6 +14,7 @@ interface PaymentFailedEmailRequest {
   name: string;
   amount: string;
   currency: string;
+  language?: EmailLanguage;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -21,71 +23,49 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, name, amount, currency }: PaymentFailedEmailRequest = await req.json();
+    const { email, name, amount, currency, language = 'en' }: PaymentFailedEmailRequest = await req.json();
+    const lang: EmailLanguage = language === 'fr' ? 'fr' : 'en';
 
     console.log("[SEND-PAYMENT-FAILED] Sending to:", email);
 
-    const currentYear = new Date().getFullYear();
+    const displayName = name || (lang === 'fr' ? 'Abonné' : 'Subscriber');
     const displayAmount = amount || 'N/A';
     const displayCurrency = currency || 'USD';
+    const greeting = lang === 'fr' ? 'Bonjour' : 'Hi';
+
+    const subject = getSubTranslation('payment.failed.subject', lang);
+    const headline = getSubTranslation('payment.failed.headline', lang);
+
+    const bodyContent = lang === 'fr'
+      ? `<p style="margin: 0 0 16px 0;">${greeting} ${displayName},</p>
+         <p style="margin: 0 0 16px 0;">Nous n'avons pas pu traiter votre paiement d'abonnement.</p>
+         <p style="margin: 0;"><strong>Montant:</strong> ${displayCurrency} ${displayAmount}</p>`
+      : `<p style="margin: 0 0 16px 0;">${greeting} ${displayName},</p>
+         <p style="margin: 0 0 16px 0;">We were unable to process your subscription payment.</p>
+         <p style="margin: 0;"><strong>Amount:</strong> ${displayCurrency} ${displayAmount}</p>`;
+
+    const emailHtml = buildCanonicalEmail({
+      headline,
+      body_primary: bodyContent,
+      impact_block: {
+        title: getSubTranslation('payment.failed.impact_title', lang),
+        items: [
+          getSubTranslation('payment.failed.item1', lang),
+          getSubTranslation('payment.failed.item2', lang),
+          getSubTranslation('payment.failed.item3', lang),
+        ]
+      },
+      primary_cta: {
+        label: getSubTranslation('payment.failed.cta', lang),
+        url: 'https://acloudforeveryone.org/my-subscriptions'
+      }
+    }, lang);
 
     const emailResponse = await resend.emails.send({
       from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
       to: [email],
-      subject: "Payment Failed - Action Required",
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
-          <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-            <!-- ACFE Text Header -->
-            <div style="text-align: center; margin-bottom: 0; background-color: #3f3f3f; padding: 24px; border-radius: 12px 12px 0 0;">
-              <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin-bottom: 4px;">ACFE</div>
-              <div style="font-size: 12px; color: #d4d4d4; letter-spacing: 2px; text-transform: uppercase;">A Cloud for Everyone</div>
-            </div>
-            
-            <div style="background-color: #ffffff; padding: 32px; border-radius: 0 0 12px 12px;">
-              <h1 style="margin: 0 0 20px 0; font-size: 24px; color: #18181b; text-align: center;">Payment Failed</h1>
-              
-              <p style="color: #3f3f46;">Hi ${name},</p>
-              <p style="color: #3f3f46; line-height: 1.6;">We were unable to process your subscription payment.</p>
-              
-              <div style="background: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc2626;">
-                <p style="margin: 0 0 10px 0; color: #991b1b;"><strong>Amount:</strong> ${displayCurrency} ${displayAmount}</p>
-                <p style="margin: 0; color: #991b1b;">Please update your payment method to continue your subscription.</p>
-              </div>
-              
-              <p style="color: #3f3f46; line-height: 1.6;">To update your payment information:</p>
-              <ol style="color: #3f3f46; line-height: 1.8; padding-left: 20px;">
-                <li>Log in to your dashboard</li>
-                <li>Click on "Manage Subscription"</li>
-                <li>Update your payment method</li>
-              </ol>
-              
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="https://acloudforeveryone.org/my-subscriptions" style="background: #4a5d4a; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Update Payment Method</a>
-              </div>
-              
-              <p style="color: #3f3f46; line-height: 1.6;">If you need any assistance, please don't hesitate to reach out.</p>
-              
-              <p style="color: #3f3f46; margin-top: 24px;">Best regards,<br><strong>The ACFE Team</strong></p>
-            </div>
-            
-            <!-- Footer -->
-            <div style="text-align: center; padding: 24px;">
-              <div style="font-size: 18px; font-weight: 700; color: #3f3f3f; letter-spacing: 2px; margin-bottom: 8px;">ACFE</div>
-              <p style="font-size: 12px; color: #71717a; margin: 0;">
-                © ${currentYear} A Cloud for Everyone. All rights reserved.
-              </p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
+      subject,
+      html: emailHtml,
     });
 
     console.log("[SEND-PAYMENT-FAILED] Email sent:", emailResponse);
