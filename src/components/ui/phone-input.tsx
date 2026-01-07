@@ -69,8 +69,8 @@ export function PhoneInput({ value, onChange, className, id, required }: PhoneIn
           </SelectValue>
         </SelectTrigger>
         <SelectContent className="bg-card max-h-[300px]">
-          {COUNTRY_CODES.map((c) => (
-            <SelectItem key={c.code} value={c.code}>
+          {COUNTRY_CODES.map((c, index) => (
+            <SelectItem key={`${c.code}-${c.country}-${index}`} value={c.code}>
               {c.flag} {c.name} ({c.code})
             </SelectItem>
           ))}
