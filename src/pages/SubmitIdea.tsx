@@ -486,15 +486,14 @@ export function SubmitIdea() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="startupWebsite">Startup Website *</Label>
+                      <Label htmlFor="startupWebsite">Startup Website (Optional)</Label>
                       <Input 
                         id="startupWebsite" 
                         name="startupWebsite" 
                         type="url" 
                         placeholder="https://yourproject.com" 
                         value={formData.startupWebsite} 
-                        onChange={handleInputChange} 
-                        required 
+                        onChange={handleInputChange}
                       />
                       <p className="text-xs text-muted-foreground">
                         Your startup's website, landing page, or social media page
