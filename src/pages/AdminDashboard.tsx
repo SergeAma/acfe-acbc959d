@@ -58,6 +58,7 @@ const quickActionCategories = [
     color: 'from-amber-500/20 to-orange-500/20',
     iconColor: 'text-amber-600 dark:text-amber-400',
     items: [
+      { label: 'Mentor Dashboard', icon: GraduationCap, path: '/admin/mentor-view' },
       { label: 'Manage Courses', icon: BookOpen, path: '/admin/courses' },
       { label: 'Idea Submissions', icon: Lightbulb, path: '/admin/ideas' },
       { label: 'News Curation', icon: Newspaper, path: '/admin/news-curation' },
