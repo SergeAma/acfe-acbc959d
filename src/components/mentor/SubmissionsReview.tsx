@@ -82,7 +82,7 @@ export const SubmissionsReview = () => {
     setLoading(true);
 
     // Fetch pending assignment submissions for mentor's courses
-    const { data: assignments } = await supabase
+    const { data: assignments, error: assignmentsError } = await supabase
       .from('assignment_submissions')
       .select(`
         *,
@@ -94,6 +94,10 @@ export const SubmissionsReview = () => {
       `)
       .eq('status', 'pending')
       .order('submitted_at', { ascending: true });
+
+    if (assignmentsError) {
+      console.error('Error fetching assignments:', assignmentsError);
+    }
 
     // Filter to only mentor's courses
     const mentorAssignments = (assignments || []).filter(
