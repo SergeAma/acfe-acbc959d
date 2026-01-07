@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { buildCanonicalEmail, EmailLanguage } from "../_shared/email-template.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -16,7 +17,8 @@ interface PurchaseEmailRequest {
   isSubscription: boolean;
   isTrial?: boolean;
   dripEnabled?: boolean;
-  dripReleaseDay?: number; // 0-6, Sunday-Saturday
+  dripReleaseDay?: number;
+  language?: EmailLanguage;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -25,105 +27,70 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, firstName, courseTitle, amount, isSubscription, isTrial, dripEnabled, dripReleaseDay }: PurchaseEmailRequest = await req.json();
+    const { email, firstName, courseTitle, amount, isSubscription, isTrial, dripEnabled, dripReleaseDay, language = 'en' }: PurchaseEmailRequest = await req.json();
+    const lang: EmailLanguage = language === 'fr' ? 'fr' : 'en';
 
     console.log(`[SEND-PURCHASE-CONFIRMATION] Sending to ${email} for course: ${courseTitle}`);
 
-    const currentYear = new Date().getFullYear();
-
-    // Get day name for drip schedule
-    const getDayName = (day: number): string => {
-      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      return days[day] || 'Wednesday';
+    const getDayName = (day: number, lang: EmailLanguage): string => {
+      const days = lang === 'fr' 
+        ? ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
+        : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      return days[day] || days[3];
     };
 
-    const subscriptionNote = isSubscription 
-      ? `<p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
-           ${isTrial ? 'Your free trial has started!' : `This is a monthly subscription at $${amount.toFixed(2)}/month.`} You can manage your subscription anytime from your dashboard.
-         </p>`
-      : '';
+    const displayName = firstName || (lang === 'fr' ? 'Apprenant' : 'Learner');
+    const greeting = lang === 'fr' ? 'Cher' : 'Dear';
 
-    // Drip content note - show if drip is enabled
-    const dripNote = dripEnabled 
-      ? `<div style="background-color: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
-           <h4 style="color: #92400e; margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">📅 Content Schedule</h4>
-           <p style="color: #78350f; margin: 0; font-size: 14px; line-height: 1.5;">
-             Your first lesson is available now! After that, new lessons unlock every <strong>${getDayName(dripReleaseDay ?? 3)}</strong> from your enrollment date. This paced approach helps you absorb the material better.
-           </p>
-         </div>`
-      : '';
+    let bodyContent = lang === 'fr'
+      ? `<p style="margin: 0 0 16px 0;">${greeting} ${displayName},</p>
+         <p style="margin: 0 0 16px 0;">Merci de vous être inscrit à <strong>${courseTitle}</strong>! Votre paiement de <strong>$${amount.toFixed(2)}</strong> a été traité avec succès.</p>`
+      : `<p style="margin: 0 0 16px 0;">${greeting} ${displayName},</p>
+         <p style="margin: 0 0 16px 0;">Thank you for enrolling in <strong>${courseTitle}</strong>! Your payment of <strong>$${amount.toFixed(2)}</strong> has been processed successfully.</p>`;
+
+    if (dripEnabled) {
+      const dayName = getDayName(dripReleaseDay ?? 3, lang);
+      bodyContent += lang === 'fr'
+        ? `<p style="margin: 0;">Votre première leçon est disponible maintenant! Ensuite, de nouvelles leçons se débloquent chaque <strong>${dayName}</strong>.</p>`
+        : `<p style="margin: 0;">Your first lesson is available now! After that, new lessons unlock every <strong>${dayName}</strong>.</p>`;
+    }
+
+    if (isSubscription) {
+      bodyContent += lang === 'fr'
+        ? `<p style="margin: 16px 0 0 0; font-size: 13px; color: #666;">${isTrial ? 'Votre essai gratuit a commencé!' : `Ceci est un abonnement mensuel à $${amount.toFixed(2)}/mois.`} Vous pouvez gérer votre abonnement à tout moment depuis votre tableau de bord.</p>`
+        : `<p style="margin: 16px 0 0 0; font-size: 13px; color: #666;">${isTrial ? 'Your free trial has started!' : `This is a monthly subscription at $${amount.toFixed(2)}/month.`} You can manage your subscription anytime from your dashboard.</p>`;
+    }
+
+    const subject = lang === 'fr' 
+      ? `Bienvenue dans ${courseTitle}!`
+      : `Welcome to ${courseTitle}!`;
+
+    const emailHtml = buildCanonicalEmail({
+      headline: lang === 'fr' ? 'Paiement Confirmé!' : 'Payment Confirmed!',
+      body_primary: bodyContent,
+      impact_block: {
+        title: lang === 'fr' ? 'Prochaines étapes' : "What's next?",
+        items: lang === 'fr' ? [
+          'Accédez à votre première leçon depuis le Tableau de Bord',
+          dripEnabled ? 'De nouvelles leçons se débloquent chaque semaine' : 'Complétez les leçons à votre rythme',
+          'Obtenez votre certificat à la fin'
+        ] : [
+          'Access your first lesson from the Dashboard',
+          dripEnabled ? 'New lessons unlock weekly - check back regularly!' : 'Complete lessons at your own pace',
+          'Earn your certificate upon completion'
+        ]
+      },
+      primary_cta: {
+        label: lang === 'fr' ? 'Commencer à Apprendre' : 'Start Learning Now',
+        url: 'https://acloudforeveryone.org/dashboard'
+      }
+    }, lang);
 
     const emailResponse = await resend.emails.send({
       from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
       to: [email],
-      subject: `Welcome to ${courseTitle}! 🎉`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5;">
-          <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-            <!-- ACFE Text Header -->
-            <div style="text-align: center; margin-bottom: 0; background-color: #3f3f3f; padding: 24px; border-radius: 12px 12px 0 0;">
-              <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin-bottom: 4px;">ACFE</div>
-              <div style="font-size: 12px; color: #d4d4d4; letter-spacing: 2px; text-transform: uppercase;">A Cloud for Everyone</div>
-            </div>
-            
-            <div style="background-color: #ffffff; padding: 40px 30px; border-radius: 0 0 12px 12px;">
-              <h1 style="margin: 0 0 24px 0; font-size: 24px; color: #18181b; text-align: center;">Payment Confirmed! ✅</h1>
-              
-              <p style="font-size: 18px; color: #3f3f46; margin-bottom: 24px;">
-                Hi ${firstName},
-              </p>
-              
-              <p style="font-size: 16px; color: #374151; line-height: 1.6; margin-bottom: 24px;">
-                Thank you for subscribing to <strong>${courseTitle}</strong>! Your payment of <strong>$${amount.toFixed(2)}</strong> has been processed successfully.
-              </p>
-              
-              ${dripNote}
-              
-              <div style="background-color: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
-                <h3 style="color: #166534; margin: 0 0 12px 0; font-size: 16px;">What's next?</h3>
-                <ul style="color: #166534; margin: 0; padding-left: 20px; line-height: 1.8;">
-                  <li>Access your first lesson from the Dashboard</li>
-                  <li>${dripEnabled ? 'New lessons unlock weekly - check back regularly!' : 'Complete lessons at your own pace'}</li>
-                  <li>Earn your certificate upon completion</li>
-                </ul>
-              </div>
-              
-              <div style="text-align: center; margin: 32px 0;">
-                <a href="https://acloudforeveryone.org/dashboard" 
-                   style="display: inline-block; background-color: #4a5d4a; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
-                  Start Learning Now →
-                </a>
-              </div>
-              
-              ${subscriptionNote}
-              
-              <p style="font-size: 14px; color: #6b7280; margin-top: 32px;">
-                If you have any questions, feel free to reach out to our support team.
-              </p>
-              
-              <p style="font-size: 16px; color: #374151; margin-top: 24px;">
-                Happy learning!<br>
-                <strong>The ACFE Team</strong>
-              </p>
-            </div>
-            
-            <!-- Footer -->
-            <div style="text-align: center; padding: 24px;">
-              <div style="font-size: 18px; font-weight: 700; color: #3f3f3f; letter-spacing: 2px; margin-bottom: 8px;">ACFE</div>
-              <p style="font-size: 12px; color: #71717a; margin: 0;">
-                © ${currentYear} A Cloud for Everyone. All rights reserved.
-              </p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
+      subject: subject,
+      html: emailHtml,
     });
 
     console.log("[SEND-PURCHASE-CONFIRMATION] Email sent successfully:", emailResponse);
@@ -136,10 +103,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("[SEND-PURCHASE-CONFIRMATION] Error:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };

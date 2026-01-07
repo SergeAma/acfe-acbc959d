@@ -1,23 +1,22 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { Resend } from "https://esm.sh/resend@2.0.0";
+import { buildCanonicalEmail, EmailLanguage } from "../_shared/email-template.ts";
 
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface IdeaConfirmationRequest {
   name: string;
   email: string;
   ideaTitle: string;
+  language?: EmailLanguage;
 }
 
-// HTML escape function to prevent injection
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -27,7 +26,6 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
-// Email validation regex
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const handler = async (req: Request): Promise<Response> => {
@@ -36,145 +34,88 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { name, email, ideaTitle }: IdeaConfirmationRequest = await req.json();
+    const { name, email, ideaTitle, language = 'en' }: IdeaConfirmationRequest = await req.json();
+    const lang: EmailLanguage = language === 'fr' ? 'fr' : 'en';
     
-    // Input validation
     if (!name || !email || !ideaTitle) {
-      console.error("Missing required fields:", { name: !!name, email: !!email, ideaTitle: !!ideaTitle });
       return new Response(
-        JSON.stringify({ error: "Missing required fields: name, email, and ideaTitle are required" }),
+        JSON.stringify({ error: "Missing required fields" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    // Length validation
-    if (name.length > 100) {
+    if (name.length > 100 || ideaTitle.length > 200 || !emailRegex.test(email)) {
       return new Response(
-        JSON.stringify({ error: "Name exceeds maximum length of 100 characters" }),
+        JSON.stringify({ error: "Invalid input" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    if (ideaTitle.length > 200) {
-      return new Response(
-        JSON.stringify({ error: "Idea title exceeds maximum length of 200 characters" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-
-    // Email format validation
-    if (!emailRegex.test(email)) {
-      return new Response(
-        JSON.stringify({ error: "Invalid email format" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-
-    // SECURITY: Validate submission exists in database before sending email
-    // This prevents abuse by ensuring only legitimate submissions trigger emails
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    const { data: submission, error: dbError } = await supabase
+    const { data: submission } = await supabase
       .from('idea_submissions')
-      .select('id, email, idea_title, full_name')
+      .select('id')
       .eq('email', email.trim().toLowerCase())
       .eq('idea_title', ideaTitle.trim())
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
     
-    if (dbError) {
-      console.error("Database error validating submission:", dbError);
-      return new Response(
-        JSON.stringify({ error: "Failed to validate submission" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-    
     if (!submission) {
-      console.warn("Email confirmation request for non-existent submission:", { email, ideaTitle });
-      // Return success to not leak information about existing submissions
-      // but don't actually send the email
       return new Response(JSON.stringify({ success: true }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    // Sanitize user inputs for HTML
     const safeName = escapeHtml(name.trim());
     const safeIdeaTitle = escapeHtml(ideaTitle.trim());
-    const currentYear = new Date().getFullYear();
-    
-    console.log(`Sending confirmation email to ${email} for verified idea submission: ${submission.id}`);
+    const greeting = lang === 'fr' ? 'Cher' : 'Dear';
 
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${RESEND_API_KEY}`,
+    const subject = lang === 'fr' 
+      ? 'Nous avons reçu votre soumission d\'idée!'
+      : 'We\'ve Received Your Idea Submission!';
+
+    const bodyContent = lang === 'fr'
+      ? `<p style="margin: 0 0 16px 0;">${greeting} ${safeName},</p>
+         <p style="margin: 0 0 16px 0;">Nous sommes ravis de vous informer que nous avons reçu votre soumission d'idée:</p>
+         <p style="margin: 0; padding: 12px; background-color: #F4F7F4; border-radius: 6px;"><strong>${safeIdeaTitle}</strong></p>`
+      : `<p style="margin: 0 0 16px 0;">${greeting} ${safeName},</p>
+         <p style="margin: 0 0 16px 0;">We're excited to let you know that we've received your idea submission:</p>
+         <p style="margin: 0; padding: 12px; background-color: #F4F7F4; border-radius: 6px;"><strong>${safeIdeaTitle}</strong></p>`;
+
+    const emailHtml = buildCanonicalEmail({
+      headline: lang === 'fr' ? 'Idée Reçue!' : 'Idea Received!',
+      body_primary: bodyContent,
+      impact_block: {
+        title: lang === 'fr' ? 'Prochaines étapes' : 'What happens next',
+        items: lang === 'fr' ? [
+          'Notre équipe examinera votre soumission sous 7 jours',
+          'Vous pourriez être contacté pour des informations supplémentaires',
+          'Les nouvelles startups sont éligibles jusqu\'à $500 de financement initial'
+        ] : [
+          'Our team is reviewing your submission within 7 days',
+          'You may be contacted for additional information',
+          'New founders are eligible for up to $500 in seed funding'
+        ]
       },
-      body: JSON.stringify({
-        from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
-        to: [email],
-        subject: "We've Received Your Idea Submission!",
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          </head>
-          <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5;">
-            <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-              <!-- ACFE Text Header -->
-              <div style="text-align: center; margin-bottom: 0; background-color: #3f3f3f; padding: 24px; border-radius: 12px 12px 0 0;">
-                <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin-bottom: 4px;">ACFE</div>
-                <div style="font-size: 12px; color: #d4d4d4; letter-spacing: 2px; text-transform: uppercase;">Innovators Incubator</div>
-              </div>
-              
-              <div style="background-color: #ffffff; padding: 32px; border-radius: 0 0 12px 12px;">
-                <h1 style="color: #1a1a1a; margin: 0 0 20px 0; font-size: 24px;">Thank You, ${safeName}!</h1>
-                
-                <p style="color: #3f3f46; line-height: 1.6; margin: 0 0 20px 0;">We're excited to let you know that we've received your idea submission:</p>
-                
-                <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4a5d4a;">
-                  <p style="margin: 0;"><strong>Your Idea:</strong> <span style="font-weight: bold; color: #166534;">${safeIdeaTitle}</span></p>
-                </div>
-                
-                <p style="color: #3f3f46; line-height: 1.6; margin: 0 0 16px 0;">Our team is reviewing your submission and we'll be in touch within <strong>7 days</strong> with next steps.</p>
-                
-                <p style="color: #3f3f46; line-height: 1.6; margin: 0 0 16px 0;">As a reminder, new founders are eligible for up to <strong>$500 in seed funding</strong> from our partner, Spectrogram Consulting.</p>
-                
-                <p style="color: #3f3f46; line-height: 1.6; margin: 0 0 20px 0;">In the meantime, feel free to explore our courses and resources to help develop your skills further.</p>
-                
-                <p style="color: #3f3f46; margin: 24px 0 0 0;">
-                  Best regards,<br>
-                  <strong>The ACFE Team</strong>
-                </p>
-              </div>
-              
-              <!-- Footer -->
-              <div style="text-align: center; padding: 24px; background-color: #f8f9fa; margin-top: 0;">
-                <p style="margin: 0 0 10px 0; font-size: 14px; color: #666666;">Building Africa's next generation of tech leaders</p>
-                <div style="font-size: 18px; font-weight: 700; color: #3f3f3f; letter-spacing: 2px; margin-bottom: 8px;">ACFE</div>
-                <p style="margin: 0; font-size: 12px; color: #71717a;">© ${currentYear} A Cloud for Everyone. All rights reserved.</p>
-              </div>
-            </div>
-          </body>
-          </html>
-        `,
-      }),
+      primary_cta: {
+        label: lang === 'fr' ? 'Explorer les Cours' : 'Explore Courses',
+        url: 'https://acloudforeveryone.org/courses'
+      }
+    }, lang);
+
+    await resend.emails.send({
+      from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
+      to: [email],
+      subject: subject,
+      html: emailHtml,
     });
 
-    if (!res.ok) {
-      const errorData = await res.text();
-      console.error("Resend API error:", errorData);
-      throw new Error("Failed to send email");
-    }
-
-    const data = await res.json();
-    console.log("Email sent successfully:", data.id);
+    console.log("Idea confirmation email sent:", submission.id);
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
@@ -184,10 +125,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Error sending confirmation email:", error.message);
     return new Response(
       JSON.stringify({ error: "Failed to send confirmation email" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };
