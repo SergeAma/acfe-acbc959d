@@ -108,8 +108,8 @@ serve(async (req) => {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: `1:1 Session with ${mentorName || 'Mentor'}`,
-              description: `Scheduled for ${scheduledDate} at ${startTime}`,
+              name: `1:1 Session with ${mentorName || 'Mentor'} - ${scheduledDate} at ${startTime}`,
+              // Note: 'description' is NOT a valid parameter for product_data in line_items
             },
             unit_amount: priceCents,
           },

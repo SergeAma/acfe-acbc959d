@@ -157,10 +157,8 @@ serve(async (req) => {
             currency: "usd",
             product_data: {
               name: "ACFE Membership",
-              description: "Unlimited access to all courses, mentorship, and learning resources on A Cloud For Everyone",
-              metadata: {
-                course_id: courseId,
-              },
+              // Note: 'description' is NOT a valid parameter for product_data in line_items
+              // Product descriptions must be set when creating the product in Stripe dashboard
             },
             unit_amount: coursePriceCents,
             recurring: {
