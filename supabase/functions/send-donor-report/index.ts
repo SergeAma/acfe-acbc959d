@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { Resend } from "https://esm.sh/resend@2.0.0";
+import { buildCanonicalEmail, getSubTranslation, EmailLanguage } from "../_shared/email-template.ts";
 
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +13,7 @@ interface Donor {
   email: string;
   firstName: string;
   lastName: string;
+  language?: EmailLanguage;
 }
 
 interface ReportRequest {
@@ -34,56 +37,32 @@ serve(async (req) => {
     const results = [];
 
     for (const donor of donors) {
-      const emailHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <img src="https://mefwbcbnctqjxrwldmjm.supabase.co/storage/v1/object/public/email-assets/acfe-logo-email.png" alt="ACFE Logo" style="height: 80px;">
-          </div>
-          
-          <h1 style="color: #4a7c59; text-align: center;">${subject}</h1>
-          
-          <p>Dear ${donor.firstName},</p>
-          
-          <div style="background: #f9f9f9; padding: 20px; border-radius: 12px; margin: 25px 0; white-space: pre-wrap;">
-            ${content}
-          </div>
-          
-          <p>Thank you for your continued support!</p>
-          
-          <p>With gratitude,<br><strong>The ACFE Team</strong></p>
-          
-          <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
-          
-          <p style="font-size: 12px; color: #666; text-align: center;">
-            You're receiving this because you're a valued ACFE donor.<br>
-            A Cloud For Everyone • Empowering Africa's Tech Career
-          </p>
-        </body>
-        </html>
-      `;
+      const displayName = donor.firstName || "Valued Donor";
+      const lang: EmailLanguage = donor.language === 'fr' ? 'fr' : 'en';
+      
+      const greeting = lang === 'fr' ? 'Cher' : 'Dear';
+      const signoffText = getSubTranslation('donor.report.signoff', lang);
+      const team = lang === 'fr' ? "L'Équipe ACFE" : 'The ACFE Team';
 
-      const emailResponse = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${RESEND_API_KEY}`,
-        },
-        body: JSON.stringify({
-          from: "A Cloud For Everyone <noreply@acloudforeveryone.org>",
-          to: [donor.email],
-          subject: subject,
-          html: emailHtml,
-        }),
+      const emailHtml = buildCanonicalEmail({
+        headline: subject,
+        body_primary: `<p style="margin: 0 0 16px 0;">${greeting} ${displayName},</p><div style="white-space: pre-wrap;">${content}</div>`,
+        signoff: `${signoffText}<br><strong>${team}</strong>`
+      }, lang);
+
+      const { data, error } = await resend.emails.send({
+        from: "A Cloud For Everyone <noreply@acloudforeveryone.org>",
+        to: [donor.email],
+        subject: subject,
+        html: emailHtml,
       });
 
-      const result = await emailResponse.json();
-      results.push({ email: donor.email, result });
+      if (error) {
+        console.error(`Error sending to ${donor.email}:`, error);
+        results.push({ email: donor.email, error: error.message });
+      } else {
+        results.push({ email: donor.email, result: data });
+      }
     }
 
     console.log("Donor report emails sent:", results.length);
