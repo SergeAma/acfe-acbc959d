@@ -168,11 +168,17 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
 
     const { error: uploadError } = await supabase.storage
       .from('course-files')
-      .upload(filePath, selectedFile, { upsert: true });
+      .upload(filePath, selectedFile, { upsert: false });
 
     if (uploadError) {
-      toast({ title: 'Error', description: 'Failed to upload video', variant: 'destructive' });
+      console.error('Video upload error:', uploadError);
+      toast({ 
+        title: 'Upload Error', 
+        description: uploadError.message || 'Failed to upload video. Please try again.', 
+        variant: 'destructive' 
+      });
       setUploadingVideo(false);
+      setVideoFile(null);
       return;
     }
 
@@ -198,11 +204,17 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
 
     const { error: uploadError } = await supabase.storage
       .from('course-files')
-      .upload(filePath, selectedFile, { upsert: true });
+      .upload(filePath, selectedFile, { upsert: false });
 
     if (uploadError) {
-      toast({ title: 'Error', description: 'Failed to upload file', variant: 'destructive' });
+      console.error('File upload error:', uploadError);
+      toast({ 
+        title: 'Upload Error', 
+        description: uploadError.message || 'Failed to upload file. Please try again.', 
+        variant: 'destructive' 
+      });
       setUploading(false);
+      setFile(null);
       return;
     }
 
@@ -382,16 +394,30 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
               </div>
             )}
             {submission.video_url && (
-              <a 
-                href={submission.video_url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-primary hover:underline"
-              >
-                <Video className="h-4 w-4" />
-                Video submission
-                <ExternalLink className="h-3 w-3" />
-              </a>
+              <div className="space-y-2">
+                {/* Show video player for direct uploads, link for external URLs */}
+                {submission.video_url.includes('supabase') || submission.video_url.includes('course-files') ? (
+                  <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+                    <video 
+                      src={submission.video_url} 
+                      controls 
+                      className="w-full h-full object-contain"
+                      preload="metadata"
+                    />
+                  </div>
+                ) : (
+                  <a 
+                    href={submission.video_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-primary hover:underline"
+                  >
+                    <Video className="h-4 w-4" />
+                    Video submission
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
             )}
             {submission.file_url && (
               <a 
@@ -484,16 +510,26 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
               
               <TabsContent value="upload" className="mt-3">
                 {videoFileUrl ? (
-                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                    <Video className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm flex-1 truncate">{videoFileName}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={clearVideoUpload}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                  <div className="space-y-3">
+                    <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+                      <video 
+                        src={videoFileUrl} 
+                        controls 
+                        className="w-full h-full object-contain"
+                        preload="metadata"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                      <Video className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm flex-1 truncate">{videoFileName}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearVideoUpload}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="border-2 border-dashed rounded-lg p-6 text-center">
