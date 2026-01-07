@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, UserPlus, Building2 } from 'lucide-react';
 import { PhoneInput } from '@/components/ui/phone-input';
+import { AutocompleteInput } from '@/components/ui/autocomplete-input';
+import { COMPANIES, AFRICAN_UNIVERSITIES } from '@/data';
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
 
@@ -253,11 +255,12 @@ export const ReferralDialog = ({ open, onOpenChange }: ReferralDialogProps) => {
 
             <div className="space-y-2">
               <Label htmlFor="referrer-company">Company</Label>
-              <Input
+              <AutocompleteInput
                 id="referrer-company"
                 value={referrerCompany}
-                onChange={(e) => setReferrerCompany(e.target.value)}
-                placeholder="Your company (optional)"
+                onChange={setReferrerCompany}
+                suggestions={COMPANIES}
+                placeholder="Start typing to see suggestions..."
               />
             </div>
 
@@ -322,12 +325,13 @@ export const ReferralDialog = ({ open, onOpenChange }: ReferralDialogProps) => {
 
             <div className="space-y-2">
               <Label htmlFor="referred-company">Institution/Company Name *</Label>
-              <Input
+              <AutocompleteInput
                 id="referred-company"
                 value={referredCompany}
-                onChange={(e) => setReferredCompany(e.target.value)}
+                onChange={setReferredCompany}
+                suggestions={[...AFRICAN_UNIVERSITIES, ...COMPANIES]}
+                placeholder="Start typing to see suggestions..."
                 required
-                placeholder="Name of institution or company"
               />
             </div>
 
