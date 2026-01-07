@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { buildCanonicalEmail, EmailLanguage } from "../_shared/email-template.ts";
+import { getEmailTranslation } from "../_shared/email-translations.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -17,6 +19,16 @@ interface MentorshipRequestNotification {
   reason: string;
 }
 
+// HTML entity encoding for XSS protection
+function encodeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("Send mentorship request notification called");
   
@@ -31,10 +43,10 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get mentor's email
+    // Get mentor's profile with language preference
     const { data: mentorProfile, error: profileError } = await supabase
       .from('profiles')
-      .select('email, full_name')
+      .select('email, full_name, preferred_language')
       .eq('id', mentorId)
       .single();
 
@@ -46,61 +58,60 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    const language: EmailLanguage = mentorProfile.preferred_language === 'fr' ? 'fr' : 'en';
+    const mentorName = encodeHtml(mentorProfile.full_name || 'Mentor');
+    const safeStudentName = encodeHtml(studentName);
+    const safeStudentBio = encodeHtml(studentBio);
+    const safeCareerAmbitions = encodeHtml(careerAmbitions);
+    const safeReason = encodeHtml(reason);
+
     console.log(`Sending mentorship request notification to ${mentorProfile.email}`);
 
-    const currentYear = new Date().getFullYear();
+    // Build email content
+    const isEnglish = language === 'en';
+    
+    const headline = isEnglish 
+      ? 'New Mentorship Request' 
+      : 'Nouvelle Demande de Mentorat';
+    
+    const greeting = isEnglish ? 'Hello' : 'Bonjour';
+    const introText = isEnglish
+      ? `<strong>${safeStudentName}</strong> has requested to join your mentorship cohort.`
+      : `<strong>${safeStudentName}</strong> a demandé à rejoindre votre cohorte de mentorat.`;
+    
+    const body_primary = `<p>${greeting} ${mentorName},</p><p>${introText}</p>`;
 
-    const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
-  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-    <!-- ACFE Text Header -->
-    <div style="text-align: center; margin-bottom: 0; background-color: #3f3f3f; padding: 24px; border-radius: 12px 12px 0 0;">
-      <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin-bottom: 4px;">ACFE</div>
-      <div style="font-size: 12px; color: #d4d4d4; letter-spacing: 2px; text-transform: uppercase;">A Cloud for Everyone</div>
-    </div>
-    
-    <div style="background-color: #ffffff; padding: 32px; border-radius: 0 0 12px 12px;">
-      <h1 style="margin: 0 0 20px 0; font-size: 24px; color: #18181b;">New Mentorship Request! 🎯</h1>
-      
-      <p style="color: #3f3f46;">Hello ${mentorProfile.full_name || 'Mentor'},</p>
-      
-      <p style="color: #3f3f46; line-height: 1.6;">Great news! <strong>${studentName}</strong> has requested to join your mentorship cohort.</p>
-      
-      <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4a5d4a;">
-        <h3 style="margin-top: 0; color: #166534;">About the Student</h3>
-        <p style="color: #3f3f46; margin: 8px 0;"><strong>Bio:</strong> ${studentBio}</p>
-        <p style="color: #3f3f46; margin: 8px 0;"><strong>Career Ambitions:</strong> ${careerAmbitions}</p>
-        <p style="color: #3f3f46; margin: 8px 0;"><strong>Why They Chose You:</strong> ${reason}</p>
-      </div>
-      
-      <div style="text-align: center; margin: 30px 0;">
-        <a href="https://acloudforeveryone.org/mentor/cohort" style="background: #4a5d4a; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">View Request</a>
-      </div>
-    </div>
-    
-    <!-- Footer -->
-    <div style="text-align: center; padding: 24px;">
-      <div style="font-size: 18px; font-weight: 700; color: #3f3f3f; letter-spacing: 2px; margin-bottom: 8px;">ACFE</div>
-      <p style="font-size: 12px; color: #71717a; margin: 0 0 8px 0;">
-        © ${currentYear} A Cloud for Everyone. All rights reserved.
-      </p>
-      <a href="mailto:contact@acloudforeveryone.org" style="color: #4a5d4a; font-size: 12px;">contact@acloudforeveryone.org</a>
-    </div>
-  </div>
-</body>
-</html>
-    `;
+    const impactTitle = isEnglish ? 'About the Student' : 'À Propos de l\'Étudiant';
+    const bioLabel = isEnglish ? 'Bio' : 'Bio';
+    const ambitionsLabel = isEnglish ? 'Career Ambitions' : 'Ambitions de Carrière';
+    const reasonLabel = isEnglish ? 'Why They Chose You' : 'Pourquoi Ils Vous Ont Choisi';
+
+    const htmlContent = buildCanonicalEmail({
+      headline,
+      body_primary,
+      impact_block: {
+        title: impactTitle,
+        items: [
+          `<strong>${bioLabel}:</strong> ${safeStudentBio}`,
+          `<strong>${ambitionsLabel}:</strong> ${safeCareerAmbitions}`,
+          `<strong>${reasonLabel}:</strong> ${safeReason}`,
+        ],
+      },
+      primary_cta: {
+        label: isEnglish ? 'View Request' : 'Voir la Demande',
+        url: 'https://acloudforeveryone.org/mentor/cohort',
+      },
+      signoff: getEmailTranslation('email.team', language),
+    }, language);
+
+    const subject = isEnglish
+      ? `New Mentorship Request from ${safeStudentName}`
+      : `Nouvelle Demande de Mentorat de ${safeStudentName}`;
 
     await resend.emails.send({
       from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
       to: [mentorProfile.email],
-      subject: `New Mentorship Request from ${studentName}`,
+      subject,
       html: htmlContent,
     });
 
