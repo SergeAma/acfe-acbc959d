@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { buildCanonicalEmail } from "../_shared/email-template.ts";
+import { buildCanonicalEmail, EmailLanguage } from "../_shared/email-template.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -13,7 +13,37 @@ const corsHeaders = {
 interface MentorInvitationRequest {
   email: string;
   message?: string;
+  language?: EmailLanguage;
 }
+
+const translations = {
+  en: {
+    subject: "You're Invited to Become a Mentor at A Cloud for Everyone",
+    headline: "You're Invited to Become a Mentor!",
+    intro: "You have been invited to join <strong>A Cloud for Everyone</strong> as a mentor and share your expertise with learners across Africa.",
+    messageLabel: "Personal message from the admin:",
+    closing: "As a mentor, you'll be able to create and publish courses, share your knowledge with students, and help shape the next generation of African tech talent.",
+    expiry: "This invitation expires in 7 days. If you didn't expect this invitation, you can safely ignore this email.",
+    impactTitle: "As a mentor, you can:",
+    item1: "Create and publish courses",
+    item2: "Share your knowledge with students",
+    item3: "Help shape the next generation of African tech talent",
+    cta: "Accept Invitation",
+  },
+  fr: {
+    subject: "Vous êtes Invité à Devenir Mentor chez A Cloud for Everyone",
+    headline: "Vous êtes Invité à Devenir Mentor!",
+    intro: "Vous avez été invité à rejoindre <strong>A Cloud for Everyone</strong> en tant que mentor pour partager votre expertise avec les apprenants à travers l'Afrique.",
+    messageLabel: "Message personnel de l'administrateur:",
+    closing: "En tant que mentor, vous pourrez créer et publier des cours, partager vos connaissances avec les étudiants et contribuer à former la prochaine génération de talents tech africains.",
+    expiry: "Cette invitation expire dans 7 jours. Si vous n'attendiez pas cette invitation, vous pouvez ignorer cet email.",
+    impactTitle: "En tant que mentor, vous pouvez:",
+    item1: "Créer et publier des cours",
+    item2: "Partager vos connaissances avec les étudiants",
+    item3: "Contribuer à former la prochaine génération de talents tech africains",
+    cta: "Accepter l'Invitation",
+  },
+};
 
 const verifyAdminRole = async (req: Request): Promise<{ isAdmin: boolean; userId: string | null; error?: string }> => {
   const authHeader = req.headers.get('Authorization');
@@ -88,7 +118,9 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { email, message }: MentorInvitationRequest = await req.json();
+    const { email, message, language = 'en' }: MentorInvitationRequest = await req.json();
+    const lang: EmailLanguage = language === 'fr' ? 'fr' : 'en';
+    const t = translations[lang];
 
     console.log(`Admin ${userId} sending mentor invitation to ${email}`);
 
@@ -119,33 +151,29 @@ const handler = async (req: Request): Promise<Response> => {
 
     const inviteUrl = `${Deno.env.get("SITE_URL") || "https://acloudforeveryone.org"}/accept-mentor-invite?token=${invitation.token}`;
 
-    let bodyContent = `<p>Hello,</p><p>You have been invited to join <strong>A Cloud for Everyone</strong> as a mentor and share your expertise with learners across Africa.</p>`;
+    let bodyContent = `<p>${lang === 'fr' ? 'Bonjour' : 'Hello'},</p><p>${t.intro}</p>`;
     if (message) {
       bodyContent += `<p style="background: #F4F7F4; padding: 15px; border-left: 4px solid #4B5C4B; border-radius: 0 6px 6px 0;"><em>"${message}"</em></p>`;
     }
-    bodyContent += `<p>As a mentor, you'll be able to create and publish courses, share your knowledge with students, and help shape the next generation of African tech talent.</p><p style="font-size: 13px; color: #666;">This invitation expires in 7 days. If you didn't expect this invitation, you can safely ignore this email.</p>`;
+    bodyContent += `<p>${t.closing}</p><p style="font-size: 13px; color: #666;">${t.expiry}</p>`;
 
     const htmlContent = buildCanonicalEmail({
-      headline: "You're Invited to Become a Mentor!",
+      headline: t.headline,
       body_primary: bodyContent,
       impact_block: {
-        title: 'As a mentor, you can:',
-        items: [
-          'Create and publish courses',
-          'Share your knowledge with students',
-          'Help shape the next generation of African tech talent',
-        ],
+        title: t.impactTitle,
+        items: [t.item1, t.item2, t.item3],
       },
       primary_cta: {
-        label: 'Accept Invitation',
+        label: t.cta,
         url: inviteUrl,
       },
-    }, 'en');
+    }, lang);
 
     const emailResponse = await resend.emails.send({
       from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
       to: [email],
-      subject: "You're Invited to Become a Mentor at A Cloud for Everyone",
+      subject: t.subject,
       html: htmlContent,
     });
 

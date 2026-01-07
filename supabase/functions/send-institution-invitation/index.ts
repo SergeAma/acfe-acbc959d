@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { buildCanonicalEmail } from "../_shared/email-template.ts";
+import { buildCanonicalEmail, EmailLanguage } from "../_shared/email-template.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -15,7 +15,33 @@ interface InvitationRequest {
   emails: string[];
   institutionName: string;
   institutionSlug: string;
+  language?: EmailLanguage;
 }
+
+const translations = {
+  en: {
+    subject: (name: string) => `You're Invited to ${name}'s Career Centre on ACFE`,
+    headline: "Career Centre Invitation",
+    intro: (name: string) => `<p>You've been invited to join <strong>${name}</strong>'s exclusive Career Development Centre on A Cloud For Everyone.</p><p>As a verified student, you'll have access to exclusive opportunities and resources.</p>`,
+    impactTitle: "Your Benefits:",
+    item1: "Exclusive job opportunities and career resources",
+    item2: "Co-organized events and professional development programs",
+    item3: "Direct pathway to Spectrogram Consulting's talent network",
+    item4: "Private discussions with your institution's community",
+    cta: "Access Career Centre",
+  },
+  fr: {
+    subject: (name: string) => `Vous êtes Invité au Centre de Carrière de ${name} sur ACFE`,
+    headline: "Invitation au Centre de Carrière",
+    intro: (name: string) => `<p>Vous avez été invité à rejoindre le Centre de Développement de Carrière exclusif de <strong>${name}</strong> sur A Cloud For Everyone.</p><p>En tant qu'étudiant vérifié, vous aurez accès à des opportunités et ressources exclusives.</p>`,
+    impactTitle: "Vos Avantages:",
+    item1: "Opportunités d'emploi exclusives et ressources de carrière",
+    item2: "Événements co-organisés et programmes de développement professionnel",
+    item3: "Accès direct au réseau de talents de Spectrogram Consulting",
+    item4: "Discussions privées avec la communauté de votre institution",
+    cta: "Accéder au Centre de Carrière",
+  },
+};
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -46,7 +72,9 @@ serve(async (req: Request) => {
       });
     }
 
-    const { institutionId, emails, institutionName, institutionSlug } = await req.json() as InvitationRequest;
+    const { institutionId, emails, institutionName, institutionSlug, language = 'en' } = await req.json() as InvitationRequest;
+    const lang: EmailLanguage = language === 'fr' ? 'fr' : 'en';
+    const t = translations[lang];
 
     if (!institutionId || !emails || !Array.isArray(emails) || emails.length === 0) {
       return new Response(JSON.stringify({ error: "Invalid request data" }), {
@@ -100,12 +128,16 @@ serve(async (req: Request) => {
 
       const { data: existingProfile } = await supabaseClient
         .from('profiles')
-        .select('id')
+        .select('id, preferred_language')
         .ilike('email', normalizedEmail)
         .single();
 
       const shouldAutoActivate = !!existingProfile;
       const inviteStatus = shouldAutoActivate ? 'active' : 'pending';
+
+      // Use recipient's preferred language if they have an account, otherwise use provided language
+      const recipientLang: EmailLanguage = existingProfile?.preferred_language === 'fr' ? 'fr' : lang;
+      const recipientT = translations[recipientLang];
 
       if (existing) {
         await supabaseClient
@@ -139,28 +171,23 @@ serve(async (req: Request) => {
       const careerCentreUrl = `https://acloudforeveryone.org/career-centre/${institutionSlug}`;
       
       const htmlContent = buildCanonicalEmail({
-        headline: 'Career Centre Invitation',
-        body_primary: `<p>You've been invited to join <strong>${institutionName}</strong>'s exclusive Career Development Centre on A Cloud For Everyone.</p><p>As a verified student, you'll have access to exclusive opportunities and resources.</p>`,
+        headline: recipientT.headline,
+        body_primary: recipientT.intro(institutionName),
         impact_block: {
-          title: 'Your Benefits:',
-          items: [
-            'Exclusive job opportunities and career resources',
-            'Co-organized events and professional development programs',
-            'Direct pathway to Spectrogram Consulting\'s talent network',
-            'Private discussions with your institution\'s community',
-          ],
+          title: recipientT.impactTitle,
+          items: [recipientT.item1, recipientT.item2, recipientT.item3, recipientT.item4],
         },
         primary_cta: {
-          label: 'Access Career Centre',
+          label: recipientT.cta,
           url: careerCentreUrl,
         },
-      }, 'en');
+      }, recipientLang);
 
       try {
         const { error: emailError } = await resend.emails.send({
           from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
           to: [normalizedEmail],
-          subject: `You're Invited to ${institutionName}'s Career Centre on ACFE`,
+          subject: recipientT.subject(institutionName),
           html: htmlContent,
         });
 
