@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { buildCanonicalEmail, EmailLanguage } from "../_shared/email-template.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -14,116 +15,8 @@ interface IdeaStatusEmailRequest {
   first_name: string;
   idea_title: string;
   new_status: string;
+  language?: EmailLanguage;
 }
-
-const getStatusEmailContent = (firstName: string, ideaTitle: string, status: string) => {
-  const currentYear = new Date().getFullYear();
-  
-  const statusMessages: Record<string, { subject: string; heading: string; message: string; color: string }> = {
-    under_review: {
-      subject: `Your idea "${ideaTitle}" is now under review`,
-      heading: "Your Idea is Under Review! 🔍",
-      message: `Great news! Our team has started reviewing your idea "<strong>${ideaTitle}</strong>". We're carefully evaluating your pitch and will get back to you with our feedback soon. This process typically takes 5-7 business days.`,
-      color: "#3b82f6"
-    },
-    approved: {
-      subject: `Congratulations! Your idea "${ideaTitle}" has been approved`,
-      heading: "Congratulations! Your Idea is Approved! 🎉",
-      message: `We're thrilled to inform you that your idea "<strong>${ideaTitle}</strong>" has been approved! Our team was impressed by your pitch and we're excited to support you on your entrepreneurial journey. A member of our team will reach out to you shortly to discuss next steps and how we can help bring your vision to life.`,
-      color: "#22c55e"
-    },
-    rejected: {
-      subject: `Update on your idea submission "${ideaTitle}"`,
-      heading: "Update on Your Submission",
-      message: `Thank you for submitting your idea "<strong>${ideaTitle}</strong>" to A Cloud for Everyone. After careful consideration, we've decided not to move forward with your submission at this time. This doesn't mean your idea lacks merit – it may simply not align with our current focus areas. We encourage you to continue refining your concept and consider resubmitting in the future. Don't give up on your entrepreneurial dreams!`,
-      color: "#f59e0b"
-    },
-    pending: {
-      subject: `Your idea "${ideaTitle}" status has been updated`,
-      heading: "Status Update",
-      message: `The status of your idea "<strong>${ideaTitle}</strong>" has been updated to pending. Our team will review it soon.`,
-      color: "#6b7280"
-    }
-  };
-
-  const content = statusMessages[status] || statusMessages.pending;
-
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${content.subject}</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
-  <table role="presentation" style="width: 100%; border-collapse: collapse;">
-    <tr>
-      <td align="center" style="padding: 40px 20px;">
-        <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse;">
-          <!-- ACFE Text Header -->
-          <tr>
-            <td style="text-align: center; background-color: #3f3f3f; padding: 24px; border-radius: 12px 12px 0 0;">
-              <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin-bottom: 4px;">ACFE</div>
-              <div style="font-size: 12px; color: #d4d4d4; letter-spacing: 2px; text-transform: uppercase;">Innovators Incubator</div>
-            </td>
-          </tr>
-          
-          <!-- Content -->
-          <tr>
-            <td style="background-color: #ffffff; padding: 40px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-              <div style="width: 60px; height: 4px; background-color: ${content.color}; margin-bottom: 24px; border-radius: 2px;"></div>
-              
-              <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 600; color: #18181b;">${content.heading}</h2>
-              
-              <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #3f3f46;">
-                Hi ${firstName},
-              </p>
-              
-              <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #3f3f46;">
-                ${content.message}
-              </p>
-              
-              ${status === 'approved' ? `
-              <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
-                <p style="margin: 0; font-size: 14px; color: #166534;">
-                  <strong>What's Next?</strong><br>
-                  Our team will contact you within 48 hours to schedule an introductory call and discuss the support we can provide.
-                </p>
-              </div>
-              ` : ''}
-              
-              <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #3f3f46;">
-                If you have any questions, feel free to reach out to us at <a href="mailto:contact@acloudforeveryone.org" style="color: ${content.color}; text-decoration: none;">contact@acloudforeveryone.org</a>.
-              </p>
-              
-              <p style="margin: 24px 0 0; font-size: 16px; line-height: 1.6; color: #3f3f46;">
-                Best regards,<br>
-                <strong>The ACFE Team</strong>
-              </p>
-            </td>
-          </tr>
-          
-          <!-- Footer -->
-          <tr>
-            <td style="padding: 24px; text-align: center;">
-              <div style="font-size: 18px; font-weight: 700; color: #3f3f3f; letter-spacing: 2px; margin-bottom: 8px;">ACFE</div>
-              <p style="margin: 0; font-size: 12px; color: #71717a;">
-                © ${currentYear} A Cloud for Everyone. All rights reserved.<br>
-                <a href="https://acloudforeveryone.org" style="color: #71717a;">acloudforeveryone.org</a>
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-  `;
-
-  return { html, subject: content.subject };
-};
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -131,63 +24,114 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, first_name, idea_title, new_status }: IdeaStatusEmailRequest = await req.json();
+    const { email, first_name, idea_title, new_status, language = 'en' }: IdeaStatusEmailRequest = await req.json();
+    const lang: EmailLanguage = language === 'fr' ? 'fr' : 'en';
 
-    // Input validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || typeof email !== 'string' || !emailRegex.test(email) || email.length > 254) {
-      console.error("Invalid email provided:", email);
+    if (!email || !emailRegex.test(email) || email.length > 254) {
       return new Response(
         JSON.stringify({ error: "Invalid email address" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
     
-    if (first_name && (typeof first_name !== 'string' || first_name.length > 100)) {
-      console.error("Invalid first_name provided");
-      return new Response(
-        JSON.stringify({ error: "Invalid name - must be under 100 characters" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-    
-    if (idea_title && (typeof idea_title !== 'string' || idea_title.length > 500)) {
-      console.error("Invalid idea_title provided");
-      return new Response(
-        JSON.stringify({ error: "Invalid idea title - must be under 500 characters" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-    
     const validStatuses = ['pending', 'under_review', 'approved', 'rejected'];
-    if (!new_status || typeof new_status !== 'string' || !validStatuses.includes(new_status)) {
-      console.error("Invalid status provided:", new_status);
+    if (!validStatuses.includes(new_status)) {
       return new Response(
         JSON.stringify({ error: "Invalid status" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    console.log("Sending idea status email to:", email, "Status:", new_status);
+    const firstName = first_name || (lang === 'fr' ? 'Innovateur' : 'Innovator');
+    const greeting = lang === 'fr' ? 'Cher' : 'Dear';
 
-    const { html, subject } = getStatusEmailContent(first_name, idea_title, new_status);
+    type StatusContent = { subject: string; headline: string; body: string; items: string[] };
+    const statusContent: Record<EmailLanguage, Record<string, StatusContent>> = {
+      en: {
+        under_review: {
+          subject: `Your idea "${idea_title}" is now under review`,
+          headline: 'Your Idea is Under Review!',
+          body: `<p style="margin: 0 0 16px 0;">${greeting} ${firstName},</p><p style="margin: 0;">Great news! Our team has started reviewing your idea "<strong>${idea_title}</strong>".</p>`,
+          items: ['Our team is evaluating your pitch', 'This process typically takes 5-7 business days', 'You will be notified of our decision']
+        },
+        approved: {
+          subject: `Congratulations! Your idea "${idea_title}" has been approved`,
+          headline: 'Congratulations! Your Idea is Approved!',
+          body: `<p style="margin: 0 0 16px 0;">${greeting} ${firstName},</p><p style="margin: 0;">We're thrilled to inform you that your idea "<strong>${idea_title}</strong>" has been approved!</p>`,
+          items: ['A member of our team will contact you within 48 hours', 'You may be eligible for up to $500 in seed funding', 'Mentorship support will be provided']
+        },
+        rejected: {
+          subject: `Update on your idea submission "${idea_title}"`,
+          headline: 'Update on Your Submission',
+          body: `<p style="margin: 0 0 16px 0;">${greeting} ${firstName},</p><p style="margin: 0;">Thank you for submitting your idea "<strong>${idea_title}</strong>". After careful consideration, we've decided not to move forward at this time.</p>`,
+          items: ['Continue refining your concept', 'You can resubmit in the future', 'Explore our courses to build your skills']
+        },
+        pending: {
+          subject: `Your idea "${idea_title}" status has been updated`,
+          headline: 'Status Update',
+          body: `<p style="margin: 0 0 16px 0;">${greeting} ${firstName},</p><p style="margin: 0;">The status of your idea "<strong>${idea_title}</strong>" has been updated to pending.</p>`,
+          items: ['Your submission is in the queue', 'Our team will review it shortly']
+        }
+      },
+      fr: {
+        under_review: {
+          subject: `Votre idée "${idea_title}" est en cours d'examen`,
+          headline: 'Votre Idée est en Cours d\'Examen!',
+          body: `<p style="margin: 0 0 16px 0;">${greeting} ${firstName},</p><p style="margin: 0;">Bonne nouvelle! Notre équipe a commencé à examiner votre idée "<strong>${idea_title}</strong>".</p>`,
+          items: ['Notre équipe évalue votre pitch', 'Ce processus prend généralement 5-7 jours ouvrables', 'Vous serez notifié de notre décision']
+        },
+        approved: {
+          subject: `Félicitations! Votre idée "${idea_title}" a été approuvée`,
+          headline: 'Félicitations! Votre Idée est Approuvée!',
+          body: `<p style="margin: 0 0 16px 0;">${greeting} ${firstName},</p><p style="margin: 0;">Nous sommes ravis de vous informer que votre idée "<strong>${idea_title}</strong>" a été approuvée!</p>`,
+          items: ['Un membre de notre équipe vous contactera sous 48 heures', 'Vous pourriez être éligible à jusqu\'à 500$ de financement initial', 'Un accompagnement par des mentors sera fourni']
+        },
+        rejected: {
+          subject: `Mise à jour sur votre soumission d'idée "${idea_title}"`,
+          headline: 'Mise à Jour sur Votre Soumission',
+          body: `<p style="margin: 0 0 16px 0;">${greeting} ${firstName},</p><p style="margin: 0;">Merci d'avoir soumis votre idée "<strong>${idea_title}</strong>". Après mûre réflexion, nous avons décidé de ne pas poursuivre pour le moment.</p>`,
+          items: ['Continuez à affiner votre concept', 'Vous pouvez resoumettre à l\'avenir', 'Explorez nos cours pour développer vos compétences']
+        },
+        pending: {
+          subject: `Votre idée "${idea_title}" a été mise à jour`,
+          headline: 'Mise à Jour du Statut',
+          body: `<p style="margin: 0 0 16px 0;">${greeting} ${firstName},</p><p style="margin: 0;">Le statut de votre idée "<strong>${idea_title}</strong>" a été mis à jour en attente.</p>`,
+          items: ['Votre soumission est dans la file', 'Notre équipe l\'examinera prochainement']
+        }
+      }
+    };
+
+    const content = statusContent[lang][new_status] || statusContent[lang]['pending'];
+
+    const emailHtml = buildCanonicalEmail({
+      headline: content.headline,
+      body_primary: content.body,
+      impact_block: {
+        title: lang === 'fr' ? 'Prochaines étapes' : 'Next Steps',
+        items: content.items
+      },
+      primary_cta: {
+        label: lang === 'fr' ? 'Explorer les Cours' : 'Explore Courses',
+        url: 'https://acloudforeveryone.org/courses'
+      }
+    }, lang);
 
     const emailResponse = await resend.emails.send({
       from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
       to: [email],
-      subject: subject,
-      html: html,
+      subject: content.subject,
+      html: emailHtml,
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    console.log("Idea status email sent:", emailResponse);
 
-    // Log the email in the database
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    await supabaseClient.from("email_logs").insert({
-      subject: subject,
+    await supabase.from("email_logs").insert({
+      subject: content.subject,
       status: "sent",
       sent_at: new Date().toISOString(),
     });
@@ -197,13 +141,10 @@ const handler = async (req: Request): Promise<Response> => {
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
-    console.error("Error in send-idea-status-email function:", error);
+    console.error("Error in send-idea-status-email:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };
