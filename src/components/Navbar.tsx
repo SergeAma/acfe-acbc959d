@@ -15,6 +15,7 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { NotificationDropdown } from "@/components/NotificationDropdown";
 import { useUserInstitutions } from "@/hooks/useInstitution";
 import { useCountryFlag } from "@/hooks/useCountryFlag";
 import acfeLogo from "@/assets/acfe-logo.png";
@@ -66,57 +67,60 @@ export const Navbar = () => {
           ))}
 
           {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 text-sm font-bold text-foreground hover:text-primary transition-colors">
-                  <ProfileAvatar
-                    src={profile?.avatar_url || undefined}
-                    name={profile?.full_name || undefined}
-                    frame={profile?.profile_frame || 'none'}
-                    size="sm"
-                  />
-                  <span className="hidden lg:inline">{t('nav.account')}</span>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-popover z-[100]">
-                <DropdownMenuLabel>{t('nav.account')}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/dashboard">{t('nav.dashboard')}</Link>
-                </DropdownMenuItem>
-                {userInstitutions.length > 0 && (
+            <>
+              <NotificationDropdown />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 text-sm font-bold text-foreground hover:text-primary transition-colors">
+                    <ProfileAvatar
+                      src={profile?.avatar_url || undefined}
+                      name={profile?.full_name || undefined}
+                      frame={profile?.profile_frame || 'none'}
+                      size="sm"
+                    />
+                    <span className="hidden lg:inline">{t('nav.account')}</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 bg-popover z-[100]">
+                  <DropdownMenuLabel>{t('nav.account')}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link to={`/career-centre/${userInstitutions[0].institution_slug}`} className="flex items-center gap-2">
-                      <GraduationCap className="h-4 w-4" />
-                      {t('nav.careerCentre')}
-                    </Link>
+                    <Link to="/dashboard">{t('nav.dashboard')}</Link>
                   </DropdownMenuItem>
-                )}
-                {profile?.role === "student" && (
+                  {userInstitutions.length > 0 && (
+                    <DropdownMenuItem asChild>
+                      <Link to={`/career-centre/${userInstitutions[0].institution_slug}`} className="flex items-center gap-2">
+                        <GraduationCap className="h-4 w-4" />
+                        {t('nav.careerCentre')}
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {profile?.role === "student" && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/courses">{t('nav.browseCourses')}</Link>
+                    </DropdownMenuItem>
+                  )}
+                  {(profile?.role === "mentor" || profile?.role === "admin") && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin/courses">{t('nav.manageCourses')}</Link>
+                    </DropdownMenuItem>
+                  )}
+                  {profile?.role === "admin" && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin">{t('nav.adminPanel')}</Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem asChild>
-                    <Link to="/courses">{t('nav.browseCourses')}</Link>
+                    <Link to="/profile">{t('nav.profileSettings')}</Link>
                   </DropdownMenuItem>
-                )}
-                {(profile?.role === "mentor" || profile?.role === "admin") && (
-                  <DropdownMenuItem asChild>
-                    <Link to="/admin/courses">{t('nav.manageCourses')}</Link>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => signOut()}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    {t('nav.signOut')}
                   </DropdownMenuItem>
-                )}
-                {profile?.role === "admin" && (
-                  <DropdownMenuItem asChild>
-                    <Link to="/admin">{t('nav.adminPanel')}</Link>
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem asChild>
-                  <Link to="/profile">{t('nav.profileSettings')}</Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => signOut()}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  {t('nav.signOut')}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           ) : (
             <Link to="/auth" className="text-sm font-bold text-foreground hover:text-primary transition-colors">
               {t('nav.account')}

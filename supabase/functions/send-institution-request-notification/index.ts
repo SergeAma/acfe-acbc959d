@@ -32,7 +32,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { mentor_name, mentor_email, institution_name, request_type, reason }: InstitutionRequestNotification = await req.json();
 
-    // Fetch admin emails
+    // Fetch admin user IDs
     const { data: adminRoles } = await supabase
       .from('user_roles')
       .select('user_id')
@@ -49,7 +49,7 @@ const handler = async (req: Request): Promise<Response> => {
     const adminUserIds = adminRoles.map(r => r.user_id);
     const { data: adminProfiles } = await supabase
       .from('profiles')
-      .select('email, full_name')
+      .select('id, email, full_name')
       .in('id', adminUserIds);
 
     if (!adminProfiles || adminProfiles.length === 0) {
@@ -64,6 +64,27 @@ const handler = async (req: Request): Promise<Response> => {
       ? 'Exclusive Content Creation' 
       : 'Institution Cohort Mentoring';
 
+    // Create in-app notifications for all admins
+    const notificationMessage = `New institution request: ${mentor_name} wants to ${request_type === 'exclusive_content' ? 'create exclusive content for' : 'mentor a cohort at'} ${institution_name}`;
+    
+    const notificationsToInsert = adminProfiles.map(admin => ({
+      user_id: admin.id,
+      message: notificationMessage,
+      link: '/admin/institutions',
+      is_read: false,
+    }));
+
+    const { error: notifError } = await supabase
+      .from('notifications')
+      .insert(notificationsToInsert);
+
+    if (notifError) {
+      console.error("Error creating in-app notifications:", notifError);
+    } else {
+      console.log(`Created ${notificationsToInsert.length} in-app notifications for admins`);
+    }
+
+    // Send email notification
     const htmlContent = buildCanonicalEmail({
       headline: 'New Institution Partnership Request',
       body_primary: `
