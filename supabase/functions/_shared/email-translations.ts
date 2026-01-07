@@ -88,6 +88,13 @@ export const emailTranslations: Record<EmailLanguage, Record<string, string>> = 
     'assignment.submitted.course': 'Course:',
     'assignment.submitted.cta': 'Review Submission',
 
+    // Assignment Pending (for student)
+    'assignment.pending.subject': 'Assignment Submitted Successfully!',
+    'assignment.pending.title': 'Assignment Under Review',
+    'assignment.pending.intro': 'Your assignment has been submitted and is now being reviewed by your mentor.',
+    'assignment.pending.responseTime': 'You can expect a response within 48 hours.',
+    'assignment.pending.track': 'Track the status of your submission from your dashboard.',
+
     // Assignment Graded
     'assignment.graded.subject': 'Your Assignment Has Been Graded',
     'assignment.graded.title': 'Assignment Graded!',
@@ -238,6 +245,13 @@ export const emailTranslations: Record<EmailLanguage, Record<string, string>> = 
     'assignment.submitted.student': 'Étudiant:',
     'assignment.submitted.course': 'Cours:',
     'assignment.submitted.cta': 'Examiner la Soumission',
+
+    // Assignment Pending (for student)
+    'assignment.pending.subject': 'Devoir Soumis avec Succès!',
+    'assignment.pending.title': 'Devoir en Cours d\'Examen',
+    'assignment.pending.intro': 'Votre devoir a été soumis et est maintenant en cours d\'examen par votre mentor.',
+    'assignment.pending.responseTime': 'Vous pouvez vous attendre à une réponse dans 48 heures.',
+    'assignment.pending.track': 'Suivez l\'état de votre soumission depuis votre tableau de bord.',
 
     // Assignment Graded
     'assignment.graded.subject': 'Votre Devoir a été Noté',

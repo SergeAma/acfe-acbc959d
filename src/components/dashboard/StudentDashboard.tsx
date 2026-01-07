@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { RequestMentorRole } from '@/components/RequestMentorRole';
 import { MySubmissions } from '@/components/dashboard/MySubmissions';
 import { SubscriptionStatus } from '@/components/dashboard/SubscriptionStatus';
+import { PendingAssignments } from '@/components/dashboard/PendingAssignments';
 import { BookOpen, Library, Award, TrendingUp, UserCheck, Clock, BookOpenCheck, MessageSquare, CreditCard, Building2 } from 'lucide-react';
 import { stripHtml } from '@/lib/html-utils';
 import { useUserInstitutions } from '@/hooks/useInstitution';
@@ -219,6 +220,9 @@ export const StudentDashboard = () => {
           </Button>
         </Link>
       </div>
+
+      {/* Pending Assignments Alert */}
+      <PendingAssignments enrollments={enrollments} />
 
       {/* In Progress Courses - Priority visibility */}
       <div>
