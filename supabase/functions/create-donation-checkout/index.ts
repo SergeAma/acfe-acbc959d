@@ -160,8 +160,7 @@ serve(async (req) => {
       currency: 'usd',
       recurring: { interval: 'month' },
       product_data: {
-        name: 'ACFE Monthly Donation',
-        description: `Monthly donation of $${(amountCents / 100).toFixed(2)} to support A Cloud For Everyone`,
+        name: `ACFE Monthly Donation - $${(amountCents / 100).toFixed(0)}`,
       },
     });
     logStep("Created price");
