@@ -2188,25 +2188,28 @@ export type Database = {
       }
       notifications: {
         Row: {
+          action_reference_id: string | null
+          action_type: string
           created_at: string
           id: string
-          is_read: boolean
           link: string | null
           message: string
           user_id: string
         }
         Insert: {
+          action_reference_id?: string | null
+          action_type?: string
           created_at?: string
           id?: string
-          is_read?: boolean
           link?: string | null
           message: string
           user_id: string
         }
         Update: {
+          action_reference_id?: string | null
+          action_type?: string
           created_at?: string
           id?: string
-          is_read?: boolean
           link?: string | null
           message?: string
           user_id?: string
@@ -2839,6 +2842,36 @@ export type Database = {
       }
     }
     Views: {
+      pending_notifications: {
+        Row: {
+          action_reference_id: string | null
+          action_type: string | null
+          created_at: string | null
+          id: string | null
+          link: string | null
+          message: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_reference_id?: string | null
+          action_type?: string | null
+          created_at?: string | null
+          id?: string | null
+          link?: string | null
+          message?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_reference_id?: string | null
+          action_type?: string | null
+          created_at?: string | null
+          id?: string | null
+          link?: string | null
+          message?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles_public: {
         Row: {
           avatar_url: string | null
@@ -2977,6 +3010,10 @@ export type Database = {
       }
       is_institution_moderator: {
         Args: { _institution_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_notification_action_completed: {
+        Args: { _action_reference_id: string; _action_type: string }
         Returns: boolean
       }
       is_platform_moderator: { Args: { _user_id: string }; Returns: boolean }
