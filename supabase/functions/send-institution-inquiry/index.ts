@@ -52,6 +52,7 @@ interface InstitutionInquiryRequest {
   firstName: string;
   lastName?: string;
   contactEmail: string;
+  country?: string;
   contactPhone?: string;
   estimatedStudents?: string;
   message?: string;
@@ -120,7 +121,7 @@ serve(async (req) => {
     logStep("Function started");
 
     const body: InstitutionInquiryRequest = await req.json();
-    const { institutionName, institutionType, firstName, lastName = '', contactEmail, contactPhone, estimatedStudents, message, turnstileToken, language = 'en' } = body;
+    const { institutionName, institutionType, firstName, lastName = '', contactEmail, country, contactPhone, estimatedStudents, message, turnstileToken, language = 'en' } = body;
 
     const lang: EmailLanguage = language === 'fr' ? 'fr' : 'en';
     const t = translations[lang];
@@ -176,6 +177,7 @@ serve(async (req) => {
     const safeContactEmail = escapeHtml(trimmedEmail);
     const safeInstitutionType = institutionType ? escapeHtml(institutionType.trim().substring(0, 100)) : '';
     const safeContactPhone = contactPhone ? escapeHtml(contactPhone.trim().substring(0, 50)) : '';
+    const safeCountry = country ? escapeHtml(country.trim().substring(0, 100)) : '';
     const safeEstimatedStudents = estimatedStudents ? escapeHtml(estimatedStudents.trim().substring(0, 50)) : '';
     const safeMessage = message ? escapeHtml(message.trim().substring(0, 2000)) : '';
 
@@ -188,6 +190,7 @@ serve(async (req) => {
         <p><strong>Institution:</strong> ${safeInstitutionName}${safeInstitutionType ? ` (${safeInstitutionType})` : ''}</p>
         <p><strong>Contact:</strong> ${safeContactName}</p>
         <p><strong>Email:</strong> ${safeContactEmail}</p>
+        ${safeCountry ? `<p><strong>Country:</strong> ${safeCountry}</p>` : ''}
         ${safeContactPhone ? `<p><strong>Phone:</strong> ${safeContactPhone}</p>` : ''}
         ${safeEstimatedStudents ? `<p><strong>Estimated Students:</strong> ${safeEstimatedStudents}</p>` : ''}
         ${safeMessage ? `<p><strong>Message:</strong> ${safeMessage}</p>` : ''}
