@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -1049,10 +1049,24 @@ const generatePermutations = (): EmailPermutation[] => {
 
 const AdminEmailPreview = () => {
   const navigate = useNavigate();
-  const permutations = generatePermutations();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [filterType, setFilterType] = useState<string>('all');
   const [filterLanguage, setFilterLanguage] = useState<string>('all');
+  
+  const permutations = generatePermutations();
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') {
+        setCurrentIndex(prev => Math.min(prev + 1, permutations.length - 1));
+      } else if (e.key === 'ArrowLeft') {
+        setCurrentIndex(prev => Math.max(prev - 1, 0));
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [permutations.length]);
 
   const filteredPermutations = permutations.filter(p => {
     if (filterType !== 'all' && p.type !== filterType) return false;
@@ -1080,7 +1094,7 @@ const AdminEmailPreview = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 pt-24">
         <div className="flex items-center gap-4 mb-6">
           <Button variant="outline" size="sm" onClick={() => navigate('/admin')}>
             <ChevronLeft className="h-4 w-4 mr-1" />
