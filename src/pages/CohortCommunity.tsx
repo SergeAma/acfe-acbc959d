@@ -36,18 +36,56 @@ export const CohortCommunity = () => {
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Check if user is admin or platform moderator (can access all cohorts)
+  const { data: hasGlobalAccess, isLoading: globalAccessLoading } = useQuery({
+    queryKey: ['global-cohort-access', user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      
+      // Check admin role
+      const { data: isAdmin } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' });
+      if (isAdmin) return true;
+      
+      // Check platform moderator
+      const { data: isModerator } = await supabase.rpc('is_platform_moderator', { _user_id: user.id });
+      return !!isModerator;
+    },
+    enabled: !!user && !authLoading,
+  });
+
   // Get the mentor ID (either user is mentor, or find their mentor)
   const { data: cohortInfo, isLoading: cohortLoading } = useQuery({
-    queryKey: ['cohort-info', user?.id],
+    queryKey: ['cohort-info', user?.id, profile?.role, hasGlobalAccess],
     queryFn: async () => {
       if (!user) return null;
 
-      // Check if user is a mentor
-      if (profile?.role === 'mentor') {
-        return { mentorId: user.id, isMentor: true };
+      // Check if user is a mentor - they always have access to their own cohort
+      const { data: isMentor } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'mentor' });
+      
+      if (isMentor) {
+        // Mentors access their own cohort
+        return { mentorId: user.id, isMentor: true, hasGlobalAccess: !!hasGlobalAccess };
       }
 
-      // Otherwise, find the mentor this user is a mentee of
+      // Admins and platform moderators without mentor role need to select a cohort
+      // For now, show a default view or first available mentor's cohort
+      if (hasGlobalAccess) {
+        // Get first mentor with accepted mentees for admin view
+        const { data: firstMentor } = await supabase
+          .from('mentorship_requests')
+          .select('mentor_id')
+          .eq('status', 'accepted')
+          .limit(1)
+          .maybeSingle();
+        
+        if (firstMentor) {
+          return { mentorId: firstMentor.mentor_id, isMentor: false, hasGlobalAccess: true };
+        }
+        // Admin with no cohorts to view - still give access indicator
+        return { mentorId: null, isMentor: false, hasGlobalAccess: true };
+      }
+
+      // Regular students - find their mentor
       const { data, error } = await supabase
         .from('mentorship_requests')
         .select('mentor_id')
@@ -59,29 +97,32 @@ export const CohortCommunity = () => {
       if (error) throw error;
       if (!data) return null;
 
-      return { mentorId: data.mentor_id, isMentor: false };
+      return { mentorId: data.mentor_id, isMentor: false, hasGlobalAccess: false };
     },
-    enabled: !!user && !authLoading,
+    enabled: !!user && !authLoading && hasGlobalAccess !== undefined,
   });
+
+  // Compute effective mentor ID for data fetching
+  const effectiveMentorIdForQuery = cohortInfo?.isMentor ? user?.id : cohortInfo?.mentorId;
 
   // Fetch cohort members
   const { data: cohortMembers } = useQuery({
-    queryKey: ['cohort-members', cohortInfo?.mentorId],
+    queryKey: ['cohort-members', effectiveMentorIdForQuery],
     queryFn: async () => {
-      if (!cohortInfo?.mentorId) return [];
+      if (!effectiveMentorIdForQuery) return [];
 
       // Get mentor profile
       const { data: mentorProfile } = await supabase
         .from('profiles')
         .select('id, full_name, avatar_url')
-        .eq('id', cohortInfo.mentorId)
+        .eq('id', effectiveMentorIdForQuery)
         .single();
 
       // Get accepted mentees
       const { data: requests } = await supabase
         .from('mentorship_requests')
         .select('student_id')
-        .eq('mentor_id', cohortInfo.mentorId)
+        .eq('mentor_id', effectiveMentorIdForQuery)
         .eq('status', 'accepted');
 
       const studentIds = requests?.map(r => r.student_id) || [];
@@ -100,25 +141,27 @@ export const CohortCommunity = () => {
         ...menteeProfiles.map(p => ({ ...p, isMentor: false }))
       ];
     },
-    enabled: !!cohortInfo?.mentorId,
+    enabled: !!effectiveMentorIdForQuery,
   });
 
   // Fetch messages
   const { data: messages, isLoading: messagesLoading } = useQuery({
-    queryKey: ['cohort-messages', cohortInfo?.mentorId],
+    queryKey: ['cohort-messages', effectiveMentorIdForQuery],
     queryFn: async () => {
-      if (!cohortInfo?.mentorId) return [];
+      if (!effectiveMentorIdForQuery) return [];
 
       const { data, error } = await supabase
         .from('cohort_messages')
         .select('*')
-        .eq('mentor_id', cohortInfo.mentorId)
+        .eq('mentor_id', effectiveMentorIdForQuery)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
 
       // Fetch author profiles
       const authorIds = [...new Set(data.map(m => m.author_id))];
+      if (authorIds.length === 0) return [];
+      
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, full_name, avatar_url')
@@ -131,12 +174,12 @@ export const CohortCommunity = () => {
         author_profile: profileMap.get(msg.author_id)
       })) as CohortMessage[];
     },
-    enabled: !!cohortInfo?.mentorId,
+    enabled: !!effectiveMentorIdForQuery,
   });
 
   // Set up realtime subscription
   useEffect(() => {
-    if (!cohortInfo?.mentorId) return;
+    if (!effectiveMentorIdForQuery) return;
 
     const channel = supabase
       .channel('cohort-messages-realtime')
@@ -146,10 +189,10 @@ export const CohortCommunity = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'cohort_messages',
-          filter: `mentor_id=eq.${cohortInfo.mentorId}`
+          filter: `mentor_id=eq.${effectiveMentorIdForQuery}`
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['cohort-messages', cohortInfo.mentorId] });
+          queryClient.invalidateQueries({ queryKey: ['cohort-messages', effectiveMentorIdForQuery] });
         }
       )
       .subscribe();
@@ -157,7 +200,7 @@ export const CohortCommunity = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [cohortInfo?.mentorId, queryClient]);
+  }, [effectiveMentorIdForQuery, queryClient]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -165,14 +208,15 @@ export const CohortCommunity = () => {
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !cohortInfo?.mentorId || !user) return;
+    const mentorIdToUse = cohortInfo?.isMentor ? user?.id : cohortInfo?.mentorId;
+    if (!newMessage.trim() || !mentorIdToUse || !user) return;
 
     setSending(true);
     try {
       const { error } = await supabase
         .from('cohort_messages')
         .insert({
-          mentor_id: cohortInfo.mentorId,
+          mentor_id: mentorIdToUse,
           author_id: user.id,
           content: newMessage.trim()
         });
@@ -191,7 +235,7 @@ export const CohortCommunity = () => {
     }
   };
 
-  if (authLoading || cohortLoading) {
+  if (authLoading || globalAccessLoading || cohortLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -199,7 +243,8 @@ export const CohortCommunity = () => {
     );
   }
 
-  if (!cohortInfo) {
+  // For mentors without cohortInfo or non-mentors without access
+  if (!cohortInfo || (!cohortInfo.mentorId && !cohortInfo.isMentor)) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
@@ -224,6 +269,7 @@ export const CohortCommunity = () => {
       </div>
     );
   }
+
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
