@@ -170,8 +170,10 @@ export const MentorCohort = () => {
 
     setResponding(true);
     try {
+      // Map 'accept' to 'accepted' for database constraint
+      const dbStatus = responseType === 'accept' ? 'accepted' : responseType;
       const updateData: any = {
-        status: responseType,
+        status: dbStatus,
         mentor_response: responseMessage || null,
         responded_at: new Date().toISOString()
       };

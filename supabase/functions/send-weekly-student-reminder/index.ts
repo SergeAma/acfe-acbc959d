@@ -118,10 +118,18 @@ const handler = async (req: Request): Promise<Response> => {
   
   <p style="margin-bottom: 20px;">Your journey to becoming part of Africa's tech career starts with small steps every day!</p>
   
-  <div style="text-align: center; margin: 30px 0;">
-    <a href="https://acloudforeveryone.org/courses" style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-right: 10px;">Explore Courses</a>
-    <a href="https://acloudforeveryone.org/mentors" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">Find a Mentor</a>
-  </div>
+  <table role="presentation" style="width: 100%; margin: 30px 0;">
+    <tr>
+      <td style="text-align: center; padding-bottom: 10px;">
+        <a href="https://acloudforeveryone.org/courses" style="display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">Explore Courses</a>
+      </td>
+    </tr>
+    <tr>
+      <td style="text-align: center;">
+        <a href="https://acloudforeveryone.org/mentors" style="display: inline-block; background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">Find a Mentor</a>
+      </td>
+    </tr>
+  </table>
   
   <p style="color: #666; font-size: 14px; margin-top: 30px;">
     Best regards,<br>

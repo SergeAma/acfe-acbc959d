@@ -185,10 +185,18 @@ const handler = async (req: Request): Promise<Response> => {
         <li>${content.step3}</li>
       </ul>
       
-      <div style="text-align: center; margin: 32px 0;">
-        <a href="https://www.acloudforeveryone.org/courses" style="display: inline-block; background-color: #4a5d4a; color: #ffffff; padding: 14px 32px; text-decoration: none; font-weight: 600; border-radius: 6px; font-size: 14px; margin-right: 12px;">${content.exploreCta}</a>
-        <a href="https://www.acloudforeveryone.org/startups" style="display: inline-block; background-color: #ffffff; color: #4a5d4a; padding: 14px 32px; text-decoration: none; font-weight: 600; border-radius: 6px; font-size: 14px; border: 2px solid #4a5d4a;">${content.startupCta}</a>
-      </div>
+      <table role="presentation" style="width: 100%; margin: 32px 0;">
+        <tr>
+          <td style="text-align: center; padding-bottom: 12px;">
+            <a href="https://www.acloudforeveryone.org/courses" style="display: inline-block; background-color: #4a5d4a; color: #ffffff; padding: 14px 32px; text-decoration: none; font-weight: 600; border-radius: 6px; font-size: 14px;">${content.exploreCta}</a>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center;">
+            <a href="https://www.acloudforeveryone.org/startups" style="display: inline-block; background-color: #ffffff; color: #4a5d4a; padding: 14px 32px; text-decoration: none; font-weight: 600; border-radius: 6px; font-size: 14px; border: 2px solid #4a5d4a;">${content.startupCta}</a>
+          </td>
+        </tr>
+      </table>
       
       <p style="margin: 32px 0 0 0; font-size: 15px; color: #18181b; font-weight: 500;">${content.tagline}</p>
       
@@ -301,10 +309,18 @@ const handler = async (req: Request): Promise<Response> => {
       </div>
       
       ${approveUrl && declineUrl ? `
-      <div style="text-align: center; margin: 30px 0;">
-        <a href="${approveUrl}" style="display: inline-block; background-color: #16a34a; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 6px; margin-right: 10px;">✓ Approve</a>
-        <a href="${declineUrl}" style="display: inline-block; background-color: #dc2626; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 6px;">✗ Decline</a>
-      </div>
+      <table role="presentation" style="width: 100%; margin: 30px 0;">
+        <tr>
+          <td style="text-align: center; padding-bottom: 10px;">
+            <a href="${approveUrl}" style="display: inline-block; background-color: #16a34a; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 6px;">Approve</a>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center;">
+            <a href="${declineUrl}" style="display: inline-block; background-color: #dc2626; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 6px;">Decline</a>
+          </td>
+        </tr>
+      </table>
       <p style="margin: 10px 0 20px 0; line-height: 1.4; color: #999999; font-size: 11px; text-align: center;">
         ⚠️ These action links are unique to you and cannot be shared.
       </p>
@@ -455,10 +471,18 @@ const handler = async (req: Request): Promise<Response> => {
         </p>
       </div>
       
-      <div style="text-align: center; margin: 32px 0;">
-        <a href="https://www.acloudforeveryone.org/courses" style="display: inline-block; background-color: #4a5d4a; color: #ffffff; padding: 14px 32px; text-decoration: none; font-weight: 600; border-radius: 6px; font-size: 14px; margin-right: 12px;">${content.exploreCta}</a>
-        <a href="https://www.acloudforeveryone.org/startups" style="display: inline-block; background-color: #ffffff; color: #4a5d4a; padding: 14px 32px; text-decoration: none; font-weight: 600; border-radius: 6px; font-size: 14px; border: 2px solid #4a5d4a;">${content.startupCta}</a>
-      </div>
+      <table role="presentation" style="width: 100%; margin: 32px 0;">
+        <tr>
+          <td style="text-align: center; padding-bottom: 12px;">
+            <a href="https://www.acloudforeveryone.org/courses" style="display: inline-block; background-color: #4a5d4a; color: #ffffff; padding: 14px 32px; text-decoration: none; font-weight: 600; border-radius: 6px; font-size: 14px;">${content.exploreCta}</a>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center;">
+            <a href="https://www.acloudforeveryone.org/startups" style="display: inline-block; background-color: #ffffff; color: #4a5d4a; padding: 14px 32px; text-decoration: none; font-weight: 600; border-radius: 6px; font-size: 14px; border: 2px solid #4a5d4a;">${content.startupCta}</a>
+          </td>
+        </tr>
+      </table>
       
       <p style="margin: 32px 0 0 0; font-size: 15px; color: #18181b; font-weight: 500;">${content.tagline}</p>
       
