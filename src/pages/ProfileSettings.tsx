@@ -15,6 +15,8 @@ import { Loader2, Upload, Pencil, Trash2, X, Plus, AlertTriangle, Pause, Play } 
 import { ProfilePhotoEditor } from '@/components/profile/ProfilePhotoEditor';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { Badge } from '@/components/ui/badge';
+import { AutocompleteInput } from '@/components/ui/autocomplete-input';
+import { AFRICAN_UNIVERSITIES, COMPANIES, COUNTRY_NAMES } from '@/data';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -83,17 +85,7 @@ const SUGGESTED_SKILLS = {
   ],
 };
 
-const COUNTRIES = [
-  'Nigeria', 'South Africa', 'Kenya', 'Ghana', 'Egypt', 'Morocco', 'Ethiopia', 'Tanzania', 
-  'Uganda', 'Algeria', 'Sudan', 'Angola', 'Mozambique', 'Cameroon', 'Ivory Coast', 
-  'Democratic Republic of Congo', 'Zimbabwe', 'Senegal', 'Rwanda', 'Tunisia',
-  'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 'France', 
-  'Netherlands', 'Belgium', 'Switzerland', 'Sweden', 'Norway', 'Denmark', 'Finland',
-  'India', 'China', 'Japan', 'Singapore', 'Malaysia', 'Indonesia', 'Thailand', 'Vietnam',
-  'Brazil', 'Mexico', 'Argentina', 'Colombia', 'Chile', 'Peru',
-  'United Arab Emirates', 'Saudi Arabia', 'Qatar', 'Israel', 'Turkey',
-  'New Zealand', 'Ireland', 'Portugal', 'Spain', 'Italy', 'Poland', 'Austria'
-];
+// COUNTRIES is now imported from @/data
 
 export const ProfileSettings = () => {
   const navigate = useNavigate();
@@ -575,7 +567,7 @@ export const ProfileSettings = () => {
                   <PopoverContent className="w-[300px] p-0 bg-popover border border-border shadow-lg z-50" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
                     <Command>
                       <CommandList className="max-h-[200px]">
-                        {COUNTRIES
+                        {COUNTRY_NAMES
                           .filter(country => 
                             !formData.country || country.toLowerCase().includes(formData.country.toLowerCase())
                           )
@@ -593,7 +585,7 @@ export const ProfileSettings = () => {
                               {country}
                             </CommandItem>
                           ))}
-                        {COUNTRIES.filter(country => 
+                        {COUNTRY_NAMES.filter(country => 
                           !formData.country || country.toLowerCase().includes(formData.country.toLowerCase())
                         ).length === 0 && (
                           <div className="p-2 text-sm text-muted-foreground">No countries found</div>
@@ -606,12 +598,12 @@ export const ProfileSettings = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="university">University/Institution</Label>
-                <Input
+                <AutocompleteInput
                   id="university"
-                  name="university"
                   value={formData.university}
-                  onChange={handleChange}
-                  placeholder="Enter your university or institution"
+                  onChange={(value) => setFormData(prev => ({ ...prev, university: value }))}
+                  suggestions={AFRICAN_UNIVERSITIES}
+                  placeholder="Start typing to see suggestions..."
                 />
               </div>
 
@@ -647,16 +639,11 @@ export const ProfileSettings = () => {
                 <div className="space-y-2">
                   <Label>Companies You Have Worked For</Label>
                   <div className="flex gap-2">
-                    <Input
+                    <AutocompleteInput
                       value={newCompany}
-                      onChange={(e) => setNewCompany(e.target.value)}
-                      placeholder="e.g., Google, Microsoft, Andela..."
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddCompany();
-                        }
-                      }}
+                      onChange={(value) => setNewCompany(value)}
+                      suggestions={COMPANIES}
+                      placeholder="Start typing to see suggestions..."
                     />
                     <Button type="button" variant="outline" onClick={handleAddCompany}>
                       <Plus className="h-4 w-4" />
