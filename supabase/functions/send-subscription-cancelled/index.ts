@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { buildCanonicalEmail, getSubTranslation, EmailLanguage } from "../_shared/email-template.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -12,6 +13,7 @@ interface CancelledEmailRequest {
   email: string;
   name: string;
   subscription_end: string;
+  language?: EmailLanguage;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -20,62 +22,47 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, name, subscription_end }: CancelledEmailRequest = await req.json();
+    const { email, name, subscription_end, language = 'en' }: CancelledEmailRequest = await req.json();
+    const lang: EmailLanguage = language === 'fr' ? 'fr' : 'en';
 
     console.log("[SEND-SUBSCRIPTION-CANCELLED] Sending to:", email);
 
-    const currentYear = new Date().getFullYear();
+    const displayName = name || (lang === 'fr' ? 'Abonné' : 'Subscriber');
+    const greeting = lang === 'fr' ? 'Bonjour' : 'Hi';
+
+    const subject = getSubTranslation('subscription.cancelled.subject', lang);
+    const headline = getSubTranslation('subscription.cancelled.headline', lang);
+
+    const bodyContent = lang === 'fr'
+      ? `<p style="margin: 0 0 16px 0;">${greeting} ${displayName},</p>
+         <p style="margin: 0 0 16px 0;">Nous sommes désolés de vous voir partir. Votre abonnement a été annulé.</p>
+         <p style="margin: 0;"><strong>Accès jusqu'au:</strong> ${subscription_end}</p>`
+      : `<p style="margin: 0 0 16px 0;">${greeting} ${displayName},</p>
+         <p style="margin: 0 0 16px 0;">We're sorry to see you go. Your subscription has been cancelled.</p>
+         <p style="margin: 0;"><strong>Access Until:</strong> ${subscription_end}</p>`;
+
+    const emailHtml = buildCanonicalEmail({
+      headline,
+      body_primary: bodyContent,
+      impact_block: {
+        title: getSubTranslation('subscription.cancelled.impact_title', lang),
+        items: [
+          `${getSubTranslation('subscription.cancelled.item1', lang)} ${subscription_end}`,
+          getSubTranslation('subscription.cancelled.item2', lang),
+          getSubTranslation('subscription.cancelled.item3', lang),
+        ]
+      },
+      primary_cta: {
+        label: getSubTranslation('subscription.cancelled.cta', lang),
+        url: 'https://acloudforeveryone.org/pricing'
+      }
+    }, lang);
 
     const emailResponse = await resend.emails.send({
       from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
       to: [email],
-      subject: "Your Subscription Has Been Cancelled",
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5;">
-          <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-            <!-- ACFE Text Header -->
-            <div style="text-align: center; margin-bottom: 0; background-color: #3f3f3f; padding: 24px; border-radius: 12px 12px 0 0;">
-              <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 4px; margin-bottom: 4px;">ACFE</div>
-              <div style="font-size: 12px; color: #d4d4d4; letter-spacing: 2px; text-transform: uppercase;">A Cloud for Everyone</div>
-            </div>
-            
-            <div style="background-color: #ffffff; padding: 32px; border-radius: 0 0 12px 12px;">
-              <h1 style="margin: 0 0 20px 0; font-size: 24px; color: #18181b;">Subscription Cancelled</h1>
-              
-              <p style="color: #3f3f46;">Hi ${name},</p>
-              <p style="color: #3f3f46; line-height: 1.6;">We're sorry to see you go. Your subscription has been cancelled.</p>
-              
-              <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
-                <p style="margin: 0; color: #92400e;"><strong>Access Until:</strong> ${subscription_end}</p>
-                <p style="margin: 10px 0 0 0; color: #92400e;">You'll continue to have access to your courses until this date.</p>
-              </div>
-              
-              <p style="color: #3f3f46; line-height: 1.6;">If you change your mind, you can always resubscribe to regain access to all our courses and features.</p>
-              
-              <p style="color: #3f3f46; line-height: 1.6;">We'd love to hear your feedback on how we can improve. Feel free to reply to this email with any suggestions.</p>
-              
-              <p style="color: #3f3f46; line-height: 1.6;">Thank you for being part of our learning community!</p>
-              
-              <p style="color: #3f3f46; margin-top: 24px;">Best regards,<br><strong>The ACFE Team</strong></p>
-            </div>
-            
-            <!-- Footer -->
-            <div style="text-align: center; padding: 24px;">
-              <div style="font-size: 18px; font-weight: 700; color: #3f3f3f; letter-spacing: 2px; margin-bottom: 8px;">ACFE</div>
-              <p style="font-size: 12px; color: #71717a; margin: 0;">
-                © ${currentYear} A Cloud for Everyone. All rights reserved.
-              </p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
+      subject,
+      html: emailHtml,
     });
 
     console.log("[SEND-SUBSCRIPTION-CANCELLED] Email sent:", emailResponse);
