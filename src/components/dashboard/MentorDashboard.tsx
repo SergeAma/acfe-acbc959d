@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { MySubmissions } from '@/components/dashboard/MySubmissions';
 import { MentorOnboardingChecklist } from '@/components/dashboard/MentorOnboardingChecklist';
 import { SubmissionsReview } from '@/components/mentor/SubmissionsReview';
+import { InstitutionPartnersSection } from '@/components/dashboard/InstitutionPartnersSection';
 import { BookOpen, Users, PlusCircle, TrendingUp, UsersRound, Video } from 'lucide-react';
 import { stripHtml } from '@/lib/html-utils';
 
@@ -144,6 +145,9 @@ export const MentorDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Institution Partners Section */}
+      <InstitutionPartnersSection />
 
       {/* Student Submissions Review */}
       <SubmissionsReview />

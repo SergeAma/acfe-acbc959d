@@ -1276,6 +1276,79 @@ export type Database = {
           },
         ]
       }
+      institution_cohort_members: {
+        Row: {
+          cohort_id: string
+          id: string
+          joined_at: string
+          status: string
+          student_id: string
+        }
+        Insert: {
+          cohort_id: string
+          id?: string
+          joined_at?: string
+          status?: string
+          student_id: string
+        }
+        Update: {
+          cohort_id?: string
+          id?: string
+          joined_at?: string
+          status?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institution_cohort_members_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "institution_cohorts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      institution_cohorts: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          institution_id: string
+          is_active: boolean
+          mentor_id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          institution_id: string
+          is_active?: boolean
+          mentor_id: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          institution_id?: string
+          is_active?: boolean
+          mentor_id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institution_cohorts_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       institution_events: {
         Row: {
           created_at: string | null
@@ -1860,6 +1933,56 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      mentor_institution_requests: {
+        Row: {
+          admin_response: string | null
+          created_at: string
+          id: string
+          institution_id: string
+          mentor_id: string
+          reason: string | null
+          request_type: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_response?: string | null
+          created_at?: string
+          id?: string
+          institution_id: string
+          mentor_id: string
+          reason?: string | null
+          request_type: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_response?: string | null
+          created_at?: string
+          id?: string
+          institution_id?: string
+          mentor_id?: string
+          reason?: string | null
+          request_type?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentor_institution_requests_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mentor_invitations: {
         Row: {

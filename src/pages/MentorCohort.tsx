@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Users, UserCheck, Clock, MessageSquare, BookOpen, CheckCircle, GraduationCap, Loader2 } from 'lucide-react';
+import { Users, UserCheck, Clock, MessageSquare, BookOpen, CheckCircle, GraduationCap, Loader2, Building2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { useMentorContract } from '@/hooks/useMentorContract';
@@ -53,7 +53,43 @@ export const MentorCohort = () => {
   const [responseMessage, setResponseMessage] = useState('');
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [responding, setResponding] = useState(false);
+  const [selectedCohortView, setSelectedCohortView] = useState<'general' | string>('general');
   const { hasSignedContract, loading: contractLoading } = useMentorContract(user?.id);
+
+  // Fetch institution cohorts for this mentor
+  const { data: institutionCohorts } = useQuery({
+    queryKey: ['mentor-institution-cohorts', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      const { data, error } = await supabase
+        .from('institution_cohorts')
+        .select(`
+          id,
+          name,
+          institution_id,
+          institutions!inner (
+            name,
+            logo_url
+          )
+        `)
+        .eq('mentor_id', user.id)
+        .eq('is_active', true);
+      
+      if (error) throw error;
+      
+      return (data || []).map(cohort => ({
+        id: cohort.id,
+        name: cohort.name,
+        institution_id: cohort.institution_id,
+        institution: {
+          name: (cohort.institutions as any).name,
+          logo_url: (cohort.institutions as any).logo_url,
+        }
+      }));
+    },
+    enabled: !!user,
+  });
 
   // Redirect if not a mentor
   useEffect(() => {
@@ -203,16 +239,63 @@ export const MentorCohort = () => {
       <PageBreadcrumb items={[{ label: "Dashboard", href: "/dashboard" }, { label: "My Cohort" }]} />
       
       <main className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold">My Mentorship Cohort</h1>
             <p className="text-muted-foreground mt-1">Manage your mentees and mentorship requests</p>
           </div>
-          <Button onClick={() => navigate('/mentor/cohort/community')}>
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Community Board
-          </Button>
+          <div className="flex items-center gap-3">
+            {/* Cohort Selector */}
+            {institutionCohorts && institutionCohorts.length > 0 && (
+              <Select value={selectedCohortView} onValueChange={setSelectedCohortView}>
+                <SelectTrigger className="w-[220px]">
+                  <SelectValue placeholder="Select cohort" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      <span>General Cohort</span>
+                    </div>
+                  </SelectItem>
+                  {institutionCohorts.map((cohort) => (
+                    <SelectItem key={cohort.id} value={cohort.id}>
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-primary" />
+                        <span>{cohort.institution.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Button onClick={() => navigate('/mentor/cohort/community')}>
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Community Board
+            </Button>
+          </div>
         </div>
+
+        {/* Institution Cohort Banner */}
+        {selectedCohortView !== 'general' && institutionCohorts && (
+          <Card className="mb-6 border-primary/20 bg-primary/5">
+            <CardContent className="py-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Building2 className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium">
+                    {institutionCohorts.find(c => c.id === selectedCohortView)?.institution.name} Cohort
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Institution-specific cohort - members from this institution only
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
