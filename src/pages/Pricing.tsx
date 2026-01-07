@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 import { Check, Sparkles, BookOpen, Video, Users, Award, Calendar, Briefcase, MessageSquare, BookMarked, Loader2, Zap, Globe, GraduationCap, Building2 } from 'lucide-react';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { AutocompleteInput } from '@/components/ui/autocomplete-input';
-import { AFRICAN_UNIVERSITIES } from '@/data/universities';
+import { UNIVERSITIES } from '@/data/universities';
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
 
@@ -590,7 +590,7 @@ export const Pricing = () => {
                   placeholder="Start typing to see suggestions..."
                   value={institutionForm.institutionName}
                   onChange={(value) => setInstitutionForm(prev => ({ ...prev, institutionName: value }))}
-                  suggestions={AFRICAN_UNIVERSITIES}
+                  suggestions={UNIVERSITIES}
                   required
                 />
               </div>

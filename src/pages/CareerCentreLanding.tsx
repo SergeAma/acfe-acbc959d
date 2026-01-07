@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { Check, GraduationCap, Building2, Users, Briefcase, Award, BarChart3, MessageSquare, Globe, Loader2 } from 'lucide-react';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { AutocompleteInput } from '@/components/ui/autocomplete-input';
-import { AFRICAN_UNIVERSITIES } from '@/data/universities';
+import { UNIVERSITIES } from '@/data/universities';
 import { useLanguage } from '@/contexts/LanguageContext';
 const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
 export const CareerCentreLanding = () => {
@@ -232,7 +232,7 @@ export const CareerCentreLanding = () => {
               <AutocompleteInput id="institutionName" value={institutionForm.institutionName} onChange={value => setInstitutionForm(prev => ({
               ...prev,
               institutionName: value
-            }))} suggestions={AFRICAN_UNIVERSITIES} placeholder="Enter institution name" className="mt-1" />
+            }))} suggestions={UNIVERSITIES} placeholder="Enter institution name" className="mt-1" />
             </div>
 
             <div>
