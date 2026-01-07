@@ -48,6 +48,8 @@ export const Courses = () => {
   const [levelFilter, setLevelFilter] = useState('all');
   const [mentorName, setMentorName] = useState<string | null>(null);
   const [subscribedCourseIds, setSubscribedCourseIds] = useState<string[]>([]);
+  const [completedCourseIds, setCompletedCourseIds] = useState<string[]>([]);
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -95,8 +97,33 @@ export const Courses = () => {
       }
     };
 
+    const fetchCompletedAndEnrolledCourses = async () => {
+      if (!profile?.id) return;
+      
+      // Fetch completed courses (those with certificates)
+      const { data: certificates } = await supabase
+        .from('course_certificates')
+        .select('course_id')
+        .eq('student_id', profile.id);
+      
+      if (certificates) {
+        setCompletedCourseIds(certificates.map(c => c.course_id));
+      }
+
+      // Fetch enrolled courses
+      const { data: enrollments } = await supabase
+        .from('enrollments')
+        .select('course_id')
+        .eq('student_id', profile.id);
+      
+      if (enrollments) {
+        setEnrolledCourseIds(enrollments.map(e => e.course_id));
+      }
+    };
+
     fetchCourses();
     fetchSubscribedCourses();
+    fetchCompletedAndEnrolledCourses();
   }, [mentorFilter, profile?.id]);
 
   useEffect(() => {
@@ -251,12 +278,16 @@ export const Courses = () => {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredCourses.map((course) => {
               const isSubscribed = subscribedCourseIds.includes(course.id);
+              const isCompleted = completedCourseIds.includes(course.id);
+              const isEnrolled = enrolledCourseIds.includes(course.id);
               return (
-              <Card key={course.id} className={`hover:shadow-lg transition-shadow relative ${isSubscribed ? 'ring-2 ring-primary' : ''}`}>
+              <Card key={course.id} className={`hover:shadow-lg transition-shadow relative ${isCompleted ? 'ring-2 ring-emerald-600' : isEnrolled ? 'ring-2 ring-blue-600' : isSubscribed ? 'ring-2 ring-primary' : ''}`}>
                 <div className="absolute top-2 right-2 z-10">
                   <CourseBadge
                     isPaid={course.is_paid}
                     isSubscribed={isSubscribed}
+                    isCompleted={isCompleted}
+                    isEnrolled={isEnrolled}
                     institutionId={course.institution_id}
                     institutionName={course.institution?.name}
                   />
