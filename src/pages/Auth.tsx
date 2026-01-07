@@ -17,7 +17,7 @@ import { Navbar } from '@/components/Navbar';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { AutocompleteInput } from '@/components/ui/autocomplete-input';
 import { PasswordInput } from '@/components/ui/password-input';
-import { AFRICAN_UNIVERSITIES } from '@/data/universities';
+import { UNIVERSITIES } from '@/data/universities';
 import { AFRICAN_CITIES } from '@/data/cities';
 const baseAuthSchema = z.object({
   email: z.string().email('Invalid email address').max(255),
@@ -372,7 +372,7 @@ export const Auth = () => {
                     placeholder="Start typing to see suggestions..."
                     value={formData.university}
                     onChange={(value) => setFormData({ ...formData, university: value })}
-                    suggestions={AFRICAN_UNIVERSITIES}
+                    suggestions={UNIVERSITIES}
                     required
                   />
                   {errors.university && <p className="text-sm text-destructive">{errors.university}</p>}

@@ -1,4 +1,5 @@
-export const AFRICAN_UNIVERSITIES = [
+// Comprehensive list of universities for autocomplete (African + Global)
+export const UNIVERSITIES = [
   // Nigeria
   "University of Lagos",
   "University of Ibadan",
@@ -138,11 +139,192 @@ export const AFRICAN_UNIVERSITIES = [
   "University of Mauritius",
   "African Leadership College",
   
-  // International/Online
+  // ============ GLOBAL UNIVERSITIES ============
+  
+  // United States
+  "Harvard University",
+  "Stanford University",
+  "Massachusetts Institute of Technology",
+  "Yale University",
+  "Princeton University",
+  "Columbia University",
+  "University of Chicago",
+  "University of Pennsylvania",
+  "Duke University",
+  "Northwestern University",
+  "California Institute of Technology",
+  "Cornell University",
+  "Brown University",
+  "Dartmouth College",
+  "University of California, Berkeley",
+  "UCLA",
+  "University of Southern California",
+  "New York University",
+  "University of Michigan",
+  "Carnegie Mellon University",
+  "Georgia Tech",
+  "University of Texas at Austin",
+  "University of Washington",
+  "University of Wisconsin-Madison",
+  "University of Illinois Urbana-Champaign",
+  "Boston University",
+  "Northeastern University",
+  "University of Florida",
+  "Penn State University",
+  "Ohio State University",
+  "Purdue University",
+  
+  // United Kingdom
+  "University of Oxford",
+  "University of Cambridge",
+  "Imperial College London",
+  "London School of Economics",
+  "University College London",
+  "King's College London",
+  "University of Edinburgh",
+  "University of Manchester",
+  "University of Warwick",
+  "University of Bristol",
+  "University of Glasgow",
+  "University of Leeds",
+  "University of Birmingham",
+  "University of Southampton",
+  "University of Sheffield",
+  "Queen Mary University of London",
+  "Durham University",
+  "University of Nottingham",
+  "University of Liverpool",
+  "University of Exeter",
+  
+  // Canada
+  "University of Toronto",
+  "McGill University",
+  "University of British Columbia",
+  "University of Waterloo",
+  "University of Alberta",
+  "Western University",
+  "McMaster University",
+  "Queen's University",
+  "University of Montreal",
+  "University of Ottawa",
+  "Simon Fraser University",
+  "York University",
+  
+  // Australia
+  "University of Melbourne",
+  "University of Sydney",
+  "Australian National University",
+  "University of Queensland",
+  "University of New South Wales",
+  "Monash University",
+  "University of Western Australia",
+  "University of Adelaide",
+  "RMIT University",
+  "University of Technology Sydney",
+  
+  // Germany
+  "Technical University of Munich",
+  "Ludwig Maximilian University of Munich",
+  "Heidelberg University",
+  "Humboldt University of Berlin",
+  "Free University of Berlin",
+  "RWTH Aachen University",
+  "University of Freiburg",
+  "University of Tübingen",
+  "University of Bonn",
+  "TU Berlin",
+  
+  // France
+  "Sciences Po",
+  "HEC Paris",
+  "ESSEC Business School",
+  "INSEAD",
+  "Sorbonne University",
+  "École Normale Supérieure",
+  "École Polytechnique",
+  "University of Paris",
+  "Pierre and Marie Curie University",
+  
+  // Netherlands
+  "University of Amsterdam",
+  "Delft University of Technology",
+  "Leiden University",
+  "Utrecht University",
+  "Erasmus University Rotterdam",
+  "Vrije Universiteit Amsterdam",
+  "University of Groningen",
+  
+  // Switzerland
+  "ETH Zurich",
+  "EPFL",
+  "University of Zurich",
+  "University of Geneva",
+  "University of Basel",
+  
+  // China
+  "Tsinghua University",
+  "Peking University",
+  "Fudan University",
+  "Shanghai Jiao Tong University",
+  "Zhejiang University",
+  "Nanjing University",
+  "University of Science and Technology of China",
+  
+  // Japan
+  "University of Tokyo",
+  "Kyoto University",
+  "Tokyo Institute of Technology",
+  "Osaka University",
+  "Waseda University",
+  "Keio University",
+  
+  // Singapore
+  "National University of Singapore",
+  "Nanyang Technological University",
+  "Singapore Management University",
+  
+  // India
+  "Indian Institute of Technology Bombay",
+  "Indian Institute of Technology Delhi",
+  "Indian Institute of Technology Madras",
+  "Indian Institute of Technology Kanpur",
+  "Indian Institute of Science",
+  "Delhi University",
+  "Jawaharlal Nehru University",
+  "BITS Pilani",
+  
+  // Middle East
+  "King Abdullah University of Science and Technology",
+  "American University of Beirut",
+  "American University in Dubai",
+  "Tel Aviv University",
+  "Hebrew University of Jerusalem",
+  "Technion - Israel Institute of Technology",
+  "Qatar University",
+  "Khalifa University",
+  
+  // Other Global
+  "National University of Ireland",
+  "Trinity College Dublin",
+  "University of Copenhagen",
+  "KTH Royal Institute of Technology",
+  "Seoul National University",
+  "Korea University",
+  "Yonsei University",
+  "University of Hong Kong",
+  "Chinese University of Hong Kong",
+  "KAIST",
+  
+  // Online/Alternative
   "African Leadership University",
   "ALX Africa",
   "Moringa School",
   "Andela Learning Community",
+  "Coursera Partner University",
+  "edX Partner University",
   "Self-taught / Online courses",
   "Other",
 ];
+
+// Backward compatibility alias
+export const AFRICAN_UNIVERSITIES = UNIVERSITIES;

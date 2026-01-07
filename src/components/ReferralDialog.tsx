@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, UserPlus, Building2 } from 'lucide-react';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { AutocompleteInput } from '@/components/ui/autocomplete-input';
-import { COMPANIES, AFRICAN_UNIVERSITIES } from '@/data';
+import { COMPANIES, UNIVERSITIES } from '@/data';
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
 
@@ -329,7 +329,7 @@ export const ReferralDialog = ({ open, onOpenChange }: ReferralDialogProps) => {
                 id="referred-company"
                 value={referredCompany}
                 onChange={setReferredCompany}
-                suggestions={[...AFRICAN_UNIVERSITIES, ...COMPANIES]}
+                suggestions={[...UNIVERSITIES, ...COMPANIES]}
                 placeholder="Start typing to see suggestions..."
                 required
               />

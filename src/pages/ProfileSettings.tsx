@@ -16,7 +16,7 @@ import { ProfilePhotoEditor } from '@/components/profile/ProfilePhotoEditor';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { Badge } from '@/components/ui/badge';
 import { AutocompleteInput } from '@/components/ui/autocomplete-input';
-import { AFRICAN_UNIVERSITIES, COMPANIES, COUNTRY_NAMES } from '@/data';
+import { UNIVERSITIES, COMPANIES, COUNTRY_NAMES } from '@/data';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -602,7 +602,7 @@ export const ProfileSettings = () => {
                   id="university"
                   value={formData.university}
                   onChange={(value) => setFormData(prev => ({ ...prev, university: value }))}
-                  suggestions={AFRICAN_UNIVERSITIES}
+                  suggestions={UNIVERSITIES}
                   placeholder="Start typing to see suggestions..."
                 />
               </div>
