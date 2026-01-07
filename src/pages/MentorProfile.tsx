@@ -14,10 +14,75 @@ import { CompanyLogos } from '@/components/CompanyLogos';
 import { MentorshipRequestDialog } from '@/components/mentorship/MentorshipRequestDialog';
 import { MentorSessionBooking } from '@/components/mentorship/MentorSessionBooking';
 import { CourseBadge } from '@/components/CourseBadge';
-import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe, ArrowLeft, Clock, BarChart, User, ChevronDown } from 'lucide-react';
+import { BookOpen, Linkedin, Twitter, Instagram, Github, Globe, ArrowLeft, Clock, BarChart, User, ChevronDown, Building2 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuth } from '@/contexts/AuthContext';
 import { stripHtml } from '@/lib/html-utils';
+
+// Component to show institutions where mentor has approved cohort partnerships
+const ExclusiveMentorSection = ({ mentorId }: { mentorId: string }) => {
+  const { data: institutions, isLoading } = useQuery({
+    queryKey: ['mentor-exclusive-institutions', mentorId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('institution_cohorts')
+        .select(`
+          id,
+          institution_id,
+          institutions!inner (
+            id,
+            name,
+            slug,
+            logo_url
+          )
+        `)
+        .eq('mentor_id', mentorId)
+        .eq('is_active', true);
+      
+      if (error) throw error;
+      return (data || []).map(cohort => ({
+        id: (cohort.institutions as any).id,
+        name: (cohort.institutions as any).name,
+        slug: (cohort.institutions as any).slug,
+        logo_url: (cohort.institutions as any).logo_url,
+      }));
+    },
+    enabled: !!mentorId,
+  });
+
+  if (isLoading || !institutions || institutions.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-6 p-4 rounded-lg bg-accent/50 border border-accent">
+      <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+        <Building2 className="h-4 w-4 text-primary" />
+        Exclusive Mentor to
+      </h3>
+      <div className="flex flex-wrap gap-3">
+        {institutions.map((institution) => (
+          <Link
+            key={institution.id}
+            to={`/institutions/${institution.slug}`}
+            className="flex items-center gap-2 px-3 py-2 rounded-full bg-background hover:bg-primary/5 border border-border hover:border-primary/30 transition-colors"
+          >
+            {institution.logo_url ? (
+              <img 
+                src={institution.logo_url} 
+                alt={institution.name}
+                className="h-6 w-6 rounded object-contain"
+              />
+            ) : (
+              <Building2 className="h-5 w-5 text-muted-foreground" />
+            )}
+            <span className="text-sm font-medium">{institution.name}</span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 interface MentorProfile {
   id: string;
@@ -342,6 +407,9 @@ export const MentorProfile = () => {
                   </div>
                 </div>
               )}
+
+              {/* Exclusive Mentor To Section */}
+              <ExclusiveMentorSection mentorId={id!} />
             </div>
           </div>
 
