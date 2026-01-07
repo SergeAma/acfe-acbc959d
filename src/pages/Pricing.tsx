@@ -18,6 +18,7 @@ import { Check, Sparkles, BookOpen, Video, Users, Award, Calendar, Briefcase, Me
 import { PhoneInput } from '@/components/ui/phone-input';
 import { AutocompleteInput } from '@/components/ui/autocomplete-input';
 import { UNIVERSITIES } from '@/data/universities';
+import { COUNTRIES } from '@/data/countries';
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
 
@@ -36,7 +37,9 @@ export const Pricing = () => {
     institutionName: '',
     institutionType: '',
     firstName: '',
+    lastName: '',
     contactEmail: '',
+    country: '',
     contactPhone: '',
     estimatedStudents: '',
     message: '',
@@ -144,7 +147,7 @@ export const Pricing = () => {
   const handleInstitutionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!institutionForm.institutionName || !institutionForm.institutionType || !institutionForm.firstName || !institutionForm.contactEmail || !institutionForm.contactPhone || !institutionForm.estimatedStudents || !institutionForm.message) {
+    if (!institutionForm.institutionName || !institutionForm.institutionType || !institutionForm.firstName || !institutionForm.lastName || !institutionForm.contactEmail || !institutionForm.country || !institutionForm.contactPhone || !institutionForm.estimatedStudents || !institutionForm.message) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -172,7 +175,9 @@ export const Pricing = () => {
         institutionName: '',
         institutionType: '',
         firstName: '',
+        lastName: '',
         contactEmail: '',
+        country: '',
         contactPhone: '',
         estimatedStudents: '',
         message: '',
@@ -614,48 +619,78 @@ export const Pricing = () => {
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName">Your Name *</Label>
+                <Label htmlFor="firstName">First Name <span className="text-destructive">*</span></Label>
                 <Input
                   id="firstName"
-                  placeholder="Full name"
+                  placeholder="John"
                   value={institutionForm.firstName}
                   onChange={(e) => setInstitutionForm(prev => ({ ...prev, firstName: e.target.value }))}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="contactEmail">Email Address *</Label>
+                <Label htmlFor="lastName">Last Name <span className="text-destructive">*</span></Label>
                 <Input
-                  id="contactEmail"
-                  type="email"
-                  placeholder="you@institution.edu"
-                  value={institutionForm.contactEmail}
-                  onChange={(e) => setInstitutionForm(prev => ({ ...prev, contactEmail: e.target.value }))}
+                  id="lastName"
+                  placeholder="Doe"
+                  value={institutionForm.lastName}
+                  onChange={(e) => setInstitutionForm(prev => ({ ...prev, lastName: e.target.value }))}
                   required
                 />
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="contactPhone">Phone Number *</Label>
-                <PhoneInput
-                  id="contactPhone"
-                  value={institutionForm.contactPhone}
-                  onChange={(value) => setInstitutionForm(prev => ({ ...prev, contactPhone: value }))}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="estimatedStudents">Estimated Students *</Label>
-                <Input
-                  id="estimatedStudents"
-                  placeholder="e.g., 500"
-                  value={institutionForm.estimatedStudents}
-                  onChange={(e) => setInstitutionForm(prev => ({ ...prev, estimatedStudents: e.target.value }))}
-                  required
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="contactEmail">Email <span className="text-destructive">*</span></Label>
+              <Input
+                id="contactEmail"
+                type="email"
+                placeholder="you@institution.edu"
+                value={institutionForm.contactEmail}
+                onChange={(e) => setInstitutionForm(prev => ({ ...prev, contactEmail: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="country">Country <span className="text-destructive">*</span></Label>
+              <Select 
+                value={institutionForm.country} 
+                onValueChange={(value) => setInstitutionForm(prev => ({ ...prev, country: value }))}
+              >
+                <SelectTrigger id="country">
+                  <SelectValue placeholder="Select your country" />
+                </SelectTrigger>
+                <SelectContent className="bg-card max-h-[200px]">
+                  {COUNTRIES.map((country) => (
+                    <SelectItem key={country.code} value={country.code}>
+                      {country.flag} {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="contactPhone">Phone <span className="text-destructive">*</span></Label>
+              <PhoneInput
+                id="contactPhone"
+                value={institutionForm.contactPhone}
+                onChange={(value) => setInstitutionForm(prev => ({ ...prev, contactPhone: value }))}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="estimatedStudents">Estimated Students <span className="text-destructive">*</span></Label>
+              <Input
+                id="estimatedStudents"
+                type="number"
+                placeholder="e.g., 500"
+                value={institutionForm.estimatedStudents}
+                onChange={(e) => setInstitutionForm(prev => ({ ...prev, estimatedStudents: e.target.value }))}
+                required
+              />
             </div>
             
             <div className="space-y-2">
