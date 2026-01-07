@@ -432,7 +432,7 @@ export const SubmissionsReview = () => {
               {selectedAssignment.text_content && (
                 <div>
                   <Label className="text-muted-foreground">Text Submission</Label>
-                  <div className="mt-1 p-3 bg-muted/50 rounded-lg whitespace-pre-wrap text-sm">
+                  <div className="mt-1 p-3 bg-muted/50 rounded-lg whitespace-pre-wrap break-words text-sm overflow-hidden">
                     {selectedAssignment.text_content}
                   </div>
                 </div>
