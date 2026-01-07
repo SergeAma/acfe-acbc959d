@@ -35,7 +35,7 @@ export const Pricing = () => {
   const [institutionForm, setInstitutionForm] = useState({
     institutionName: '',
     institutionType: '',
-    contactName: '',
+    firstName: '',
     contactEmail: '',
     contactPhone: '',
     estimatedStudents: '',
@@ -144,7 +144,7 @@ export const Pricing = () => {
   const handleInstitutionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!institutionForm.institutionName || !institutionForm.institutionType || !institutionForm.contactName || !institutionForm.contactEmail || !institutionForm.contactPhone || !institutionForm.estimatedStudents || !institutionForm.message) {
+    if (!institutionForm.institutionName || !institutionForm.institutionType || !institutionForm.firstName || !institutionForm.contactEmail || !institutionForm.contactPhone || !institutionForm.estimatedStudents || !institutionForm.message) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -171,7 +171,7 @@ export const Pricing = () => {
       setInstitutionForm({
         institutionName: '',
         institutionType: '',
-        contactName: '',
+        firstName: '',
         contactEmail: '',
         contactPhone: '',
         estimatedStudents: '',
@@ -614,12 +614,12 @@ export const Pricing = () => {
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="contactName">Your Name *</Label>
+                <Label htmlFor="firstName">Your Name *</Label>
                 <Input
-                  id="contactName"
+                  id="firstName"
                   placeholder="Full name"
-                  value={institutionForm.contactName}
-                  onChange={(e) => setInstitutionForm(prev => ({ ...prev, contactName: e.target.value }))}
+                  value={institutionForm.firstName}
+                  onChange={(e) => setInstitutionForm(prev => ({ ...prev, firstName: e.target.value }))}
                   required
                 />
               </div>
