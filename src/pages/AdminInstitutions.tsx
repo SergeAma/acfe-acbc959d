@@ -42,6 +42,7 @@ import { Navigate, Link } from 'react-router-dom';
 import { InstitutionLogoEditor } from '@/components/admin/InstitutionLogoEditor';
 import { StudentProfileDialog } from '@/components/admin/StudentProfileDialog';
 import { ModeratorManagement } from '@/components/admin/ModeratorManagement';
+import { AdminInstitutionRequests } from '@/components/admin/AdminInstitutionRequests';
 
 export const AdminInstitutions = () => {
   const { user, profile, loading: authLoading } = useAuth();
@@ -579,6 +580,11 @@ export const AdminInstitutions = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+            </div>
+
+            {/* Mentor Partnership Requests Section */}
+            <div className="mb-6">
+              <AdminInstitutionRequests />
             </div>
 
             <div className="grid lg:grid-cols-3 gap-6">
