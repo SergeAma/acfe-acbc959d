@@ -64,6 +64,15 @@ const handler = async (req: Request): Promise<Response> => {
       ? 'Exclusive Content Creation' 
       : 'Institution Cohort Mentoring';
 
+    // Get the request ID for action tracking
+    const { data: latestRequest } = await supabase
+      .from('mentor_institution_requests')
+      .select('id')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
     // Create in-app notifications for all admins
     const notificationMessage = `New institution request: ${mentor_name} wants to ${request_type === 'exclusive_content' ? 'create exclusive content for' : 'mentor a cohort at'} ${institution_name}`;
     
@@ -71,7 +80,8 @@ const handler = async (req: Request): Promise<Response> => {
       user_id: admin.id,
       message: notificationMessage,
       link: '/admin/institutions',
-      is_read: false,
+      action_type: 'review_institution_request',
+      action_reference_id: latestRequest?.id || null,
     }));
 
     const { error: notifError } = await supabase
