@@ -26,7 +26,7 @@ export const EMAIL_DESIGN_TOKENS = {
   BORDER_RADIUS: '6px',
   
   // Assets (absolute CDN URLs only)
-  LOGO_URL: 'https://mefwbcbnctqjxrwldmjm.supabase.co/storage/v1/object/public/email-assets/acfe-logo-email.png',
+  LOGO_URL: 'https://acloudforeveryone.org/acfe-logo-email.png',
   LOGO_WIDTH: '140',
   LOGO_HEIGHT: '50',
   
