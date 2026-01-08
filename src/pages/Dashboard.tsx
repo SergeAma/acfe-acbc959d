@@ -10,7 +10,7 @@ import { useLearnerAgreement } from '@/hooks/useLearnerAgreement';
 import { useSessionTracking } from '@/hooks/useSessionTracking';
 
 export const Dashboard = () => {
-  const { user, profile, loading, isActualAdmin } = useAuth();
+  const { user, profile, loading, isActualAdmin, effectiveRole, isSimulating } = useAuth();
   const { hasSignedContract, loading: contractLoading } = useMentorContract(user?.id);
   const { hasSignedAgreement, isLoading: agreementLoading, isProfileComplete } = useLearnerAgreement();
   
@@ -25,18 +25,20 @@ export const Dashboard = () => {
     );
   }
 
-  // Redirect admins to the admin dashboard
-  if (profile?.role === 'admin') {
-    return <Navigate to="/admin" replace />;
-  }
+  // Determine which dashboard to show
+  // Admins see MentorDashboard by default (they are also mentors)
+  // When simulating, show dashboard based on simulated role
+  const dashboardRole = isActualAdmin 
+    ? (isSimulating ? effectiveRole : 'mentor') 
+    : effectiveRole;
 
-  // Redirect mentors who haven't signed contract (unless they're an admin simulating)
-  if (profile?.role === 'mentor' && !isActualAdmin && hasSignedContract === false) {
+  // Redirect mentors who haven't signed contract (unless they're an admin)
+  if (dashboardRole === 'mentor' && !isActualAdmin && hasSignedContract === false) {
     return <Navigate to="/mentor-contract" replace />;
   }
 
   // For students: first check profile completion, then agreement
-  if (profile?.role === 'student' && !isActualAdmin) {
+  if (dashboardRole === 'student' && !isActualAdmin) {
     // If profile incomplete, redirect to profile page
     if (!isProfileComplete) {
       return <Navigate to="/profile" replace />;
@@ -52,7 +54,7 @@ export const Dashboard = () => {
       <Navbar />
       <PageBreadcrumb items={[{ label: "Dashboard" }]} />
       <div className="container mx-auto px-4 py-4">
-        {profile?.role === 'student' ? <StudentDashboard /> : <MentorDashboard />}
+        {dashboardRole === 'student' ? <StudentDashboard /> : <MentorDashboard />}
       </div>
     </div>
   );
