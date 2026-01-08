@@ -239,22 +239,22 @@ export const InstitutionCareerCentre = () => {
         <div className="container mx-auto px-4 relative">
           <div className="max-w-6xl mx-auto">
             <div className="flex items-start gap-6">
-              {/* Institution logo with accent ring */}
-              <div className="relative">
+              {/* Institution logo - large and prominent (standard for all institutions) */}
+              <div className="relative shrink-0">
                 {institution.logo_url ? (
                   <div className="relative">
                     <img 
                       src={institution.logo_url} 
                       alt={institution.name}
-                      className="h-20 w-20 sm:h-24 sm:w-24 object-contain rounded-2xl bg-white p-2 border-2 border-primary/20 shadow-lg"
+                      className="h-28 w-28 sm:h-36 sm:w-36 lg:h-40 lg:w-40 object-contain rounded-2xl bg-white p-3 border-2 border-primary/20 shadow-xl"
                     />
-                    <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-primary flex items-center justify-center">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-primary-foreground" />
+                    <div className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-primary flex items-center justify-center shadow-lg">
+                      <CheckCircle2 className="h-4 w-4 text-primary-foreground" />
                     </div>
                   </div>
                 ) : (
-                  <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border-2 border-primary/20 shadow-lg">
-                    <Building2 className="h-10 w-10 sm:h-12 sm:w-12 text-primary" />
+                  <div className="h-28 w-28 sm:h-36 sm:w-36 lg:h-40 lg:w-40 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border-2 border-primary/20 shadow-xl">
+                    <Building2 className="h-14 w-14 sm:h-16 sm:w-16 lg:h-20 lg:w-20 text-primary" />
                   </div>
                 )}
               </div>
