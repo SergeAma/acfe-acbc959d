@@ -28,6 +28,10 @@ interface Donation {
   status: string;
   created_at: string;
   is_recurring: boolean;
+  company: string | null;
+  reason: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
 }
 
 export const AdminDonors = () => {
@@ -40,6 +44,7 @@ export const AdminDonors = () => {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [emailSubject, setEmailSubject] = useState('');
   const [emailContent, setEmailContent] = useState('');
+  const [selectedDonor, setSelectedDonor] = useState<Donation | null>(null);
 
   useEffect(() => {
     if (profile?.role === 'admin') {
@@ -278,13 +283,17 @@ export const AdminDonors = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredDonations.map((donation) => (
-                      <TableRow key={donation.id}>
+                      <TableRow 
+                        key={donation.id} 
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => setSelectedDonor(donation)}
+                      >
                         <TableCell className="font-medium">
                           {donation.first_name} {donation.last_name}
                         </TableCell>
                         <TableCell>{donation.email}</TableCell>
                         <TableCell>
-                          ${(donation.amount_cents / 100).toFixed(2)}/mo
+                          ${(donation.amount_cents / 100).toFixed(2)}{donation.is_recurring ? '/mo' : ''}
                         </TableCell>
                         <TableCell>{getStatusBadge(donation.status)}</TableCell>
                         <TableCell className="text-muted-foreground">
@@ -351,6 +360,84 @@ export const AdminDonors = () => {
                   Send to {activeDonors.length} Donors
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Donor Detail Dialog */}
+      <Dialog open={!!selectedDonor} onOpenChange={(open) => !open && setSelectedDonor(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Donor Profile</DialogTitle>
+            <DialogDescription>
+              Complete donor information
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedDonor && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground text-xs">Full Name</Label>
+                  <p className="font-medium">{selectedDonor.first_name} {selectedDonor.last_name}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">Status</Label>
+                  <div className="mt-1">{getStatusBadge(selectedDonor.status)}</div>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-muted-foreground text-xs">Email</Label>
+                <p className="font-medium">{selectedDonor.email}</p>
+              </div>
+              
+              {selectedDonor.company && (
+                <div>
+                  <Label className="text-muted-foreground text-xs">Company</Label>
+                  <p className="font-medium">{selectedDonor.company}</p>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground text-xs">Amount</Label>
+                  <p className="font-medium text-lg">
+                    ${(selectedDonor.amount_cents / 100).toFixed(2)}
+                    {selectedDonor.is_recurring && <span className="text-sm text-muted-foreground">/mo</span>}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">Type</Label>
+                  <p className="font-medium">{selectedDonor.is_recurring ? 'Recurring' : 'One-time'}</p>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-muted-foreground text-xs">Date</Label>
+                <p className="font-medium">{format(new Date(selectedDonor.created_at), 'MMMM d, yyyy')}</p>
+              </div>
+              
+              {selectedDonor.reason && (
+                <div>
+                  <Label className="text-muted-foreground text-xs">Reason for Supporting</Label>
+                  <p className="text-sm bg-muted/50 p-3 rounded-md mt-1">{selectedDonor.reason}</p>
+                </div>
+              )}
+              
+              {selectedDonor.stripe_customer_id && (
+                <div>
+                  <Label className="text-muted-foreground text-xs">Stripe Customer ID</Label>
+                  <p className="font-mono text-xs text-muted-foreground">{selectedDonor.stripe_customer_id}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedDonor(null)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
