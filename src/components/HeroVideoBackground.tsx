@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-const heroVideos = [
-  '/videos/hero-background.mp4',
-  '/videos/cape-town.mp4',
-  '/videos/lagos.mp4',
-  '/videos/johannesburg.mp4',
+const heroMedia = [
+  { video: '/videos/hero-background.mp4', poster: '/images/hero-poster-main.jpg' },
+  { video: '/videos/cape-town.mp4', poster: '/images/hero-poster-capetown.jpg' },
+  { video: '/videos/lagos.mp4', poster: '/images/hero-poster-lagos.jpg' },
+  { video: '/videos/johannesburg.mp4', poster: '/images/hero-poster-johannesburg.jpg' },
 ];
 
 export const HeroVideoBackground = () => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [videosLoaded, setVideosLoaded] = useState<boolean[]>(new Array(heroMedia.length).fill(false));
   const [isMobile, setIsMobile] = useState(false);
   const [isInViewport, setIsInViewport] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -57,7 +57,7 @@ export const HeroVideoBackground = () => {
     if (isMobile) return;
 
     const interval = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % heroVideos.length);
+      setActiveIndex((prev) => (prev + 1) % heroMedia.length);
     }, 8000);
 
     return () => clearInterval(interval);
@@ -65,10 +65,12 @@ export const HeroVideoBackground = () => {
 
   // Handle video load events
   const handleLoadedData = useCallback((index: number) => {
-    if (index === 0 && !isLoaded) {
-      setIsLoaded(true);
-    }
-  }, [isLoaded]);
+    setVideosLoaded(prev => {
+      const updated = [...prev];
+      updated[index] = true;
+      return updated;
+    });
+  }, []);
 
   const handleCanPlay = useCallback((video: HTMLVideoElement) => {
     if (isInViewport) {
@@ -83,19 +85,22 @@ export const HeroVideoBackground = () => {
     }
   }, [isInViewport]);
 
-  // Mobile: show static background image
+  // Mobile: show static background image with crossfade
   if (isMobile) {
     return (
       <div
         ref={containerRef}
         className="absolute inset-0 w-full h-full overflow-hidden bg-[hsl(30,15%,12%)]"
-        style={{
-          backgroundImage: 'url(/videos/hero-background.mp4#t=0.1)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
       >
-        {/* Dark overlay for mobile static background */}
+        {heroMedia.map((media, index) => (
+          <div
+            key={media.poster}
+            className={`absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000 ${
+              index === activeIndex ? 'opacity-100' : 'opacity-0'
+            }`}
+            style={{ backgroundImage: `url(${media.poster})` }}
+          />
+        ))}
         <div className="absolute inset-0 bg-black/40" />
       </div>
     );
@@ -104,27 +109,38 @@ export const HeroVideoBackground = () => {
   return (
     <div
       ref={containerRef}
-      className={`absolute inset-0 w-full h-full overflow-hidden bg-[hsl(30,15%,12%)] transition-opacity duration-500 ${
-        isLoaded ? 'opacity-100' : 'opacity-0'
-      }`}
+      className="absolute inset-0 w-full h-full overflow-hidden bg-[hsl(30,15%,12%)]"
     >
-      {heroVideos.map((src, index) => (
+      {/* Poster images as immediate background */}
+      {heroMedia.map((media, index) => (
+        <div
+          key={`poster-${media.poster}`}
+          className={`absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-500 ${
+            index === activeIndex && !videosLoaded[index] ? 'opacity-100 z-[1]' : 'opacity-0 z-0'
+          }`}
+          style={{ backgroundImage: `url(${media.poster})` }}
+        />
+      ))}
+      
+      {/* Videos with crossfade */}
+      {heroMedia.map((media, index) => (
         <video
-          key={src}
+          key={media.video}
           ref={(el) => { videoRefs.current[index] = el; }}
           className={`hero-video absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out pointer-events-none ${
-            index === activeIndex ? 'opacity-100 z-[2]' : 'opacity-0 z-[1]'
+            index === activeIndex && videosLoaded[index] ? 'opacity-100 z-[2]' : 'opacity-0 z-[1]'
           }`}
           autoPlay
           muted
           loop
           playsInline
           preload="auto"
+          poster={media.poster}
           disablePictureInPicture
           onLoadedData={() => handleLoadedData(index)}
           onCanPlay={(e) => handleCanPlay(e.currentTarget)}
         >
-          <source src={src} type="video/mp4" />
+          <source src={media.video} type="video/mp4" />
         </video>
       ))}
     </div>
