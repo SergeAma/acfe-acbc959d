@@ -363,7 +363,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // ==================== MENTORS ====================
     'mentors.title': 'Our Mentors',
-    'mentors.subtitle': 'Learn from experienced professionals across Africa',
+    'mentors.subtitle': 'Learn from experienced professionals who understand the African context.',
     'mentors.search': 'Search mentors...',
     'mentors.filter': 'Filter',
     'mentors.allSkills': 'All Skills',
@@ -1239,7 +1239,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // ==================== MENTORS ====================
     'mentors.title': 'Nos Mentors',
-    'mentors.subtitle': "Apprenez auprès de professionnels expérimentés à travers l'Afrique",
+    'mentors.subtitle': "Apprenez auprès de professionnels expérimentés qui comprennent le contexte africain.",
     'mentors.search': 'Rechercher des mentors...',
     'mentors.filter': 'Filtrer',
     'mentors.allSkills': 'Toutes les Compétences',
