@@ -30,6 +30,12 @@ import { stripHtml } from '@/lib/html-utils';
 import { InstitutionAuthGate } from '@/components/institution/InstitutionAuthGate';
 import { InstitutionMembershipGate } from '@/components/institution/InstitutionMembershipGate';
 
+interface MentorProfile {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+}
+
 interface Course {
   id: string;
   title: string;
@@ -39,6 +45,8 @@ interface Course {
   level: string | null;
   is_live: boolean | null;
   live_date: string | null;
+  mentor_id?: string;
+  mentor?: MentorProfile;
 }
 
 interface Enrollment {
@@ -98,14 +106,17 @@ export const InstitutionCareerCentre = () => {
     enabled: !!user,
   });
 
-  // Fetch institution-exclusive courses
+  // Fetch institution-exclusive courses with mentor data
   const { data: exclusiveCourses = [] } = useQuery({
     queryKey: ['institution-exclusive-courses', institution?.id],
     queryFn: async () => {
       if (!institution?.id) return [];
       const { data, error } = await supabase
         .from('courses')
-        .select('id, title, description, thumbnail_url, category, level, is_live, live_date')
+        .select(`
+          id, title, description, thumbnail_url, category, level, is_live, live_date, mentor_id,
+          mentor:profiles!courses_mentor_id_fkey(id, full_name, avatar_url)
+        `)
         .eq('institution_id', institution.id)
         .eq('is_published', true)
         .order('created_at', { ascending: false });
@@ -429,7 +440,39 @@ export const InstitutionCareerCentre = () => {
                                 {acronym} EXCLUSIVE
                               </Badge>
                             </div>
+                            {/* Clickable Mentor Avatar */}
+                            {course.mentor && (
+                              <Link 
+                                to={`/mentors/${course.mentor.id}`}
+                                className="absolute bottom-2 right-2 group/mentor"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <div className="h-10 w-10 rounded-full ring-2 ring-white shadow-lg overflow-hidden bg-white hover:ring-primary transition-all">
+                                  {course.mentor.avatar_url ? (
+                                    <img 
+                                      src={course.mentor.avatar_url} 
+                                      alt={course.mentor.full_name || 'Mentor'}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary text-sm font-semibold">
+                                      {course.mentor.full_name?.[0]?.toUpperCase() || 'M'}
+                                    </div>
+                                  )}
+                                </div>
+                              </Link>
+                            )}
                           </div>
+                          {/* Mentor name row */}
+                          {course.mentor && (
+                            <Link 
+                              to={`/mentors/${course.mentor.id}`}
+                              className="flex items-center gap-2 mb-2 text-xs text-muted-foreground hover:text-primary transition-colors"
+                            >
+                              <span>by</span>
+                              <span className="font-medium">{course.mentor.full_name || 'Mentor'}</span>
+                            </Link>
+                          )}
                           <h4 className="font-semibold text-foreground line-clamp-1 mb-1">{course.title}</h4>
                           {course.description && (
                             <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
