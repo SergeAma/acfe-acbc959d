@@ -17,7 +17,7 @@ interface CourseAssessmentsProps {
   assignmentApproved: boolean;
   onBack: () => void;
   onQuizComplete: (passed: boolean) => void;
-  onAssignmentComplete: (approved: boolean) => void;
+  onAssignmentComplete: (status: 'submitted' | 'approved') => void;
 }
 
 export const CourseAssessments = ({

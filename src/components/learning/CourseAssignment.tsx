@@ -17,7 +17,7 @@ import { isValidVideoUrl } from '@/lib/video-utils';
 interface CourseAssignmentProps {
   courseId: string;
   enrollmentId: string;
-  onComplete: (approved: boolean) => void;
+  onComplete: (status: 'submitted' | 'approved') => void;
 }
 
 interface Assignment {
@@ -103,7 +103,9 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
       setFileName(submissionData.file_name || '');
       
       if (typedSubmission.status === 'approved') {
-        onComplete(true);
+        onComplete('approved');
+      } else if (typedSubmission.status === 'pending' || typedSubmission.status === 'revision_requested') {
+        onComplete('submitted');
       }
     }
 
@@ -303,6 +305,7 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
       toast({ title: 'Error', description: 'Failed to submit assignment', variant: 'destructive' });
     } else {
       setSubmission(result.data);
+      onComplete('submitted'); // Notify parent of submission
       toast({ title: 'Success', description: 'Assignment submitted for review' });
       
       // Send email notifications
