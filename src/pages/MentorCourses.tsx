@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, BookOpen, Users, Trash2, Edit, BarChart3, LayoutGrid, Loader2 } from 'lucide-react';
 import { CourseAnalytics } from '@/components/mentor/CourseAnalytics';
+import { CourseQuickStats } from '@/components/admin/CourseQuickStats';
 import { useMentorContract } from '@/hooks/useMentorContract';
 import {
   AlertDialog,
@@ -206,7 +207,7 @@ export const MentorCourses = () => {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                         <div className="flex items-center gap-1">
                           <BookOpen className="h-4 w-4" />
                           {course.sections[0]?.count || 0} sections
@@ -216,7 +217,8 @@ export const MentorCourses = () => {
                           {course.enrollments[0]?.count || 0} students
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <CourseQuickStats courseId={course.id} />
+                      <div className="flex gap-2 mt-3">
                         <Button
                           variant="outline"
                           className="flex-1"
