@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,6 +17,9 @@ import { CoursePrerequisites } from '@/components/admin/CoursePrerequisites';
 import { QuizBuilder } from '@/components/admin/QuizBuilder';
 import { AssignmentBuilder } from '@/components/admin/AssignmentBuilder';
 import { CourseDescriptionMedia } from '@/components/admin/CourseDescriptionMedia';
+import { AutosaveIndicator } from '@/components/admin/AutosaveIndicator';
+import { CourseBuilderProgress, type BuilderStep } from '@/components/admin/CourseBuilderProgress';
+import { useAutosave } from '@/hooks/useAutosave';
 import {
   DndContext,
   closestCenter,
@@ -138,6 +141,127 @@ export const AdminCourseBuilder = () => {
     localStorage.setItem('courseBuilderTipDismissed', 'true');
     setShowEditingTip(false);
   };
+
+  // Autosave data - tracks fields that should be autosaved
+  const autosaveData = useMemo(() => ({
+    title: editedTitle,
+    description: editedDescription,
+    category: category === 'Other' ? customCategory : category,
+    level,
+    durationWeeks,
+    dripScheduleType,
+    dripReleaseDay,
+  }), [editedTitle, editedDescription, category, customCategory, level, durationWeeks, dripScheduleType, dripReleaseDay]);
+
+  // Autosave handler
+  const handleAutosave = useCallback(async (data: typeof autosaveData) => {
+    if (!courseId || !course) return;
+
+    const updates: Record<string, any> = {};
+    
+    // Only include fields that have changed
+    if (data.title && data.title !== course.title) {
+      updates.title = data.title;
+    }
+    if (data.description !== course.description) {
+      updates.description = data.description;
+    }
+    if (data.category !== course.category) {
+      updates.category = data.category || null;
+    }
+    if (data.level !== (course.level || '')) {
+      updates.level = data.level || null;
+    }
+    if (data.durationWeeks !== course.duration_weeks) {
+      updates.duration_weeks = data.durationWeeks;
+    }
+    if (data.dripScheduleType !== (course.drip_schedule_type || 'week')) {
+      updates.drip_schedule_type = data.dripScheduleType;
+    }
+    if (data.dripReleaseDay !== (course.drip_release_day ?? 3)) {
+      updates.drip_release_day = data.dripScheduleType === 'week' ? data.dripReleaseDay : null;
+    }
+
+    // Only save if there are changes
+    if (Object.keys(updates).length === 0) return;
+
+    const { error } = await supabase
+      .from('courses')
+      .update(updates)
+      .eq('id', courseId);
+
+    if (error) throw error;
+
+    // Update local state
+    setCourse(prev => prev ? { ...prev, ...updates } : null);
+  }, [courseId, course]);
+
+  const { status: autosaveStatus, lastSaved } = useAutosave({
+    data: autosaveData,
+    onSave: handleAutosave,
+    debounceMs: 2000,
+    enabled: !!course && !editingTitle && !editingDescription,
+  });
+
+  // Builder progress steps
+  const builderSteps: BuilderStep[] = useMemo(() => [
+    {
+      id: 'title',
+      label: 'Title',
+      isComplete: !!course?.title && course.title.length >= 5,
+      isRequired: true,
+      description: 'Course title (min 5 characters)',
+    },
+    {
+      id: 'description',
+      label: 'Description',
+      isComplete: !!course?.description && course.description.length >= 20,
+      isRequired: true,
+      description: 'Course description (min 20 characters)',
+    },
+    {
+      id: 'thumbnail',
+      label: 'Thumbnail',
+      isComplete: !!course?.thumbnail_url,
+      isRequired: true,
+      description: 'Upload a course thumbnail image',
+    },
+    {
+      id: 'category',
+      label: 'Category',
+      isComplete: !!course?.category,
+      isRequired: true,
+      description: 'Select a course category',
+    },
+    {
+      id: 'level',
+      label: 'Level',
+      isComplete: !!course?.level,
+      isRequired: true,
+      description: 'Set difficulty level',
+    },
+    {
+      id: 'content',
+      label: 'Content',
+      isComplete: sections.length > 0 && totalLessons > 0,
+      isRequired: true,
+      description: 'Add at least one section with content',
+    },
+    {
+      id: 'duration',
+      label: 'Duration',
+      isComplete: !!course?.duration_weeks,
+      isRequired: false,
+      description: 'Estimated completion time',
+    },
+    {
+      id: 'media',
+      label: 'Intro Media',
+      isComplete: !!course?.description_video_url || !!course?.description_audio_url,
+      isRequired: false,
+      description: 'Video or audio introduction',
+    },
+  ], [course, sections.length, totalLessons]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -868,11 +992,20 @@ export const AdminCourseBuilder = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-8 max-w-5xl">
+        {/* Builder Progress Indicator */}
+        <div className="mb-6">
+          <CourseBuilderProgress steps={builderSteps} />
+        </div>
+
         <div className="flex justify-between items-center mb-6">
-          <Button variant="ghost" onClick={() => navigate(isAdminRoute ? '/admin/courses' : '/dashboard')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {isAdminRoute ? 'Back to Courses' : 'Back to Dashboard'}
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" onClick={() => navigate(isAdminRoute ? '/admin/courses' : '/dashboard')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              {isAdminRoute ? 'Back to Courses' : 'Back to Dashboard'}
+            </Button>
+            {/* Autosave Indicator */}
+            <AutosaveIndicator status={autosaveStatus} lastSaved={lastSaved} />
+          </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => navigate(`/courses/${courseId}`)}>
               <Eye className="h-4 w-4 mr-2" />
