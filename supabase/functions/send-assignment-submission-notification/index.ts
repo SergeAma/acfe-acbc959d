@@ -16,6 +16,7 @@ interface AssignmentSubmissionNotification {
   studentName: string;
   courseTitle: string;
   assignmentTitle: string;
+  submissionId?: string; // Optional for backward compatibility
 }
 
 // HTML entity encoding for XSS protection
@@ -36,7 +37,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { mentorId, studentName, courseTitle, assignmentTitle }: AssignmentSubmissionNotification = await req.json();
+    const { mentorId, studentName, courseTitle, assignmentTitle, submissionId }: AssignmentSubmissionNotification = await req.json();
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -118,15 +119,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Assignment submission notification sent");
 
     // Create in-app notification for mentor to review submission
-    const { data: submissionData } = await supabase
-      .from('assignment_submissions')
-      .select('id')
-      .eq('student_id', (await supabase.from('profiles').select('id').eq('full_name', studentName).single()).data?.id)
-      .order('submitted_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (submissionData) {
+    if (submissionId) {
       await supabase.from('notifications').insert({
         user_id: mentorId,
         message: isEnglish 
@@ -134,7 +127,7 @@ const handler = async (req: Request): Promise<Response> => {
           : `${safeStudentName} a soumis un devoir pour "${safeCourseTitle}" - examen requis`,
         link: '/dashboard',
         action_type: 'review_submission',
-        action_reference_id: submissionData.id
+        action_reference_id: submissionId
       });
       console.log("In-app notification created for mentor");
     }

@@ -319,7 +319,7 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
           .eq('id', user.id)
           .single();
         
-        if (courseData) {
+        if (courseData && result.data) {
           // Send notification to mentor
           await supabase.functions.invoke('send-assignment-submission-notification', {
             body: {
@@ -327,6 +327,7 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
               studentName: studentProfile?.full_name || 'A student',
               courseTitle: courseData.title,
               assignmentTitle: assignment.title,
+              submissionId: result.data.id,
             }
           });
           
