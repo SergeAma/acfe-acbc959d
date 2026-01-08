@@ -242,6 +242,26 @@ video[controls] {
   -webkit-appearance: none;
 }
 
+/* Hero video specific - extra aggressive control hiding */
+.hero-video {
+  pointer-events: none !important;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.hero-video::-webkit-media-controls {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+.hero-video::-webkit-media-controls-start-playback-button {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
 /* Smooth transition utility for hero videos */
 .duration-1500 {
   transition-duration: 1500ms;
