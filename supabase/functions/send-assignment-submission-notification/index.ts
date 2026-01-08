@@ -117,6 +117,28 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Assignment submission notification sent");
 
+    // Create in-app notification for mentor to review submission
+    const { data: submissionData } = await supabase
+      .from('assignment_submissions')
+      .select('id')
+      .eq('student_id', (await supabase.from('profiles').select('id').eq('full_name', studentName).single()).data?.id)
+      .order('submitted_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (submissionData) {
+      await supabase.from('notifications').insert({
+        user_id: mentorId,
+        message: isEnglish 
+          ? `${safeStudentName} submitted an assignment for "${safeCourseTitle}" - review required`
+          : `${safeStudentName} a soumis un devoir pour "${safeCourseTitle}" - examen requis`,
+        link: '/dashboard',
+        action_type: 'review_submission',
+        action_reference_id: submissionData.id
+      });
+      console.log("In-app notification created for mentor");
+    }
+
     await supabase.from('email_logs').insert({
       subject: `Assignment Submission Notification - ${courseTitle}`,
       status: 'sent',
