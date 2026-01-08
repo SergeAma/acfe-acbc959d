@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, Users, Award, BarChart3, Calendar, Download } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { TrendingUp, Users, Award, BarChart3, Calendar, Download, ClipboardCheck, HelpCircle } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { format, subDays, startOfWeek, endOfWeek, eachWeekOfInterval } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -30,14 +31,35 @@ interface EnrollmentTrend {
   completions: number;
 }
 
+interface AssessmentStats {
+  courseId: string;
+  courseTitle: string;
+  // Quiz stats
+  quizAttempts: number;
+  quizCompleted: number;
+  quizPassed: number;
+  quizDropOffRate: number;
+  quizPassRate: number;
+  // Assignment stats
+  enrolledCount: number;
+  assignmentSubmissions: number;
+  assignmentApproved: number;
+  submissionRate: number;
+}
+
 export const CourseAnalytics = ({ mentorId, isAdmin }: CourseAnalyticsProps) => {
   const { toast } = useToast();
   const [courseStats, setCourseStats] = useState<CourseStats[]>([]);
   const [enrollmentTrends, setEnrollmentTrends] = useState<EnrollmentTrend[]>([]);
+  const [assessmentStats, setAssessmentStats] = useState<AssessmentStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalEnrollments, setTotalEnrollments] = useState(0);
   const [totalCompletions, setTotalCompletions] = useState(0);
   const [avgCompletionRate, setAvgCompletionRate] = useState(0);
+  // Assessment totals
+  const [totalQuizAttempts, setTotalQuizAttempts] = useState(0);
+  const [totalQuizPassed, setTotalQuizPassed] = useState(0);
+  const [totalAssignmentSubmissions, setTotalAssignmentSubmissions] = useState(0);
 
   const exportToCSV = (type: 'courses' | 'trends') => {
     let csvContent = '';
@@ -193,6 +215,90 @@ export const CourseAnalytics = ({ mentorId, isAdmin }: CourseAnalyticsProps) => 
 
         setEnrollmentTrends(trends);
       }
+
+      // Fetch assessment stats (quiz attempts and assignment submissions)
+      const assessments: AssessmentStats[] = [];
+      let allQuizAttempts = 0;
+      let allQuizPassed = 0;
+      let allSubmissions = 0;
+
+      for (const course of courses || []) {
+        // Get quiz attempts for this course
+        const { data: quizData } = await supabase
+          .from('course_quizzes')
+          .select('id')
+          .eq('course_id', course.id)
+          .single();
+
+        let quizAttempts = 0;
+        let quizCompleted = 0;
+        let quizPassed = 0;
+
+        if (quizData) {
+          const { data: attempts } = await supabase
+            .from('quiz_attempts')
+            .select('id, completed_at, passed')
+            .eq('quiz_id', quizData.id);
+
+          quizAttempts = attempts?.length || 0;
+          quizCompleted = attempts?.filter(a => a.completed_at !== null).length || 0;
+          quizPassed = attempts?.filter(a => a.passed === true).length || 0;
+        }
+
+        // Get enrollments count for this course
+        const { data: enrollments } = await supabase
+          .from('enrollments')
+          .select('id')
+          .eq('course_id', course.id);
+        
+        const enrolledCount = enrollments?.length || 0;
+
+        // Get assignment submissions for this course
+        const { data: assignmentData } = await supabase
+          .from('course_assignments')
+          .select('id')
+          .eq('course_id', course.id)
+          .single();
+
+        let submissions = 0;
+        let approved = 0;
+
+        if (assignmentData) {
+          const { data: subs } = await supabase
+            .from('assignment_submissions')
+            .select('id, status')
+            .eq('assignment_id', assignmentData.id);
+
+          submissions = subs?.length || 0;
+          approved = subs?.filter(s => s.status === 'approved').length || 0;
+        }
+
+        allQuizAttempts += quizAttempts;
+        allQuizPassed += quizPassed;
+        allSubmissions += submissions;
+
+        // Only include courses with some assessment activity
+        if (quizAttempts > 0 || submissions > 0) {
+          assessments.push({
+            courseId: course.id,
+            courseTitle: course.title,
+            quizAttempts,
+            quizCompleted,
+            quizPassed,
+            quizDropOffRate: quizAttempts > 0 ? Math.round(((quizAttempts - quizCompleted) / quizAttempts) * 100) : 0,
+            quizPassRate: quizCompleted > 0 ? Math.round((quizPassed / quizCompleted) * 100) : 0,
+            enrolledCount,
+            assignmentSubmissions: submissions,
+            assignmentApproved: approved,
+            submissionRate: enrolledCount > 0 ? Math.round((submissions / enrolledCount) * 100) : 0
+          });
+        }
+      }
+
+      setAssessmentStats(assessments);
+      setTotalQuizAttempts(allQuizAttempts);
+      setTotalQuizPassed(allQuizPassed);
+      setTotalAssignmentSubmissions(allSubmissions);
     } catch (error) {
       console.error('Error fetching analytics:', error);
     } finally {
@@ -222,16 +328,16 @@ export const CourseAnalytics = ({ mentorId, isAdmin }: CourseAnalyticsProps) => 
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Enrollments</CardTitle>
+            <CardTitle className="text-sm font-medium">Enrollments</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{totalEnrollments}</div>
+            <div className="text-2xl font-bold">{totalEnrollments}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              Across {courseStats.length} course{courseStats.length !== 1 ? 's' : ''}
+              {courseStats.length} course{courseStats.length !== 1 ? 's' : ''}
             </p>
           </CardContent>
         </Card>
@@ -242,22 +348,65 @@ export const CourseAnalytics = ({ mentorId, isAdmin }: CourseAnalyticsProps) => 
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{totalCompletions}</div>
+            <div className="text-2xl font-bold">{totalCompletions}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              Students completed courses
+              {avgCompletionRate}% rate
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Avg Completion Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">Quiz Attempts</CardTitle>
+            <HelpCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalQuizAttempts}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {totalQuizPassed} passed
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Quiz Pass Rate</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{avgCompletionRate}%</div>
+            <div className="text-2xl font-bold">
+              {totalQuizAttempts > 0 ? Math.round((totalQuizPassed / totalQuizAttempts) * 100) : 0}%
+            </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Overall completion rate
+              Overall
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Assignments</CardTitle>
+            <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalAssignmentSubmissions}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Submitted
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Submission Rate</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {totalEnrollments > 0 ? Math.round((totalAssignmentSubmissions / totalEnrollments) * 100) : 0}%
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Of enrolled
             </p>
           </CardContent>
         </Card>
@@ -272,6 +421,10 @@ export const CourseAnalytics = ({ mentorId, isAdmin }: CourseAnalyticsProps) => 
           <TabsTrigger value="courses">
             <BarChart3 className="h-4 w-4 mr-2" />
             Course Breakdown
+          </TabsTrigger>
+          <TabsTrigger value="assessments">
+            <ClipboardCheck className="h-4 w-4 mr-2" />
+            Assessments
           </TabsTrigger>
         </TabsList>
 
@@ -429,6 +582,108 @@ export const CourseAnalytics = ({ mentorId, isAdmin }: CourseAnalyticsProps) => 
               ) : (
                 <div className="h-[200px] flex items-center justify-center text-muted-foreground">
                   No course data available yet
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="assessments">
+          <Card>
+            <CardHeader>
+              <CardTitle>Quiz & Assignment Performance</CardTitle>
+              <CardDescription>
+                Learner engagement with quizzes and assignments per course
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {assessmentStats.length > 0 ? (
+                <div className="space-y-4">
+                  {assessmentStats.map((stat) => (
+                    <div 
+                      key={stat.courseId} 
+                      className="p-4 rounded-lg border bg-card"
+                    >
+                      <h4 className="font-medium mb-3 truncate">{stat.courseTitle}</h4>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Quiz Stats */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                            <HelpCircle className="h-4 w-4" />
+                            Quiz Performance
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-center">
+                            <div className="p-2 bg-muted/50 rounded">
+                              <p className="text-lg font-semibold">{stat.quizAttempts}</p>
+                              <p className="text-xs text-muted-foreground">Started</p>
+                            </div>
+                            <div className="p-2 bg-muted/50 rounded">
+                              <p className="text-lg font-semibold">{stat.quizCompleted}</p>
+                              <p className="text-xs text-muted-foreground">Completed</p>
+                            </div>
+                            <div className="p-2 bg-muted/50 rounded">
+                              <p className="text-lg font-semibold">{stat.quizPassed}</p>
+                              <p className="text-xs text-muted-foreground">Passed</p>
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-xs">
+                              <span>Pass Rate</span>
+                              <span className={stat.quizPassRate >= 70 ? 'text-green-600' : stat.quizPassRate >= 40 ? 'text-yellow-600' : 'text-destructive'}>
+                                {stat.quizPassRate}%
+                              </span>
+                            </div>
+                            <Progress value={stat.quizPassRate} className="h-2" />
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-xs">
+                              <span>Drop-off Rate</span>
+                              <span className={stat.quizDropOffRate <= 20 ? 'text-green-600' : stat.quizDropOffRate <= 50 ? 'text-yellow-600' : 'text-destructive'}>
+                                {stat.quizDropOffRate}%
+                              </span>
+                            </div>
+                            <Progress value={stat.quizDropOffRate} className="h-2" />
+                          </div>
+                        </div>
+
+                        {/* Assignment Stats */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                            <ClipboardCheck className="h-4 w-4" />
+                            Assignment Performance
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-center">
+                            <div className="p-2 bg-muted/50 rounded">
+                              <p className="text-lg font-semibold">{stat.enrolledCount}</p>
+                              <p className="text-xs text-muted-foreground">Enrolled</p>
+                            </div>
+                            <div className="p-2 bg-muted/50 rounded">
+                              <p className="text-lg font-semibold">{stat.assignmentSubmissions}</p>
+                              <p className="text-xs text-muted-foreground">Submitted</p>
+                            </div>
+                            <div className="p-2 bg-muted/50 rounded">
+                              <p className="text-lg font-semibold">{stat.assignmentApproved}</p>
+                              <p className="text-xs text-muted-foreground">Approved</p>
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-xs">
+                              <span>Submission Rate</span>
+                              <span className={stat.submissionRate >= 70 ? 'text-green-600' : stat.submissionRate >= 40 ? 'text-yellow-600' : 'text-muted-foreground'}>
+                                {stat.submissionRate}%
+                              </span>
+                            </div>
+                            <Progress value={stat.submissionRate} className="h-2" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+                  No assessment data available yet
                 </div>
               )}
             </CardContent>
