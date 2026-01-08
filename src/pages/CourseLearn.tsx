@@ -103,6 +103,53 @@ const calculateReadingTime = (htmlContent: string): number => {
   return Math.max(1, Math.ceil(wordCount / 200));
 };
 
+// Calculate overall progress including lessons and assessments
+// Lessons = 60% (if course has assessments), Quiz passed = 20%, Assignment approved = 20%
+// Assignment submitted but pending = 10%
+const calculateOverallProgress = (
+  lessonsCompleted: number,
+  totalLessons: number,
+  hasQuiz: boolean,
+  quizPassed: boolean,
+  hasAssignment: boolean,
+  assignmentStatus: 'none' | 'submitted' | 'approved'
+): number => {
+  const hasAnyAssessment = hasQuiz || hasAssignment;
+  
+  if (!hasAnyAssessment) {
+    // No assessments - lessons are 100% of progress
+    return totalLessons > 0 ? Math.round((lessonsCompleted / totalLessons) * 100) : 0;
+  }
+
+  // With assessments, lessons are 60% of total progress
+  const lessonProgress = totalLessons > 0 ? (lessonsCompleted / totalLessons) * 60 : 0;
+  
+  // Quiz is 20% if exists
+  const quizProgress = hasQuiz ? (quizPassed ? 20 : 0) : 0;
+  
+  // Assignment: 20% if approved, 10% if submitted pending review
+  let assignmentProgress = 0;
+  if (hasAssignment) {
+    if (assignmentStatus === 'approved') {
+      assignmentProgress = 20;
+    } else if (assignmentStatus === 'submitted') {
+      assignmentProgress = 10;
+    }
+  }
+  
+  // If only quiz (no assignment), quiz is 40%
+  // If only assignment (no quiz), assignment is 40% when approved
+  if (hasQuiz && !hasAssignment) {
+    return Math.round(lessonProgress + (quizPassed ? 40 : 0));
+  }
+  if (hasAssignment && !hasQuiz) {
+    const assignmentFullProgress = assignmentStatus === 'approved' ? 40 : (assignmentStatus === 'submitted' ? 20 : 0);
+    return Math.round(lessonProgress + assignmentFullProgress);
+  }
+  
+  return Math.round(lessonProgress + quizProgress + assignmentProgress);
+};
+
 // Calculate the next release date based on drip schedule
 const getNextReleaseDate = (releaseDay: number): Date => {
   const today = new Date();
@@ -148,6 +195,7 @@ export const CourseLearn = () => {
   const [showAssessments, setShowAssessments] = useState(false);
   const [quizPassed, setQuizPassed] = useState(false);
   const [assignmentApproved, setAssignmentApproved] = useState(false);
+  const [assignmentSubmitted, setAssignmentSubmitted] = useState(false);
   const [hasQuiz, setHasQuiz] = useState(false);
   const [hasAssignment, setHasAssignment] = useState(false);
 
@@ -329,13 +377,12 @@ export const CourseLearn = () => {
 
       setSections(sortedSections as Section[]);
 
-      // Calculate overall progress
-      const allContent = sortedSections.flatMap(s => s.content);
-      const completedCount = allContent.filter(c => c.completed).length;
-      const progress = allContent.length > 0 ? Math.round((completedCount / allContent.length) * 100) : 0;
-      setOverallProgress(progress);
-
       // Check if course has quiz and assignment (only for non-preview mode)
+      let courseHasQuiz = false;
+      let courseHasAssignment = false;
+      let isQuizPassed = false;
+      let assignmentStatus: 'none' | 'submitted' | 'approved' = 'none';
+
       if (!isPreviewMode) {
         const { data: quizData } = await supabase
           .from('course_quizzes')
@@ -349,22 +396,27 @@ export const CourseLearn = () => {
           .eq('course_id', id)
           .maybeSingle();
 
-        setHasQuiz(!!quizData);
-        setHasAssignment(!!assignmentData);
+        courseHasQuiz = !!quizData;
+        courseHasAssignment = !!assignmentData;
+        setHasQuiz(courseHasQuiz);
+        setHasAssignment(courseHasAssignment);
 
-        // Check quiz and assignment status
+        // Check quiz status
         if (quizData && currentEnrollmentId) {
           const { data: attemptData } = await supabase
             .from('quiz_attempts')
             .select('passed')
             .eq('enrollment_id', currentEnrollmentId)
+            .eq('passed', true)
             .maybeSingle();
           
           if (attemptData?.passed) {
+            isQuizPassed = true;
             setQuizPassed(true);
           }
         }
 
+        // Check assignment status
         if (assignmentData && currentEnrollmentId) {
           const { data: submissionData } = await supabase
             .from('assignment_submissions')
@@ -373,14 +425,45 @@ export const CourseLearn = () => {
             .maybeSingle();
           
           if (submissionData?.status === 'approved') {
+            assignmentStatus = 'approved';
             setAssignmentApproved(true);
+            setAssignmentSubmitted(true);
+          } else if (submissionData?.status) {
+            // Any other status means submitted (pending, revision_requested)
+            assignmentStatus = 'submitted';
+            setAssignmentSubmitted(true);
           }
         }
+      }
 
-        // If all lessons are complete but assessments pending, show assessments
-        if (progress === 100 && (quizData || assignmentData)) {
-          setShowAssessments(true);
-        }
+      setSections(sortedSections as Section[]);
+
+      // Calculate overall progress including assessments
+      const allContent = sortedSections.flatMap(s => s.content);
+      const completedCount = allContent.filter(c => c.completed).length;
+      const lessonsProgress = allContent.length > 0 ? Math.round((completedCount / allContent.length) * 100) : 0;
+      
+      const progress = calculateOverallProgress(
+        completedCount,
+        allContent.length,
+        courseHasQuiz,
+        isQuizPassed,
+        courseHasAssignment,
+        assignmentStatus
+      );
+      setOverallProgress(progress);
+
+      // Update enrollment progress if it differs
+      if (currentEnrollmentId && currentEnrollmentId !== 'preview-mode') {
+        await supabase
+          .from('enrollments')
+          .update({ progress })
+          .eq('id', currentEnrollmentId);
+      }
+
+      // If all lessons are complete but assessments pending, show assessments
+      if (lessonsProgress === 100 && (courseHasQuiz || courseHasAssignment)) {
+        setShowAssessments(true);
       }
 
       // Set first incomplete available lesson or first available lesson
@@ -430,10 +513,22 @@ export const CourseLearn = () => {
       )
     })));
 
-    // Recalculate progress
+    // Recalculate progress including assessments
     const allContent = sections.flatMap(s => s.content);
     const completedCount = allContent.filter(c => c.id === contentId || c.completed).length;
-    const newProgress = Math.round((completedCount / allContent.length) * 100);
+    
+    // Determine assignment status for progress calculation
+    const assignmentStatus: 'none' | 'submitted' | 'approved' = 
+      assignmentApproved ? 'approved' : (assignmentSubmitted ? 'submitted' : 'none');
+    
+    const newProgress = calculateOverallProgress(
+      completedCount,
+      allContent.length,
+      hasQuiz,
+      quizPassed,
+      hasAssignment,
+      assignmentStatus
+    );
     setOverallProgress(newProgress);
 
     // Update enrollment progress
@@ -447,8 +542,10 @@ export const CourseLearn = () => {
       description: 'Lesson marked as complete',
     });
 
-    // Check if course is now 100% complete
-    if (newProgress === 100 && user && course) {
+    // Check if all lessons are complete (60% base or 100% if no assessments)
+    const lessonsComplete = completedCount === allContent.length;
+    
+    if (lessonsComplete && user && course) {
       // If course has assessments (quiz or assignment), show assessments section
       if (hasQuiz || hasAssignment) {
         setShowAssessments(true);
@@ -568,6 +665,33 @@ export const CourseLearn = () => {
   const getContentIcon = (type: string, completed: boolean) => {
     const IconComponent = type === 'video' ? Video : type === 'file' ? File : FileText;
     return completed ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <Circle className="h-4 w-4" />;
+  };
+
+  // Helper to update progress when assessments change
+  const updateProgressWithAssessments = async (
+    isQuizPassed: boolean,
+    assignmentStatus: 'none' | 'submitted' | 'approved'
+  ) => {
+    if (!enrollmentId || enrollmentId === 'preview-mode') return;
+    
+    const allContent = sections.flatMap(s => s.content);
+    const completedCount = allContent.filter(c => c.completed).length;
+    
+    const newProgress = calculateOverallProgress(
+      completedCount,
+      allContent.length,
+      hasQuiz,
+      isQuizPassed,
+      hasAssignment,
+      assignmentStatus
+    );
+    
+    setOverallProgress(newProgress);
+    
+    await supabase
+      .from('enrollments')
+      .update({ progress: newProgress })
+      .eq('id', enrollmentId);
   };
 
   // Check and issue certificate after assessments are complete
@@ -1176,6 +1300,9 @@ export const CourseLearn = () => {
                       onComplete={(passed) => {
                         setQuizPassed(passed);
                         if (passed) {
+                          // Update progress with quiz completion
+                          const currentAssignmentStatus = assignmentApproved ? 'approved' : (assignmentSubmitted ? 'submitted' : 'none');
+                          updateProgressWithAssessments(passed, currentAssignmentStatus as 'none' | 'submitted' | 'approved');
                           checkAndIssueCertificate();
                         }
                       }}
@@ -1194,11 +1321,14 @@ export const CourseLearn = () => {
                     <CourseAssignment
                       courseId={id!}
                       enrollmentId={enrollmentId}
-                      onComplete={(approved) => {
-                        setAssignmentApproved(approved);
-                        if (approved) {
+                      onComplete={(status) => {
+                        setAssignmentSubmitted(true);
+                        if (status === 'approved') {
+                          setAssignmentApproved(true);
                           checkAndIssueCertificate();
                         }
+                        // Update progress when assignment status changes
+                        updateProgressWithAssessments(quizPassed, status);
                       }}
                     />
                   </div>
