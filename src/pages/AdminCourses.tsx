@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { Plus, Edit, Trash2, BookOpen } from 'lucide-react';
 import { InviteMentorDialog } from '@/components/admin/InviteMentorDialog';
+import { CourseQuickStats } from '@/components/admin/CourseQuickStats';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -149,9 +150,10 @@ export const AdminCourses = () => {
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col">
                   <p className="text-sm text-muted-foreground mb-3 line-clamp-2 flex-1">{stripHtml(course.description)}</p>
-                  <div className="text-xs text-muted-foreground mb-3">
+                  <div className="text-xs text-muted-foreground">
                     {course.sections[0]?.count || 0} sections
                   </div>
+                  <CourseQuickStats courseId={course.id} />
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
