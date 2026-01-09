@@ -68,12 +68,16 @@ serve(async (req) => {
     };
 
     const trialLabel = formatTrialDuration(validTrialDays);
+    
+    // Stripe coupon name limit is 40 characters
+    const rawName = name || `${trialLabel} Free Trial`;
+    const couponName = rawName.length > 40 ? rawName.substring(0, 37) + '...' : rawName;
 
     // Create coupon for trial (100% off for the trial period)
     const coupon = await stripe.coupons.create({
       percent_off: 100,
       duration: "once",
-      name: name || `${trialLabel} Free Trial`,
+      name: couponName,
       max_redemptions: 100,
       redeem_by: Math.floor(Date.now() / 1000) + (90 * 24 * 60 * 60), // Valid for 90 days
       metadata: {
