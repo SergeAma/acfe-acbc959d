@@ -155,8 +155,9 @@ export const MentorAgreementCard = ({ signatureName, signatureDate, showViewButt
               </div>
 
               {/* Footer */}
-              <div className="text-center text-xs text-gray-400 pt-4 border-t">
-                This document is a legally binding agreement between the signatory and A Cloud for Everyone (ACFE).
+              <div className="text-center text-xs text-gray-400 pt-4 border-t space-y-1">
+                <p>This document is a legally binding agreement between the signatory and A Cloud for Everyone (ACFE).</p>
+                <p>Subject to ACFE Terms of Service and Privacy Policy. Governed by the laws of England and Wales.</p>
               </div>
             </div>
           </ScrollArea>
