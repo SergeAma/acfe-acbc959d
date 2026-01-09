@@ -42,7 +42,7 @@ const getContractConditions = (sessionPriceDollars: number) => [
   {
     id: "condition_data_privacy",
     title: "Student Data Privacy",
-    description: "I commit to not discussing student-specific data online (social media or any public platform)."
+    description: "I commit to not divulge, share or discuss student-specific Personal Identifiable Information (PII) externally or online (social media or any public platform). Sharing of ACFE-related student-mentor experience has to be with the express agreement of the student/ACFE."
   },
   {
     id: "condition_monthly_meetings",
