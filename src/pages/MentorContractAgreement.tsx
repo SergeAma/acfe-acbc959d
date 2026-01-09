@@ -398,7 +398,16 @@ export default function MentorContractAgreement() {
 
             <p className="text-xs text-center text-muted-foreground">
               A copy of this signed agreement will be stored securely and may be referenced 
-              in case of any disputes or policy violations.
+              in case of any disputes or policy violations. This agreement is subject to and 
+              incorporates by reference our{" "}
+              <a href="/terms" target="_blank" className="text-primary hover:underline">
+                Terms of Service
+              </a>{" "}
+              and{" "}
+              <a href="/privacy" target="_blank" className="text-primary hover:underline">
+                Privacy Policy
+              </a>, 
+              including provisions on liability, governing law (England and Wales), and dispute resolution.
             </p>
           </CardContent>
         </Card>
