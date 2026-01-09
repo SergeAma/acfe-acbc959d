@@ -171,49 +171,52 @@ export const Mentors = () => {
           </p>
         </div>
 
-        {/* Search and Filters */}
+        {/* Search and Skill Filters - Horizontal Layout */}
         <div className="mb-8 space-y-4">
-          {/* Search Input */}
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={t('mentors.search')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
+          {/* Search Input + Skills in one row */}
+          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+            {/* Search Input */}
+            <div className="relative w-full lg:w-80 flex-shrink-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={t('mentors.search')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
 
-          {/* Skill Filters */}
-          {allSkills.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-foreground">{t('mentors.filter')}:</span>
+            {/* Skill Filters - Horizontal */}
+            {allSkills.length > 0 && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0 flex-1">
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-foreground whitespace-nowrap">{t('mentors.filter')}:</span>
+                </div>
+                <div className="flex gap-2 flex-wrap lg:flex-nowrap">
+                  {allSkills.map(skill => (
+                    <Badge
+                      key={skill}
+                      variant={selectedSkills.includes(skill) ? "default" : "outline"}
+                      className={`cursor-pointer transition-colors whitespace-nowrap ${
+                        selectedSkills.includes(skill) 
+                          ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                          : 'hover:bg-primary/10'
+                      }`}
+                      onClick={() => toggleSkill(skill)}
+                    >
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
                 {hasFilters && (
-                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 px-2 text-xs">
-                    {t('common.close')} <X className="h-3 w-3 ml-1" />
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 px-2 text-xs flex-shrink-0">
+                    <X className="h-3 w-3 mr-1" /> {t('common.close')}
                   </Button>
                 )}
               </div>
-              <div className="flex flex-wrap gap-2">
-                {allSkills.map(skill => (
-                  <Badge
-                    key={skill}
-                    variant={selectedSkills.includes(skill) ? "default" : "outline"}
-                    className={`cursor-pointer transition-colors ${
-                      selectedSkills.includes(skill) 
-                        ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                        : 'hover:bg-primary/10'
-                    }`}
-                    onClick={() => toggleSkill(skill)}
-                  >
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Filter Results Count */}
           {hasFilters && (
