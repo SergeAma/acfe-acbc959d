@@ -19,7 +19,7 @@ const CONTRACT_CONDITIONS = [
   { id: "condition_session_pricing", title: "1:1 Mentoring Session Pricing", description: "I agree to the platform's mentoring session pricing terms." },
   { id: "condition_minimum_courses", title: "Course Creation Commitment", description: "I commit to creating at least 4 courses of 30 minutes maximum duration each." },
   { id: "condition_quarterly_events", title: "Live Events Commitment", description: "I commit to hosting at least 1 live event per quarter." },
-  { id: "condition_data_privacy", title: "Student Data Privacy", description: "I commit to not discussing student-specific data online." },
+  { id: "condition_data_privacy", title: "Student Data Privacy", description: "I commit to not divulge, share or discuss student-specific Personal Identifiable Information (PII) externally or online (social media or any public platform). Sharing of ACFE-related student-mentor experience has to be with the express agreement of the student/ACFE." },
   { id: "condition_monthly_meetings", title: "Monthly Mentor Meetings", description: "I commit to joining at least 1 ACFE mentor's general meeting per month." },
   { id: "condition_support_youth", title: "Supporting African Youth", description: "I commit to always help and support African youth on the platform." },
   { id: "condition_no_profanity", title: "Professional Conduct", description: "I commit to not using profanity on the ACFE platform." },
