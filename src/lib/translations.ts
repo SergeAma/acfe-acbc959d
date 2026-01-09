@@ -456,7 +456,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // ==================== CAREER CENTRE ====================
     'career.title': 'Career Centre',
     'career.subtitle': 'Your gateway to career development and opportunities',
-    'career.forInstitutions': 'For Educational Institutions',
+    'career.forInstitutions': 'For Educational Institutions & Corporates',
     'career.partnerWithUs': 'Partner with us to provide your students with world-class digital skills training and career support.',
     'career.inquireNow': 'Inquire Now',
     'career.features.training': 'Digital Skills Training',
@@ -579,7 +579,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'jobs.applyHere': 'APPLY HERE',
 
     // ==================== CAREER CENTRE LANDING ====================
-    'careerCentre.forInstitutions': 'For Educational Institutions',
+    'careerCentre.forInstitutions': 'For Educational Institutions & Corporates',
     'careerCentre.heroTitle': '"Your Institution"',
     'careerCentre.heroTitleHighlight': 'Career Development Center',
     'careerCentre.poweredBy': 'Powered by ACFE',
@@ -787,7 +787,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'pricing_cta_button': 'Get ACFE Membership for',
 
     // ==================== CAREER CENTRE LANDING ====================
-    'career_badge': 'For Educational Institutions',
+    'career_badge': 'For Educational Institutions & Corporates',
     'career_hero_title': 'Career Development Center',
     'career_hero_highlight': '"Your Institution\'s Name"',
     'career_powered_by': 'Powered by ACFE',
@@ -1332,7 +1332,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // ==================== CAREER CENTRE ====================
     'career.title': 'Centre de Carrière',
     'career.subtitle': 'Votre passerelle vers le développement de carrière et les opportunités',
-    'career.forInstitutions': 'Pour les Institutions Éducatives',
+    'career.forInstitutions': 'Pour les Institutions Éducatives & Entreprises',
     'career.partnerWithUs': 'Associez-vous à nous pour offrir à vos étudiants une formation en compétences numériques de classe mondiale et un soutien de carrière.',
     'career.inquireNow': 'Nous Contacter',
     'career.features.training': 'Formation en Compétences Numériques',
@@ -1662,7 +1662,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'pricing_cta_button': 'Obtenir l\'Adhésion ACFE pour',
 
     // ==================== CAREER CENTRE LANDING ====================
-    'career_badge': 'Pour les Institutions Éducatives',
+    'career_badge': 'Pour les Institutions Éducatives & Entreprises',
     'career_hero_title': '"Nom de Votre Institution"',
     'career_hero_highlight': 'Centre de développement professionnel',
     'career_powered_by': 'Mis en œuvre par ACFE',
