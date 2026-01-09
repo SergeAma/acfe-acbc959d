@@ -1884,6 +1884,7 @@ export type Database = {
           id: string
           ip_address: string | null
           mentor_id: string
+          requires_resign: boolean | null
           signature_date: string
           signature_name: string
           user_agent: string | null
@@ -1905,6 +1906,7 @@ export type Database = {
           id?: string
           ip_address?: string | null
           mentor_id: string
+          requires_resign?: boolean | null
           signature_date?: string
           signature_name: string
           user_agent?: string | null
@@ -1926,6 +1928,7 @@ export type Database = {
           id?: string
           ip_address?: string | null
           mentor_id?: string
+          requires_resign?: boolean | null
           signature_date?: string
           signature_name?: string
           user_agent?: string | null

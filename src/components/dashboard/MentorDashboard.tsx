@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useMentorContract } from '@/hooks/useMentorContract';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +11,7 @@ import { MySubmissions } from '@/components/dashboard/MySubmissions';
 import { MentorOnboardingChecklist } from '@/components/dashboard/MentorOnboardingChecklist';
 import { SubmissionsReview } from '@/components/mentor/SubmissionsReview';
 import { InstitutionPartnersSection } from '@/components/dashboard/InstitutionPartnersSection';
+import { MentorAgreementCard } from '@/components/mentor/MentorAgreementCard';
 import { BookOpen, Users, PlusCircle, TrendingUp, UsersRound, Video } from 'lucide-react';
 import { stripHtml } from '@/lib/html-utils';
 
@@ -24,8 +26,9 @@ interface Course {
 }
 
 export const MentorDashboard = () => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { t } = useLanguage();
+  const { contractData } = useMentorContract(user?.id);
   const [courses, setCourses] = useState<Course[]>([]);
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -154,6 +157,16 @@ export const MentorDashboard = () => {
 
       {/* My Startup Ideas Submissions */}
       <MySubmissions />
+
+      {/* Mentor Agreement Section */}
+      {contractData && (
+        <div className="max-w-md">
+          <MentorAgreementCard
+            signatureName={contractData.signature_name}
+            signatureDate={contractData.signature_date}
+          />
+        </div>
+      )}
 
       {/* My Courses */}
       <div>

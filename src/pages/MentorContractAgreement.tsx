@@ -116,12 +116,13 @@ export default function MentorContractAgreement() {
       try {
         const { data, error } = await supabase
           .from('mentor_contracts')
-          .select('id')
+          .select('id, requires_resign')
           .eq('mentor_id', user.id)
           .maybeSingle();
         
         if (error) throw error;
-        setHasContract(!!data);
+        // User needs to sign if no contract OR if requires_resign is true
+        setHasContract(data ? !data.requires_resign : false);
       } catch (error) {
         console.error("Error checking contract:", error);
         setHasContract(false);
@@ -135,7 +136,7 @@ export default function MentorContractAgreement() {
     }
   }, [user]);
 
-  // Redirect if already has contract
+  // Redirect if already has valid contract (not requiring re-sign)
   useEffect(() => {
     if (hasContract === true) {
       navigate('/dashboard');
@@ -165,9 +166,10 @@ export default function MentorContractAgreement() {
 
     setSubmitting(true);
     try {
+      // Use upsert to handle both new contracts and re-signing
       const { error } = await supabase
         .from('mentor_contracts')
-        .insert({
+        .upsert({
           mentor_id: user.id,
           condition_respect_students: conditions.condition_respect_students,
           condition_free_courses: conditions.condition_free_courses,
@@ -181,7 +183,11 @@ export default function MentorContractAgreement() {
           condition_platform_engagement: conditions.condition_platform_engagement,
           condition_promotional_rights: conditions.condition_promotional_rights,
           signature_name: signatureName.trim(),
-          user_agent: navigator.userAgent
+          signature_date: new Date().toISOString(),
+          user_agent: navigator.userAgent,
+          requires_resign: false, // Clear the re-sign flag
+        }, { 
+          onConflict: 'mentor_id' 
         });
 
       if (error) throw error;

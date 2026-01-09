@@ -11,8 +11,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Loader2, ArrowLeft, User, Mail, Calendar, Search, ChevronLeft, ChevronRight, 
-  Download, UserX, UserCheck, Users, Eye 
+  Download, UserX, UserCheck, Users, Eye, FileSignature
 } from 'lucide-react';
+import { MentorAgreementStatus } from '@/components/mentor/MentorAgreementCard';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Table,
@@ -67,6 +68,12 @@ interface UserProfile {
   avatar_url: string | null;
 }
 
+interface MentorContract {
+  mentor_id: string;
+  signature_name: string;
+  signature_date: string;
+}
+
 const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100];
 
 export const AdminUsers = () => {
@@ -75,6 +82,7 @@ export const AdminUsers = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [mentorContracts, setMentorContracts] = useState<Map<string, MentorContract>>(new Map());
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -99,19 +107,32 @@ export const AdminUsers = () => {
   const fetchUsers = async () => {
     setLoading(true);
     
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, email, full_name, role, created_at, country, account_status, avatar_url')
-      .order('created_at', { ascending: false });
+    const [usersResult, contractsResult] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('id, email, full_name, role, created_at, country, account_status, avatar_url')
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('mentor_contracts')
+        .select('mentor_id, signature_name, signature_date')
+    ]);
 
-    if (error) {
+    if (usersResult.error) {
       toast({
         title: "Error fetching users",
-        description: error.message,
+        description: usersResult.error.message,
         variant: "destructive",
       });
     } else {
-      setUsers(data || []);
+      setUsers(usersResult.data || []);
+    }
+
+    if (contractsResult.data) {
+      const contractsMap = new Map<string, MentorContract>();
+      contractsResult.data.forEach((c) => {
+        contractsMap.set(c.mentor_id, c);
+      });
+      setMentorContracts(contractsMap);
     }
     
     setLoading(false);
@@ -410,6 +431,7 @@ export const AdminUsers = () => {
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Role</TableHead>
+                      {filter === 'mentor' && <TableHead>Agreement</TableHead>}
                       <TableHead>Country</TableHead>
                       <TableHead>Joined</TableHead>
                       <TableHead>Status & Actions</TableHead>
@@ -418,7 +440,7 @@ export const AdminUsers = () => {
                   <TableBody>
                     {paginatedUsers.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={filter === 'mentor' ? 8 : 7} className="text-center py-8 text-muted-foreground">
                           {searchQuery ? 'No users found matching your search.' : 'No users found.'}
                         </TableCell>
                       </TableRow>
@@ -454,6 +476,20 @@ export const AdminUsers = () => {
                               {u.role}
                             </Badge>
                           </TableCell>
+                          {filter === 'mentor' && (
+                            <TableCell>
+                              {(() => {
+                                const contract = mentorContracts.get(u.id);
+                                return (
+                                  <MentorAgreementStatus
+                                    hasSigned={!!contract}
+                                    signatureName={contract?.signature_name}
+                                    signatureDate={contract?.signature_date}
+                                  />
+                                );
+                              })()}
+                            </TableCell>
+                          )}
                           <TableCell>{u.country || 'N/A'}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
