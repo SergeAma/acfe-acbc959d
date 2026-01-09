@@ -377,50 +377,77 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 function generateHtmlResponse(type: 'success' | 'declined' | 'error' | 'info', message: string): string {
-  const colors = {
-    success: { bg: '#dcfce7', border: '#16a34a', text: '#166534', icon: '✓' },
-    declined: { bg: '#fef3c7', border: '#d97706', text: '#92400e', icon: '✗' },
-    error: { bg: '#fee2e2', border: '#dc2626', text: '#991b1b', icon: '!' },
-    info: { bg: '#dbeafe', border: '#2563eb', text: '#1e40af', icon: 'ℹ' },
+  const config = {
+    success: { bg: '#dcfce7', border: '#16a34a', text: '#166534', icon: '✓', title: 'Mentor Request Approved!' },
+    declined: { bg: '#fef3c7', border: '#d97706', text: '#92400e', icon: '✗', title: 'Mentor Request Declined' },
+    error: { bg: '#fee2e2', border: '#dc2626', text: '#991b1b', icon: '!', title: 'Error' },
+    info: { bg: '#dbeafe', border: '#2563eb', text: '#1e40af', icon: 'ℹ', title: 'Information' },
   };
   
-  const color = colors[type];
+  const c = config[type];
   
-  return `
-<!DOCTYPE html>
-<html>
+  return `<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mentor Action - A Cloud for Everyone</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>${c.title} - A Cloud for Everyone</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5; min-height: 100vh; display: flex; align-items: center; justify-content: center;">
-  <div style="max-width: 500px; margin: 40px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;">
-    <div style="background-color: #4a5d4a; padding: 30px; text-align: center;">
-      <h1 style="margin: 0; font-size: 20px; color: #ffffff;">A Cloud for Everyone</h1>
-    </div>
-    
-    <div style="padding: 40px; text-align: center;">
-      <div style="width: 60px; height: 60px; background-color: ${color.bg}; border: 3px solid ${color.border}; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 24px; color: ${color.text};">
-        ${color.icon}
-      </div>
-      
-      <h2 style="margin: 0 0 15px 0; color: #1a1a1a; font-size: 20px;">
-        ${type === 'success' ? 'Application Approved!' : type === 'declined' ? 'Application Declined' : type === 'info' ? 'Information' : 'Error'}
-      </h2>
-      
-      <p style="margin: 0 0 25px 0; line-height: 1.6; color: #666666;">
-        ${message}
-      </p>
-      
-      <a href="https://www.acloudforeveryone.org/admin/users" style="display: inline-block; background-color: #4a5d4a; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: 500; border-radius: 6px;">
-        Go to Admin Dashboard
-      </a>
-    </div>
-  </div>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="min-height: 100vh; background-color: #f5f5f5;">
+    <tr>
+      <td align="center" valign="middle" style="padding: 40px 20px;">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width: 500px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background-color: #4a5d4a; padding: 30px; text-align: center;">
+              <h1 style="margin: 0; font-size: 20px; color: #ffffff; font-weight: 600;">A Cloud for Everyone</h1>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px; text-align: center;">
+              <!-- Icon -->
+              <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin-bottom: 20px;">
+                <tr>
+                  <td style="width: 60px; height: 60px; background-color: ${c.bg}; border: 3px solid ${c.border}; border-radius: 50%; text-align: center; vertical-align: middle; font-size: 24px; color: ${c.text};">
+                    ${c.icon}
+                  </td>
+                </tr>
+              </table>
+              
+              <!-- Title -->
+              <h2 style="margin: 0 0 15px 0; color: #1a1a1a; font-size: 22px; font-weight: 600;">
+                ${c.title}
+              </h2>
+              
+              <!-- Message -->
+              <p style="margin: 0 0 25px 0; line-height: 1.6; color: #666666; font-size: 15px;">
+                ${message}
+              </p>
+              
+              <!-- CTA Button -->
+              <table cellpadding="0" cellspacing="0" border="0" align="center">
+                <tr>
+                  <td style="background-color: #4a5d4a; border-radius: 6px;">
+                    <a href="https://www.acloudforeveryone.org/admin" style="display: inline-block; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: 500; font-size: 14px;">
+                      Go to Admin Dashboard
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
-</html>
-  `;
+</html>`;
 }
 
 // Export the signature generator for use in notification emails
