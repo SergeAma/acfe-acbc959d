@@ -12,8 +12,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { MentorCard } from '@/components/MentorCard';
-import { UserPlus, LogIn, X, Filter, Search } from 'lucide-react';
+import { UserPlus, LogIn, X, Filter, Search, ChevronDown } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface MentorProfile {
   id: string;
@@ -37,6 +42,8 @@ export const Mentors = () => {
   const { t } = useLanguage();
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [skillSearchQuery, setSkillSearchQuery] = useState('');
+  const [skillPopoverOpen, setSkillPopoverOpen] = useState(false);
 
   const { data: mentors, isLoading } = useQuery({
     queryKey: ['mentors-list'],
@@ -115,12 +122,26 @@ export const Mentors = () => {
         ? prev.filter(s => s !== skill)
         : [...prev, skill]
     );
+    setSkillSearchQuery('');
+  };
+
+  const removeSkill = (skill: string) => {
+    setSelectedSkills(prev => prev.filter(s => s !== skill));
   };
 
   const clearFilters = () => {
     setSelectedSkills([]);
     setSearchQuery('');
+    setSkillSearchQuery('');
   };
+
+  // Filter skills based on search query for the dropdown
+  const filteredSkillOptions = useMemo(() => {
+    if (!skillSearchQuery) return allSkills.filter(s => !selectedSkills.includes(s));
+    return allSkills
+      .filter(s => !selectedSkills.includes(s))
+      .filter(s => s.toLowerCase().includes(skillSearchQuery.toLowerCase()));
+  }, [allSkills, skillSearchQuery, selectedSkills]);
 
   const hasFilters = selectedSkills.length > 0 || searchQuery.length > 0;
 
@@ -171,12 +192,12 @@ export const Mentors = () => {
           </p>
         </div>
 
-        {/* Search and Skill Filters - Horizontal Layout */}
-        <div className="mb-8 space-y-4">
-          {/* Search Input + Skills in one row */}
-          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+        {/* Search and Skill Filters - Clean Horizontal Layout */}
+        <div className="mb-8 space-y-3">
+          {/* Search Input + Skill Filter in one row */}
+          <div className="flex flex-col sm:flex-row gap-3">
             {/* Search Input */}
-            <div className="relative w-full lg:w-80 flex-shrink-0">
+            <div className="relative flex-1 sm:max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder={t('mentors.search')}
@@ -186,37 +207,82 @@ export const Mentors = () => {
               />
             </div>
 
-            {/* Skill Filters - Horizontal */}
+            {/* Skill Filter Dropdown */}
             {allSkills.length > 0 && (
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0 flex-1">
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <Filter className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium text-foreground whitespace-nowrap">{t('mentors.filter')}:</span>
-                </div>
-                <div className="flex gap-2 flex-wrap lg:flex-nowrap">
-                  {allSkills.map(skill => (
-                    <Badge
-                      key={skill}
-                      variant={selectedSkills.includes(skill) ? "default" : "outline"}
-                      className={`cursor-pointer transition-colors whitespace-nowrap ${
-                        selectedSkills.includes(skill) 
-                          ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                          : 'hover:bg-primary/10'
-                      }`}
-                      onClick={() => toggleSkill(skill)}
-                    >
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-                {hasFilters && (
-                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 px-2 text-xs flex-shrink-0">
-                    <X className="h-3 w-3 mr-1" /> {t('common.close')}
+              <Popover open={skillPopoverOpen} onOpenChange={setSkillPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="justify-between min-w-[200px] sm:w-auto"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-4 w-4" />
+                      <span>{t('mentors.filter')}</span>
+                      {selectedSkills.length > 0 && (
+                        <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                          {selectedSkills.length}
+                        </Badge>
+                      )}
+                    </div>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
-                )}
-              </div>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-0 bg-popover border shadow-lg z-50" align="start">
+                  <div className="p-3 border-b">
+                    <Input
+                      placeholder="Search skills..."
+                      value={skillSearchQuery}
+                      onChange={(e) => setSkillSearchQuery(e.target.value)}
+                      className="h-8"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="max-h-60 overflow-y-auto p-2">
+                    {filteredSkillOptions.length > 0 ? (
+                      filteredSkillOptions.map(skill => (
+                        <button
+                          key={skill}
+                          onClick={() => toggleSkill(skill)}
+                          className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                        >
+                          {skill}
+                        </button>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        {skillSearchQuery ? 'No matching skills' : 'All skills selected'}
+                      </p>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+
+            {/* Clear Filters Button */}
+            {hasFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
+                <X className="h-4 w-4 mr-1" /> Clear
+              </Button>
             )}
           </div>
+
+          {/* Selected Skills as Badges */}
+          {selectedSkills.length > 0 && (
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-sm text-muted-foreground">Skills:</span>
+              {selectedSkills.map(skill => (
+                <Badge
+                  key={skill}
+                  variant="default"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer gap-1"
+                  onClick={() => removeSkill(skill)}
+                >
+                  {skill}
+                  <X className="h-3 w-3" />
+                </Badge>
+              ))}
+            </div>
+          )}
 
           {/* Filter Results Count */}
           {hasFilters && (
