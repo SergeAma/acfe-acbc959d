@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FileSignature, Shield, AlertTriangle, CheckCircle2, Loader2, Heart } from "lucide-react";
 
-const CONTRACT_CONDITIONS = [
+const getContractConditions = (sessionPriceDollars: number) => [
   {
     id: "condition_respect_students",
     title: "Respect & Data Protection",
@@ -27,7 +27,7 @@ const CONTRACT_CONDITIONS = [
   {
     id: "condition_session_pricing",
     title: "1:1 Mentoring Session Pricing",
-    description: "I agree to receive a $20 fee per 1:1 mentoring session requests from students, minus a 10% ACFE administrative fee."
+    description: `I agree to receive a $${sessionPriceDollars} fee per 1:1 30 mins mentoring session requests from students, minus a 10% ACFE administrative fee.`
   },
   {
     id: "condition_minimum_courses",
@@ -81,6 +81,32 @@ export default function MentorContractAgreement() {
   const [submitting, setSubmitting] = useState(false);
   const [hasContract, setHasContract] = useState<boolean | null>(null);
   const [checkingContract, setCheckingContract] = useState(true);
+  const [sessionPriceCents, setSessionPriceCents] = useState<number>(3000); // Default $30
+
+  // Fetch session price from platform settings
+  useEffect(() => {
+    const fetchSessionPrice = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('platform_settings')
+          .select('setting_value')
+          .eq('setting_key', 'mentorship_session_price')
+          .single();
+        
+        if (!error && data) {
+          const settings = data.setting_value as { price_cents: number };
+          setSessionPriceCents(settings.price_cents);
+        }
+      } catch (error) {
+        console.error("Error fetching session price:", error);
+      }
+    };
+
+    fetchSessionPrice();
+  }, []);
+
+  const sessionPriceDollars = Math.round(sessionPriceCents / 100);
+  const CONTRACT_CONDITIONS = getContractConditions(sessionPriceDollars);
 
   // Check if user already has a signed contract
   useEffect(() => {
