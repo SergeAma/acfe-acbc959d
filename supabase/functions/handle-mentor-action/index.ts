@@ -135,7 +135,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Get the mentor request
     const { data: request, error: requestError } = await supabase
       .from('mentor_role_requests')
-      .select('*, profiles:user_id(email, full_name)')
+      .select('*')
       .eq('id', requestId)
       .single();
 
@@ -147,6 +147,13 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    // Get user profile separately (no FK relationship)
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('email, full_name')
+      .eq('id', request.user_id)
+      .single();
+
     // Check if already processed
     if (request.status !== 'pending') {
       return new Response(generateHtmlResponse('info', `This request has already been ${request.status}`), {
@@ -155,7 +162,6 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    const userProfile = request.profiles as { email: string; full_name: string } | null;
     const userEmail = userProfile?.email;
     const userName = userProfile?.full_name || 'User';
     const firstName = userName.split(' ')[0];
