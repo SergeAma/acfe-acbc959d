@@ -44,13 +44,15 @@ export const RequestMentorRole = () => {
 
     setLoading(true);
 
-    const { error } = await supabase
+    const { data: insertedRequest, error } = await supabase
       .from('mentor_role_requests')
       .insert({
         user_id: user.id,
         reason: reason,
         status: 'pending'
-      });
+      })
+      .select('id')
+      .single();
 
     if (error) {
       toast({
@@ -65,6 +67,28 @@ export const RequestMentorRole = () => {
       });
       setHasRequest(true);
       setRequestStatus('pending');
+
+      // Create notification for all admins
+      try {
+        const { data: admins } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'admin');
+
+        if (admins && admins.length > 0 && insertedRequest) {
+          const notifications = admins.map(admin => ({
+            user_id: admin.user_id,
+            message: `New mentor application: ${profile.full_name || 'A user'} has requested mentor status`,
+            link: '/admin',
+            action_type: 'review_mentor_request',
+            action_reference_id: insertedRequest.id
+          }));
+
+          await supabase.from('notifications').insert(notifications);
+        }
+      } catch (notifError) {
+        console.error('Failed to create admin notifications:', notifError);
+      }
 
       // Send confirmation email automatically
       try {
