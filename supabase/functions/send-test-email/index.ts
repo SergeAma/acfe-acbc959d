@@ -22,15 +22,15 @@ const verifyAdminRole = async (req: Request): Promise<{ isAdmin: boolean; userId
     return { isAdmin: false, userId: null, error: 'Missing authorization header' };
   }
 
+  const token = authHeader.replace('Bearer ', '');
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   
-  // Use service role client to verify the JWT token
-  const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
-    global: { headers: { Authorization: authHeader } }
-  });
+  // Create service role client (no auth header needed for service role)
+  const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
-  const { data: { user }, error: authError } = await adminClient.auth.getUser();
+  // Verify the user's JWT token directly
+  const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
   if (authError || !user) {
     console.error("Auth error:", authError);
     return { isAdmin: false, userId: null, error: 'Invalid or expired token' };
