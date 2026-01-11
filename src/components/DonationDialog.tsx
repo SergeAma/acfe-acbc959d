@@ -89,7 +89,7 @@ const donationSchema = z.object({
   email: z.string().email('Please enter a valid email'),
   country: z.string().min(1, 'Country is required'),
   phone: z.string().min(8, 'Phone number is required'),
-  company: z.string().max(100).optional(),
+  company: z.string().min(1, 'Company is required').max(100),
   reason: z.string().min(1, 'Please share why you want to support us').max(500, 'Maximum 500 characters'),
   amount: z.number().min(10, 'Minimum donation is $10').max(10000, 'Maximum donation is $10,000'),
 });
@@ -344,7 +344,7 @@ export const DonationDialog = ({ open, onOpenChange }: DonationDialogProps) => {
                 <FormItem>
                   <FormLabel className="flex items-center gap-1">
                     <Building2 className="h-3.5 w-3.5" />
-                    Company <span className="text-muted-foreground text-xs">(optional)</span>
+                    Company <span className="text-destructive">*</span>
                   </FormLabel>
                   <FormControl>
                     <Input placeholder="Your company name" {...field} />

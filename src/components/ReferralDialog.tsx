@@ -190,6 +190,7 @@ export const ReferralDialog = ({ open, onOpenChange }: ReferralDialogProps) => {
     referrerFirstName && 
     referrerLastName && 
     referrerEmail && 
+    referrerCompany &&
     referrerCountry &&
     referrerPhone &&
     referredFirstName && 
@@ -254,13 +255,14 @@ export const ReferralDialog = ({ open, onOpenChange }: ReferralDialogProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="referrer-company">Company</Label>
+              <Label htmlFor="referrer-company">Company <span className="text-destructive">*</span></Label>
               <AutocompleteInput
                 id="referrer-company"
                 value={referrerCompany}
                 onChange={setReferrerCompany}
                 suggestions={COMPANIES}
                 placeholder="Start typing to see suggestions..."
+                required
               />
             </div>
 
