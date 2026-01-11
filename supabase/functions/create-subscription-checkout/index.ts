@@ -12,17 +12,20 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-SUBSCRIPTION-CHECKOUT] ${step}${detailsStr}`);
 };
 
-// Tier configuration with Stripe price IDs
-const SUBSCRIPTION_TIERS = {
+// ACFE-specific product IDs - isolated from Spectrogram products
+// Price IDs are fetched dynamically from platform_settings to stay in sync with admin changes
+const ACFE_PRODUCTS = {
   membership: {
-    priceId: "price_1SmiEGJv3w1nJBLYw5Wi2f4b", // $15/month ACFE Membership
     productId: "prod_TkCdNAxRmKONyc",
     name: "ACFE Membership",
+    settingKey: "subscription_price",
+    defaultPriceId: "price_1SmiEGJv3w1nJBLYw5Wi2f4b",
   },
   mentorship_plus: {
-    priceId: "price_1Smj0WJv3w1nJBLYn4uAQZ8g", // $30/month Mentorship Plus
     productId: "prod_TkDR4mktfjQo8r",
     name: "ACFE Mentorship Plus",
+    settingKey: "mentorship_plus_price",
+    defaultPriceId: "price_1Smj0WJv3w1nJBLYn4uAQZ8g",
   },
 };
 
@@ -59,15 +62,24 @@ serve(async (req) => {
     let tier = "membership"; // Default tier
     try {
       const body = await req.json();
-      if (body.tier && SUBSCRIPTION_TIERS[body.tier as keyof typeof SUBSCRIPTION_TIERS]) {
+      if (body.tier && ACFE_PRODUCTS[body.tier as keyof typeof ACFE_PRODUCTS]) {
         tier = body.tier;
       }
     } catch {
       // No body or invalid JSON, use default tier
     }
 
-    const selectedTier = SUBSCRIPTION_TIERS[tier as keyof typeof SUBSCRIPTION_TIERS];
-    logStep("Selected tier", { tier, priceId: selectedTier.priceId });
+    const tierConfig = ACFE_PRODUCTS[tier as keyof typeof ACFE_PRODUCTS];
+    
+    // Fetch the current price ID from platform_settings (synced with Stripe by admin)
+    const { data: settingData } = await supabaseClient
+      .from('platform_settings')
+      .select('setting_value')
+      .eq('setting_key', tierConfig.settingKey)
+      .single();
+    
+    const priceId = settingData?.setting_value?.price_id || tierConfig.defaultPriceId;
+    logStep("Selected tier", { tier, priceId, settingKey: tierConfig.settingKey });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
@@ -85,15 +97,17 @@ serve(async (req) => {
         status: "active",
       });
       
-      // Check if they already have the same tier subscription
+      // Check if they already have the same tier subscription (by product, not price ID)
       const hasSameTier = existingSubs.data.some((sub: Stripe.Subscription) => 
-        sub.items.data.some((item: Stripe.SubscriptionItem) => item.price.id === selectedTier.priceId)
+        sub.items.data.some((item: Stripe.SubscriptionItem) => 
+          item.price.product === tierConfig.productId
+        )
       );
       
       if (hasSameTier) {
         logStep("User already has this subscription tier");
         return new Response(JSON.stringify({ 
-          error: `You already have an active ${selectedTier.name} subscription`,
+          error: `You already have an active ${tierConfig.name} subscription`,
           alreadySubscribed: true
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -122,7 +136,7 @@ serve(async (req) => {
       customer_email: customerId ? undefined : user.email,
       line_items: [
         {
-          price: selectedTier.priceId,
+          price: priceId,
           quantity: 1,
         },
       ],
