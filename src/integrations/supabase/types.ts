@@ -912,6 +912,7 @@ export type Database = {
       }
       email_logs: {
         Row: {
+          campaign_name: string | null
           clicked_at: string | null
           contact_id: string | null
           error_message: string | null
@@ -924,6 +925,7 @@ export type Database = {
           template_id: string | null
         }
         Insert: {
+          campaign_name?: string | null
           clicked_at?: string | null
           contact_id?: string | null
           error_message?: string | null
@@ -936,6 +938,7 @@ export type Database = {
           template_id?: string | null
         }
         Update: {
+          campaign_name?: string | null
           clicked_at?: string | null
           contact_id?: string | null
           error_message?: string | null

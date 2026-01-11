@@ -68,6 +68,7 @@ import { AdminDonors } from "./pages/AdminDonors";
 import { AdminTranslations } from "./pages/AdminTranslations";
 import { AdminMentorView } from "./pages/AdminMentorView";
 import AdminEmailPreview from "./pages/AdminEmailPreview";
+import AdminMassMailer from "./pages/AdminMassMailer";
 
 const queryClient = new QueryClient();
 
@@ -133,6 +134,7 @@ const App = () => (
               <Route path="/admin/courses/:courseId/build" element={<ProtectedRoute requiredRole="admin"><AdminCourseBuilder /></ProtectedRoute>} />
               <Route path="/admin/mentor-view" element={<ProtectedRoute requiredRole="admin"><AdminMentorView /></ProtectedRoute>} />
               <Route path="/admin/email-preview" element={<ProtectedRoute requiredRole="admin"><AdminEmailPreview /></ProtectedRoute>} />
+              <Route path="/admin/mass-mailer" element={<ProtectedRoute requiredRole="admin"><AdminMassMailer /></ProtectedRoute>} />
               <Route path="/career-centre" element={<CareerCentreLanding />} />
               <Route path="/career-centre/:slug" element={<InstitutionCareerCentre />} />
               <Route path="/moderator/:slug" element={<ProtectedRoute><ModeratorDashboard /></ProtectedRoute>} />

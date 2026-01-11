@@ -48,6 +48,7 @@ const quickActionCategories = [
     iconColor: 'text-blue-600 dark:text-blue-400',
     items: [
       { label: 'Newsletter', icon: Send, path: '/admin/newsletter' },
+      { label: 'Mass Mailer', icon: Send, path: '/admin/mass-mailer' },
       { label: 'Email Logs', icon: Mail, path: '/admin/email-logs' },
       { label: 'Email Templates', icon: Mail, path: '/admin/email-templates' },
     ]
