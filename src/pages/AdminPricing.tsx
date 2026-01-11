@@ -82,11 +82,18 @@ export const AdminPricing = () => {
   const [reactivatingId, setReactivatingId] = useState<string | null>(null);
   
   // Subscription pricing state
-  const [subscriptionPriceCents, setSubscriptionPriceCents] = useState<number>(1000);
+  const [subscriptionPriceCents, setSubscriptionPriceCents] = useState<number>(1500);
   const [editingPrice, setEditingPrice] = useState(false);
-  const [tempPriceValue, setTempPriceValue] = useState('10');
+  const [tempPriceValue, setTempPriceValue] = useState('15');
   const [savingPrice, setSavingPrice] = useState(false);
   const [loadingPrice, setLoadingPrice] = useState(true);
+
+  // Mentorship Plus pricing state
+  const [mentorshipPlusPriceCents, setMentorshipPlusPriceCents] = useState<number>(3000);
+  const [editingMentorshipPrice, setEditingMentorshipPrice] = useState(false);
+  const [tempMentorshipPriceValue, setTempMentorshipPriceValue] = useState('30');
+  const [savingMentorshipPrice, setSavingMentorshipPrice] = useState(false);
+  const [loadingMentorshipPrice, setLoadingMentorshipPrice] = useState(true);
 
   // 1:1 Session pricing state
   const [sessionPriceCents, setSessionPriceCents] = useState<number>(5000);
@@ -137,16 +144,39 @@ export const AdminPricing = () => {
     const fetchSubscriptionPrice = async () => {
       setLoadingPrice(true);
       try {
-        const { data, error } = await supabase.functions.invoke('get-subscription-price');
-        if (error) throw error;
-        if (data?.priceCents) {
-          setSubscriptionPriceCents(data.priceCents);
-          setTempPriceValue((data.priceCents / 100).toString());
+        const { data } = await supabase
+          .from('platform_settings')
+          .select('setting_value')
+          .eq('setting_key', 'subscription_price')
+          .single();
+        if (data?.setting_value) {
+          const priceCents = (data.setting_value as any).price_cents || 1500;
+          setSubscriptionPriceCents(priceCents);
+          setTempPriceValue((priceCents / 100).toString());
         }
       } catch (error) {
         console.error('Error fetching subscription price:', error);
       }
       setLoadingPrice(false);
+    };
+
+    const fetchMentorshipPlusPrice = async () => {
+      setLoadingMentorshipPrice(true);
+      try {
+        const { data } = await supabase
+          .from('platform_settings')
+          .select('setting_value')
+          .eq('setting_key', 'mentorship_plus_price')
+          .single();
+        if (data?.setting_value) {
+          const priceCents = (data.setting_value as any).price_cents || 3000;
+          setMentorshipPlusPriceCents(priceCents);
+          setTempMentorshipPriceValue((priceCents / 100).toString());
+        }
+      } catch (error) {
+        console.error('Error fetching mentorship plus price:', error);
+      }
+      setLoadingMentorshipPrice(false);
     };
 
     const fetchSessionPrice = async () => {
@@ -167,6 +197,7 @@ export const AdminPricing = () => {
 
     fetchSettings();
     fetchSubscriptionPrice();
+    fetchMentorshipPlusPrice();
     fetchSessionPrice();
     if (!couponsInitialized) {
       fetchCoupons(true);
@@ -228,13 +259,13 @@ export const AdminPricing = () => {
     setSavingPrice(true);
     
     try {
-      const { data: session } = await supabase.auth.getSession();
-      const { data, error } = await supabase.functions.invoke('update-subscription-price', {
-        body: { priceCents },
-        headers: {
-          Authorization: `Bearer ${session.session?.access_token}`,
-        },
-      });
+      const { error } = await supabase
+        .from('platform_settings')
+        .update({ 
+          setting_value: { price_cents: priceCents, price_id: 'price_1SmiEGJv3w1nJBLYw5Wi2f4b' },
+          updated_at: new Date().toISOString()
+        })
+        .eq('setting_key', 'subscription_price');
 
       if (error) throw error;
       
@@ -242,7 +273,7 @@ export const AdminPricing = () => {
       setEditingPrice(false);
       toast({
         title: "Price updated",
-        description: `Subscription price set to $${priceValue.toFixed(2)}/month`,
+        description: `ACFE Membership price set to $${priceValue.toFixed(2)}/month`,
       });
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Failed to update price";
@@ -259,6 +290,54 @@ export const AdminPricing = () => {
   const handleCancelPriceEdit = () => {
     setTempPriceValue((subscriptionPriceCents / 100).toString());
     setEditingPrice(false);
+  };
+
+  const handleSaveMentorshipPrice = async () => {
+    const priceValue = parseFloat(tempMentorshipPriceValue);
+    if (isNaN(priceValue) || priceValue < 1) {
+      toast({
+        title: "Invalid price",
+        description: "Please enter a valid price (minimum $1.00)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const priceCents = Math.round(priceValue * 100);
+    setSavingMentorshipPrice(true);
+    
+    try {
+      const { error } = await supabase
+        .from('platform_settings')
+        .update({ 
+          setting_value: { price_cents: priceCents, price_id: 'price_1Smj0WJv3w1nJBLYn4uAQZ8g' },
+          updated_at: new Date().toISOString()
+        })
+        .eq('setting_key', 'mentorship_plus_price');
+
+      if (error) throw error;
+      
+      setMentorshipPlusPriceCents(priceCents);
+      setEditingMentorshipPrice(false);
+      toast({
+        title: "Price updated",
+        description: `Mentorship Plus price set to $${priceValue.toFixed(2)}/month`,
+      });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to update price";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+    
+    setSavingMentorshipPrice(false);
+  };
+
+  const handleCancelMentorshipPriceEdit = () => {
+    setTempMentorshipPriceValue((mentorshipPlusPriceCents / 100).toString());
+    setEditingMentorshipPrice(false);
   };
 
   const handleSaveSessionPrice = async () => {
@@ -711,14 +790,14 @@ export const AdminPricing = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-primary/50">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-primary">
                 <DollarSign className="h-5 w-5" />
-                Default Pricing
+                ACFE Membership Pricing
               </CardTitle>
               <CardDescription>
-                Set the monthly subscription price for all paid courses. Mentors can set their courses as free or paid.
+                Set the monthly subscription price for ACFE Membership tier.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -776,6 +855,81 @@ export const AdminPricing = () => {
                     onClick={(e) => {
                       e.stopPropagation();
                       setEditingPrice(true);
+                    }}
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Mentorship Plus Pricing */}
+          <Card className="border-secondary/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-secondary">
+                <DollarSign className="h-5 w-5" />
+                Mentorship Plus Pricing
+              </CardTitle>
+              <CardDescription>
+                Set the monthly price for the Mentorship Plus tier (includes 1:1 session credits).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingMentorshipPrice ? (
+                <div className="bg-secondary/10 rounded-lg p-4 flex justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : editingMentorshipPrice ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold text-secondary">$</span>
+                    <Input
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      value={tempMentorshipPriceValue}
+                      onChange={(e) => setTempMentorshipPriceValue(e.target.value)}
+                      className="text-2xl font-bold w-32 text-center border-secondary/50"
+                    />
+                    <span className="text-muted-foreground">/month</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleSaveMentorshipPrice} 
+                      disabled={savingMentorshipPrice}
+                      className="flex-1 bg-secondary hover:bg-secondary/90"
+                    >
+                      {savingMentorshipPrice ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Save className="h-4 w-4 mr-2" />
+                      )}
+                      Save Price
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleCancelMentorshipPriceEdit}
+                      disabled={savingMentorshipPrice}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div 
+                  className="bg-secondary/10 rounded-lg p-4 text-center cursor-pointer hover:bg-secondary/20 transition-colors group relative"
+                  onClick={() => setEditingMentorshipPrice(true)}
+                >
+                  <span className="text-4xl font-bold text-secondary">${(mentorshipPlusPriceCents / 100).toFixed(0)}</span>
+                  <p className="text-sm text-muted-foreground mt-1">per month subscription</p>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingMentorshipPrice(true);
                     }}
                   >
                     <Edit2 className="h-4 w-4" />
