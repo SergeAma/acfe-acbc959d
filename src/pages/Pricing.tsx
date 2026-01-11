@@ -28,6 +28,7 @@ export const Pricing = () => {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [pricePerMonth, setPricePerMonth] = useState(15);
+  const [mentorshipPricePerMonth, setMentorshipPricePerMonth] = useState(30);
   const [showInstitutionDialog, setShowInstitutionDialog] = useState(false);
   const [institutionLoading, setInstitutionLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -46,16 +47,32 @@ export const Pricing = () => {
   });
 
   useEffect(() => {
-    const fetchPrice = async () => {
-      const { data } = await supabase.from('platform_settings').select('setting_value').eq('setting_key', 'subscription_price').single();
-      if (data?.setting_value) {
-        const priceCents = typeof data.setting_value === 'object' ? (data.setting_value as any).price_cents : data.setting_value;
+    const fetchPrices = async () => {
+      // Fetch both subscription prices in parallel
+      const [membershipResult, mentorshipResult] = await Promise.all([
+        supabase.from('platform_settings').select('setting_value').eq('setting_key', 'subscription_price').single(),
+        supabase.from('platform_settings').select('setting_value').eq('setting_key', 'mentorship_plus_price').single(),
+      ]);
+      
+      if (membershipResult.data?.setting_value) {
+        const priceCents = typeof membershipResult.data.setting_value === 'object' 
+          ? (membershipResult.data.setting_value as any).price_cents 
+          : membershipResult.data.setting_value;
         if (priceCents) {
           setPricePerMonth(priceCents / 100);
         }
       }
+      
+      if (mentorshipResult.data?.setting_value) {
+        const priceCents = typeof mentorshipResult.data.setting_value === 'object'
+          ? (mentorshipResult.data.setting_value as any).price_cents
+          : mentorshipResult.data.setting_value;
+        if (priceCents) {
+          setMentorshipPricePerMonth(priceCents / 100);
+        }
+      }
     };
-    fetchPrice();
+    fetchPrices();
   }, []);
 
   // Initialize Turnstile when dialog opens
@@ -359,7 +376,7 @@ export const Pricing = () => {
                   </div>
                   {/* Price - fixed height */}
                   <div className="h-16 flex items-baseline justify-center mt-4">
-                    <span className="text-5xl font-bold text-secondary">$30</span>
+                    <span className="text-5xl font-bold text-secondary">${mentorshipPricePerMonth}</span>
                     <span className="text-muted-foreground text-lg">/{t('pricing_month')}</span>
                   </div>
                   {/* Subtext - fixed height */}
