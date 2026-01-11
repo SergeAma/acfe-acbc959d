@@ -12,6 +12,20 @@ const logStep = (step: string, details?: unknown) => {
   console.log(`[UPDATE-SUBSCRIPTION-PRICE] ${step}${detailsStr}`);
 };
 
+// ACFE-specific product IDs - isolated from Spectrogram products
+const ACFE_PRODUCTS = {
+  membership: {
+    productId: "prod_TkCdNAxRmKONyc",
+    name: "ACFE Membership",
+    settingKey: "subscription_price",
+  },
+  mentorship_plus: {
+    productId: "prod_TkDR4mktfjQo8r",
+    name: "ACFE Mentorship Plus",
+    settingKey: "mentorship_plus_price",
+  },
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -58,82 +72,84 @@ serve(async (req) => {
     }
     logStep("Admin role verified");
 
-    const { priceCents } = await req.json();
+    const { priceCents, tier = "membership" } = await req.json();
     if (!priceCents || typeof priceCents !== 'number' || priceCents < 100) {
       throw new Error("Invalid price. Minimum is $1.00 (100 cents)");
     }
-    logStep("Price to set", { priceCents });
+
+    const tierConfig = ACFE_PRODUCTS[tier as keyof typeof ACFE_PRODUCTS];
+    if (!tierConfig) {
+      throw new Error(`Invalid tier: ${tier}. Must be 'membership' or 'mentorship_plus'`);
+    }
+    logStep("Price update request", { priceCents, tier, productId: tierConfig.productId });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    // Find the existing monthly subscription product
+    // Find existing active price for this specific ACFE product
     const prices = await stripe.prices.list({
+      product: tierConfig.productId,
+      active: true,
       type: 'recurring',
       limit: 10,
     });
-    logStep("Fetched prices", { count: prices.data.length });
+    logStep("Fetched existing prices", { count: prices.data.length, productId: tierConfig.productId });
 
-    // Find a monthly recurring price
-    const monthlyPrice = prices.data.find(
-      (p: { recurring?: { interval: string }; active: boolean }) => p.recurring?.interval === 'month' && p.active
+    const currentPrice = prices.data.find(
+      (p: { recurring?: { interval: string } }) => p.recurring?.interval === 'month'
     );
 
-    if (!monthlyPrice) {
-      // Create a new product and price if none exists
-      logStep("No monthly subscription found, creating new product");
-      
-      const product = await stripe.products.create({
-        name: "ACFE Monthly Subscription",
-        description: "Access to all paid courses on the ACFE platform",
-      });
-      logStep("Created product", { productId: product.id });
-
-      const newPrice = await stripe.prices.create({
-        product: product.id,
-        unit_amount: priceCents,
-        currency: 'usd',
-        recurring: { interval: 'month' },
-      });
-      logStep("Created new price", { priceId: newPrice.id, amount: priceCents });
-
+    // If price already matches, no action needed
+    if (currentPrice && currentPrice.unit_amount === priceCents) {
+      logStep("Price already matches, no update needed");
       return new Response(
         JSON.stringify({ 
           success: true, 
-          priceId: newPrice.id,
+          priceId: currentPrice.id,
           amount: priceCents,
-          message: "Subscription price created successfully"
+          message: "Price already up to date"
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }
 
-    // Archive the old price and create a new one with the updated amount
-    const productId = typeof monthlyPrice.product === 'string' 
-      ? monthlyPrice.product 
-      : monthlyPrice.product.id;
-    
-    logStep("Found existing price", { priceId: monthlyPrice.id, productId, currentAmount: monthlyPrice.unit_amount });
+    // Archive old price if exists
+    if (currentPrice) {
+      await stripe.prices.update(currentPrice.id, { active: false });
+      logStep("Archived old price", { oldPriceId: currentPrice.id, oldAmount: currentPrice.unit_amount });
+    }
 
-    // Archive the old price
-    await stripe.prices.update(monthlyPrice.id, { active: false });
-    logStep("Archived old price");
-
-    // Create a new price with the updated amount
+    // Create new price for this ACFE product
     const newPrice = await stripe.prices.create({
-      product: productId,
+      product: tierConfig.productId,
       unit_amount: priceCents,
       currency: 'usd',
       recurring: { interval: 'month' },
     });
     logStep("Created new price", { priceId: newPrice.id, amount: priceCents });
 
+    // Update platform_settings with new price info
+    const { error: updateError } = await supabase
+      .from('platform_settings')
+      .update({ 
+        setting_value: { price_cents: priceCents, price_id: newPrice.id },
+        updated_at: new Date().toISOString()
+      })
+      .eq('setting_key', tierConfig.settingKey);
+
+    if (updateError) {
+      logStep("Warning: Failed to update platform_settings", { error: updateError.message });
+    } else {
+      logStep("Updated platform_settings", { settingKey: tierConfig.settingKey });
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         priceId: newPrice.id,
-        oldPriceId: monthlyPrice.id,
+        oldPriceId: currentPrice?.id || null,
         amount: priceCents,
-        message: "Subscription price updated successfully"
+        tier,
+        message: `${tierConfig.name} price updated to $${(priceCents / 100).toFixed(2)}/month`
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );

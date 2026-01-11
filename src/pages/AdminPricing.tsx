@@ -259,21 +259,23 @@ export const AdminPricing = () => {
     setSavingPrice(true);
     
     try {
-      const { error } = await supabase
-        .from('platform_settings')
-        .update({ 
-          setting_value: { price_cents: priceCents, price_id: 'price_1SmiEGJv3w1nJBLYw5Wi2f4b' },
-          updated_at: new Date().toISOString()
-        })
-        .eq('setting_key', 'subscription_price');
+      // Call edge function to update Stripe price and sync platform_settings
+      const { data: session } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke('update-subscription-price', {
+        body: { priceCents, tier: 'membership' },
+        headers: {
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       
       setSubscriptionPriceCents(priceCents);
       setEditingPrice(false);
       toast({
         title: "Price updated",
-        description: `ACFE Membership price set to $${priceValue.toFixed(2)}/month`,
+        description: data?.message || `ACFE Membership price set to $${priceValue.toFixed(2)}/month`,
       });
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Failed to update price";
@@ -307,21 +309,23 @@ export const AdminPricing = () => {
     setSavingMentorshipPrice(true);
     
     try {
-      const { error } = await supabase
-        .from('platform_settings')
-        .update({ 
-          setting_value: { price_cents: priceCents, price_id: 'price_1Smj0WJv3w1nJBLYn4uAQZ8g' },
-          updated_at: new Date().toISOString()
-        })
-        .eq('setting_key', 'mentorship_plus_price');
+      // Call edge function to update Stripe price and sync platform_settings
+      const { data: session } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke('update-subscription-price', {
+        body: { priceCents, tier: 'mentorship_plus' },
+        headers: {
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       
       setMentorshipPlusPriceCents(priceCents);
       setEditingMentorshipPrice(false);
       toast({
         title: "Price updated",
-        description: `Mentorship Plus price set to $${priceValue.toFixed(2)}/month`,
+        description: data?.message || `Mentorship Plus price set to $${priceValue.toFixed(2)}/month`,
       });
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Failed to update price";
