@@ -25,24 +25,23 @@ interface MassEmailRequest {
 
 const verifyAdminRole = async (req: Request): Promise<{ isAdmin: boolean; userId: string | null; error?: string }> => {
   const authHeader = req.headers.get('Authorization');
-  if (!authHeader) {
+  if (!authHeader?.startsWith('Bearer ')) {
     return { isAdmin: false, userId: null, error: 'Missing authorization header' };
   }
 
+  const token = authHeader.replace('Bearer ', '');
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader } }
-  });
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  
+  // Create service role client and verify JWT token directly
+  const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
   if (authError || !user) {
+    console.error("Auth error:", authError);
     return { isAdmin: false, userId: null, error: 'Invalid or expired token' };
   }
 
-  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const adminClient = createClient(supabaseUrl, supabaseServiceKey);
-  
   const { data: roleData, error: roleError } = await adminClient
     .from('user_roles')
     .select('role')
