@@ -900,7 +900,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'notifications.empty': 'Aucune action en attente',
 
     // ==================== HERO SECTION ====================
-    'hero.title': 'Rejoignez nos 300+ inscrits accompagnés par des mentors et accélérez votre carrière en tech',
+    'hero.title': 'Rejoignez nos 300+ inscrits accompagnés par des mentors et accélérez votre carrière en tech!',
     'hero.subtitle': 'Aucune expérience requise | Tous profils | Apprenez à tout moment',
     'hero.context': 'Formation dispensée par des experts tech qui comprennent le contexte africain.',
     'hero.dashboard': 'Aller au Tableau de Bord',
