@@ -25,7 +25,7 @@ const baseAuthSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters').max(100),
   lastName: z.string().min(2, 'Last name must be at least 2 characters').max(100),
   phone: z.string().min(10, 'Phone number must be at least 10 digits').max(20),
-  age: z.string().min(1, 'Please select your age').optional(),
+  age: z.string().min(1, 'Please select your age'),
   university: z.string().min(2, 'Please enter your university or college').max(200),
   city: z.string().min(2, 'Please enter your city').max(100),
   linkedinUrl: z.string().url('Invalid LinkedIn URL').optional().or(z.literal('')),
