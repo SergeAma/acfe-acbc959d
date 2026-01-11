@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { Link } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -18,6 +17,7 @@ import { FormProgressStepper } from "@/components/FormProgressStepper";
 import { Confetti } from "@/components/Confetti";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
+import { VideoRecorderDialog } from "@/components/VideoRecorderDialog";
 import { COUNTRY_NAMES, GLOBAL_CITIES } from "@/data";
 const STORAGE_KEY = "acfe-idea-submission-draft";
 
@@ -42,7 +42,7 @@ export function SubmitIdea() {
     profile
   } = useAuth();
   const { t } = useLanguage();
-  const isMobile = useIsMobile();
+  const [showRecorder, setShowRecorder] = useState(false);
 
   // Honeypot field - bots will fill this, humans won't see it
   const [honeypot, setHoneypot] = useState("");
@@ -570,26 +570,19 @@ export function SubmitIdea() {
                           </Button>
                         </div>
                       ) : (
-                        <div className={`grid gap-4 ${isMobile ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
-                          {/* Record Video Option - Only shown on mobile where capture attribute works */}
-                          {isMobile && (
-                            <label 
-                              className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors border-border hover:border-primary/50 hover:bg-muted/50"
-                            >
-                              <input 
-                                type="file" 
-                                accept="video/*" 
-                                capture="environment"
-                                className="hidden" 
-                                onChange={handleVideoInputChange} 
-                              />
-                              <Camera className="h-10 w-10 text-muted-foreground mx-auto" />
-                              <p className="font-medium text-foreground mt-2">Record Video</p>
-                              <p className="text-sm text-muted-foreground">Use your camera</p>
-                            </label>
-                          )}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Record Video Option - Works on all devices via MediaRecorder API */}
+                          <button
+                            type="button"
+                            onClick={() => setShowRecorder(true)}
+                            className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors border-border hover:border-primary/50 hover:bg-muted/50"
+                          >
+                            <Camera className="h-10 w-10 text-muted-foreground mx-auto" />
+                            <p className="font-medium text-foreground mt-2">Record Video</p>
+                            <p className="text-sm text-muted-foreground">Use your camera</p>
+                          </button>
                           
-                          {/* Upload Video Option - Always available */}
+                          {/* Upload Video Option */}
                           <label 
                             className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors border-border hover:border-primary/50 hover:bg-muted/50"
                           >
@@ -635,6 +628,14 @@ export function SubmitIdea() {
           </div>
         </section>
       </main>
+
+      {/* Video Recorder Dialog */}
+      <VideoRecorderDialog
+        open={showRecorder}
+        onOpenChange={setShowRecorder}
+        onVideoRecorded={handleVideoSelect}
+        maxDurationSeconds={180}
+      />
 
       <Footer />
     </div>;
