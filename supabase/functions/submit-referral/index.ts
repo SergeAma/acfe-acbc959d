@@ -74,6 +74,9 @@ const handler = async (req: Request): Promise<Response> => {
     if (!referrer?.email || typeof referrer.email !== 'string' || referrer.email.length > 255) {
       throw new Error("Invalid referrer email");
     }
+    if (!referrer?.company || typeof referrer.company !== 'string' || referrer.company.length > 200) {
+      throw new Error("Invalid referrer company");
+    }
     if (!referred?.firstName || typeof referred.firstName !== 'string' || referred.firstName.length > 100) {
       throw new Error("Invalid referred first name");
     }
@@ -131,7 +134,7 @@ const handler = async (req: Request): Promise<Response> => {
       firstName: referrer.firstName.trim().substring(0, 100),
       lastName: referrer.lastName.trim().substring(0, 100),
       email: referrer.email.trim().toLowerCase().substring(0, 255),
-      company: referrer.company?.trim().substring(0, 200) || null,
+      company: referrer.company.trim().substring(0, 200),
     };
 
     const sanitizedReferred = {
