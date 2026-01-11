@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Link } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -41,6 +42,7 @@ export function SubmitIdea() {
     profile
   } = useAuth();
   const { t } = useLanguage();
+  const isMobile = useIsMobile();
 
   // Honeypot field - bots will fill this, humans won't see it
   const [honeypot, setHoneypot] = useState("");
@@ -568,24 +570,26 @@ export function SubmitIdea() {
                           </Button>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {/* Record Video Option */}
-                          <label 
-                            className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors border-border hover:border-primary/50 hover:bg-muted/50"
-                          >
-                            <input 
-                              type="file" 
-                              accept="video/*" 
-                              capture="environment"
-                              className="hidden" 
-                              onChange={handleVideoInputChange} 
-                            />
-                            <Camera className="h-10 w-10 text-muted-foreground mx-auto" />
-                            <p className="font-medium text-foreground mt-2">Record Video</p>
-                            <p className="text-sm text-muted-foreground">Use your camera</p>
-                          </label>
+                        <div className={`grid gap-4 ${isMobile ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+                          {/* Record Video Option - Only shown on mobile where capture attribute works */}
+                          {isMobile && (
+                            <label 
+                              className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors border-border hover:border-primary/50 hover:bg-muted/50"
+                            >
+                              <input 
+                                type="file" 
+                                accept="video/*" 
+                                capture="environment"
+                                className="hidden" 
+                                onChange={handleVideoInputChange} 
+                              />
+                              <Camera className="h-10 w-10 text-muted-foreground mx-auto" />
+                              <p className="font-medium text-foreground mt-2">Record Video</p>
+                              <p className="text-sm text-muted-foreground">Use your camera</p>
+                            </label>
+                          )}
                           
-                          {/* Upload Video Option */}
+                          {/* Upload Video Option - Always available */}
                           <label 
                             className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors border-border hover:border-primary/50 hover:bg-muted/50"
                           >
