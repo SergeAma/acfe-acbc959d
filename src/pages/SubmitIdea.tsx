@@ -226,10 +226,10 @@ export function SubmitIdea() {
       });
       return;
     }
-    if (!formData.fullName || !formData.email || !formData.ideaTitle) {
+    if (!formData.fullName || !formData.email || !formData.phone || !formData.country || !formData.city || !formData.ideaTitle) {
       toast({
         title: "Missing required fields",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required fields including phone, country, and city",
         variant: "destructive"
       });
       return;

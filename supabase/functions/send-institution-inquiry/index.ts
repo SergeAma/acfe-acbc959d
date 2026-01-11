@@ -52,9 +52,9 @@ interface InstitutionInquiryRequest {
   firstName: string;
   lastName?: string;
   contactEmail: string;
-  country?: string;
-  contactPhone?: string;
-  estimatedStudents?: string;
+  country: string;
+  contactPhone: string;
+  estimatedStudents: string;
   message?: string;
   turnstileToken: string;
   language?: EmailLanguage;
@@ -144,6 +144,15 @@ serve(async (req) => {
     if (!emailRegex.test(trimmedEmail)) {
       throw new Error("Invalid email format");
     }
+    if (!country || typeof country !== 'string' || country.length > 100) {
+      throw new Error("Country is required");
+    }
+    if (!contactPhone || typeof contactPhone !== 'string' || contactPhone.length < 8 || contactPhone.length > 50) {
+      throw new Error("Valid phone number is required");
+    }
+    if (!estimatedStudents || typeof estimatedStudents !== 'string' || estimatedStudents.length > 50) {
+      throw new Error("Estimated students is required");
+    }
 
     const rateLimitKey = `institution:${trimmedEmail}`;
     if (isRateLimited(rateLimitKey)) {
@@ -175,9 +184,9 @@ serve(async (req) => {
     const safeLastName = lastName ? escapeHtml(lastName.trim().substring(0, 100)) : '';
     const safeContactName = safeLastName ? `${safeFirstName} ${safeLastName}` : safeFirstName;
     const safeContactEmail = escapeHtml(trimmedEmail);
-    const safeInstitutionType = institutionType ? escapeHtml(institutionType.trim().substring(0, 100)) : '';
-    const safeContactPhone = contactPhone ? escapeHtml(contactPhone.trim().substring(0, 50)) : '';
-    const safeCountry = country ? escapeHtml(country.trim().substring(0, 100)) : '';
+    const safeInstitutionType = escapeHtml(institutionType.trim().substring(0, 100));
+    const safeContactPhone = escapeHtml(contactPhone.trim().substring(0, 50));
+    const safeCountry = escapeHtml(country.trim().substring(0, 100));
     const safeEstimatedStudents = estimatedStudents ? escapeHtml(estimatedStudents.trim().substring(0, 50)) : '';
     const safeMessage = message ? escapeHtml(message.trim().substring(0, 2000)) : '';
 
