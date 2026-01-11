@@ -106,28 +106,41 @@ export const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-foreground mb-4">9. Fee-Based Services</h2>
+            <h2 className="text-2xl font-semibold text-foreground mb-4">9. Donations and Contributions</h2>
+            <p className="text-muted-foreground">
+              Some Services allow users to make financial contributions to support ACFE's mission. By making a donation, you acknowledge and agree that:
+            </p>
+            <ul className="list-disc list-inside text-muted-foreground mt-4 space-y-2">
+              <li>All donations are voluntary and non-refundable unless otherwise required by law</li>
+              <li>Donations will be used to support ACFE's educational programs, mentorship initiatives, and operational costs</li>
+              <li><strong>Donor Recognition:</strong> ACFE reserves the right to publicly share donor profiles (individual or entity names) via public channels, including but not limited to our website, social media platforms, newsletters, annual reports, and promotional materials, to highlight positive impact to our cause. If you wish to remain anonymous, you must notify us in writing at contact@acloudforeveryone.org prior to or immediately following your donation</li>
+              <li>ACFE may contact donors regarding the impact of their contribution and future giving opportunities</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold text-foreground mb-4">10. Fee-Based Services</h2>
             <p className="text-muted-foreground">
               Some Services, including certain courses, require a fee to access or use. You agree to pay all fees and charges incurred. Fees and charges are payable in accordance with payment terms in effect at the time the fee or charge becomes payable.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-foreground mb-4">10. Registration Obligations</h2>
+            <h2 className="text-2xl font-semibold text-foreground mb-4">11. Registration Obligations</h2>
             <p className="text-muted-foreground">
               Some Services require registration. You agree to provide accurate information and update it as necessary. If you provide information that is untrue, inaccurate, not current or incomplete, we have the right to suspend or terminate your account.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-foreground mb-4">11. Passwords and Other Security Issues</h2>
+            <h2 className="text-2xl font-semibold text-foreground mb-4">12. Passwords and Other Security Issues</h2>
             <p className="text-muted-foreground">
               If we issue you a password, you agree to protect it and change it if its security has been compromised. You may not transfer your registration, password or username to another person or share it with anyone.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-foreground mb-4">12. Privacy Policy</h2>
+            <h2 className="text-2xl font-semibold text-foreground mb-4">13. Privacy Policy</h2>
             <p className="text-muted-foreground">
               ACFE respects your privacy. Please see our{" "}
               <Link to="/privacy" className="text-primary hover:underline">
@@ -138,35 +151,35 @@ export const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-foreground mb-4">13. Service Deactivation or Termination</h2>
+            <h2 className="text-2xl font-semibold text-foreground mb-4">14. Service Deactivation or Termination</h2>
             <p className="text-muted-foreground">
               We have the right to restrict, suspend or terminate your access to all or any part of our Services, refuse or remove any material submitted on or through the Services, deactivate or delete your accounts, and establish general practices and limits concerning use of the Services.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-foreground mb-4">14. Indemnification</h2>
+            <h2 className="text-2xl font-semibold text-foreground mb-4">15. Indemnification</h2>
             <p className="text-muted-foreground">
               You agree to indemnify, defend and hold ACFE, Spectrogram UK LTD, its subsidiaries, affiliates, and their respective officers, directors, owners, employees, agents, licensors, representatives, licensors and suppliers (collectively, the "ACFE Parties"), harmless from and against any and all liability, losses, expenses, damages and costs (including attorneys' fees), incurred by any ACFE Party in connection with any claim arising out of your use of the Services.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-foreground mb-4">15. Disclaimers of Warranties</h2>
+            <h2 className="text-2xl font-semibold text-foreground mb-4">16. Disclaimers of Warranties</h2>
             <p className="text-muted-foreground">
               The Services are provided "as is" and "as available", without any representation, promise or warranty of any kind, express or implied, or any guarantee or assurance that the Services will be available for use, or uninterrupted or error-free. Any material downloaded or otherwise obtained through our Services is done at your own discretion and risk.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-foreground mb-4">16. Limitation of Liability</h2>
+            <h2 className="text-2xl font-semibold text-foreground mb-4">17. Limitation of Liability</h2>
             <p className="text-muted-foreground">
               In no event shall any ACFE Party be liable to you or any other person or entity, under any theory, for damages of any kind arising from the use of the Services, including but not limited to direct, indirect, incidental, punitive, special or consequential damages, lost income, revenue or profits, lost or damaged data, or other commercial or economic loss. If applicable law does not allow the limitation or exclusion of liability or damages, the total liability of any ACFE Party shall not exceed one hundred pounds (£100).
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-foreground mb-4">17. Miscellaneous</h2>
+            <h2 className="text-2xl font-semibold text-foreground mb-4">18. Miscellaneous</h2>
             <ul className="list-disc list-inside text-muted-foreground space-y-3">
               <li><strong>General:</strong> This site is created, controlled, and operated by A Cloud for Everyone, an initiative by Spectrogram UK LTD, in the UK.</li>
               <li><strong>Entire Agreement:</strong> These TOS, including the policies referred to in these TOS, constitute the entire agreement between you and ACFE.</li>
@@ -180,7 +193,7 @@ export const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-foreground mb-4">18. Violations</h2>
+            <h2 className="text-2xl font-semibold text-foreground mb-4">19. Violations</h2>
             <p className="text-muted-foreground">
               For questions about these Terms of Service, the practices of this site or any dealings with A Cloud for Everyone, contact us at{" "}
               <a href="mailto:contact@acloudforeveryone.org" className="text-primary hover:underline">
