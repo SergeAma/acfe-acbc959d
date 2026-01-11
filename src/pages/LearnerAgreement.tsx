@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Navbar } from "@/components/Navbar";
@@ -10,49 +11,27 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FileSignature, Loader2, Heart, Users, Shield } from "lucide-react";
 
-const AGREEMENT_TERMS = [
-  {
-    title: "Good Conduct",
-    description: "You commit to maintaining good conduct with fellow learners in all forums and cohorts."
-  },
-  {
-    title: "Zero Tolerance Policy",
-    description: "There is zero tolerance for bullying or use of profanity on the platform."
-  },
-  {
-    title: "Respect & Privacy",
-    description: "You commit to respecting fellow learners as well as mentor privacy at all times."
-  },
-  {
-    title: "Student Behaviour Liability",
-    description: "ACFE shall not be held responsible or accountable for any other student's behaviour."
-  },
-  {
-    title: "External Connections Liability",
-    description: "ACFE shall not be held responsible or accountable for any outcome if students or mentors decide to connect outside the ACFE platform."
-  },
-  {
-    title: "Promotional Rights",
-    description: "ACFE reserves the right to publicly share and promote any positive outcomes as a result of your learning & mentorship experience."
-  },
-  {
-    title: "Membership Fees",
-    description: "Once subscribed, membership fees are non-refundable unless cancellation happens before the next billing cycle."
-  },
-  {
-    title: "Account & Promo Code Sharing",
-    description: "You may not share your login credentials with any other individual, nor any promotional code you have access to."
-  }
-];
-
 export default function LearnerAgreement() {
   const { user, profile, loading: authLoading, refreshProfile } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
   
   const [submitting, setSubmitting] = useState(false);
   const [hasAgreement, setHasAgreement] = useState<boolean | null>(null);
   const [checkingAgreement, setCheckingAgreement] = useState(true);
+
+  // Agreement terms using translation keys
+  const AGREEMENT_TERMS = [
+    { title: t('learner.term1_title'), description: t('learner.term1_desc') },
+    { title: t('learner.term2_title'), description: t('learner.term2_desc') },
+    { title: t('learner.term3_title'), description: t('learner.term3_desc') },
+    { title: t('learner.term4_title'), description: t('learner.term4_desc') },
+    { title: t('learner.term5_title'), description: t('learner.term5_desc') },
+    { title: t('learner.term6_title'), description: t('learner.term6_desc') },
+    { title: t('learner.term7_title'), description: t('learner.term7_desc') },
+    { title: t('learner.term8_title'), description: t('learner.term8_desc') },
+  ];
 
   // Check if user already has a signed agreement
   useEffect(() => {
@@ -121,8 +100,8 @@ export default function LearnerAgreement() {
       await refreshProfile();
 
       toast({
-        title: "Welcome to ACFE!",
-        description: "You now have full access to the platform.",
+        title: t('learner.welcome_title'),
+        description: t('learner.welcome_desc'),
       });
 
       navigate('/dashboard');
@@ -163,9 +142,9 @@ export default function LearnerAgreement() {
             <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
               <Users className="h-8 w-8 text-primary" />
             </div>
-            <CardTitle className="text-2xl md:text-3xl">Community Guidelines</CardTitle>
+            <CardTitle className="text-2xl md:text-3xl">{t('learner.title')}</CardTitle>
             <CardDescription className="text-base max-w-xl mx-auto">
-              Please read and agree to our community guidelines before accessing courses and features.
+              {t('learner.description')}
             </CardDescription>
           </CardHeader>
 
@@ -200,11 +179,10 @@ export default function LearnerAgreement() {
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-2">
               <div className="flex items-center gap-2">
                 <Heart className="h-4 w-4 text-primary" />
-                <h3 className="font-semibold text-sm text-primary">Our Mission</h3>
+                <h3 className="font-semibold text-sm text-primary">{t('learner.mission_title')}</h3>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                ACFE is a not-for-profit organisation dedicated to empowering African professionals. 
-                All proceeds are reinvested into funding internships and supporting partner charities.
+                {t('learner.mission_desc')}
               </p>
             </div>
 
@@ -212,8 +190,7 @@ export default function LearnerAgreement() {
             <div className="flex items-start gap-2 text-sm text-muted-foreground">
               <Shield className="h-4 w-4 mt-0.5 flex-shrink-0" />
               <p>
-                By clicking "I Agree & Continue", you confirm that you have read, understood, 
-                and agree to abide by these community guidelines.
+                {t('learner.agreement_notice')}
               </p>
             </div>
 
@@ -227,12 +204,12 @@ export default function LearnerAgreement() {
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Processing...
+                  {t('learner.processing')}
                 </>
               ) : (
                 <>
                   <FileSignature className="mr-2 h-5 w-5" />
-                  I Agree & Continue
+                  {t('learner.agree_button')}
                 </>
               )}
             </Button>
