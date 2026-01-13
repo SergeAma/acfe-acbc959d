@@ -19,7 +19,9 @@ import { PhoneInput } from "@/components/ui/phone-input";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { VideoRecorderDialog } from "@/components/VideoRecorderDialog";
 import { COUNTRY_NAMES, GLOBAL_CITIES } from "@/data";
+
 const STORAGE_KEY = "acfe-idea-submission-draft";
+const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
 
 // Minimum time (in seconds) user must spend on form before submitting
 const MIN_FORM_TIME_SECONDS = 15;
@@ -43,6 +45,11 @@ export function SubmitIdea() {
   } = useAuth();
   const { t } = useLanguage();
   const [showRecorder, setShowRecorder] = useState(false);
+
+  // Turnstile CAPTCHA state
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<HTMLDivElement>(null);
+  const turnstileWidgetId = useRef<string | null>(null);
 
   // Honeypot field - bots will fill this, humans won't see it
   const [honeypot, setHoneypot] = useState("");
@@ -127,6 +134,42 @@ export function SubmitIdea() {
   useEffect(() => {
     formLoadTime.current = Date.now();
   }, []);
+
+  // Initialize Turnstile CAPTCHA
+  useEffect(() => {
+    if (!user) return; // Only load for authenticated users who can see the form
+
+    const initTurnstile = () => {
+      if (!turnstileRef.current || !(window as any).turnstile || turnstileWidgetId.current) return;
+      
+      turnstileWidgetId.current = (window as any).turnstile.render(turnstileRef.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        callback: (token: string) => setTurnstileToken(token),
+        'expired-callback': () => setTurnstileToken(null),
+        'error-callback': () => setTurnstileToken(null),
+        theme: 'auto',
+      });
+    };
+
+    // Load Turnstile script if not already loaded
+    const existingScript = document.querySelector('script[src*="turnstile"]');
+    if (existingScript) {
+      setTimeout(initTurnstile, 100);
+    } else {
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      script.async = true;
+      script.onload = () => setTimeout(initTurnstile, 100);
+      document.body.appendChild(script);
+    }
+
+    return () => {
+      if (turnstileWidgetId.current && (window as any).turnstile) {
+        (window as any).turnstile.remove(turnstileWidgetId.current);
+        turnstileWidgetId.current = null;
+      }
+    };
+  }, [user]);
 
   // URL validation helper
   const isValidUrl = (url: string) => {
@@ -234,6 +277,17 @@ export function SubmitIdea() {
       });
       return;
     }
+
+    // Verify Turnstile CAPTCHA
+    if (!turnstileToken) {
+      toast({
+        title: "Security verification required",
+        description: "Please complete the CAPTCHA verification",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     setUploadProgress(0);
     try {
@@ -607,7 +661,12 @@ export function SubmitIdea() {
                         </p>
                       </div>}
 
-                    <Button type="submit" size="lg" className="w-full rounded-full" disabled={isSubmitting || !videoFile || formData.ideaDescription.trim().length < MIN_DESCRIPTION_LENGTH || (formData.startupWebsite.trim() && !isValidUrl(formData.startupWebsite))}>
+                    {/* Cloudflare Turnstile CAPTCHA */}
+                    <div className="flex justify-center">
+                      <div ref={turnstileRef} className="min-h-[65px]" />
+                    </div>
+
+                    <Button type="submit" size="lg" className="w-full rounded-full" disabled={isSubmitting || !videoFile || formData.ideaDescription.trim().length < MIN_DESCRIPTION_LENGTH || (formData.startupWebsite.trim() && !isValidUrl(formData.startupWebsite)) || !turnstileToken}>
                       {isSubmitting ? "Submitting..." : "Submit Your Idea"}
                     </Button>
                     

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -19,6 +19,9 @@ import { AutocompleteInput } from '@/components/ui/autocomplete-input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { UNIVERSITIES } from '@/data/universities';
 import { AFRICAN_CITIES } from '@/data/cities';
+import { toast } from 'sonner';
+
+const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
 const baseAuthSchema = z.object({
   email: z.string().email('Invalid email address').max(255),
   password: z.string().min(6, 'Password must be at least 6 characters').max(100),
@@ -80,6 +83,11 @@ export const Auth = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  // Turnstile CAPTCHA state
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<HTMLDivElement>(null);
+  const turnstileWidgetId = useRef<string | null>(null);
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -102,6 +110,49 @@ export const Auth = () => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Initialize Turnstile when on signup mode
+  useEffect(() => {
+    if (mode !== 'signup') {
+      setTurnstileToken(null);
+      if (turnstileWidgetId.current && (window as any).turnstile) {
+        (window as any).turnstile.remove(turnstileWidgetId.current);
+        turnstileWidgetId.current = null;
+      }
+      return;
+    }
+
+    const initTurnstile = () => {
+      if (!turnstileRef.current || !(window as any).turnstile || turnstileWidgetId.current) return;
+      
+      turnstileWidgetId.current = (window as any).turnstile.render(turnstileRef.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        callback: (token: string) => setTurnstileToken(token),
+        'expired-callback': () => setTurnstileToken(null),
+        'error-callback': () => setTurnstileToken(null),
+        theme: 'auto',
+      });
+    };
+
+    // Load Turnstile script if not already loaded
+    const existingScript = document.querySelector('script[src*="turnstile"]');
+    if (existingScript) {
+      setTimeout(initTurnstile, 100);
+    } else {
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      script.async = true;
+      script.onload = () => setTimeout(initTurnstile, 100);
+      document.body.appendChild(script);
+    }
+
+    return () => {
+      if (turnstileWidgetId.current && (window as any).turnstile) {
+        (window as any).turnstile.remove(turnstileWidgetId.current);
+        turnstileWidgetId.current = null;
+      }
+    };
+  }, [mode]);
 
   useEffect(() => {
     if (user) {
@@ -150,6 +201,12 @@ export const Auth = () => {
     // Check mentor pledge for mentor signup
     if (mode === 'signup' && isMentorSignup && !formData.mentorPledge) {
       setErrors(prev => ({ ...prev, mentorPledge: 'You must confirm your intent to become a mentor and accept the terms' }));
+      return;
+    }
+
+    // Check Turnstile CAPTCHA for signup
+    if (mode === 'signup' && !turnstileToken) {
+      toast.error('Please complete the security verification');
       return;
     }
 
@@ -604,10 +661,15 @@ export const Auth = () => {
                   </p>
                 )}
 
+                {/* Cloudflare Turnstile CAPTCHA */}
+                <div className="flex justify-center">
+                  <div ref={turnstileRef} className="min-h-[65px]" />
+                </div>
+
                 <Button 
                   type="submit" 
                   className="w-full bg-foreground text-background hover:bg-foreground/90 font-semibold" 
-                  disabled={loading || !formData.termsAccepted || (isMentorSignup && !formData.mentorPledge)}
+                  disabled={loading || !formData.termsAccepted || (isMentorSignup && !formData.mentorPledge) || !turnstileToken}
                 >
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (isMentorSignup ? 'SUBMIT MENTOR APPLICATION' : 'REGISTER')}
                 </Button>
