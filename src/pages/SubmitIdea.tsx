@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -64,6 +65,7 @@ export function SubmitIdea() {
             fullName: parsed.fullName || "",
             email: parsed.email || "",
             phone: parsed.phone || "",
+            gender: parsed.gender || "",
             country: parsed.country || "",
             city: parsed.city || "",
             ideaTitle: parsed.ideaTitle || "",
@@ -79,6 +81,7 @@ export function SubmitIdea() {
       fullName: "",
       email: "",
       phone: "",
+      gender: "" as 'male' | 'female' | '',
       country: "",
       city: "",
       ideaTitle: "",
@@ -269,10 +272,10 @@ export function SubmitIdea() {
       });
       return;
     }
-    if (!formData.fullName || !formData.email || !formData.phone || !formData.country || !formData.city || !formData.ideaTitle) {
+    if (!formData.fullName || !formData.email || !formData.phone || !formData.gender || !formData.country || !formData.city || !formData.ideaTitle) {
       toast({
         title: "Missing required fields",
-        description: "Please fill in all required fields including phone, country, and city",
+        description: "Please fill in all required fields including phone, gender, country, and city",
         variant: "destructive"
       });
       return;
@@ -321,6 +324,7 @@ export function SubmitIdea() {
         full_name: formData.fullName,
         email: formData.email,
         phone: formData.phone || null,
+        gender: formData.gender || null,
         idea_title: formData.ideaTitle,
         idea_description: formData.ideaDescription || null,
         video_url: videoPath,
@@ -560,14 +564,28 @@ export function SubmitIdea() {
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number *</Label>
-                      <PhoneInput 
-                        id="phone" 
-                        value={formData.phone} 
-                        onChange={(value) => setFormData(prev => ({ ...prev, phone: value }))} 
-                        required 
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Phone Number *</Label>
+                        <PhoneInput 
+                          id="phone" 
+                          value={formData.phone} 
+                          onChange={(value) => setFormData(prev => ({ ...prev, phone: value }))} 
+                          required 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="gender">Gender *</Label>
+                        <Select value={formData.gender} onValueChange={(value: 'male' | 'female') => setFormData(prev => ({ ...prev, gender: value }))}>
+                          <SelectTrigger id="gender">
+                            <SelectValue placeholder="Select gender" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-card">
+                            <SelectItem value="male">Male</SelectItem>
+                            <SelectItem value="female">Female</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
                     <div className="space-y-2">

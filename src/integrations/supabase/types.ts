@@ -1159,6 +1159,7 @@ export type Database = {
           created_at: string
           email: string
           full_name: string
+          gender: string | null
           id: string
           idea_description: string | null
           idea_title: string
@@ -1173,6 +1174,7 @@ export type Database = {
           created_at?: string
           email: string
           full_name: string
+          gender?: string | null
           id?: string
           idea_description?: string | null
           idea_title: string
@@ -1187,6 +1189,7 @@ export type Database = {
           created_at?: string
           email?: string
           full_name?: string
+          gender?: string | null
           id?: string
           idea_description?: string | null
           idea_title?: string
@@ -2089,6 +2092,7 @@ export type Database = {
           career_ambitions: string
           course_to_complete_id: string | null
           created_at: string
+          gender: string | null
           id: string
           mentor_id: string
           mentor_response: string | null
@@ -2103,6 +2107,7 @@ export type Database = {
           career_ambitions: string
           course_to_complete_id?: string | null
           created_at?: string
+          gender?: string | null
           id?: string
           mentor_id: string
           mentor_response?: string | null
@@ -2117,6 +2122,7 @@ export type Database = {
           career_ambitions?: string
           course_to_complete_id?: string | null
           created_at?: string
+          gender?: string | null
           id?: string
           mentor_id?: string
           mentor_response?: string | null
@@ -2305,6 +2311,7 @@ export type Database = {
           created_at: string | null
           email: string
           full_name: string | null
+          gender: string | null
           github_url: string | null
           id: string
           instagram_url: string | null
@@ -2328,6 +2335,7 @@ export type Database = {
           created_at?: string | null
           email: string
           full_name?: string | null
+          gender?: string | null
           github_url?: string | null
           id: string
           instagram_url?: string | null
@@ -2351,6 +2359,7 @@ export type Database = {
           created_at?: string | null
           email?: string
           full_name?: string | null
+          gender?: string | null
           github_url?: string | null
           id?: string
           instagram_url?: string | null

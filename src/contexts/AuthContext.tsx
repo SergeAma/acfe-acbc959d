@@ -29,7 +29,7 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
-  signUp: (email: string, password: string, fullName: string, linkedinUrl?: string, wantsMentor?: boolean, university?: string, mentorBio?: string, portfolioLinks?: string, preferredLanguage?: 'en' | 'fr') => Promise<{ error: AuthError | null }>;
+  signUp: (email: string, password: string, fullName: string, linkedinUrl?: string, wantsMentor?: boolean, university?: string, mentorBio?: string, portfolioLinks?: string, preferredLanguage?: 'en' | 'fr', gender?: 'male' | 'female') => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
@@ -263,7 +263,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error: null };
   };
 
-  const signUp = async (email: string, password: string, fullName: string, linkedinUrl?: string, wantsMentor?: boolean, university?: string, mentorBio?: string, portfolioLinks?: string, preferredLanguage: 'en' | 'fr' = 'en') => {
+  const signUp = async (email: string, password: string, fullName: string, linkedinUrl?: string, wantsMentor?: boolean, university?: string, mentorBio?: string, portfolioLinks?: string, preferredLanguage: 'en' | 'fr' = 'en', gender?: 'male' | 'female') => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -289,11 +289,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           : "Welcome to A Cloud for Everyone. All users start as learners.",
       });
       
-      // Update profile with LinkedIn URL, university, and language preference if provided
+      // Update profile with LinkedIn URL, university, gender, and language preference if provided
       if (data.user) {
         const updateData: Record<string, string> = {};
         if (linkedinUrl) updateData.linkedin_url = linkedinUrl;
         if (university) updateData.university = university;
+        if (gender) updateData.gender = gender;
         updateData.preferred_language = preferredLanguage;
         
         await supabase
