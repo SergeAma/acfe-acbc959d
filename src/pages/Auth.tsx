@@ -29,6 +29,7 @@ const baseAuthSchema = z.object({
   lastName: z.string().min(2, 'Last name must be at least 2 characters').max(100),
   phone: z.string().min(10, 'Phone number must be at least 10 digits').max(20),
   age: z.string().min(1, 'Please select your age'),
+  gender: z.enum(['male', 'female'], { required_error: 'Please select your gender' }),
   university: z.string().min(2, 'Please enter your university or college').max(200),
   city: z.string().min(2, 'Please enter your city').max(100),
   linkedinUrl: z.string().url('Invalid LinkedIn URL').optional().or(z.literal('')),
@@ -95,6 +96,7 @@ export const Auth = () => {
     lastName: '',
     phone: '',
     age: '',
+    gender: '' as 'male' | 'female' | '',
     university: '',
     city: '',
     linkedinUrl: '',
@@ -231,7 +233,8 @@ export const Auth = () => {
           formData.university,
           isMentorSignup ? formData.mentorBio : undefined,
           isMentorSignup ? formData.portfolioLinks : undefined,
-          formData.preferredLanguage
+          formData.preferredLanguage,
+          formData.gender as 'male' | 'female'
         );
         if (!error) {
           // Update the language context with user's preference
@@ -404,22 +407,38 @@ export const Auth = () => {
                   {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-age">Age</Label>
-                  <Select value={formData.age} onValueChange={(value) => setFormData({ ...formData, age: value })}>
-                    <SelectTrigger id="signup-age">
-                      <SelectValue placeholder="Select an option" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card">
-                      <SelectItem value="under-18">Under 18</SelectItem>
-                      <SelectItem value="18-24">18-24</SelectItem>
-                      <SelectItem value="25-34">25-34</SelectItem>
-                      <SelectItem value="35-44">35-44</SelectItem>
-                      <SelectItem value="45-54">45-54</SelectItem>
-                      <SelectItem value="55+">55+</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.age && <p className="text-sm text-destructive">{errors.age}</p>}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-age">Age</Label>
+                    <Select value={formData.age} onValueChange={(value) => setFormData({ ...formData, age: value })}>
+                      <SelectTrigger id="signup-age">
+                        <SelectValue placeholder="Select an option" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card">
+                        <SelectItem value="under-18">Under 18</SelectItem>
+                        <SelectItem value="18-24">18-24</SelectItem>
+                        <SelectItem value="25-34">25-34</SelectItem>
+                        <SelectItem value="35-44">35-44</SelectItem>
+                        <SelectItem value="45-54">45-54</SelectItem>
+                        <SelectItem value="55+">55+</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.age && <p className="text-sm text-destructive">{errors.age}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-gender">Gender</Label>
+                    <Select value={formData.gender} onValueChange={(value: 'male' | 'female') => setFormData({ ...formData, gender: value })}>
+                      <SelectTrigger id="signup-gender">
+                        <SelectValue placeholder="Select an option" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card">
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.gender && <p className="text-sm text-destructive">{errors.gender}</p>}
+                  </div>
                 </div>
 
                 <div className="space-y-2">

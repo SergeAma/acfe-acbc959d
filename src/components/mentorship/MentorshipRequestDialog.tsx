@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, UserPlus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -24,7 +25,8 @@ export const MentorshipRequestDialog = ({ mentorId, mentorName }: MentorshipRequ
   const [formData, setFormData] = useState({
     studentBio: '',
     careerAmbitions: '',
-    reasonForMentor: ''
+    reasonForMentor: '',
+    gender: '' as 'male' | 'female' | ''
   });
 
   // Check if user already has a pending/accepted request with this mentor
@@ -51,7 +53,7 @@ export const MentorshipRequestDialog = ({ mentorId, mentorName }: MentorshipRequ
       return;
     }
 
-    if (!formData.studentBio || !formData.careerAmbitions || !formData.reasonForMentor) {
+    if (!formData.studentBio || !formData.careerAmbitions || !formData.reasonForMentor || !formData.gender) {
       toast({
         title: 'Please fill in all fields',
         variant: 'destructive'
@@ -68,7 +70,8 @@ export const MentorshipRequestDialog = ({ mentorId, mentorName }: MentorshipRequ
           mentor_id: mentorId,
           student_bio: formData.studentBio,
           career_ambitions: formData.careerAmbitions,
-          reason_for_mentor: formData.reasonForMentor
+          reason_for_mentor: formData.reasonForMentor,
+          gender: formData.gender
         });
 
       if (error) throw error;
@@ -94,7 +97,7 @@ export const MentorshipRequestDialog = ({ mentorId, mentorName }: MentorshipRequ
       });
 
       setOpen(false);
-      setFormData({ studentBio: '', careerAmbitions: '', reasonForMentor: '' });
+      setFormData({ studentBio: '', careerAmbitions: '', reasonForMentor: '', gender: '' });
       refetch();
     } catch (error: any) {
       console.error('Error submitting request:', error);
@@ -152,7 +155,20 @@ export const MentorshipRequestDialog = ({ mentorId, mentorName }: MentorshipRequ
 
         <div className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="studentBio">Brief Bio</Label>
+            <Label htmlFor="gender">Gender *</Label>
+            <Select value={formData.gender} onValueChange={(value: 'male' | 'female') => setFormData({ ...formData, gender: value })}>
+              <SelectTrigger id="gender">
+                <SelectValue placeholder="Select gender" />
+              </SelectTrigger>
+              <SelectContent className="bg-card">
+                <SelectItem value="male">Male</SelectItem>
+                <SelectItem value="female">Female</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="studentBio">Brief Bio *</Label>
             <Textarea
               id="studentBio"
               placeholder="Tell us about yourself, your background, and current role..."
