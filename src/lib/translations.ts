@@ -25,7 +25,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // ==================== HERO SECTION ====================
     'hero.title': 'Join our mentor-led community of 300+ learners and accelerate your career in tech!',
-    'hero.subtitle': 'Zero experience required | Any background | Learn Anytime',
+    'hero.subtitle': 'Zero experience required | Any background | Start Anytime',
     'hero.context': 'Training delivered by tech experts who understand the African context.',
     'hero.dashboard': 'Go to Dashboard',
     'hero.startLearning': 'START LEARNING',
@@ -970,7 +970,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // ==================== HERO SECTION ====================
     'hero.title': 'Rejoignez nos 300+ inscrits accompagnés par des mentors et accélérez votre carrière en tech!',
-    'hero.subtitle': 'Aucune expérience requise | Tous profils | Apprenez à tout moment',
+    'hero.subtitle': 'Aucune expérience requise | Tous profils | Commencez à tout moment',
     'hero.context': 'Formation dispensée par des experts tech qui comprennent le contexte africain.',
     'hero.dashboard': 'Aller au Tableau de Bord',
     'hero.startLearning': 'COMMENCER À APPRENDRE',
