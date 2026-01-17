@@ -13,13 +13,14 @@ import eastAfricanUniversityLogo from '@/assets/east-african-university-logo.png
 import johannesburgLogo from '@/assets/johannesburg-logo.png';
 import spectrogramLogo from '@/assets/spectrogram-logo.png';
 import learnProjectLogo from '@/assets/learn-project-logo.png';
-
 export const Landing = () => {
-  const { user } = useAuth();
-  const { t } = useLanguage();
-
-  return (
-    <div className="min-h-screen">
+  const {
+    user
+  } = useAuth();
+  const {
+    t
+  } = useLanguage();
+  return <div className="min-h-screen">
       <Navbar />
       
       {/* Hero Section */}
@@ -35,18 +36,13 @@ export const Landing = () => {
             <p className="text-sm sm:text-lg md:text-xl text-white/90 mb-3 sm:mb-4 leading-relaxed drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] [text-shadow:_0_0_15px_rgba(0,0,0,0.4)]">
               {t('hero.subtitle')}
             </p>
-            <p className="text-xs sm:text-base text-white mb-6 sm:mb-8 inline-block bg-black/30 backdrop-blur-sm px-3 py-2 rounded-lg">
-              {t('hero.context')}
-            </p>
+            
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
-              {user ? (
-                <Link to="/dashboard" className="w-full sm:w-auto">
+              {user ? <Link to="/dashboard" className="w-full sm:w-auto">
                   <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
                     {t('hero.dashboard')}
                   </Button>
-                </Link>
-              ) : (
-                <>
+                </Link> : <>
                   <Link to="/auth?mode=signup&role=student" className="w-full sm:w-auto">
                     <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
                       {t('hero.startLearning')}
@@ -57,8 +53,7 @@ export const Landing = () => {
                       {t('hero.becomeMentor')}
                     </Button>
                   </Link>
-                </>
-              )}
+                </>}
             </div>
           </div>
         </div>
@@ -191,6 +186,5 @@ export const Landing = () => {
       <SupportSection />
       <TechNewsSection />
       <Footer />
-    </div>
-  );
+    </div>;
 };
