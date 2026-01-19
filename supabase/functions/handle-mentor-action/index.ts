@@ -70,14 +70,14 @@ const handler = async (req: Request): Promise<Response> => {
   if (!action || !requestId) {
     return new Response(generateHtmlResponse('error', 'Missing required parameters'), {
       status: 400,
-      headers: { 'Content-Type': 'text/html' },
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
   }
 
   if (action !== 'approve' && action !== 'decline') {
     return new Response(generateHtmlResponse('error', 'Invalid action'), {
       status: 400,
-      headers: { 'Content-Type': 'text/html' },
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
   }
 
@@ -87,7 +87,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("ACFE_SHARED_SECRET not configured");
     return new Response(generateHtmlResponse('error', 'Server configuration error'), {
       status: 500,
-      headers: { 'Content-Type': 'text/html' },
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
   }
 
@@ -95,7 +95,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Missing authentication token or admin_id");
     return new Response(generateHtmlResponse('error', 'Unauthorized: Missing authentication credentials'), {
       status: 401,
-      headers: { 'Content-Type': 'text/html' },
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
   }
 
@@ -107,7 +107,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Invalid token signature");
     return new Response(generateHtmlResponse('error', 'Unauthorized: Invalid or expired link'), {
       status: 401,
-      headers: { 'Content-Type': 'text/html' },
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
   }
 
@@ -128,7 +128,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("Admin verification failed:", adminError);
       return new Response(generateHtmlResponse('error', 'Unauthorized: Admin privileges required'), {
         status: 403,
-        headers: { 'Content-Type': 'text/html' },
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
       });
     }
 
@@ -143,7 +143,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.error('Request not found:', requestError);
       return new Response(generateHtmlResponse('error', 'Mentor request not found'), {
         status: 404,
-        headers: { 'Content-Type': 'text/html' },
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
       });
     }
 
@@ -158,7 +158,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (request.status !== 'pending') {
       return new Response(generateHtmlResponse('info', `This request has already been ${request.status}`), {
         status: 200,
-        headers: { 'Content-Type': 'text/html' },
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
       });
     }
 
@@ -273,7 +273,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.log(`Mentor request ${requestId} approved by admin ${adminId}`);
       return new Response(generateHtmlResponse('success', `${userName}'s mentor application has been approved! They have been notified via email.`), {
         status: 200,
-        headers: { 'Content-Type': 'text/html' },
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
       });
 
     } else {
@@ -363,7 +363,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.log(`Mentor request ${requestId} declined by admin ${adminId}`);
       return new Response(generateHtmlResponse('declined', `${userName}'s mentor application has been declined. They have been notified via email.`), {
         status: 200,
-        headers: { 'Content-Type': 'text/html' },
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
       });
     }
 
@@ -371,7 +371,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Error in handle-mentor-action function");
     return new Response(generateHtmlResponse('error', 'An error occurred processing this request'), {
       status: 500,
-      headers: { 'Content-Type': 'text/html' },
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
   }
 };
