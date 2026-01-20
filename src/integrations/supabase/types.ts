@@ -41,6 +41,39 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_broadcasts: {
+        Row: {
+          content: string
+          created_at: string
+          filters: Json | null
+          id: string
+          recipient_count: number
+          sent_by: string | null
+          subject: string
+          target_role: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          filters?: Json | null
+          id?: string
+          recipient_count?: number
+          sent_by?: string | null
+          subject: string
+          target_role: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          filters?: Json | null
+          id?: string
+          recipient_count?: number
+          sent_by?: string | null
+          subject?: string
+          target_role?: string
+        }
+        Relationships: []
+      }
       assignment_submissions: {
         Row: {
           assignment_id: string
@@ -244,6 +277,38 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      broadcast_recipients: {
+        Row: {
+          broadcast_id: string
+          created_at: string
+          email_sent: boolean | null
+          id: string
+          recipient_id: string
+        }
+        Insert: {
+          broadcast_id: string
+          created_at?: string
+          email_sent?: boolean | null
+          id?: string
+          recipient_id: string
+        }
+        Update: {
+          broadcast_id?: string
+          created_at?: string
+          email_sent?: boolean | null
+          id?: string
+          recipient_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broadcast_recipients_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "admin_broadcasts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cohort_messages: {
         Row: {
@@ -3017,6 +3082,24 @@ export type Database = {
       claim_institution_invitation: {
         Args: { _institution_id: string; _user_id: string }
         Returns: boolean
+      }
+      get_broadcast_recipients: {
+        Args: {
+          _country?: string
+          _gender?: string
+          _language?: string
+          _skills?: string[]
+          _target_role: string
+        }
+        Returns: {
+          country: string
+          email: string
+          full_name: string
+          gender: string
+          id: string
+          preferred_language: string
+          skills: string[]
+        }[]
       }
       get_conversation_messages: {
         Args: { _partner_id: string; _user_id: string }

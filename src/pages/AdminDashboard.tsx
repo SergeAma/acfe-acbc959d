@@ -47,10 +47,11 @@ const quickActionCategories = [
     color: 'from-blue-500/20 to-indigo-500/20',
     iconColor: 'text-blue-600 dark:text-blue-400',
     items: [
+      { label: 'Broadcasts', icon: Send, path: '/admin/broadcasts' },
       { label: 'Newsletter', icon: Send, path: '/admin/newsletter' },
       { label: 'Mass Mailer', icon: Send, path: '/admin/mass-mailer' },
+      { label: 'Messages Oversight', icon: Mail, path: '/admin/messages' },
       { label: 'Email Logs', icon: Mail, path: '/admin/email-logs' },
-      { label: 'Email Templates', icon: Mail, path: '/admin/email-templates' },
     ]
   },
   {
