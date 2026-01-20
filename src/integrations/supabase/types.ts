@@ -2301,6 +2301,42 @@ export type Database = {
         }
         Relationships: []
       }
+      private_messages: {
+        Row: {
+          attachment_name: string | null
+          attachment_url: string | null
+          content: string
+          created_at: string
+          id: string
+          is_read: boolean
+          recipient_id: string
+          sender_id: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_name?: string | null
+          attachment_url?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          recipient_id: string
+          sender_id: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_name?: string | null
+          attachment_url?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          recipient_id?: string
+          sender_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_status: string
@@ -2957,6 +2993,13 @@ export type Database = {
         }
         Relationships: []
       }
+      unread_message_counts: {
+        Row: {
+          unread_count: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_mentor_invitation: {
@@ -2967,9 +3010,39 @@ export type Database = {
         Args: { _admin_id: string; _request_id: string }
         Returns: undefined
       }
+      can_send_private_message: {
+        Args: { _recipient_id: string; _sender_id: string }
+        Returns: boolean
+      }
       claim_institution_invitation: {
         Args: { _institution_id: string; _user_id: string }
         Returns: boolean
+      }
+      get_conversation_messages: {
+        Args: { _partner_id: string; _user_id: string }
+        Returns: {
+          attachment_name: string
+          attachment_url: string
+          content: string
+          created_at: string
+          id: string
+          is_own_message: boolean
+          is_read: boolean
+          recipient_id: string
+          sender_id: string
+        }[]
+      }
+      get_conversation_partners: {
+        Args: { _user_id: string }
+        Returns: {
+          last_message_at: string
+          last_message_content: string
+          partner_avatar: string
+          partner_id: string
+          partner_name: string
+          partner_role: string
+          unread_count: number
+        }[]
       }
       get_public_mentor_profile: {
         Args: { mentor_id: string }
@@ -3055,6 +3128,7 @@ export type Database = {
         Args: { _institution_id: string; _user_id: string }
         Returns: boolean
       }
+      is_mentor: { Args: { _user_id: string }; Returns: boolean }
       is_notification_action_completed: {
         Args: { _action_reference_id: string; _action_type: string }
         Returns: boolean
