@@ -295,12 +295,12 @@ export const AdminBroadcasts = () => {
 
                   <div className="space-y-2">
                     <Label>Country</Label>
-                    <Select value={filterCountry} onValueChange={setFilterCountry}>
+                    <Select value={filterCountry || "__any__"} onValueChange={(v) => setFilterCountry(v === "__any__" ? "" : v)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Any country" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Any country</SelectItem>
+                        <SelectItem value="__any__">Any country</SelectItem>
                         {COUNTRIES.map(c => (
                           <SelectItem key={c.code} value={c.name}>{c.name}</SelectItem>
                         ))}
@@ -310,12 +310,12 @@ export const AdminBroadcasts = () => {
 
                   <div className="space-y-2">
                     <Label>Language</Label>
-                    <Select value={filterLanguage} onValueChange={setFilterLanguage}>
+                    <Select value={filterLanguage || "__any__"} onValueChange={(v) => setFilterLanguage(v === "__any__" ? "" : v)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Any language" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Any language</SelectItem>
+                        <SelectItem value="__any__">Any language</SelectItem>
                         <SelectItem value="en">English</SelectItem>
                         <SelectItem value="fr">French</SelectItem>
                       </SelectContent>
@@ -324,12 +324,12 @@ export const AdminBroadcasts = () => {
 
                   <div className="space-y-2">
                     <Label>Gender</Label>
-                    <Select value={filterGender} onValueChange={setFilterGender}>
+                    <Select value={filterGender || "__any__"} onValueChange={(v) => setFilterGender(v === "__any__" ? "" : v)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Any gender" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Any gender</SelectItem>
+                        <SelectItem value="__any__">Any gender</SelectItem>
                         <SelectItem value="male">Male</SelectItem>
                         <SelectItem value="female">Female</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
