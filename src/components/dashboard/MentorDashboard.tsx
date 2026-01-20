@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useMentorContract } from '@/hooks/useMentorContract';
+import { usePrivateMessages } from '@/hooks/usePrivateMessages';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MySubmissions } from '@/components/dashboard/MySubmissions';
 import { MentorOnboardingChecklist } from '@/components/dashboard/MentorOnboardingChecklist';
 import { SubmissionsReview } from '@/components/mentor/SubmissionsReview';
 import { InstitutionPartnersSection } from '@/components/dashboard/InstitutionPartnersSection';
 import { MentorAgreementCard } from '@/components/mentor/MentorAgreementCard';
-import { BookOpen, Users, PlusCircle, TrendingUp, UsersRound, Video } from 'lucide-react';
+import { MentorMessagesTab } from '@/components/messaging/MentorMessagesTab';
+import { BookOpen, Users, PlusCircle, TrendingUp, UsersRound, Video, MessageCircle } from 'lucide-react';
 import { stripHtml } from '@/lib/html-utils';
 
 interface Course {
@@ -29,9 +32,13 @@ export const MentorDashboard = () => {
   const { profile, user } = useAuth();
   const { t } = useLanguage();
   const { contractData } = useMentorContract(user?.id);
+  const { totalUnread } = usePrivateMessages();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [courses, setCourses] = useState<Course[]>([]);
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  
+  const activeTab = searchParams.get('tab') || 'overview';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,50 +72,17 @@ export const MentorDashboard = () => {
     fetchData();
   }, [profile]);
 
+  const setActiveTab = (tab: string) => {
+    setSearchParams({ tab });
+  };
+
   const totalStudents = courses.reduce((acc, course) => {
     return acc + (course.enrollments[0]?.count || 0);
   }, 0);
 
-  return (
-    <div className="space-y-8">
-      {/* Onboarding Checklist */}
-      <MentorOnboardingChecklist />
-
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-bold mb-2">{t('mentorDashboard.title')}</h1>
-          <p className="text-muted-foreground text-lg">{t('mentorDashboard.subtitle')}</p>
-        </div>
-        <div className="flex gap-3">
-          <Link to="/mentor/sessions">
-            <Button size="lg" variant="outline">
-              <Video className="h-5 w-5 mr-2" />
-              {t('mentorDashboard.sessions')}
-            </Button>
-          </Link>
-          <Link to="/mentor/cohort">
-            <Button size="lg" variant="outline" className="relative">
-              <UsersRound className="h-5 w-5 mr-2" />
-              {t('mentorDashboard.myCohort')}
-              {pendingRequestCount > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                >
-                  {pendingRequestCount}
-                </Badge>
-              )}
-            </Button>
-          </Link>
-          <Link to="/mentor/courses/new">
-            <Button size="lg">
-              <PlusCircle className="h-5 w-5 mr-2" />
-              {t('mentorDashboard.createCourse')}
-            </Button>
-        </Link>
-        </div>
-      </div>
-
+  // Overview content as a separate component for tabs
+  const OverviewContent = () => (
+    <>
       {/* Stats Cards */}
       <div className="grid md:grid-cols-3 gap-6">
         <Card>
@@ -233,6 +207,75 @@ export const MentorDashboard = () => {
           </div>
         )}
       </div>
+    </>
+  );
+
+  return (
+    <div className="space-y-8">
+      {/* Onboarding Checklist */}
+      <MentorOnboardingChecklist />
+
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-4xl font-bold mb-2">{t('mentorDashboard.title')}</h1>
+          <p className="text-muted-foreground text-lg">{t('mentorDashboard.subtitle')}</p>
+        </div>
+        <div className="flex gap-3">
+          <Link to="/mentor/sessions">
+            <Button size="lg" variant="outline">
+              <Video className="h-5 w-5 mr-2" />
+              {t('mentorDashboard.sessions')}
+            </Button>
+          </Link>
+          <Link to="/mentor/cohort">
+            <Button size="lg" variant="outline" className="relative">
+              <UsersRound className="h-5 w-5 mr-2" />
+              {t('mentorDashboard.myCohort')}
+              {pendingRequestCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                >
+                  {pendingRequestCount}
+                </Badge>
+              )}
+            </Button>
+          </Link>
+          <Link to="/mentor/courses/new">
+            <Button size="lg">
+              <PlusCircle className="h-5 w-5 mr-2" />
+              {t('mentorDashboard.createCourse')}
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Tabbed Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="messages" className="relative">
+            <MessageCircle className="h-4 w-4 mr-2" />
+            Messages
+            {totalUnread > 0 && (
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]"
+              >
+                {totalUnread > 9 ? '9+' : totalUnread}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="overview" className="mt-6 space-y-8">
+          <OverviewContent />
+        </TabsContent>
+        
+        <TabsContent value="messages" className="mt-6">
+          <MentorMessagesTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
