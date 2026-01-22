@@ -126,7 +126,7 @@ export const StudentProfileDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Student Profile</DialogTitle>
+          <DialogTitle>{profile?.role === 'mentor' ? 'Mentor Profile' : 'Student Profile'}</DialogTitle>
         </DialogHeader>
 
         {profileLoading ? (
@@ -137,7 +137,7 @@ export const StudentProfileDialog = ({
           <div className="py-8 text-center text-muted-foreground">
             <Mail className="h-10 w-10 mx-auto mb-3 opacity-50" />
             <p className="font-medium">{studentEmail}</p>
-            <p className="text-sm mt-1">This student hasn't completed their profile yet.</p>
+            <p className="text-sm mt-1">This user hasn't completed their profile yet.</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -148,7 +148,7 @@ export const StudentProfileDialog = ({
                 <AvatarFallback className="text-lg">{initials}</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-lg truncate">{profile.full_name || 'Unnamed Student'}</h3>
+                <h3 className="font-semibold text-lg truncate">{profile.full_name || 'Unnamed User'}</h3>
                 <p className="text-sm text-muted-foreground truncate">{profile.email}</p>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge variant="secondary" className="text-xs">
