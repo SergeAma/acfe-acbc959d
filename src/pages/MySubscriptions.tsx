@@ -61,7 +61,16 @@ export const MySubscriptions = () => {
       });
 
       if (error) throw error;
-      setSubscriptions(data?.subscriptions || []);
+      
+      const subs = data?.subscriptions || [];
+      
+      // If no paying subscriptions exist, redirect to pricing page
+      if (subs.length === 0) {
+        navigate('/pricing', { replace: true });
+        return;
+      }
+      
+      setSubscriptions(subs);
     } catch (error: any) {
       console.error('Error fetching subscriptions:', error);
       toast({
