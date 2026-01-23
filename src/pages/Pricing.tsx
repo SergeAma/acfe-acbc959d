@@ -280,8 +280,14 @@ export const Pricing = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="pb-8 flex flex-col flex-1">
-                  <Button size="lg" variant="outline" className="w-full mb-6 text-lg h-14 flex-shrink-0" onClick={() => navigate('/auth')}>
-                    {t('pricing_create_free')}
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="w-full mb-6 text-lg h-14 flex-shrink-0" 
+                    onClick={() => navigate('/auth')}
+                    disabled={!!user}
+                  >
+                    {user ? t('pricing_current_plan') || 'Current Plan' : t('pricing_create_free')}
                   </Button>
                   
                   <div className="space-y-3 flex-1">
