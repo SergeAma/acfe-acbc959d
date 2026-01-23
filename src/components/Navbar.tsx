@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, Instagram, Linkedin, Menu, X, GraduationCap } from "lucide-react";
+import { LogOut, Instagram, Linkedin, Menu, X, GraduationCap, MessageCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +18,8 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
 import { useUserInstitutions } from "@/hooks/useInstitution";
 import { useCountryFlag } from "@/hooks/useCountryFlag";
+import { usePrivateMessages } from "@/hooks/usePrivateMessages";
+import { Badge } from "@/components/ui/badge";
 import acfeLogo from "@/assets/acfe-logo.png";
 
 export const Navbar = () => {
@@ -26,6 +28,10 @@ export const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { data: userInstitutions = [] } = useUserInstitutions();
   const { flag, countryName, loading: flagLoading } = useCountryFlag();
+  const { totalUnread } = usePrivateMessages();
+  
+  // Only mentors and admins can access private messaging
+  const canAccessMessages = profile?.role === 'mentor' || profile?.role === 'admin';
 
   const navLinks = [
     { to: "/home", labelKey: "nav.home" },
@@ -68,6 +74,24 @@ export const Navbar = () => {
 
           {user ? (
             <>
+              {/* Messages icon for mentors/admins */}
+              {canAccessMessages && (
+                <Link 
+                  to="/dashboard?tab=messages" 
+                  className="relative p-2 text-foreground hover:text-primary transition-colors"
+                  title={t('nav.messages') || 'Messages'}
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  {totalUnread > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-0.5 -right-0.5 h-4 w-4 flex items-center justify-center p-0 text-[10px]"
+                    >
+                      {totalUnread > 9 ? '9+' : totalUnread}
+                    </Badge>
+                  )}
+                </Link>
+              )}
               <NotificationDropdown />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -177,6 +201,22 @@ export const Navbar = () => {
 
             {user ? (
               <>
+                {/* Messages link for mentors/admins in mobile menu */}
+                {canAccessMessages && (
+                  <Link
+                    to="/dashboard?tab=messages"
+                    className="text-base font-semibold text-white hover:text-primary transition-colors py-3 px-4 rounded-lg hover:bg-white/10 flex items-center gap-2"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    {t('nav.messages') || 'Messages'}
+                    {totalUnread > 0 && (
+                      <Badge variant="destructive" className="ml-auto h-5 min-w-5 flex items-center justify-center p-0 text-xs">
+                        {totalUnread > 9 ? '9+' : totalUnread}
+                      </Badge>
+                    )}
+                  </Link>
+                )}
                 <Link
                   to="/dashboard"
                   className="text-base font-semibold text-white hover:text-primary transition-colors py-3 px-4 rounded-lg hover:bg-white/10"

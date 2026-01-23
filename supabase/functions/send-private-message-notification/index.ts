@@ -72,6 +72,24 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Create in-app notification (moved from frontend for reliability)
+    const { error: notificationError } = await supabase
+      .from("notifications")
+      .insert({
+        user_id: message.recipient_id,
+        message: `New private message from ${sender?.full_name || 'a mentor'}`,
+        link: '/dashboard?tab=messages',
+        action_type: 'new_private_message',
+        action_reference_id: message.id,
+      });
+
+    if (notificationError) {
+      console.error("Failed to create notification:", notificationError);
+      // Continue with email - notification failure shouldn't block email
+    } else {
+      console.log("In-app notification created for message:", messageId);
+    }
+
     const senderName = sender?.full_name || "A mentor";
     const recipientName = recipient?.full_name || "there";
     const isEnglish = recipient?.preferred_language !== "fr";

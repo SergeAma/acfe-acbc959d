@@ -127,23 +127,15 @@ export const useConversation = (partnerId: string | null) => {
       
       if (error) throw error;
       
-      // Create notification for recipient
-      await supabase.from('notifications').insert({
-        user_id: recipientId,
-        message: 'You have a new private message',
-        link: '/dashboard?tab=messages',
-        action_type: 'new_private_message',
-        action_reference_id: data.id,
-      });
-      
-      // Trigger email notification via edge function
+      // Trigger email and in-app notification via edge function
+      // Notification creation is now handled server-side for reliability
       try {
         await supabase.functions.invoke('send-private-message-notification', {
           body: { messageId: data.id },
         });
       } catch (e) {
-        // Non-blocking - email is best effort
-        console.error('Failed to send email notification:', e);
+        // Non-blocking - notification is best effort
+        console.error('Failed to send notification:', e);
       }
       
       return data;
