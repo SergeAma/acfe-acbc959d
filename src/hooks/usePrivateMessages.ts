@@ -58,17 +58,24 @@ export const usePrivateMessages = () => {
     queryFn: async () => {
       if (!user) return [];
       
-      // Get all mentors except current user
+      // Get all mentors except current user using secure RPC function
       const { data, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url, role')
-        .eq('role', 'mentor')
-        .eq('account_status', 'active')
-        .neq('id', user.id)
-        .order('full_name');
+        .rpc('get_public_mentor_profiles');
       
       if (error) throw error;
-      return (data || []) as MentorForMessaging[];
+      
+      // Filter out current user and map to expected format
+      const mentors = (data || [])
+        .filter(m => m.id !== user.id)
+        .map(m => ({
+          id: m.id,
+          full_name: m.full_name,
+          avatar_url: m.avatar_url,
+          role: m.role
+        }))
+        .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
+      
+      return mentors as MentorForMessaging[];
     },
     enabled: !!user,
     staleTime: 60000, // 1 minute

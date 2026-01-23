@@ -105,8 +105,9 @@ export const Jobs = () => {
       const userIds = [...new Set(data.map(post => post.user_id))];
       if (userIds.length === 0) return [];
 
+      // Use profiles_public view to avoid exposing email addresses
       const { data: profiles } = await supabase
-        .from('profiles')
+        .from('profiles_public')
         .select('id, full_name, role')
         .in('id', userIds);
 
