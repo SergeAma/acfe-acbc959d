@@ -287,7 +287,7 @@ export const Pricing = () => {
                     onClick={() => navigate('/auth')}
                     disabled={!!user}
                   >
-                    {user ? t('pricing_current_plan') || 'Current Plan' : t('pricing_create_free')}
+                    {user ? 'Your Current Plan' : t('pricing_create_free')}
                   </Button>
                   
                   <div className="space-y-3 flex-1">
