@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MySubmissions } from '@/components/dashboard/MySubmissions';
 import { MentorOnboardingChecklist } from '@/components/dashboard/MentorOnboardingChecklist';
-import { MentorOnboardingVideo } from '@/components/dashboard/MentorOnboardingVideo';
+import { MentorVideoResources } from '@/components/dashboard/MentorVideoResources';
 import { SubmissionsReview } from '@/components/mentor/SubmissionsReview';
 import { InstitutionPartnersSection } from '@/components/dashboard/InstitutionPartnersSection';
 import { MentorAgreementCard } from '@/components/mentor/MentorAgreementCard';
@@ -213,8 +213,8 @@ export const MentorDashboard = () => {
 
   return (
     <div className="space-y-8">
-      {/* Mentor Onboarding Video - shows once on first visit */}
-      <MentorOnboardingVideo />
+      {/* Mentor Video Resources - always visible */}
+      <MentorVideoResources />
       
       {/* Onboarding Checklist */}
       <MentorOnboardingChecklist />
