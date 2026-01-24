@@ -11,6 +11,7 @@ import { RequestMentorRole } from '@/components/RequestMentorRole';
 import { MySubmissions } from '@/components/dashboard/MySubmissions';
 import { SubscriptionStatus } from '@/components/dashboard/SubscriptionStatus';
 import { PendingAssignments } from '@/components/dashboard/PendingAssignments';
+import { StudentVideoResources } from '@/components/dashboard/StudentVideoResources';
 import { BookOpen, Library, Award, TrendingUp, UserCheck, Clock, BookOpenCheck, MessageSquare, CreditCard, Building2 } from 'lucide-react';
 import { stripHtml } from '@/lib/html-utils';
 import { useUserInstitutions } from '@/hooks/useInstitution';
@@ -140,6 +141,8 @@ export const StudentDashboard = () => {
         <p className="text-muted-foreground text-lg">{t('studentDashboard.continueJourney')}</p>
       </div>
 
+      {/* Video Resources - Top priority visibility */}
+      <StudentVideoResources />
       {/* Stats Cards */}
       <div className="grid md:grid-cols-3 gap-6">
         <Card>
