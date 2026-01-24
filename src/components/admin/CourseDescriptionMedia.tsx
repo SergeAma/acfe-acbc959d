@@ -9,6 +9,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Upload, Link, Save, Loader2, Trash2, Video, Music, ExternalLink, Youtube } from 'lucide-react';
 import { getVideoEmbedInfo, getProviderDisplayName } from '@/lib/video-utils';
 import { getAudioEmbedInfo, getAudioProviderDisplayName } from '@/lib/audio-utils';
+import { uploadMedia, validateFile, formatFileSize, MAX_FILE_SIZES } from '@/lib/storage-utils';
 
 interface CourseDescriptionMediaProps {
   courseId: string;
@@ -40,10 +41,12 @@ export const CourseDescriptionMedia = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('video/')) {
+    // Pre-upload validation
+    const validation = validateFile(file, 'video');
+    if (!validation.valid) {
       toast({
-        title: 'Invalid file type',
-        description: 'Please upload a video file',
+        title: 'Invalid file',
+        description: validation.error,
         variant: 'destructive',
       });
       return;
@@ -51,36 +54,28 @@ export const CourseDescriptionMedia = ({
 
     setUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${courseId}-description-video-${Date.now()}.${fileExt}`;
-      const filePath = `descriptions/${courseId}/${fileName}`;
+      // Use centralized upload utility
+      const result = await uploadMedia(file, 'video', 'description', courseId);
 
-      const { error: uploadError } = await supabase.storage
-        .from('course-videos')
-        .upload(filePath, file, { upsert: true });
+      if (!result.success) {
+        throw new Error(result.error || 'Upload failed');
+      }
 
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('course-videos')
-        .getPublicUrl(filePath);
-
-      const urlWithCacheBust = `${publicUrl}?t=${Date.now()}`;
-
+      // Update database with the storage URL
       const { error: updateError } = await supabase
         .from('courses')
-        .update({ description_video_url: urlWithCacheBust })
+        .update({ description_video_url: result.url })
         .eq('id', courseId);
 
       if (updateError) throw updateError;
 
-      onUpdate(urlWithCacheBust, audioUrl);
+      onUpdate(result.url!, audioUrl);
       toast({ title: 'Success', description: 'Description video uploaded' });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Video upload error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to upload video',
+        description: error.message || 'Failed to upload video',
         variant: 'destructive',
       });
     } finally {
@@ -147,10 +142,12 @@ export const CourseDescriptionMedia = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('audio/')) {
+    // Pre-upload validation
+    const validation = validateFile(file, 'audio');
+    if (!validation.valid) {
       toast({
-        title: 'Invalid file type',
-        description: 'Please upload an audio file',
+        title: 'Invalid file',
+        description: validation.error,
         variant: 'destructive',
       });
       return;
@@ -158,36 +155,28 @@ export const CourseDescriptionMedia = ({
 
     setUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${courseId}-description-audio-${Date.now()}.${fileExt}`;
-      const filePath = `descriptions/${courseId}/${fileName}`;
+      // Use centralized upload utility - audio goes to course-videos bucket
+      const result = await uploadMedia(file, 'audio', 'description', courseId);
 
-      const { error: uploadError } = await supabase.storage
-        .from('course-videos')
-        .upload(filePath, file, { upsert: true });
+      if (!result.success) {
+        throw new Error(result.error || 'Upload failed');
+      }
 
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('course-videos')
-        .getPublicUrl(filePath);
-
-      const urlWithCacheBust = `${publicUrl}?t=${Date.now()}`;
-
+      // Update database with the storage URL
       const { error: updateError } = await supabase
         .from('courses')
-        .update({ description_audio_url: urlWithCacheBust })
+        .update({ description_audio_url: result.url })
         .eq('id', courseId);
 
       if (updateError) throw updateError;
 
-      onUpdate(videoUrl, urlWithCacheBust);
+      onUpdate(videoUrl, result.url!);
       toast({ title: 'Success', description: 'Description audio uploaded' });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Audio upload error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to upload audio',
+        description: error.message || 'Failed to upload audio',
         variant: 'destructive',
       });
     } finally {
