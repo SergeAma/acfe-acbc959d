@@ -86,7 +86,7 @@ export const AdminCourseBuilder = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, profile } = useAuth();
+  const { user, profile, isActualAdmin } = useAuth();
   const { toast } = useToast();
   const isAdminRoute = location.pathname.startsWith('/admin');
   const [course, setCourse] = useState<Course | null>(null);
@@ -1270,7 +1270,8 @@ export const AdminCourseBuilder = () => {
             </CardContent>
           </Card>
 
-          {/* Pricing Settings */}
+          {/* Pricing Settings - Only visible to admins */}
+          {isActualAdmin && (
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -1335,6 +1336,7 @@ export const AdminCourseBuilder = () => {
               )}
             </CardContent>
           </Card>
+          )}
 
           {/* Course Availability / Institution Exclusivity */}
           <Card>
