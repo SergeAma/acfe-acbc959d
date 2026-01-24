@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FileSignature, Download, Eye, CheckCircle2, XCircle } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { supabase } from "@/integrations/supabase/client";
 import html2canvas from "html2canvas";
 
 interface MentorAgreementCardProps {
@@ -18,16 +19,38 @@ export const MentorAgreementCard = ({ signatureName, signatureDate, showViewButt
   const { t } = useLanguage();
   const [previewOpen, setPreviewOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [sessionPriceDollars, setSessionPriceDollars] = useState(50); // Default $50
+
+  // Fetch session price from platform settings
+  useEffect(() => {
+    const fetchSessionPrice = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('platform_settings')
+          .select('setting_value')
+          .eq('setting_key', 'mentorship_session_price')
+          .single();
+        
+        if (!error && data) {
+          const settings = data.setting_value as { price_cents: number };
+          setSessionPriceDollars(Math.round(settings.price_cents / 100));
+        }
+      } catch (error) {
+        console.error("Error fetching session price:", error);
+      }
+    };
+
+    fetchSessionPrice();
+  }, []);
 
   // Contract conditions using translation keys
   const CONTRACT_CONDITIONS = [
     { id: "condition_respect_students", title: t('mentor.term1_title'), description: t('mentor.term1_desc') },
     { id: "condition_free_courses", title: t('mentor.term2_title'), description: t('mentor.term2_desc') },
-    { id: "condition_session_pricing", title: t('mentor.term3_title'), description: t('mentor.term3_desc').replace('${price}', '30') },
+    { id: "condition_session_pricing", title: t('mentor.term3_title'), description: t('mentor.term3_desc').replace('${price}', `$${sessionPriceDollars}`) },
     { id: "condition_minimum_courses", title: t('mentor.term4_title'), description: t('mentor.term4_desc') },
     { id: "condition_quarterly_events", title: t('mentor.term5_title'), description: t('mentor.term5_desc') },
     { id: "condition_data_privacy", title: t('mentor.term6_title'), description: t('mentor.term6_desc') },
-    { id: "condition_monthly_meetings", title: t('mentor.term7_title'), description: t('mentor.term7_desc') },
     { id: "condition_support_youth", title: t('mentor.term8_title'), description: t('mentor.term8_desc') },
     { id: "condition_no_profanity", title: t('mentor.term9_title'), description: t('mentor.term9_desc') },
     { id: "condition_platform_engagement", title: t('mentor.term10_title'), description: t('mentor.term10_desc') },
@@ -159,7 +182,7 @@ export const MentorAgreementCard = ({ signatureName, signatureDate, showViewButt
 
               {/* Footer */}
               <div className="text-center text-xs text-gray-400 pt-4 border-t space-y-1">
-                <p>{t('sign_in') === 'Se Connecter' ? 'Ce document est un accord juridiquement contraignant entre le signataire et A Cloud for Everyone (ACFE).' : 'This document is a legally binding agreement between the signatory and A Cloud for Everyone (ACFE).'}</p>
+                <p>{t('sign_in') === 'Se Connecter' ? 'Ce document est un accord contraignant entre le signataire et A Cloud for Everyone (ACFE).' : 'This document is a binding agreement between the signatory and A Cloud for Everyone (ACFE).'}</p>
                 <p>{t('sign_in') === 'Se Connecter' ? 'Soumis aux Conditions d\'Utilisation et Politique de Confidentialité ACFE. Régi par les lois de l\'Angleterre et du Pays de Galles.' : 'Subject to ACFE Terms of Service and Privacy Policy. Governed by the laws of England and Wales.'}</p>
               </div>
             </div>
