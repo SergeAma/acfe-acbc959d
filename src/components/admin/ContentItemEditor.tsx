@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getVideoEmbedInfo, isValidVideoUrl, getProviderDisplayName } from '@/lib/video-utils';
 import { getAudioEmbedInfo, isValidAudioUrl, getAudioProviderDisplayName } from '@/lib/audio-utils';
+import { uploadMedia, validateFile, formatFileSize, MAX_FILE_SIZES } from '@/lib/storage-utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -225,38 +226,42 @@ export const ContentItemEditor = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploading(true);
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${item.id}-${Date.now()}.${fileExt}`;
-    const filePath = `lessons/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('course-videos')
-      .upload(filePath, file);
-
-    if (uploadError) {
+    // Pre-upload validation
+    const validation = validateFile(file, 'video');
+    if (!validation.valid) {
       toast({
-        title: 'Error',
-        description: 'Failed to upload video',
+        title: 'Invalid file',
+        description: validation.error,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploading(true);
+
+    // Use centralized upload utility
+    const result = await uploadMedia(file, 'video', 'lesson', item.id);
+
+    if (!result.success) {
+      toast({
+        title: 'Upload failed',
+        description: result.error || 'Failed to upload video',
         variant: 'destructive',
       });
       setUploading(false);
       return;
     }
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('course-videos')
-      .getPublicUrl(filePath);
-
+    // Update database with the storage URL
     const { error: updateError } = await supabase
       .from('course_content')
-      .update({ video_url: publicUrl })
+      .update({ video_url: result.url })
       .eq('id', item.id);
 
     if (updateError) {
       toast({
         title: 'Error',
-        description: 'Failed to update video URL',
+        description: 'Failed to save video reference',
         variant: 'destructive',
       });
     } else {
@@ -330,33 +335,37 @@ export const ContentItemEditor = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploading(true);
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${item.id}-${Date.now()}.${fileExt}`;
-    const filePath = fileName;
-
-    const { error: uploadError } = await supabase.storage
-      .from('course-files')
-      .upload(filePath, file);
-
-    if (uploadError) {
+    // Pre-upload validation
+    const validation = validateFile(file, 'file');
+    if (!validation.valid) {
       toast({
-        title: 'Error',
-        description: 'Failed to upload file',
+        title: 'Invalid file',
+        description: validation.error,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploading(true);
+
+    // Use centralized upload utility
+    const result = await uploadMedia(file, 'file', 'lesson', item.id);
+
+    if (!result.success) {
+      toast({
+        title: 'Upload failed',
+        description: result.error || 'Failed to upload file',
         variant: 'destructive',
       });
       setUploading(false);
       return;
     }
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('course-files')
-      .getPublicUrl(filePath);
-
+    // Update database with the storage URL
     const { error: updateError } = await supabase
       .from('course_content')
       .update({ 
-        file_url: publicUrl,
+        file_url: result.url,
         file_name: file.name 
       })
       .eq('id', item.id);
@@ -364,7 +373,7 @@ export const ContentItemEditor = ({
     if (updateError) {
       toast({
         title: 'Error',
-        description: 'Failed to update file',
+        description: 'Failed to save file reference',
         variant: 'destructive',
       });
     } else {
@@ -377,43 +386,47 @@ export const ContentItemEditor = ({
     setUploading(false);
   };
 
-  // Audio upload handler
+  // Audio upload handler - FIXED: Uses course-videos bucket (not course-files)
   const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploading(true);
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${item.id}-${Date.now()}.${fileExt}`;
-    const filePath = fileName;
-
-    const { error: uploadError } = await supabase.storage
-      .from('course-files')
-      .upload(filePath, file);
-
-    if (uploadError) {
+    // Pre-upload validation
+    const validation = validateFile(file, 'audio');
+    if (!validation.valid) {
       toast({
-        title: 'Error',
-        description: 'Failed to upload audio',
+        title: 'Invalid file',
+        description: validation.error,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploading(true);
+
+    // Use centralized upload utility - audio goes to course-videos bucket
+    const result = await uploadMedia(file, 'audio', 'lesson', item.id);
+
+    if (!result.success) {
+      toast({
+        title: 'Upload failed',
+        description: result.error || 'Failed to upload audio',
         variant: 'destructive',
       });
       setUploading(false);
       return;
     }
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('course-files')
-      .getPublicUrl(filePath);
-
+    // Update database with the storage URL
     const { error: updateError } = await supabase
       .from('course_content')
-      .update({ audio_url: publicUrl })
+      .update({ audio_url: result.url })
       .eq('id', item.id);
 
     if (updateError) {
       toast({
         title: 'Error',
-        description: 'Failed to update audio URL',
+        description: 'Failed to save audio reference',
         variant: 'destructive',
       });
     } else {

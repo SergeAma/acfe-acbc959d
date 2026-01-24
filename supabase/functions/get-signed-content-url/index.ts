@@ -9,7 +9,7 @@ const corsHeaders = {
 
 interface RequestBody {
   contentId: string;
-  urlType: 'video' | 'file';
+  urlType: 'video' | 'file' | 'audio';
 }
 
 serve(async (req) => {
@@ -59,12 +59,13 @@ serve(async (req) => {
     // Use service role client for privileged operations
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch the content item with course info
+    // Fetch the content item with course info - include audio_url
     const { data: content, error: contentError } = await supabaseAdmin
       .from("course_content")
       .select(`
         id,
         video_url,
+        audio_url,
         file_url,
         section:course_sections!inner(
           course:courses!inner(
@@ -117,7 +118,19 @@ serve(async (req) => {
     }
 
     // Get the appropriate URL based on type
-    const sourceUrl = urlType === 'video' ? content.video_url : content.file_url;
+    let sourceUrl: string | null = null;
+    switch (urlType) {
+      case 'video':
+        sourceUrl = content.video_url;
+        break;
+      case 'audio':
+        // Audio is stored in course-videos bucket, uses audio_url column
+        sourceUrl = (content as any).audio_url || null;
+        break;
+      case 'file':
+        sourceUrl = content.file_url;
+        break;
+    }
     
     if (!sourceUrl) {
       return new Response(

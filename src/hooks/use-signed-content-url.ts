@@ -5,7 +5,7 @@ import { getVideoEmbedInfo } from '@/lib/video-utils';
 interface UseSignedContentUrlOptions {
   contentId: string;
   originalUrl: string | null;
-  urlType: 'video' | 'file';
+  urlType: 'video' | 'file' | 'audio';
   enabled?: boolean;
 }
 
