@@ -183,6 +183,7 @@ export const MentorAgreementCard = ({ signatureName, signatureDate, showViewButt
               {/* Footer */}
               <div className="text-center text-xs text-gray-400 pt-4 border-t space-y-1">
                 <p>{t('sign_in') === 'Se Connecter' ? 'Ce document est un accord contraignant entre le signataire et A Cloud for Everyone (ACFE).' : 'This document is a binding agreement between the signatory and A Cloud for Everyone (ACFE).'}</p>
+                <p>{t('sign_in') === 'Se Connecter' ? 'ACFE se réserve le droit de réviser, modifier et/ou mettre à jour les termes à tout moment, les mentors en seront informés.' : 'ACFE reserves the right to review, modify and/or update terms at any time, upon which mentors will be notified.'}</p>
                 <p>{t('sign_in') === 'Se Connecter' ? 'Soumis aux Conditions d\'Utilisation et Politique de Confidentialité ACFE. Régi par les lois de l\'Angleterre et du Pays de Galles.' : 'Subject to ACFE Terms of Service and Privacy Policy. Governed by the laws of England and Wales.'}</p>
               </div>
             </div>
