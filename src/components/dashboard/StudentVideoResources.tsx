@@ -23,7 +23,7 @@ const VIDEO_RESOURCES: VideoResource[] = [
     titleFr: 'Bienvenue sur ACFE: Présentation de la Plateforme',
     description: 'Learn how to navigate the platform and make the most of your learning journey',
     descriptionFr: 'Apprenez à naviguer sur la plateforme et à tirer le meilleur parti de votre parcours d\'apprentissage',
-    embedUrl: 'https://drive.google.com/file/d/1DL-RLfI-qR3u_-WQvfvKHUYjY_GqnYDe/preview',
+    embedUrl: 'https://drive.google.com/file/d/1eAYdL3_k_xZmmWSs80xNUBmhvcbBCyBM/preview',
     thumbnail: walkthroughThumbnail,
   },
   // Future videos can be added here
