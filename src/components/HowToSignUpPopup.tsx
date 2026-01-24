@@ -123,9 +123,26 @@ export const HowToSignUpPopup = () => {
           <h3 className="font-semibold text-foreground mb-1 text-base sm:text-sm">
             New here?
           </h3>
-          <p className="text-sm sm:text-xs text-muted-foreground mb-3">
+          <p className="text-sm sm:text-xs text-muted-foreground mb-2">
             Watch a quick walkthrough on how to sign up and get started.
           </p>
+          
+          {/* Visual Preview Thumbnail */}
+          <button
+            onClick={handleWatch}
+            className="relative w-full aspect-video rounded-lg overflow-hidden mb-3 group cursor-pointer border border-border hover:border-primary/50 transition-colors"
+          >
+            <img
+              src="https://cdn.storylane.io/image/upload/s--JFpXsLDm--/v1735213159/platform/jvqw3rq95bxslyjb6pwf.webp"
+              alt="How to sign up walkthrough preview"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/40 transition-colors">
+              <div className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-primary flex items-center justify-center shadow-lg">
+                <Play className="h-5 w-5 sm:h-4 sm:w-4 text-primary-foreground ml-0.5" />
+              </div>
+            </div>
+          </button>
           
           <Button
             onClick={handleWatch}
