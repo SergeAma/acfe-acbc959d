@@ -51,8 +51,9 @@ export const CourseDescriptionMedia = ({
 
     setUploading(true);
     try {
-      const fileName = `${courseId}-description-video.${file.name.split('.').pop()}`;
-      const filePath = `course-videos/${courseId}/${fileName}`;
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${courseId}-description-video-${Date.now()}.${fileExt}`;
+      const filePath = `descriptions/${courseId}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('course-videos')
@@ -157,8 +158,9 @@ export const CourseDescriptionMedia = ({
 
     setUploading(true);
     try {
-      const fileName = `${courseId}-description-audio.${file.name.split('.').pop()}`;
-      const filePath = `course-audio/${courseId}/${fileName}`;
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${courseId}-description-audio-${Date.now()}.${fileExt}`;
+      const filePath = `descriptions/${courseId}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('course-videos')

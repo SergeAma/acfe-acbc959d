@@ -228,7 +228,7 @@ export const ContentItemEditor = ({
     setUploading(true);
     const fileExt = file.name.split('.').pop();
     const fileName = `${item.id}-${Date.now()}.${fileExt}`;
-    const filePath = fileName;
+    const filePath = `lessons/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('course-videos')
