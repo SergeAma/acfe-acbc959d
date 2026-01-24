@@ -95,33 +95,29 @@ export const HowToSignUpPopup = () => {
   if (!showPopup || !scriptLoaded) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
-      <div className="bg-card border border-border rounded-xl shadow-2xl p-4 max-w-xs relative">
+    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
+      <div className="bg-card border border-border rounded-xl shadow-2xl p-4 sm:max-w-xs w-full sm:w-auto relative">
         {/* Close button */}
         <button
           onClick={handleDismiss}
-          className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-foreground transition-colors"
+          className="absolute top-2 right-2 p-1.5 text-muted-foreground hover:text-foreground transition-colors"
           aria-label="Dismiss popup"
         >
-          <X className="h-4 w-4" />
+          <X className="h-5 w-5 sm:h-4 sm:w-4" />
         </button>
 
-        <div className="pr-6">
-          <h3 className="font-semibold text-foreground mb-1 text-sm">
+        <div className="pr-8 sm:pr-6">
+          <h3 className="font-semibold text-foreground mb-1 text-base sm:text-sm">
             New here?
           </h3>
-          <p className="text-xs text-muted-foreground mb-3">
+          <p className="text-sm sm:text-xs text-muted-foreground mb-3">
             Watch a quick walkthrough on how to sign up and get started.
           </p>
           
           <Button
             onClick={handleWatch}
             size="sm"
-            className="w-full gap-2"
-            style={{
-              backgroundColor: '#b49d7b',
-              borderRadius: '8px',
-            }}
+            className="w-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             <Play className="h-4 w-4" />
             How It Works
