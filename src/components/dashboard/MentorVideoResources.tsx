@@ -27,15 +27,22 @@ const VIDEO_RESOURCES: VideoResource[] = [
     embedUrl: 'https://drive.google.com/file/d/1eAYdL3_k_xZmmWSs80xNUBmhvcbBCyBM/preview',
     thumbnail: mentorWalkthroughThumbnail,
   },
-  // Future videos can be added here:
-  // {
-  //   id: 'course-creation',
-  //   title: 'Creating Your First Course',
-  //   titleFr: 'Créer Votre Premier Cours',
-  //   description: 'Learn how to build engaging courses',
-  //   descriptionFr: 'Apprenez à créer des cours captivants',
-  //   embedUrl: 'https://...',
-  // },
+  {
+    id: 'building-first-course',
+    title: 'Building Your First Course On ACFE',
+    titleFr: 'Créer Votre Premier Cours sur ACFE',
+    description: 'Learn how to build engaging courses step by step',
+    descriptionFr: 'Apprenez à créer des cours captivants étape par étape',
+    embedUrl: 'https://drive.google.com/file/d/1pRYPxcZXTqov664snTKRSAZ9GoDZ1IHl/preview',
+  },
+  {
+    id: 'getting-started-mentor',
+    title: 'Getting Started As ACFE Mentor',
+    titleFr: 'Débuter en tant que Mentor ACFE',
+    description: 'Everything you need to know to start mentoring',
+    descriptionFr: 'Tout ce que vous devez savoir pour commencer à mentorer',
+    embedUrl: 'https://drive.google.com/file/d/1oXwddexExAET87vwtCnR4oNb-m4XEHDb/preview',
+  },
 ];
 
 export const MentorVideoResources = () => {
@@ -69,12 +76,14 @@ export const MentorVideoResources = () => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                      <div className="w-12 h-12 rounded-full bg-primary/90 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Play className="h-6 w-6 text-primary-foreground ml-0.5" />
-                      </div>
-                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5" />
                   )}
+                  {/* Play button overlay - always visible */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-primary/90 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                      <Play className="h-6 w-6 text-primary-foreground ml-0.5" fill="currentColor" />
+                    </div>
+                  </div>
                 </div>
                 
                 {/* Text Content */}
