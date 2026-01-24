@@ -49,7 +49,7 @@ export const MentorVideoResources = () => {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
             <Video className="h-5 w-5 text-primary" />
-            {isFrench ? 'Ressources Vidéo pour Mentors' : 'Mentor Video Resources'}
+            {isFrench ? 'Regarder les Ressources Vidéo pour Mentors' : 'Watch Mentor Video Resources'}
           </CardTitle>
         </CardHeader>
         <CardContent>
