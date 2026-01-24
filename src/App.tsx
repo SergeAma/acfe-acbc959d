@@ -7,6 +7,7 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { CookieConsent } from "@/components/CookieConsent";
+import { HowToSignUpPopup } from "@/components/HowToSignUpPopup";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoleSwitcher } from "@/components/admin/AdminRoleSwitcher";
 import { Landing } from "./pages/Landing";
@@ -161,6 +162,7 @@ const App = () => (
             </Routes>
             <AdminRoleSwitcher />
             <CookieConsent />
+            <HowToSignUpPopup />
           </BrowserRouter>
         </LanguageProvider>
       </AuthProvider>
