@@ -55,11 +55,10 @@ export default function MentorContractAgreement() {
   const CONTRACT_CONDITIONS = [
     { id: "condition_respect_students", title: t('mentor.term1_title'), description: t('mentor.term1_desc') },
     { id: "condition_free_courses", title: t('mentor.term2_title'), description: t('mentor.term2_desc') },
-    { id: "condition_session_pricing", title: t('mentor.term3_title'), description: t('mentor.term3_desc').replace('${price}', sessionPriceDollars.toString()) },
+    { id: "condition_session_pricing", title: t('mentor.term3_title'), description: t('mentor.term3_desc').replace('${price}', `$${sessionPriceDollars}`) },
     { id: "condition_minimum_courses", title: t('mentor.term4_title'), description: t('mentor.term4_desc') },
     { id: "condition_quarterly_events", title: t('mentor.term5_title'), description: t('mentor.term5_desc') },
     { id: "condition_data_privacy", title: t('mentor.term6_title'), description: t('mentor.term6_desc') },
-    { id: "condition_monthly_meetings", title: t('mentor.term7_title'), description: t('mentor.term7_desc') },
     { id: "condition_support_youth", title: t('mentor.term8_title'), description: t('mentor.term8_desc') },
     { id: "condition_no_profanity", title: t('mentor.term9_title'), description: t('mentor.term9_desc') },
     { id: "condition_platform_engagement", title: t('mentor.term10_title'), description: t('mentor.term10_desc') },
@@ -135,7 +134,7 @@ export default function MentorContractAgreement() {
           condition_minimum_courses: conditions.condition_minimum_courses,
           condition_quarterly_events: conditions.condition_quarterly_events,
           condition_data_privacy: conditions.condition_data_privacy,
-          condition_monthly_meetings: conditions.condition_monthly_meetings,
+          condition_monthly_meetings: true, // Legacy field - set to true for compatibility
           condition_support_youth: conditions.condition_support_youth,
           condition_no_profanity: conditions.condition_no_profanity,
           condition_platform_engagement: conditions.condition_platform_engagement,
