@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import walkthroughThumbnail from '@/assets/walkthrough-thumbnail.png';
 
 const POPUP_WATCHED_KEY = 'acfe_signup_video_watched';
 const POPUP_SHOW_COUNT_KEY = 'acfe_popup_show_count';
@@ -133,7 +134,7 @@ export const HowToSignUpPopup = () => {
             className="relative w-full aspect-video rounded-lg overflow-hidden mb-3 group cursor-pointer border border-border hover:border-primary/50 transition-colors"
           >
             <img
-              src="https://cdn.storylane.io/image/upload/s--JFpXsLDm--/v1735213159/platform/jvqw3rq95bxslyjb6pwf.webp"
+              src={walkthroughThumbnail}
               alt="How to sign up walkthrough preview"
               className="w-full h-full object-cover"
             />
