@@ -117,6 +117,47 @@ serve(async (req) => {
       });
     };
 
+    // Check if user has an active ACFE subscription (Membership or Mentorship Plus)
+    // or is a member of an institution/career centre
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+      apiVersion: "2025-08-27.basil",
+    });
+
+    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    let hasActiveSubscription = false;
+    
+    if (customers.data.length > 0) {
+      const customerId = customers.data[0].id;
+      const subscriptions = await stripe.subscriptions.list({
+        customer: customerId,
+        status: "active",
+        limit: 10,
+      });
+      hasActiveSubscription = subscriptions.data.length > 0;
+      logStep("Subscription check", { customerId, hasActiveSubscription, subscriptionCount: subscriptions.data.length });
+    }
+
+    // Check if user is part of an institution (career development centre)
+    const { data: institutionMembership } = await serviceClient
+      .from("institution_students")
+      .select("id, status")
+      .eq("user_id", user.id)
+      .eq("status", "joined")
+      .limit(1)
+      .maybeSingle();
+    
+    const isInstitutionMember = !!institutionMembership;
+    logStep("Institution membership check", { isInstitutionMember });
+
+    // If user has active subscription or is institution member, enroll for free
+    if (hasActiveSubscription || isInstitutionMember) {
+      const reason = hasActiveSubscription 
+        ? "Enrolled as an ACFE subscriber" 
+        : "Enrolled as institution member";
+      logStep("User qualifies for free enrollment", { hasActiveSubscription, isInstitutionMember });
+      return await enrollFree(reason);
+    }
+
     // If platform forces free, enroll directly
     if (override?.enabled && override?.force_free) {
       logStep("Platform override: course is free");
@@ -129,108 +170,15 @@ serve(async (req) => {
       return await enrollFree("Enrolled successfully");
     }
 
-    // Paid course - create Stripe subscription checkout session
-    logStep("Creating Stripe subscription checkout session");
-
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2025-08-27.basil",
-    });
-
-    // Check if customer exists
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    let customerId;
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
-    }
-    logStep("Customer lookup", { customerId: customerId || "new customer" });
-
+    // User is "free access" with no subscription - redirect to pricing page
+    logStep("User has no subscription, redirecting to pricing page");
     const origin = req.headers.get("origin") || "https://lovable.dev";
-    const coursePriceCents = course.price_cents || 1000;
     
-    // Build checkout session options - disable Stripe's promo code input to ensure consistent 7-day trials
-    const sessionOptions: Stripe.Checkout.SessionCreateParams = {
-      customer: customerId,
-      customer_email: customerId ? undefined : user.email,
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: "ACFE Membership",
-              // Note: 'description' is NOT a valid parameter for product_data in line_items
-              // Product descriptions must be set when creating the product in Stripe dashboard
-            },
-            unit_amount: coursePriceCents,
-            recurring: {
-              interval: "month",
-            },
-          },
-          quantity: 1,
-        },
-      ],
-      mode: "subscription",
-      success_url: `${origin}/payment-success?course_id=${courseId}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/courses/${courseId}`,
-      metadata: {
-        course_id: courseId,
-        student_id: user.id,
-      },
-      subscription_data: {
-        metadata: {
-          course_id: courseId,
-          student_id: user.id,
-        },
-      },
-      // Disable Stripe's built-in promo code input - users must enter codes on ACFE site
-      // This ensures consistent 7-day trial behavior for all promo codes
-      allow_promotion_codes: false,
-    };
-
-    // If promo code provided, look it up and apply 7-day trial
-    if (promoCode) {
-      try {
-        const promoCodes = await stripe.promotionCodes.list({
-          code: promoCode.toUpperCase(),
-          active: true,
-          limit: 1,
-        });
-        
-        if (promoCodes.data.length > 0) {
-          const promo = promoCodes.data[0];
-          const coupon = typeof promo.coupon === 'object' ? promo.coupon : null;
-          
-          logStep("Found promo code", { 
-            code: promo.code, 
-            percentOff: coupon?.percent_off,
-            amountOff: coupon?.amount_off,
-            metadata: promo.metadata 
-          });
-          
-          // For 100% off coupons, always apply 7-day trial period (standardized)
-          if (coupon?.percent_off === 100) {
-            const standardTrialDays = 7; // All promo codes give exactly 7 days free
-            sessionOptions.subscription_data!.trial_period_days = standardTrialDays;
-            logStep("Applied 7-day trial from promo code", { code: promoCode, trialDays: standardTrialDays });
-          } else {
-            // For non-100% off coupons, apply as discount
-            sessionOptions.discounts = [{ promotion_code: promo.id }];
-            logStep("Applied discount from promo code", { code: promoCode });
-          }
-        } else {
-          logStep("Promo code not found or inactive", { code: promoCode });
-        }
-      } catch (promoError) {
-        logStep("Error looking up promo code", { error: String(promoError) });
-        // Continue without the promo code
-      }
-    }
-
-    // Create subscription checkout session
-    const session = await stripe.checkout.sessions.create(sessionOptions);
-
-    logStep("Subscription checkout session created", { sessionId: session.id, url: session.url });
-
-    return new Response(JSON.stringify({ url: session.url }), {
+    return new Response(JSON.stringify({ 
+      requiresSubscription: true,
+      redirectUrl: `${origin}/pricing`,
+      message: "Please subscribe to access paid courses"
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

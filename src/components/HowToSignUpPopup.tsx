@@ -3,6 +3,8 @@ import { X, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const POPUP_WATCHED_KEY = 'acfe_signup_video_watched';
+const POPUP_SHOW_COUNT_KEY = 'acfe_popup_show_count';
+const MAX_POPUP_SHOWS = 2;
 const INITIAL_DELAY_MS = 7000;
 const REAPPEAR_DELAY_MS = 10000;
 
@@ -48,14 +50,19 @@ export const HowToSignUpPopup = () => {
   // Handle initial appearance and reappearance logic
   useEffect(() => {
     const hasWatched = sessionStorage.getItem(POPUP_WATCHED_KEY) === 'true';
+    const showCount = parseInt(sessionStorage.getItem(POPUP_SHOW_COUNT_KEY) || '0', 10);
     
-    if (hasWatched) {
-      return; // User has watched, never show again this session
+    if (hasWatched || showCount >= MAX_POPUP_SHOWS) {
+      return; // User has watched or reached max appearances, never show again this session
     }
 
     // Show popup after initial delay
     const timer = setTimeout(() => {
-      setShowPopup(true);
+      const currentCount = parseInt(sessionStorage.getItem(POPUP_SHOW_COUNT_KEY) || '0', 10);
+      if (currentCount < MAX_POPUP_SHOWS) {
+        sessionStorage.setItem(POPUP_SHOW_COUNT_KEY, String(currentCount + 1));
+        setShowPopup(true);
+      }
     }, INITIAL_DELAY_MS);
 
     return () => clearTimeout(timer);
@@ -83,11 +90,17 @@ export const HowToSignUpPopup = () => {
   const handleDismiss = useCallback(() => {
     setShowPopup(false);
 
-    // Reappear after 10 seconds if not watched
+    // Reappear after 10 seconds if not watched and under max count
     const hasWatched = sessionStorage.getItem(POPUP_WATCHED_KEY) === 'true';
-    if (!hasWatched) {
+    const showCount = parseInt(sessionStorage.getItem(POPUP_SHOW_COUNT_KEY) || '0', 10);
+    
+    if (!hasWatched && showCount < MAX_POPUP_SHOWS) {
       setTimeout(() => {
-        setShowPopup(true);
+        const currentCount = parseInt(sessionStorage.getItem(POPUP_SHOW_COUNT_KEY) || '0', 10);
+        if (currentCount < MAX_POPUP_SHOWS) {
+          sessionStorage.setItem(POPUP_SHOW_COUNT_KEY, String(currentCount + 1));
+          setShowPopup(true);
+        }
       }, REAPPEAR_DELAY_MS);
     }
   }, []);

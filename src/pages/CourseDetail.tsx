@@ -137,6 +137,13 @@ export const CourseDetail = () => {
           title: "Success!",
           description: data.message || "You're now enrolled in this course",
         });
+      } else if (data.requiresSubscription) {
+        // User needs to subscribe first - redirect to pricing
+        toast({
+          title: "Subscription Required",
+          description: data.message || "Please subscribe to access paid courses",
+        });
+        navigate(data.redirectUrl || '/pricing');
       } else if (data.url) {
         // Redirect to Stripe checkout
         window.open(data.url, '_blank');
