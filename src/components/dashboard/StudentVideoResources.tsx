@@ -21,8 +21,8 @@ const VIDEO_RESOURCES: VideoResource[] = [
     id: 'acfe-walkthrough',
     title: 'Welcome to ACFE: Platform Walkthrough',
     titleFr: 'Bienvenue sur ACFE: Présentation de la Plateforme',
-    description: 'Learn how to navigate the platform and make the most of your learning journey',
-    descriptionFr: 'Apprenez à naviguer sur la plateforme et à tirer le meilleur parti de votre parcours d\'apprentissage',
+    description: 'Learn how to navigate the platform and make the most of your learning journey. CLICK on the purple boxes for next steps!',
+    descriptionFr: 'Apprenez à naviguer sur la plateforme et à tirer le meilleur parti de votre parcours d\'apprentissage. CLIQUEZ sur les cases violettes pour les prochaines étapes!',
     embedUrl: 'https://app.storylane.io/share/70er0b80dgh2',
     thumbnail: walkthroughThumbnail,
   },
@@ -95,7 +95,7 @@ export const StudentVideoResources = () => {
 
       {/* Video Dialog */}
       <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
-        <DialogContent className="max-w-4xl w-[95vw] p-0 overflow-hidden">
+        <DialogContent className="max-w-6xl w-[95vw] p-0 overflow-hidden">
           <DialogHeader className="p-4 pb-2">
             <DialogTitle>
               {selectedVideo && (isFrench ? selectedVideo.titleFr : selectedVideo.title)}
