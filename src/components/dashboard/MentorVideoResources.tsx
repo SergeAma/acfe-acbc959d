@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Play, Video, ChevronRight } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import mentorWalkthroughThumbnail from '@/assets/mentor-walkthrough-thumbnail.png';
 
 interface VideoResource {
   id: string;
@@ -24,6 +25,7 @@ const VIDEO_RESOURCES: VideoResource[] = [
     description: 'A complete walkthrough of the mentor platform',
     descriptionFr: 'Une présentation complète de la plateforme mentor',
     embedUrl: 'https://drive.google.com/file/d/1eAYdL3_k_xZmmWSs80xNUBmhvcbBCyBM/preview',
+    thumbnail: mentorWalkthroughThumbnail,
   },
   // Future videos can be added here:
   // {
