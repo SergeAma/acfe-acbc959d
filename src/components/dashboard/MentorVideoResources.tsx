@@ -5,6 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Play, Video, ChevronRight } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import mentorWalkthroughThumbnail from '@/assets/mentor-walkthrough-thumbnail.png';
+import buildingCourseThumbnail from '@/assets/building-course-thumbnail.png';
+import gettingStartedMentorThumbnail from '@/assets/getting-started-mentor-thumbnail.png';
 
 interface VideoResource {
   id: string;
@@ -20,20 +22,12 @@ interface VideoResource {
 const VIDEO_RESOURCES: VideoResource[] = [
   {
     id: 'walkthrough',
-    title: 'How to Get Started',
-    titleFr: 'Comment Commencer',
+    title: 'Welcome to ACFE: Mentor Basics',
+    titleFr: 'Bienvenue sur ACFE: Les Bases du Mentor',
     description: 'A complete walkthrough of the mentor platform',
     descriptionFr: 'Une présentation complète de la plateforme mentor',
     embedUrl: 'https://drive.google.com/file/d/1eAYdL3_k_xZmmWSs80xNUBmhvcbBCyBM/preview',
     thumbnail: mentorWalkthroughThumbnail,
-  },
-  {
-    id: 'building-first-course',
-    title: 'Building Your First Course On ACFE',
-    titleFr: 'Créer Votre Premier Cours sur ACFE',
-    description: 'Learn how to build engaging courses step by step',
-    descriptionFr: 'Apprenez à créer des cours captivants étape par étape',
-    embedUrl: 'https://drive.google.com/file/d/1pRYPxcZXTqov664snTKRSAZ9GoDZ1IHl/preview',
   },
   {
     id: 'getting-started-mentor',
@@ -42,6 +36,16 @@ const VIDEO_RESOURCES: VideoResource[] = [
     description: 'Everything you need to know to start mentoring',
     descriptionFr: 'Tout ce que vous devez savoir pour commencer à mentorer',
     embedUrl: 'https://drive.google.com/file/d/1oXwddexExAET87vwtCnR4oNb-m4XEHDb/preview',
+    thumbnail: gettingStartedMentorThumbnail,
+  },
+  {
+    id: 'building-first-course',
+    title: 'Building Your First Course On ACFE',
+    titleFr: 'Créer Votre Premier Cours sur ACFE',
+    description: 'Learn how to build engaging courses step by step',
+    descriptionFr: 'Apprenez à créer des cours captivants étape par étape',
+    embedUrl: 'https://drive.google.com/file/d/1pRYPxcZXTqov664snTKRSAZ9GoDZ1IHl/preview',
+    thumbnail: buildingCourseThumbnail,
   },
 ];
 
