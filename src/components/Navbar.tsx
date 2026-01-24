@@ -48,7 +48,7 @@ export const Navbar = () => {
       <div className="container mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
         {/* Logo with Country Flag */}
         <Link to="/home" className="flex items-center gap-2 hover:opacity-80 transition-opacity flex-shrink-0">
-          <img src={acfeLogo} alt="A Cloud for Everyone" className="h-16 sm:h-24 w-auto" />
+          <img src={acfeLogo} alt="A Cloud for Everyone" className="h-12 sm:h-16 md:h-20 w-auto" />
           {!flagLoading && (
             <span 
               className="text-2xl sm:text-3xl" 
@@ -184,7 +184,7 @@ export const Navbar = () => {
 
       {/* Mobile Navigation Menu - Floating Semi-Transparent Overlay */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-x-4 top-20 sm:top-24 z-[60] bg-black/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="md:hidden fixed inset-x-4 top-16 sm:top-20 z-[60] bg-black/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 max-h-[calc(100vh-5rem)] overflow-y-auto">
           <div className="px-6 py-6 flex flex-col gap-3">
             {navLinks.map((link) => (
               <NavLink
