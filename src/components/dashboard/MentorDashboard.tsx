@@ -176,13 +176,13 @@ export const MentorDashboard = () => {
                   <div className="flex items-start justify-between">
                     <CardTitle className="line-clamp-2 flex-1">{course.title}</CardTitle>
                     {course.is_published ? (
-                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded ml-2">
+                      <Badge variant="secondary" className="bg-secondary/20 text-secondary-foreground ml-2">
                         {t('mentorDashboard.published')}
-                      </span>
+                      </Badge>
                     ) : (
-                      <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded ml-2">
+                      <Badge variant="outline" className="bg-accent/20 text-accent-foreground ml-2">
                         {t('mentorDashboard.draft')}
-                      </span>
+                      </Badge>
                     )}
                   </div>
                   <span className="text-xs text-primary">{course.category}</span>
@@ -219,21 +219,21 @@ export const MentorDashboard = () => {
       {/* Onboarding Checklist */}
       <MentorOnboardingChecklist />
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold mb-2">{t('mentorDashboard.title')}</h1>
-          <p className="text-muted-foreground text-lg">{t('mentorDashboard.subtitle')}</p>
+          <h1 className="text-2xl sm:text-4xl font-bold mb-1 sm:mb-2">{t('mentorDashboard.title')}</h1>
+          <p className="text-muted-foreground text-sm sm:text-lg">{t('mentorDashboard.subtitle')}</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           <Link to="/mentor/sessions">
-            <Button size="lg" variant="outline">
-              <Video className="h-5 w-5 mr-2" />
+            <Button size="sm" variant="outline" className="h-9 sm:h-11 text-xs sm:text-sm">
+              <Video className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
               {t('mentorDashboard.sessions')}
             </Button>
           </Link>
           <Link to="/mentor/cohort">
-            <Button size="lg" variant="outline" className="relative">
-              <UsersRound className="h-5 w-5 mr-2" />
+            <Button size="sm" variant="outline" className="relative h-9 sm:h-11 text-xs sm:text-sm">
+              <UsersRound className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
               {t('mentorDashboard.myCohort')}
               {pendingRequestCount > 0 && (
                 <Badge 
@@ -246,8 +246,8 @@ export const MentorDashboard = () => {
             </Button>
           </Link>
           <Link to="/mentor/courses/new">
-            <Button size="lg">
-              <PlusCircle className="h-5 w-5 mr-2" />
+            <Button size="sm" className="h-9 sm:h-11 text-xs sm:text-sm">
+              <PlusCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
               {t('mentorDashboard.createCourse')}
             </Button>
           </Link>

@@ -6,7 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CheckCircle2, Circle, User, BookOpen, Image, FileText, ArrowRight } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { CheckCircle2, Circle, User, BookOpen, Image, FileText, ArrowRight, ChevronDown } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CourseTopicItem {
   key: string;
@@ -36,6 +38,8 @@ export const MentorOnboardingChecklist = () => {
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [courseTopics, setCourseTopics] = useState<CourseTopicItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
@@ -197,85 +201,99 @@ export const MentorOnboardingChecklist = () => {
     return null;
   }
 
+  // On mobile, start collapsed. On desktop, always show content.
+  const shouldCollapse = isMobile;
+
   return (
     <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-xl">Welcome to A Cloud for Everyone!</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Complete these steps to get started as a mentor
-            </p>
-          </div>
-          <div className="text-right">
-            <span className="text-2xl font-bold text-primary">{completedCount}/{totalCount}</span>
-            <p className="text-xs text-muted-foreground">completed</p>
-          </div>
-        </div>
-        <Progress value={progressPercentage} className="h-2 mt-3" />
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-3">
-          {checklist.map((item) => (
-            <div
-              key={item.id}
-              className={`flex items-start gap-4 p-3 rounded-lg transition-colors ${
-                item.completed 
-                  ? 'bg-green-50 dark:bg-green-950/20' 
-                  : 'bg-muted/50 hover:bg-muted'
-              }`}
-            >
-              <div className={`flex-shrink-0 mt-0.5 ${item.completed ? 'text-green-600' : 'text-muted-foreground'}`}>
-                {item.completed ? (
-                  <CheckCircle2 className="h-6 w-6" />
-                ) : (
-                  <Circle className="h-6 w-6" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className={`font-medium ${item.completed ? 'text-green-700 dark:text-green-400 line-through' : ''}`}>
-                  {item.label}
+      <Collapsible open={shouldCollapse ? isOpen : true} onOpenChange={setIsOpen}>
+        <CardHeader className="pb-3">
+          <CollapsibleTrigger asChild disabled={!shouldCollapse}>
+            <div className={`flex items-center justify-between ${shouldCollapse ? 'cursor-pointer' : ''}`}>
+              <div className="flex-1">
+                <CardTitle className="text-lg sm:text-xl">Welcome to A Cloud for Everyone!</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Complete these steps to get started as a mentor
                 </p>
-                <p className="text-sm text-muted-foreground">{item.description}</p>
-                {item.courseTopics && item.courseTopics.length > 0 && (
-                  <ul className="mt-3 space-y-2">
-                    {item.courseTopics.map((topic) => (
-                      <li key={topic.key} className="flex items-center gap-3">
-                        <Checkbox
-                          id={topic.key}
-                          checked={topic.completed}
-                          onCheckedChange={() => handleTopicToggle(topic.key, topic.completed)}
-                          className="h-4 w-4"
-                        />
-                        <label 
-                          htmlFor={topic.key}
-                          className={`text-sm cursor-pointer ${topic.completed ? 'text-green-600 line-through' : 'text-muted-foreground'}`}
-                        >
-                          {topic.label}
-                        </label>
-                      </li>
-                    ))}
-                  </ul>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="text-right">
+                  <span className="text-xl sm:text-2xl font-bold text-primary">{completedCount}/{totalCount}</span>
+                  <p className="text-xs text-muted-foreground">completed</p>
+                </div>
+                {shouldCollapse && (
+                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                 )}
               </div>
-              {!item.completed && !item.courseTopics && (
-                <Link to={item.link}>
-                  <Button size="sm" variant="outline">
-                    Start
-                  </Button>
-                </Link>
-              )}
-              {item.courseTopics && !item.completed && (
-                <Link to={item.link}>
-                  <Button size="sm" variant="outline">
-                    Create
-                  </Button>
-                </Link>
-              )}
             </div>
-          ))}
-        </div>
-      </CardContent>
+          </CollapsibleTrigger>
+          <Progress value={progressPercentage} className="h-2 mt-3" />
+        </CardHeader>
+        <CollapsibleContent>
+          <CardContent className="pt-0">
+            <div className="grid gap-2 sm:gap-3">
+              {checklist.map((item) => (
+                <div
+                  key={item.id}
+                  className={`flex items-start gap-3 sm:gap-4 p-2.5 sm:p-3 rounded-lg transition-colors ${
+                    item.completed 
+                      ? 'bg-green-50 dark:bg-green-950/20' 
+                      : 'bg-muted/50 hover:bg-muted'
+                  }`}
+                >
+                  <div className={`flex-shrink-0 mt-0.5 ${item.completed ? 'text-green-600' : 'text-muted-foreground'}`}>
+                    {item.completed ? (
+                      <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
+                    ) : (
+                      <Circle className="h-5 w-5 sm:h-6 sm:w-6" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-medium text-sm sm:text-base ${item.completed ? 'text-green-700 dark:text-green-400 line-through' : ''}`}>
+                      {item.label}
+                    </p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{item.description}</p>
+                    {item.courseTopics && item.courseTopics.length > 0 && (
+                      <ul className="mt-2 sm:mt-3 space-y-1.5 sm:space-y-2">
+                        {item.courseTopics.map((topic) => (
+                          <li key={topic.key} className="flex items-center gap-2 sm:gap-3">
+                            <Checkbox
+                              id={topic.key}
+                              checked={topic.completed}
+                              onCheckedChange={() => handleTopicToggle(topic.key, topic.completed)}
+                              className="h-4 w-4"
+                            />
+                            <label 
+                              htmlFor={topic.key}
+                              className={`text-xs sm:text-sm cursor-pointer ${topic.completed ? 'text-green-600 line-through' : 'text-muted-foreground'}`}
+                            >
+                              {topic.label}
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  {!item.completed && !item.courseTopics && (
+                    <Link to={item.link}>
+                      <Button size="sm" variant="outline" className="text-xs h-8 px-2 sm:px-3">
+                        Start
+                      </Button>
+                    </Link>
+                  )}
+                  {item.courseTopics && !item.completed && (
+                    <Link to={item.link}>
+                      <Button size="sm" variant="outline" className="text-xs h-8 px-2 sm:px-3">
+                        Create
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
     </Card>
   );
 };
