@@ -6,10 +6,12 @@ import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Clock, BarChart, Loader2, CheckCircle, DollarSign, Gift, Ticket } from 'lucide-react';
+import { ArrowLeft, Clock, BarChart, Loader2, CheckCircle, DollarSign, Gift, Ticket, Crown } from 'lucide-react';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { createSafeHtml } from '@/lib/sanitize-html';
+import { CoursePrerequisitesDisplay } from '@/components/course/CoursePrerequisitesDisplay';
 
 interface Course {
   id: string;
@@ -160,18 +162,15 @@ export const CourseDetail = () => {
   };
 
   // Determine display price
+  // CRITICAL: All courses require subscription by default unless explicitly overridden
   const getDisplayPrice = () => {
     if (!course) return null;
 
     const isSponsored = pricingOverride?.enabled && pricingOverride?.force_free;
-    const isFree = !course.is_paid;
-    const price = (course.price_cents || 1000) / 100;
-
-    if (isFree) {
-      return { type: 'free', label: 'Free', originalPrice: null };
-    }
-
+    
+    // Sponsored courses are shown as free
     if (isSponsored) {
+      const price = (course.price_cents || 1500) / 100;
       return {
         type: 'sponsored',
         label: 'Free',
@@ -181,7 +180,13 @@ export const CourseDetail = () => {
       };
     }
 
-    return { type: 'paid', label: `$${price.toFixed(2)}`, originalPrice: null };
+    // All other courses require subscription
+    // Even if is_paid is false, we show subscription required
+    return { 
+      type: 'subscription', 
+      label: 'Subscription Required', 
+      originalPrice: null 
+    };
   };
 
   if (loading) {
@@ -226,6 +231,9 @@ export const CourseDetail = () => {
               />
             </div>
 
+            {/* Prerequisites Section */}
+            <CoursePrerequisitesDisplay courseId={course.id} />
+
             {/* What you'll learn section - to be added by mentor in course builder */}
           </div>
 
@@ -255,37 +263,36 @@ export const CourseDetail = () => {
                     </div>
                   )}
                   
-                  {priceInfo?.type === 'paid' && (
+                  {priceInfo?.type === 'subscription' && (
                     <div className="mb-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <DollarSign className="h-5 w-5 text-primary" />
-                        <span className="text-3xl font-bold">{priceInfo.label}</span>
-                        <span className="text-muted-foreground">/month</span>
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <Crown className="h-5 w-5 text-primary" />
+                        <Badge variant="default" className="text-sm">
+                          Subscription Required
+                        </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">Monthly subscription • Cancel anytime</p>
-                    </div>
-                  )}
-
-                  {priceInfo?.type === 'free' && (
-                    <div className="mb-4">
-                      <span className="text-3xl font-bold text-green-600">Free</span>
+                      <p className="text-sm text-muted-foreground">
+                        Subscribe to access all courses
+                      </p>
                     </div>
                   )}
                 </div>
 
                 {isEnrolled ? (
                   <div className="space-y-4">
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                    <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-4 text-center">
                       <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                      <p className="text-sm font-medium text-green-900">You're enrolled!</p>
+                      <p className="text-sm font-medium text-green-900 dark:text-green-100">You're enrolled!</p>
                     </div>
-                    <Button onClick={() => navigate('/dashboard')} className="w-full">
-                      Go to Dashboard
-                    </Button>
+                    <Link to={`/courses/${course.id}/learn`}>
+                      <Button className="w-full">
+                        Start Learning
+                      </Button>
+                    </Link>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {priceInfo?.type === 'paid' && (
+                    {priceInfo?.type === 'subscription' && (
                       <div className="space-y-2">
                         {showPromoInput ? (
                           <div className="flex gap-2">
@@ -326,8 +333,13 @@ export const CourseDetail = () => {
                       {enrolling ? (
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
                       ) : null}
-                      {priceInfo?.type === 'paid' ? 'Buy Course' : 'Enroll Now'}
+                      {priceInfo?.type === 'subscription' ? 'Enroll Now' : 'Enroll Now'}
                     </Button>
+                    {priceInfo?.type === 'subscription' && (
+                      <p className="text-xs text-center text-muted-foreground">
+                        Requires active subscription. <Link to="/pricing" className="text-primary hover:underline">View plans</Link>
+                      </p>
+                    )}
                   </div>
                 )}
 

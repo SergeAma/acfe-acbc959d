@@ -12,9 +12,11 @@ import { MySubmissions } from '@/components/dashboard/MySubmissions';
 import { SubscriptionStatus } from '@/components/dashboard/SubscriptionStatus';
 import { PendingAssignments } from '@/components/dashboard/PendingAssignments';
 import { StudentVideoResources } from '@/components/dashboard/StudentVideoResources';
-import { BookOpen, Library, Award, TrendingUp, UserCheck, Clock, BookOpenCheck, MessageSquare, CreditCard, Building2 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { BookOpen, Library, Award, TrendingUp, UserCheck, Clock, BookOpenCheck, MessageSquare, CreditCard, Building2, ChevronDown } from 'lucide-react';
 import { stripHtml } from '@/lib/html-utils';
 import { useUserInstitutions } from '@/hooks/useInstitution';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Enrollment {
   id: string;
@@ -46,11 +48,14 @@ interface MentorshipRequest {
 export const StudentDashboard = () => {
   const { profile } = useAuth();
   const { t } = useLanguage();
+  const isMobile = useIsMobile();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [mentorshipRequests, setMentorshipRequests] = useState<MentorshipRequest[]>([]);
   const [mentorProfiles, setMentorProfiles] = useState<Record<string, { full_name: string; avatar_url: string }>>({});
   const [subscribedCourseIds, setSubscribedCourseIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [videoResourcesOpen, setVideoResourcesOpen] = useState(false);
+  const [mentorshipOpen, setMentorshipOpen] = useState(false);
   const { data: userInstitutions = [] } = useUserInstitutions();
 
   useEffect(() => {
@@ -134,54 +139,215 @@ export const StudentDashboard = () => {
     fetchData();
   }, [profile]);
 
+  // Course sections
+  const inProgressCourses = enrollments.filter(e => e.progress > 0 && e.progress < 100);
+  const notStartedCourses = enrollments.filter(e => e.progress === 0);
+  const completedCourses = enrollments.filter(e => e.progress === 100);
+
+  const CourseCard = ({ enrollment, showProgress = true }: { enrollment: Enrollment; showProgress?: boolean }) => {
+    const isSubscribed = subscribedCourseIds.includes(enrollment.course.id);
+    const isCompleted = enrollment.progress === 100;
+    
+    return (
+      <Card className={`hover:shadow-lg transition-shadow relative ${isSubscribed ? 'ring-2 ring-primary' : ''} ${isCompleted ? 'border-green-200 dark:border-green-800' : ''}`}>
+        {isSubscribed && (
+          <div className="absolute top-2 right-2 z-10">
+            <Badge className="bg-primary text-primary-foreground">
+              <CreditCard className="h-3 w-3 mr-1" />
+              {t('studentDashboard.subscribed')}
+            </Badge>
+          </div>
+        )}
+        {isCompleted && (
+          <div className="absolute top-2 right-2 z-10">
+            <Badge variant="default" className="bg-green-500">
+              <Award className="h-3 w-3 mr-1" />
+              {t('studentDashboard.completed')}
+            </Badge>
+          </div>
+        )}
+        <CardHeader className="pb-2">
+          <CardTitle className="line-clamp-1 text-base sm:text-lg">{enrollment.course.title}</CardTitle>
+          <div className="flex gap-2 mt-2 flex-wrap">
+            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+              {enrollment.course.category}
+            </span>
+            <span className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded">
+              {enrollment.course.level}
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+            {stripHtml(enrollment.course.description)}
+          </p>
+          {showProgress && enrollment.progress > 0 && enrollment.progress < 100 && (
+            <div className="space-y-2 mb-4">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{t('studentDashboard.progress')}</span>
+                <span className="font-medium">{enrollment.progress}%</span>
+              </div>
+              <Progress value={enrollment.progress} className="h-2" />
+            </div>
+          )}
+          <Link to={`/courses/${enrollment.course.id}/learn`}>
+            <Button className={`w-full ${isCompleted ? 'bg-green-600 hover:bg-green-700' : ''}`} size="sm">
+              {isCompleted ? t('courses.reviewCourse') || 'Review Course' : enrollment.progress > 0 ? t('courses.continue') : t('courses.startLearning') || 'Start Learning'}
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* Welcome Header */}
       <div>
-        <h1 className="text-4xl font-bold mb-2">{t('dashboard.welcome')}, {profile?.full_name}!</h1>
-        <p className="text-muted-foreground text-lg">{t('studentDashboard.continueJourney')}</p>
+        <h1 className="text-2xl sm:text-4xl font-bold mb-1">{t('dashboard.welcome')}, {profile?.full_name}!</h1>
+        <p className="text-muted-foreground text-sm sm:text-lg">{t('studentDashboard.continueJourney')}</p>
       </div>
 
-      {/* Video Resources - Top priority visibility */}
-      <StudentVideoResources />
-      {/* Stats Cards */}
-      <div className="grid md:grid-cols-3 gap-6">
+      {/* Subscription Status - Compact */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+        <SubscriptionStatus />
+        <Link to="/subscriptions">
+          <Button variant="outline" size="sm">
+            <CreditCard className="h-4 w-4 mr-2" />
+            {t('studentDashboard.manageSubscriptions')}
+          </Button>
+        </Link>
+      </div>
+
+      {/* Pending Assignments Alert */}
+      <PendingAssignments enrollments={enrollments} />
+
+      {/* PRIMARY: In Progress Courses */}
+      {loading ? (
+        <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
+      ) : (
+        <>
+          {inProgressCourses.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  {t('dashboard.inProgress')}
+                </h2>
+              </div>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {inProgressCourses.map((enrollment) => (
+                  <CourseCard key={enrollment.id} enrollment={enrollment} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Not Started Courses */}
+          {notStartedCourses.length > 0 && (
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 flex items-center gap-2">
+                <Clock className="h-5 w-5 text-muted-foreground" />
+                {t('studentDashboard.notStarted') || 'Not Started'}
+              </h2>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {notStartedCourses.map((enrollment) => (
+                  <CourseCard key={enrollment.id} enrollment={enrollment} showProgress={false} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* No Courses Yet - Prompt to browse */}
+          {enrollments.length === 0 && (
+            <Card className="border-dashed border-2">
+              <CardContent className="py-8 text-center">
+                <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-xl font-semibold mb-2">{t('studentDashboard.noEnrollments') || 'No courses yet'}</h3>
+                <p className="text-muted-foreground mb-4">{t('studentDashboard.startLearningPrompt') || 'Browse our course catalog to start your learning journey'}</p>
+                <Link to="/courses">
+                  <Button size="lg">
+                    <Library className="h-5 w-5 mr-2" />
+                    {t('studentDashboard.browseMoreCourses')}
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Completed Courses */}
+          {completedCourses.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                  <Award className="h-5 w-5 text-green-500" />
+                  {t('dashboard.completedCourses')}
+                </h2>
+                <Link to="/certificates">
+                  <Button variant="outline" size="sm">
+                    <Award className="h-4 w-4 mr-2" />
+                    {t('studentDashboard.viewCertificates')}
+                  </Button>
+                </Link>
+              </div>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {completedCourses.map((enrollment) => (
+                  <CourseCard key={enrollment.id} enrollment={enrollment} showProgress={false} />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Browse More Courses Link */}
+      {enrollments.length > 0 && (
+        <div className="flex justify-center">
+          <Link to="/courses">
+            <Button variant="outline" size="lg">
+              <Library className="h-5 w-5 mr-2" />
+              {t('studentDashboard.browseMoreCourses')}
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {/* SECONDARY CONTENT - Collapsible on mobile */}
+      
+      {/* Quick Stats */}
+      <div className="grid grid-cols-3 gap-3 sm:gap-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">{t('studentDashboard.activeCourses')}</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">{t('studentDashboard.activeCourses')}</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground hidden sm:block" />
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{enrollments.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">{t('studentDashboard.enrolledLearning')}</p>
+          <CardContent className="px-3 sm:px-6">
+            <div className="text-2xl sm:text-3xl font-bold">{enrollments.length}</div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">{t('studentDashboard.avgProgress')}</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">{t('studentDashboard.avgProgress')}</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground hidden sm:block" />
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
+          <CardContent className="px-3 sm:px-6">
+            <div className="text-2xl sm:text-3xl font-bold">
               {enrollments.length > 0
                 ? Math.round(enrollments.reduce((acc, e) => acc + e.progress, 0) / enrollments.length)
                 : 0}%
             </div>
-            <p className="text-xs text-muted-foreground mt-1">{t('studentDashboard.acrossAllCourses')}</p>
           </CardContent>
         </Card>
 
         <Link to="/certificates">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">{t('dashboard.certificates')}</CardTitle>
-              <Award className="h-4 w-4 text-muted-foreground" />
+          <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">{t('dashboard.certificates')}</CardTitle>
+              <Award className="h-4 w-4 text-muted-foreground hidden sm:block" />
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {enrollments.filter(e => e.progress === 100).length}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">{t('studentDashboard.coursesCompleted')}</p>
+            <CardContent className="px-3 sm:px-6">
+              <div className="text-2xl sm:text-3xl font-bold">{completedCourses.length}</div>
             </CardContent>
           </Card>
         </Link>
@@ -213,304 +379,97 @@ export const StudentDashboard = () => {
         </Card>
       )}
 
-      {/* Subscription Status */}
-      <div className="flex items-center justify-between">
-        <SubscriptionStatus />
-        <Link to="/subscriptions">
-          <Button variant="outline" size="sm">
-            <CreditCard className="h-4 w-4 mr-2" />
-            {t('studentDashboard.manageSubscriptions')}
-          </Button>
-        </Link>
-      </div>
-
-      {/* Pending Assignments Alert */}
-      <PendingAssignments enrollments={enrollments} />
-
-      {/* In Progress Courses - Priority visibility */}
-      <div>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">{t('dashboard.inProgress')}</h2>
-          <Link to="/courses">
-            <Button variant="outline">
-              <Library className="h-4 w-4 mr-2" />
-              {t('studentDashboard.browseMoreCourses')}
-            </Button>
-          </Link>
-        </div>
-
-        {loading ? (
-          <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
-        ) : enrollments.filter(e => e.progress > 0 && e.progress < 100).length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center">
-              <BookOpen className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">{t('studentDashboard.noCoursesInProgress')}</h3>
-              <p className="text-muted-foreground mb-4">{t('studentDashboard.startCourseToSeeProgress')}</p>
-              <Link to="/courses">
-                <Button>{t('features.courses.title')}</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid md:grid-cols-2 gap-6">
-            {enrollments.filter(e => e.progress > 0 && e.progress < 100).map((enrollment) => {
-              const isSubscribed = subscribedCourseIds.includes(enrollment.course.id);
-              return (
-              <Card key={enrollment.id} className={`hover:shadow-lg transition-shadow relative ${isSubscribed ? 'ring-2 ring-primary' : ''}`}>
-                {isSubscribed && (
-                  <div className="absolute top-2 right-2 z-10">
-                    <Badge className="bg-primary text-primary-foreground">
-                      <CreditCard className="h-3 w-3 mr-1" />
-                      {t('studentDashboard.subscribed')}
-                    </Badge>
-                  </div>
+      {/* Video Resources - Collapsible */}
+      <Collapsible open={isMobile ? videoResourcesOpen : true} onOpenChange={setVideoResourcesOpen}>
+        <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+          <CardHeader className="pb-3">
+            <CollapsibleTrigger asChild disabled={!isMobile}>
+              <div className={`flex items-center justify-between ${isMobile ? 'cursor-pointer' : ''}`}>
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <BookOpenCheck className="h-5 w-5 text-primary" />
+                  {t('studentDashboard.videoResources') || 'Getting Started Videos'}
+                </CardTitle>
+                {isMobile && (
+                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${videoResourcesOpen ? 'rotate-180' : ''}`} />
                 )}
-                <CardHeader>
-                  <CardTitle className="line-clamp-1">{enrollment.course.title}</CardTitle>
-                  <div className="flex gap-2 mt-2">
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                      {enrollment.course.category}
-                    </span>
-                    <span className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded">
-                      {enrollment.course.level}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {stripHtml(enrollment.course.description)}
-                  </p>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">{t('studentDashboard.progress')}</span>
-                      <span className="font-medium">{enrollment.progress}%</span>
-                    </div>
-                    <Progress value={enrollment.progress} className="h-2" />
-                  </div>
-                  <Link to={`/courses/${enrollment.course.id}/learn`}>
-                    <Button className="w-full mt-4">
-                      {t('courses.continue')}
+              </div>
+            </CollapsibleTrigger>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              <StudentVideoResources />
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Mentorship Requests Section - Collapsible */}
+      <Collapsible open={isMobile ? mentorshipOpen : true} onOpenChange={setMentorshipOpen}>
+        <Card>
+          <CardHeader className="pb-3">
+            <CollapsibleTrigger asChild disabled={!isMobile}>
+              <div className={`flex items-center justify-between ${isMobile ? 'cursor-pointer' : ''}`}>
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <UserCheck className="h-5 w-5 text-muted-foreground" />
+                  {t('studentDashboard.myMentorshipRequests')}
+                  {mentorshipRequests.length > 0 && (
+                    <Badge variant="secondary" className="ml-2">{mentorshipRequests.length}</Badge>
+                  )}
+                </CardTitle>
+                {isMobile && (
+                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${mentorshipOpen ? 'rotate-180' : ''}`} />
+                )}
+              </div>
+            </CollapsibleTrigger>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              {mentorshipRequests.length === 0 ? (
+                <div className="text-center py-6">
+                  <UserCheck className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold mb-2">{t('studentDashboard.noMentorshipRequests')}</h3>
+                  <p className="text-muted-foreground mb-4">{t('studentDashboard.connectWithMentor')}</p>
+                  <Link to="/mentors">
+                    <Button variant="outline">
+                      <UserCheck className="h-4 w-4 mr-2" />
+                      {t('studentDashboard.findMentor')}
                     </Button>
                   </Link>
-                </CardContent>
-              </Card>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Not Started Courses - Second priority */}
-      {enrollments.filter(e => e.progress === 0).length > 0 && (
-        <div>
-          <h2 className="text-2xl font-bold mb-6">Not Started</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {enrollments.filter(e => e.progress === 0).map((enrollment) => {
-              const isSubscribed = subscribedCourseIds.includes(enrollment.course.id);
-              return (
-              <Card key={enrollment.id} className={`hover:shadow-lg transition-shadow relative ${isSubscribed ? 'ring-2 ring-primary' : ''}`}>
-                {isSubscribed && (
-                  <div className="absolute top-2 right-2 z-10">
-                    <Badge className="bg-primary text-primary-foreground">
-                      <CreditCard className="h-3 w-3 mr-1" />
-                      Subscribed
-                    </Badge>
-                  </div>
-                )}
-                <CardHeader>
-                  <CardTitle className="line-clamp-1">{enrollment.course.title}</CardTitle>
-                  <div className="flex gap-2 mt-2">
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                      {enrollment.course.category}
-                    </span>
-                    <span className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded">
-                      {enrollment.course.level}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {stripHtml(enrollment.course.description)}
-                  </p>
-                  <Link to={`/courses/${enrollment.course.id}/learn`}>
-                    <Button className="w-full">
-                      Start Learning
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Completed Courses */}
-      <div>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">{t('dashboard.completedCourses')}</h2>
-          <Link to="/certificates">
-            <Button variant="outline">
-              <Award className="h-4 w-4 mr-2" />
-              {t('studentDashboard.viewCertificates')}
-            </Button>
-          </Link>
-        </div>
-
-        {enrollments.filter(e => e.progress === 100).length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center">
-              <Award className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">{t('studentDashboard.noCompletedCourses')}</h3>
-              <p className="text-muted-foreground">{t('studentDashboard.completeCourseForCertificate')}</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid md:grid-cols-2 gap-6">
-            {enrollments.filter(e => e.progress === 100).map((enrollment) => (
-              <Card key={enrollment.id} className="hover:shadow-lg transition-shadow border-green-200 dark:border-green-800">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="line-clamp-1">{enrollment.course.title}</CardTitle>
-                    <Badge variant="default" className="bg-green-500">
-                      <Award className="h-3 w-3 mr-1" />
-                      {t('studentDashboard.completed')}
-                    </Badge>
-                  </div>
-                  <div className="flex gap-2 mt-2">
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                      {enrollment.course.category}
-                    </span>
-                    <span className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded">
-                      {enrollment.course.level}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {stripHtml(enrollment.course.description)}
-                  </p>
-                  <div className="flex gap-2">
-                    <Link to={`/courses/${enrollment.course.id}/learn`} className="flex-1">
-                      <Button variant="outline" className="w-full">
-                        Review Course
-                      </Button>
-                    </Link>
-                    <Link to="/certificates">
-                      <Button>
-                        <Award className="h-4 w-4 mr-2" />
-                        Certificate
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Mentorship Requests Section */}
-      <div>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">{t('studentDashboard.myMentorshipRequests')}</h2>
-          <Link to="/mentors">
-            <Button variant="outline">
-              <UserCheck className="h-4 w-4 mr-2" />
-              {t('studentDashboard.findMentor')}
-            </Button>
-          </Link>
-        </div>
-
-        {mentorshipRequests.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center">
-              <UserCheck className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">{t('studentDashboard.noMentorshipRequests')}</h3>
-              <p className="text-muted-foreground mb-4">{t('studentDashboard.connectWithMentor')}</p>
-              <Link to="/mentors">
-                <Button>{t('studentDashboard.browseMentors')}</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid md:grid-cols-2 gap-4">
-            {mentorshipRequests.map((request) => (
-              <Card key={request.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <UserCheck className="h-5 w-5 text-primary" />
-                      </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {mentorshipRequests.slice(0, 3).map((request) => (
+                    <div key={request.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                       <div>
-                        <CardTitle className="text-base">
-                          {mentorProfiles[request.mentor_id]?.full_name || 'Mentor'}
-                        </CardTitle>
-                        <p className="text-xs text-muted-foreground">
-                          {t('studentDashboard.requested')} {new Date(request.created_at).toLocaleDateString()}
-                        </p>
+                        <p className="font-medium text-sm">{mentorProfiles[request.mentor_id]?.full_name || 'Mentor'}</p>
+                        <Badge variant={request.status === 'approved' ? 'default' : request.status === 'rejected' ? 'destructive' : 'secondary'} className="mt-1">
+                          {request.status}
+                        </Badge>
                       </div>
-                    </div>
-                    <Badge 
-                      variant={
-                        request.status === 'accepted' ? 'default' :
-                        request.status === 'course_required' ? 'secondary' : 'outline'
-                      }
-                    >
-                      {request.status === 'accepted' && <UserCheck className="h-3 w-3 mr-1" />}
-                      {request.status === 'course_required' && <BookOpenCheck className="h-3 w-3 mr-1" />}
-                      {request.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
-                      {request.status === 'accepted' ? t('studentDashboard.accepted') : 
-                       request.status === 'course_required' ? t('studentDashboard.courseRequired') : t('studentDashboard.pending')}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  {request.status === 'accepted' && (
-                    <div className="space-y-3">
-                      {request.mentor_response && (
-                        <p className="text-sm text-muted-foreground">{request.mentor_response}</p>
-                      )}
-                      <Link to={`/cohort/community?mentor=${request.mentor_id}`}>
-                        <Button size="sm" className="w-full">
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          {t('studentDashboard.joinCohort')}
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
-                  {request.status === 'course_required' && request.course_to_complete && (
-                    <div className="space-y-3">
-                      <p className="text-sm text-muted-foreground">
-                        {t('studentDashboard.completeCourseToJoin')}
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(request.created_at).toLocaleDateString()}
                       </p>
-                      <Link to={`/courses/${request.course_to_complete.id}`}>
-                        <Button size="sm" variant="outline" className="w-full">
-                          <BookOpen className="h-4 w-4 mr-2" />
-                          {request.course_to_complete.title}
-                        </Button>
-                      </Link>
                     </div>
+                  ))}
+                  {mentorshipRequests.length > 3 && (
+                    <Link to="/mentors">
+                      <Button variant="ghost" size="sm" className="w-full">
+                        View all {mentorshipRequests.length} requests
+                      </Button>
+                    </Link>
                   )}
-                  {request.status === 'pending' && (
-                    <p className="text-sm text-muted-foreground">
-                      {t('studentDashboard.waitingForResponse')}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+                </div>
+              )}
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
-      {/* Mentor Role Request - Only shown to students */}
-      <RequestMentorRole />
-
-      {/* My Startup Ideas Submissions */}
+      {/* My Startup Submissions - Compact */}
       <MySubmissions />
+
+      {/* Request Mentor Role */}
+      <RequestMentorRole />
     </div>
   );
 };
