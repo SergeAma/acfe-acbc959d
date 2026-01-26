@@ -34,7 +34,7 @@ export const ContentSubmissionCard = () => {
             </li>
             <li className="flex items-start gap-2">
               <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0 mt-0.5">2</span>
-              <span>Upload your video or audio content to Google Drive and share the links</span>
+              <span>Upload your video or audio content</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0 mt-0.5">3</span>
