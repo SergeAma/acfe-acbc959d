@@ -126,7 +126,7 @@ export const Navbar = () => {
                   )}
                   {(profile?.role === "mentor" || profile?.role === "admin") && (
                     <DropdownMenuItem asChild>
-                      <Link to="/admin/courses">{t('nav.manageCourses')}</Link>
+                      <Link to="/mentor/courses/new">{t('nav.manageCourses')}</Link>
                     </DropdownMenuItem>
                   )}
                   {profile?.role === "admin" && (
@@ -245,7 +245,7 @@ export const Navbar = () => {
                 )}
                 {(profile?.role === "mentor" || profile?.role === "admin") && (
                   <Link
-                    to="/admin/courses"
+                    to="/mentor/courses/new"
                     className="text-base font-semibold text-white hover:text-primary transition-colors py-3 px-4 rounded-lg hover:bg-white/10"
                     onClick={() => setMobileMenuOpen(false)}
                   >

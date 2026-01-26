@@ -7,19 +7,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, ArrowRight } from 'lucide-react';
 import { z } from 'zod';
-import { RichTextEditor } from '@/components/RichTextEditor';
+import { Textarea } from '@/components/ui/textarea';
 
+// Minimal schema for draft creation - only essential fields
 const courseSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters').max(200),
-  description: z.string().min(20, 'Description must be at least 20 characters').max(2000),
-  category: z.string().min(2).max(100),
+  description: z.string().min(20, 'Description must be at least 20 characters').max(500),
+  category: z.string().min(2, 'Please select a category'),
   level: z.enum(['beginner', 'intermediate', 'advanced']),
-  duration_weeks: z.number().min(1).max(52),
 });
 
 export const CreateCourse = () => {
@@ -29,13 +28,12 @@ export const CreateCourse = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
+  // Minimal form data - only what's needed to create a course shell
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     category: '',
     level: 'beginner' as 'beginner' | 'intermediate' | 'advanced',
-    duration_weeks: 4,
-    drip_enabled: false,
   });
 
   const validateForm = () => {
@@ -57,7 +55,7 @@ export const CreateCourse = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent, publish: boolean = false) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -71,12 +69,16 @@ export const CreateCourse = () => {
 
     setLoading(true);
 
+    // Always create as draft - publishing happens in full builder
     const { data, error } = await supabase
       .from('courses')
       .insert({
-        ...formData,
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        level: formData.level,
         mentor_id: profile?.id,
-        is_published: publish,
+        is_published: false, // Always draft
       })
       .select()
       .single();
@@ -87,21 +89,23 @@ export const CreateCourse = () => {
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Success!",
-        description: publish ? "Course created and published" : "Course saved as draft",
-      });
-      navigate(`/admin/courses/${data.id}/build`);
+      setLoading(false);
+      return;
     }
 
-    setLoading(false);
+    toast({
+      title: "Course created!",
+      description: "Now add sections and lessons to your course.",
+    });
+    
+    // Redirect to full course builder
+    navigate(`/mentor/courses/${data.id}/build`);
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto px-4 py-8 max-w-3xl">
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
         <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Dashboard
@@ -109,10 +113,13 @@ export const CreateCourse = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-3xl">Create New Course</CardTitle>
+            <CardTitle className="text-2xl">Create New Course</CardTitle>
+            <CardDescription>
+              Start with the basics. You'll add content, media, and configure settings in the full editor.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="title">Course Title *</Label>
                 <Input
@@ -126,16 +133,23 @@ export const CreateCourse = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description *</Label>
-                <RichTextEditor
-                  content={formData.description}
-                  onChange={(html) => setFormData({ ...formData, description: html })}
-                  placeholder="Describe what students will learn in this course..."
+                <Label htmlFor="description">Short Description *</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Briefly describe what students will learn..."
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="min-h-[100px] resize-none"
+                  maxLength={500}
+                  required
                 />
+                <p className="text-xs text-muted-foreground text-right">
+                  {formData.description.length}/500 characters
+                </p>
                 {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="category">Category *</Label>
                   <Select
@@ -165,10 +179,12 @@ export const CreateCourse = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="level">Level *</Label>
+                  <Label htmlFor="level">Difficulty Level *</Label>
                   <Select
                     value={formData.level}
-                    onValueChange={(value: any) => setFormData({ ...formData, level: value })}
+                    onValueChange={(value: 'beginner' | 'intermediate' | 'advanced') => 
+                      setFormData({ ...formData, level: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -182,49 +198,18 @@ export const CreateCourse = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="duration">Duration (weeks) *</Label>
-                <Input
-                  id="duration"
-                  type="number"
-                  min="1"
-                  max="52"
-                  value={formData.duration_weeks}
-                  onChange={(e) => setFormData({ ...formData, duration_weeks: parseInt(e.target.value) || 1 })}
-                  required
-                />
-                {errors.duration_weeks && <p className="text-sm text-destructive">{errors.duration_weeks}</p>}
-              </div>
-
-              <div className="flex items-center space-x-2 border rounded-lg p-4">
-                <Checkbox
-                  id="drip_enabled"
-                  checked={formData.drip_enabled}
-                  onCheckedChange={(checked) => setFormData({ ...formData, drip_enabled: checked as boolean })}
-                />
-                <div className="space-y-1">
-                  <Label htmlFor="drip_enabled" className="cursor-pointer">
-                    Enable Drip Content Release
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Release course content progressively based on enrollment date. You can set individual delays for each lesson.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <Button type="submit" variant="outline" disabled={loading}>
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                  Save as Draft
+              <div className="pt-4 border-t">
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <ArrowRight className="h-4 w-4 mr-2" />
+                  )}
+                  Save Draft & Continue Editing
                 </Button>
-                <Button
-                  type="button"
-                  onClick={(e) => handleSubmit(e, true)}
-                  disabled={loading}
-                >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                  Publish Course
-                </Button>
+                <p className="text-xs text-muted-foreground text-center mt-3">
+                  Your course will be saved as a draft. Add content and publish from the course editor.
+                </p>
               </div>
             </form>
           </CardContent>
