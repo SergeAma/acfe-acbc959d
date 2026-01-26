@@ -16,7 +16,7 @@ import { ThumbnailDropzone } from '@/components/admin/ThumbnailDropzone';
 import { CoursePrerequisites } from '@/components/admin/CoursePrerequisites';
 import { QuizBuilder } from '@/components/admin/QuizBuilder';
 import { AssignmentBuilder } from '@/components/admin/AssignmentBuilder';
-import { CourseDescriptionMedia } from '@/components/admin/CourseDescriptionMedia';
+
 import { AutosaveIndicator } from '@/components/admin/AutosaveIndicator';
 import { CourseBuilderProgress, type BuilderStep } from '@/components/admin/CourseBuilderProgress';
 import { useAutosave } from '@/hooks/useAutosave';
@@ -1213,21 +1213,6 @@ export const AdminCourseBuilder = () => {
             </div>
           )}
 
-          {/* Course Description Media (Video/Audio) */}
-          {course && (
-            <CourseDescriptionMedia
-              courseId={course.id}
-              videoUrl={course.description_video_url}
-              audioUrl={course.description_audio_url}
-              onUpdate={(videoUrl, audioUrl) => {
-                setCourse(prev => prev ? { 
-                  ...prev, 
-                  description_video_url: videoUrl,
-                  description_audio_url: audioUrl 
-                } : null);
-              }}
-            />
-          )}
 
           {/* Quick Analytics Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 mb-6">
