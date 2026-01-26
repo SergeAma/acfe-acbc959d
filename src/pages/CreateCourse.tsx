@@ -1,106 +1,24 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Loader2, ArrowRight } from 'lucide-react';
-import { z } from 'zod';
-import { Textarea } from '@/components/ui/textarea';
+import { ArrowLeft, ExternalLink, FileText, Shield, Info } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
-// Minimal schema for draft creation - only essential fields
-const courseSchema = z.object({
-  title: z.string().min(5, 'Title must be at least 5 characters').max(200),
-  description: z.string().min(20, 'Description must be at least 20 characters').max(500),
-  category: z.string().min(2, 'Please select a category'),
-  level: z.enum(['beginner', 'intermediate', 'advanced']),
-});
+const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSct5Mq4TJ84YDSROIC3MAv8V2iOj8jEhqFl8H9nl1Eron65bg/viewform';
 
 export const CreateCourse = () => {
   const navigate = useNavigate();
-  const { profile } = useAuth();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const { profile, isActualAdmin } = useAuth();
   
-  // Minimal form data - only what's needed to create a course shell
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: '',
-    level: 'beginner' as 'beginner' | 'intermediate' | 'advanced',
-  });
-
-  const validateForm = () => {
-    try {
-      courseSchema.parse(formData);
-      setErrors({});
-      return true;
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const newErrors: Record<string, string> = {};
-        error.errors.forEach((err) => {
-          if (err.path) {
-            newErrors[err.path[0]] = err.message;
-          }
-        });
-        setErrors(newErrors);
-      }
-      return false;
+  // If admin, redirect to admin course creation
+  useEffect(() => {
+    if (profile?.role === 'admin' || isActualAdmin) {
+      navigate('/admin/courses');
     }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      toast({
-        title: "Validation error",
-        description: "Please check your inputs",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-
-    // Always create as draft - publishing happens in full builder
-    const { data, error } = await supabase
-      .from('courses')
-      .insert({
-        title: formData.title,
-        description: formData.description,
-        category: formData.category,
-        level: formData.level,
-        mentor_id: profile?.id,
-        is_published: false, // Always draft
-      })
-      .select()
-      .single();
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-      setLoading(false);
-      return;
-    }
-
-    toast({
-      title: "Course created!",
-      description: "Now add sections and lessons to your course.",
-    });
-    
-    // Redirect to full course builder
-    navigate(`/mentor/courses/${data.id}/build`);
-  };
+  }, [profile, isActualAdmin, navigate]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -111,107 +29,92 @@ export const CreateCourse = () => {
           Back to Dashboard
         </Button>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Create New Course</CardTitle>
-            <CardDescription>
-              Start with the basics. You'll add content, media, and configure settings in the full editor.
+        <Card className="border-primary/30">
+          <CardHeader className="text-center">
+            <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-4">
+              <FileText className="h-8 w-8 text-primary" />
+            </div>
+            <CardTitle className="text-2xl">Submit Your Course Content</CardTitle>
+            <CardDescription className="text-base">
+              Share your expertise with learners across Africa
             </CardDescription>
           </CardHeader>
+          <CardContent className="space-y-6">
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                Course creation is handled by our admin team to ensure quality and consistency. 
+                Submit your content through our Google Form and we'll take care of the rest!
+              </AlertDescription>
+            </Alert>
+
+            <div className="bg-muted/50 rounded-lg p-5 space-y-4">
+              <h3 className="font-semibold">What to prepare:</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="text-primary">•</span>
+                  <span>Course title and description</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary">•</span>
+                  <span>YouTube video links for each lesson</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary">•</span>
+                  <span>Lesson titles and text content</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary">•</span>
+                  <span>Section/module structure</span>
+                </li>
+              </ul>
+            </div>
+
+            <Button 
+              className="w-full gap-2 h-12 text-base" 
+              size="lg"
+              onClick={() => window.open(GOOGLE_FORM_URL, '_blank')}
+            >
+              <FileText className="h-5 w-5" />
+              Open Content Submission Form
+              <ExternalLink className="h-4 w-4 ml-1" />
+            </Button>
+
+            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-2">
+              <Shield className="h-3 w-3" />
+              <span>Your content is reviewed before publishing</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-lg">How it works</CardTitle>
+          </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="title">Course Title *</Label>
-                <Input
-                  id="title"
-                  placeholder="e.g., Introduction to Web Development"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
-                />
-                {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Short Description *</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Briefly describe what students will learn..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="min-h-[100px] resize-none"
-                  maxLength={500}
-                  required
-                />
-                <p className="text-xs text-muted-foreground text-right">
-                  {formData.description.length}/500 characters
-                </p>
-                {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category *</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value: string) => setFormData({ ...formData, category: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-64">
-                      <SelectItem value="Career Learning">Career Learning</SelectItem>
-                      <SelectItem value="General Learning">General Learning</SelectItem>
-                      <SelectItem value="Tech Jobs">Tech Jobs</SelectItem>
-                      <SelectItem value="Software Development">Software Development</SelectItem>
-                      <SelectItem value="Data Science">Data Science</SelectItem>
-                      <SelectItem value="Design">Design</SelectItem>
-                      <SelectItem value="Marketing">Marketing</SelectItem>
-                      <SelectItem value="Business">Business</SelectItem>
-                      <SelectItem value="Finance">Finance</SelectItem>
-                      <SelectItem value="Leadership">Leadership</SelectItem>
-                      <SelectItem value="Communication">Communication</SelectItem>
-                      <SelectItem value="Entrepreneurship">Entrepreneurship</SelectItem>
-                      <SelectItem value="Personal Development">Personal Development</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.category && <p className="text-sm text-destructive">{errors.category}</p>}
+            <ol className="space-y-4">
+              <li className="flex items-start gap-3">
+                <span className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm shrink-0">1</span>
+                <div>
+                  <p className="font-medium">Submit your content</p>
+                  <p className="text-sm text-muted-foreground">Fill out the form with your course details and YouTube links</p>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="level">Difficulty Level *</Label>
-                  <Select
-                    value={formData.level}
-                    onValueChange={(value: 'beginner' | 'intermediate' | 'advanced') => 
-                      setFormData({ ...formData, level: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="beginner">Beginner</SelectItem>
-                      <SelectItem value="intermediate">Intermediate</SelectItem>
-                      <SelectItem value="advanced">Advanced</SelectItem>
-                    </SelectContent>
-                  </Select>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm shrink-0">2</span>
+                <div>
+                  <p className="font-medium">Admin review</p>
+                  <p className="text-sm text-muted-foreground">Our team reviews and structures your content</p>
                 </div>
-              </div>
-
-              <div className="pt-4 border-t">
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <ArrowRight className="h-4 w-4 mr-2" />
-                  )}
-                  Save Draft & Continue Editing
-                </Button>
-                <p className="text-xs text-muted-foreground text-center mt-3">
-                  Your course will be saved as a draft. Add content and publish from the course editor.
-                </p>
-              </div>
-            </form>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm shrink-0">3</span>
+                <div>
+                  <p className="font-medium">Course goes live</p>
+                  <p className="text-sm text-muted-foreground">Students can enroll and start learning from you!</p>
+                </div>
+              </li>
+            </ol>
           </CardContent>
         </Card>
       </div>

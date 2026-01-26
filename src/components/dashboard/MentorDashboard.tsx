@@ -16,11 +16,11 @@ import { SubmissionsReview } from '@/components/mentor/SubmissionsReview';
 import { InstitutionPartnersSection } from '@/components/dashboard/InstitutionPartnersSection';
 import { MentorAgreementCard } from '@/components/mentor/MentorAgreementCard';
 import { MentorMessagesTab } from '@/components/messaging/MentorMessagesTab';
+import { ContentSubmissionCard } from '@/components/mentor/ContentSubmissionCard';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { BookOpen, Users, PlusCircle, TrendingUp, UsersRound, Video, MessageCircle, ChevronDown, X, HelpCircle, Edit } from 'lucide-react';
+import { BookOpen, Users, TrendingUp, UsersRound, Video, MessageCircle, ChevronDown, X, HelpCircle, Eye } from 'lucide-react';
 import { stripHtml } from '@/lib/html-utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-
 interface Course {
   id: string;
   title: string;
@@ -132,37 +132,22 @@ export const MentorDashboard = () => {
         </Card>
       </div>
 
-      {/* My Courses - Priority 2 */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-primary" />
-            {t('mentorDashboard.myCourses')}
-          </h2>
-          <div className="flex gap-2">
+      {/* Content Submission - Priority 2 */}
+      <ContentSubmissionCard />
+
+      {/* My Published Courses (Read-Only View) */}
+      {courses.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
+              {t('mentorDashboard.myCourses')}
+            </h2>
             <Link to="/mentor/courses">
               <Button variant="outline" size="sm">{t('mentorDashboard.viewAllCourses')}</Button>
             </Link>
           </div>
-        </div>
 
-        {loading ? (
-          <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
-        ) : courses.length === 0 ? (
-          <Card className="border-dashed border-2">
-            <CardContent className="py-8 text-center">
-              <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-xl font-semibold mb-2">{t('mentorDashboard.noCoursesYet')}</h3>
-              <p className="text-muted-foreground mb-4">{t('mentorDashboard.createFirstCourse')}</p>
-              <Link to="/mentor/courses/new">
-                <Button size="lg">
-                  <PlusCircle className="h-5 w-5 mr-2" />
-                  {t('mentorDashboard.createCourse')}
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {courses.slice(0, 6).map((course) => (
               <Card key={course.id} className="hover:shadow-lg transition-shadow">
@@ -170,7 +155,7 @@ export const MentorDashboard = () => {
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="line-clamp-2 flex-1 text-base">{course.title}</CardTitle>
                     {course.is_published ? (
-                      <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 shrink-0">
+                      <Badge className="shrink-0">
                         {t('mentorDashboard.published')}
                       </Badge>
                     ) : (
@@ -191,27 +176,18 @@ export const MentorDashboard = () => {
                       {course.enrollments[0]?.count || 0} {t('courses.students')}
                     </div>
                   </div>
-                  <Link to={`/mentor/courses/${course.id}/build`}>
+                  <Link to={`/courses/${course.id}`}>
                     <Button variant="outline" size="sm" className="w-full">
-                      <Edit className="h-4 w-4 mr-2" />
-                      {t('mentorDashboard.buildCourse')}
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Course
                     </Button>
                   </Link>
                 </CardContent>
               </Card>
             ))}
-            {/* Create new course card */}
-            <Link to="/mentor/courses/new">
-              <Card className="h-full border-dashed border-2 hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer flex items-center justify-center min-h-[200px]">
-                <CardContent className="text-center py-8">
-                  <PlusCircle className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-                  <p className="font-medium">{t('mentorDashboard.createCourse')}</p>
-                </CardContent>
-              </Card>
-            </Link>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Student Submissions Review - Priority 3 */}
       <SubmissionsReview />
@@ -285,13 +261,6 @@ export const MentorDashboard = () => {
                   {pendingRequestCount}
                 </Badge>
               )}
-            </Button>
-          </Link>
-          <Link to="/mentor/courses/new">
-            <Button size="sm" className="h-9">
-              <PlusCircle className="h-4 w-4 mr-1.5" />
-              <span className="hidden sm:inline">{t('mentorDashboard.createCourse')}</span>
-              <span className="sm:hidden">Create</span>
             </Button>
           </Link>
         </div>

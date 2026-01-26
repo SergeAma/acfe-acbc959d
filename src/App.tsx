@@ -146,7 +146,8 @@ const App = () => (
               <Route path="/donation-success" element={<DonationSuccess />} />
               <Route path="/mentor/courses" element={<ProtectedRoute><MentorCourses /></ProtectedRoute>} />
               <Route path="/mentor/courses/new" element={<ProtectedRoute><CreateCourse /></ProtectedRoute>} />
-              <Route path="/mentor/courses/:courseId/build" element={<ProtectedRoute><AdminCourseBuilder /></ProtectedRoute>} />
+              {/* Course builder is admin-only - mentors submit via Google Form */}
+              <Route path="/mentor/courses/:courseId/build" element={<ProtectedRoute requiredRole="admin"><AdminCourseBuilder /></ProtectedRoute>} />
               <Route path="/mentor/cohort" element={<ProtectedRoute><MentorCohort /></ProtectedRoute>} />
               <Route path="/mentor/sessions" element={<ProtectedRoute><MentorSessions /></ProtectedRoute>} />
               <Route path="/mentor/cohort/community" element={<ProtectedRoute><CohortCommunity /></ProtectedRoute>} />
