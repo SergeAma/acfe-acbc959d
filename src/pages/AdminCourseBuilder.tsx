@@ -196,12 +196,33 @@ export const AdminCourseBuilder = () => {
     setCourse(prev => prev ? { ...prev, ...updates } : null);
   }, [courseId, course]);
 
-  const { status: autosaveStatus, lastSaved } = useAutosave({
+  const { status: autosaveStatus, lastSaved, saveNow } = useAutosave({
     data: autosaveData,
     onSave: handleAutosave,
     debounceMs: 2000,
     enabled: !!course && !editingTitle && !editingDescription,
   });
+
+  const [manualSaving, setManualSaving] = useState(false);
+  
+  const handleSaveDraft = async () => {
+    setManualSaving(true);
+    try {
+      await saveNow();
+      toast({
+        title: 'Saved',
+        description: 'Your changes have been saved.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save changes.',
+        variant: 'destructive',
+      });
+    } finally {
+      setManualSaving(false);
+    }
+  };
 
   // Builder progress steps
   const builderSteps: BuilderStep[] = useMemo(() => [
@@ -1035,7 +1056,15 @@ export const AdminCourseBuilder = () => {
             {/* Autosave Indicator */}
             <AutosaveIndicator status={autosaveStatus} lastSaved={lastSaved} />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button 
+              variant="outline" 
+              onClick={handleSaveDraft}
+              disabled={manualSaving || autosaveStatus === 'saving'}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {manualSaving ? 'Saving...' : 'Save Draft'}
+            </Button>
             <Button variant="outline" onClick={() => navigate(`/courses/${courseId}`)}>
               <Eye className="h-4 w-4 mr-2" />
               Preview Course
