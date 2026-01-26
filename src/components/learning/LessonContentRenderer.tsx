@@ -11,9 +11,9 @@ import {
   Clock,
   Maximize2,
   Minimize2,
+  Video,
 } from 'lucide-react';
-import { SecureVideoContent, SecureFileContent } from '@/components/learning/SecureContent';
-import { SecureAudioContent } from '@/components/learning/SecureAudioContent';
+import { YouTubeLessonPlayer } from '@/components/learning/YouTubeLessonPlayer';
 import { createSafeHtml } from '@/lib/sanitize-html';
 
 interface ContentItem {
@@ -22,10 +22,6 @@ interface ContentItem {
   content_type: string;
   text_content: string | null;
   video_url: string | null;
-  audio_url: string | null;
-  file_url: string | null;
-  file_name: string | null;
-  duration_minutes: number | null;
   sort_order: number;
   drip_delay_days: number | null;
   completed?: boolean;
@@ -53,7 +49,8 @@ interface LessonContentRendererProps {
   onNavigateNext: () => void;
   onNavigatePrevious: () => void;
   onVideoComplete: () => void;
-  onBookmark: (timestamp: number) => void;
+  isAuthenticated?: boolean;
+  hasActiveSubscription?: boolean;
 }
 
 // Calculate reading time based on word count (average 200 words per minute)
@@ -76,7 +73,8 @@ export const LessonContentRenderer = ({
   onNavigateNext,
   onNavigatePrevious,
   onVideoComplete,
-  onBookmark,
+  isAuthenticated = true,
+  hasActiveSubscription = true,
 }: LessonContentRendererProps) => {
   const allContent = sections.flatMap(s => s.content);
 
@@ -201,17 +199,22 @@ export const LessonContentRenderer = ({
         <div className="flex-1 min-w-0">
           <h2 className="text-3xl font-bold mb-2">{currentContent.title}</h2>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="capitalize">{currentContent.content_type}</span>
-            {currentContent.duration_minutes && (
-              <>
-                <span>•</span>
-                <span>{currentContent.duration_minutes} minutes</span>
-              </>
+            {currentContent.video_url && (
+              <span className="flex items-center gap-1">
+                <Video className="h-4 w-4" />
+                Video Lesson
+              </span>
+            )}
+            {!currentContent.video_url && currentContent.text_content && (
+              <span className="flex items-center gap-1">
+                <FileText className="h-4 w-4" />
+                Text Lesson
+              </span>
             )}
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          {(currentContent.content_type === 'video' || currentContent.content_type === 'audio') && (
+          {currentContent.video_url && (
             <Button
               variant="outline"
               size="sm"
@@ -239,41 +242,15 @@ export const LessonContentRenderer = ({
       {/* Lesson Description */}
       {renderDescription()}
 
-      {/* Video Content */}
-      {currentContent.content_type === 'video' && currentContent.video_url && enrollmentId && (
+      {/* YouTube Video Content */}
+      {currentContent.video_url && (
         <Card>
           <CardContent className="pt-6">
-            <SecureVideoContent
-              contentId={currentContent.id}
+            <YouTubeLessonPlayer
               videoUrl={currentContent.video_url}
-              enrollmentId={enrollmentId}
-              onBookmark={onBookmark}
+              isAuthenticated={isAuthenticated}
+              hasActiveSubscription={hasActiveSubscription}
               onVideoComplete={onVideoComplete}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Audio Content */}
-      {currentContent.content_type === 'audio' && currentContent.audio_url && (
-        <Card>
-          <CardContent className="pt-6">
-            <SecureAudioContent
-              audioUrl={currentContent.audio_url}
-              transcript={currentContent.text_content}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* File Content */}
-      {currentContent.content_type === 'file' && currentContent.file_url && (
-        <Card>
-          <CardContent className="pt-6">
-            <SecureFileContent
-              contentId={currentContent.id}
-              fileUrl={currentContent.file_url}
-              fileName={currentContent.file_name}
             />
           </CardContent>
         </Card>
