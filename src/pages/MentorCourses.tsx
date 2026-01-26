@@ -54,6 +54,13 @@ export const MentorCourses = () => {
     }
   }, [contractLoading, profile, isActualAdmin, hasSignedContract, navigate]);
 
+  // Redirect to create course page if mentor has no courses
+  useEffect(() => {
+    if (!loading && courses.length === 0 && user) {
+      navigate('/mentor/courses/new');
+    }
+  }, [loading, courses.length, user, navigate]);
+
   useEffect(() => {
     if (user) {
       fetchCourses();
