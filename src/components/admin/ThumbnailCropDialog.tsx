@@ -209,12 +209,15 @@ export const ThumbnailCropDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="crop-dialog-description">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Crop className="h-5 w-5" />
             Crop Thumbnail
           </DialogTitle>
+          <p id="crop-dialog-description" className="sr-only">
+            Crop and adjust your course thumbnail image. Use the controls to zoom, rotate, and position your image.
+          </p>
         </DialogHeader>
 
         <div className="grid md:grid-cols-[1fr,auto] gap-6">

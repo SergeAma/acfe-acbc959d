@@ -729,25 +729,51 @@ export const AdminCourseBuilder = () => {
   const handleThumbnailUpload = async (file: File) => {
     if (!file || !courseId) return;
 
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please upload a JPG, PNG, WEBP, or GIF image.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (5MB max for thumbnails)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast({
+        title: 'File too large',
+        description: 'Thumbnail must be under 5MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setUploadingThumbnail(true);
 
     try {
-      const fileName = `${courseId}-thumbnail.jpg`;
-      const filePath = `thumbnails/${fileName}`;
+      // Preserve original extension or default to jpg
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `${courseId}-thumbnail-${Date.now()}.${ext}`;
+      // Use courseId as folder to satisfy RLS policy requiring folder structure
+      const filePath = `${courseId}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('course-files')
+        .from('course-thumbnails')
         .upload(filePath, file, { 
           upsert: true,
-          contentType: 'image/jpeg'
+          contentType: file.type,
         });
 
       if (uploadError) {
+        console.error('Storage upload error:', uploadError);
         throw uploadError;
       }
 
       const { data: { publicUrl } } = supabase.storage
-        .from('course-files')
+        .from('course-thumbnails')
         .getPublicUrl(filePath);
 
       // Add cache-busting query param to force refresh
@@ -767,11 +793,14 @@ export const AdminCourseBuilder = () => {
         title: 'Success',
         description: 'Thumbnail uploaded',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Thumbnail upload error:', error);
+      const errorMessage = error?.message || 'Failed to upload thumbnail';
       toast({
-        title: 'Error',
-        description: 'Failed to upload thumbnail. Please try a different image.',
+        title: 'Upload failed',
+        description: errorMessage.includes('row-level security') 
+          ? 'Permission denied. Please ensure you have mentor access.'
+          : `${errorMessage}. Please try a different image.`,
         variant: 'destructive',
       });
     } finally {

@@ -58,8 +58,8 @@ export const MAX_FILE_SIZES = {
 
 // Accepted MIME types
 export const ACCEPTED_TYPES = {
-  VIDEO: ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo'],
-  AUDIO: ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/aac', 'audio/x-m4a'],
+  VIDEO: ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/x-m4v'],
+  AUDIO: ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/aac', 'audio/x-m4a', 'audio/m4a'],
   IMAGE: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
   FILE: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
 } as const;
