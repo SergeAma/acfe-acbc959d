@@ -16,8 +16,10 @@ import { SubmissionsReview } from '@/components/mentor/SubmissionsReview';
 import { InstitutionPartnersSection } from '@/components/dashboard/InstitutionPartnersSection';
 import { MentorAgreementCard } from '@/components/mentor/MentorAgreementCard';
 import { MentorMessagesTab } from '@/components/messaging/MentorMessagesTab';
-import { BookOpen, Users, PlusCircle, TrendingUp, UsersRound, Video, MessageCircle } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { BookOpen, Users, PlusCircle, TrendingUp, UsersRound, Video, MessageCircle, ChevronDown, X, HelpCircle, Edit } from 'lucide-react';
 import { stripHtml } from '@/lib/html-utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Course {
   id: string;
@@ -34,10 +36,13 @@ export const MentorDashboard = () => {
   const { t } = useLanguage();
   const { contractData } = useMentorContract(user?.id);
   const { totalUnread } = usePrivateMessages();
+  const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
   const [courses, setCourses] = useState<Course[]>([]);
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [onboardingMinimized, setOnboardingMinimized] = useState(false);
+  const [videoResourcesOpen, setVideoResourcesOpen] = useState(false);
   
   const activeTab = searchParams.get('tab') || 'overview';
 
@@ -81,106 +86,95 @@ export const MentorDashboard = () => {
     return acc + (course.enrollments[0]?.count || 0);
   }, 0);
 
+  const publishedCourses = courses.filter(c => c.is_published);
+  const draftCourses = courses.filter(c => !c.is_published);
+
   // Overview content as a separate component for tabs
   const OverviewContent = () => (
-    <>
-      {/* Stats Cards */}
-      <div className="grid md:grid-cols-3 gap-6">
+    <div className="space-y-6">
+      {/* Stats Cards - Priority 1 */}
+      <div className="grid grid-cols-3 gap-3 sm:gap-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">{t('mentorDashboard.totalCourses')}</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">{t('mentorDashboard.totalCourses')}</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground hidden sm:block" />
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{courses.length}</div>
+          <CardContent className="px-3 sm:px-6">
+            <div className="text-2xl sm:text-3xl font-bold">{courses.length}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {courses.filter(c => c.is_published).length} {t('mentorDashboard.published')}
+              {publishedCourses.length} {t('mentorDashboard.published')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">{t('mentorDashboard.totalStudents')}</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">{t('mentorDashboard.totalStudents')}</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground hidden sm:block" />
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{totalStudents}</div>
+          <CardContent className="px-3 sm:px-6">
+            <div className="text-2xl sm:text-3xl font-bold">{totalStudents}</div>
             <p className="text-xs text-muted-foreground mt-1">{t('studentDashboard.acrossAllCourses')}</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">{t('mentorDashboard.engagement')}</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">{t('mentorDashboard.engagement')}</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground hidden sm:block" />
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
+          <CardContent className="px-3 sm:px-6">
+            <div className="text-2xl sm:text-3xl font-bold">
               {courses.length > 0 ? Math.round(totalStudents / courses.length) : 0}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">{t('mentorDashboard.avgStudentsPerCourse')}</p>
+            <p className="text-xs text-muted-foreground mt-1 hidden sm:block">{t('mentorDashboard.avgStudentsPerCourse')}</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Institution Partners Section */}
-      <InstitutionPartnersSection />
-
-      {/* Student Submissions Review */}
-      <SubmissionsReview />
-
-      {/* My Startup Ideas Submissions */}
-      <MySubmissions />
-
-      {/* Mentor Agreement Section */}
-      {contractData && (
-        <div className="max-w-md">
-          <MentorAgreementCard
-            signatureName={contractData.signature_name}
-            signatureDate={contractData.signature_date}
-          />
-        </div>
-      )}
-
-      {/* My Courses */}
+      {/* My Courses - Priority 2 */}
       <div>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">{t('mentorDashboard.myCourses')}</h2>
-          <Link to="/mentor/courses">
-            <Button variant="outline">{t('mentorDashboard.viewAllCourses')}</Button>
-          </Link>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+            <BookOpen className="h-5 w-5 text-primary" />
+            {t('mentorDashboard.myCourses')}
+          </h2>
+          <div className="flex gap-2">
+            <Link to="/mentor/courses">
+              <Button variant="outline" size="sm">{t('mentorDashboard.viewAllCourses')}</Button>
+            </Link>
+          </div>
         </div>
 
         {loading ? (
           <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
         ) : courses.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
+          <Card className="border-dashed border-2">
+            <CardContent className="py-8 text-center">
               <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-xl font-semibold mb-2">{t('mentorDashboard.noCoursesYet')}</h3>
               <p className="text-muted-foreground mb-4">{t('mentorDashboard.createFirstCourse')}</p>
               <Link to="/mentor/courses/new">
-                <Button>
-                  <PlusCircle className="h-4 w-4 mr-2" />
+                <Button size="lg">
+                  <PlusCircle className="h-5 w-5 mr-2" />
                   {t('mentorDashboard.createCourse')}
                 </Button>
               </Link>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.map((course) => (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {courses.slice(0, 6).map((course) => (
               <Card key={course.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="line-clamp-2 flex-1">{course.title}</CardTitle>
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="line-clamp-2 flex-1 text-base">{course.title}</CardTitle>
                     {course.is_published ? (
-                      <Badge variant="secondary" className="bg-secondary/20 text-secondary-foreground ml-2">
+                      <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 shrink-0">
                         {t('mentorDashboard.published')}
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="bg-accent/20 text-accent-foreground ml-2">
+                      <Badge variant="outline" className="shrink-0">
                         {t('mentorDashboard.draft')}
                       </Badge>
                     )}
@@ -188,53 +182,101 @@ export const MentorDashboard = () => {
                   <span className="text-xs text-primary">{course.category}</span>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                     {stripHtml(course.description)}
                   </p>
-                  <div className="flex items-center justify-between text-sm mb-4">
+                  <div className="flex items-center justify-between text-sm mb-3">
                     <div className="flex items-center text-muted-foreground">
                       <Users className="h-4 w-4 mr-1" />
                       {course.enrollments[0]?.count || 0} {t('courses.students')}
                     </div>
                   </div>
                   <Link to={`/mentor/courses/${course.id}/build`}>
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" size="sm" className="w-full">
+                      <Edit className="h-4 w-4 mr-2" />
                       {t('mentorDashboard.buildCourse')}
                     </Button>
                   </Link>
                 </CardContent>
               </Card>
             ))}
+            {/* Create new course card */}
+            <Link to="/mentor/courses/new">
+              <Card className="h-full border-dashed border-2 hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer flex items-center justify-center min-h-[200px]">
+                <CardContent className="text-center py-8">
+                  <PlusCircle className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+                  <p className="font-medium">{t('mentorDashboard.createCourse')}</p>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
         )}
       </div>
-    </>
+
+      {/* Student Submissions Review - Priority 3 */}
+      <SubmissionsReview />
+
+      {/* Institution Partners Section */}
+      <InstitutionPartnersSection />
+
+      {/* Video Resources - Collapsible */}
+      <Collapsible open={isMobile ? videoResourcesOpen : true} onOpenChange={setVideoResourcesOpen}>
+        <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+          <CardHeader className="pb-3">
+            <CollapsibleTrigger asChild disabled={!isMobile}>
+              <div className={`flex items-center justify-between ${isMobile ? 'cursor-pointer' : ''}`}>
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Video className="h-5 w-5 text-primary" />
+                  {t('mentorDashboard.videoResources') || 'Mentor Video Resources'}
+                </CardTitle>
+                {isMobile && (
+                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${videoResourcesOpen ? 'rotate-180' : ''}`} />
+                )}
+              </div>
+            </CollapsibleTrigger>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              <MentorVideoResources />
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Mentor Agreement Section - Compact */}
+      {contractData && (
+        <MentorAgreementCard
+          signatureName={contractData.signature_name}
+          signatureDate={contractData.signature_date}
+        />
+      )}
+
+      {/* My Startup Ideas Submissions - Lower priority */}
+      <MySubmissions />
+    </div>
   );
 
   return (
-    <div className="space-y-8">
-      {/* Mentor Video Resources - always visible */}
-      <MentorVideoResources />
-      
-      {/* Onboarding Checklist */}
-      <MentorOnboardingChecklist />
-
+    <div className="space-y-6">
+      {/* Header with Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-4xl font-bold mb-1 sm:mb-2">{t('mentorDashboard.title')}</h1>
+          <h1 className="text-2xl sm:text-4xl font-bold mb-1">{t('mentorDashboard.title')}</h1>
           <p className="text-muted-foreground text-sm sm:text-lg">{t('mentorDashboard.subtitle')}</p>
         </div>
-        <div className="flex flex-wrap gap-2 sm:gap-3">
+        <div className="flex flex-wrap gap-2">
           <Link to="/mentor/sessions">
-            <Button size="sm" variant="outline" className="h-9 sm:h-11 text-xs sm:text-sm">
-              <Video className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
-              {t('mentorDashboard.sessions')}
+            <Button size="sm" variant="outline" className="h-9">
+              <Video className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">{t('mentorDashboard.sessions')}</span>
+              <span className="sm:hidden">Sessions</span>
             </Button>
           </Link>
           <Link to="/mentor/cohort">
-            <Button size="sm" variant="outline" className="relative h-9 sm:h-11 text-xs sm:text-sm">
-              <UsersRound className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
-              {t('mentorDashboard.myCohort')}
+            <Button size="sm" variant="outline" className="relative h-9">
+              <UsersRound className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">{t('mentorDashboard.myCohort')}</span>
+              <span className="sm:hidden">Cohort</span>
               {pendingRequestCount > 0 && (
                 <Badge 
                   variant="destructive" 
@@ -246,17 +288,43 @@ export const MentorDashboard = () => {
             </Button>
           </Link>
           <Link to="/mentor/courses/new">
-            <Button size="sm" className="h-9 sm:h-11 text-xs sm:text-sm">
-              <PlusCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
-              {t('mentorDashboard.createCourse')}
+            <Button size="sm" className="h-9">
+              <PlusCircle className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">{t('mentorDashboard.createCourse')}</span>
+              <span className="sm:hidden">Create</span>
             </Button>
           </Link>
         </div>
       </div>
 
+      {/* Floating Onboarding Checklist - Minimizable */}
+      {!onboardingMinimized ? (
+        <div className="relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-2 right-2 z-10 h-6 w-6"
+            onClick={() => setOnboardingMinimized(true)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+          <MentorOnboardingChecklist />
+        </div>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setOnboardingMinimized(false)}
+          className="flex items-center gap-2"
+        >
+          <HelpCircle className="h-4 w-4" />
+          Show onboarding checklist
+        </Button>
+      )}
+
       {/* Tabbed Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-xs grid-cols-2">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="messages" className="relative">
             <MessageCircle className="h-4 w-4 mr-2" />
@@ -272,7 +340,7 @@ export const MentorDashboard = () => {
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="overview" className="mt-6 space-y-8">
+        <TabsContent value="overview" className="mt-6">
           <OverviewContent />
         </TabsContent>
         

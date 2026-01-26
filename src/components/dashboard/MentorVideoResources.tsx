@@ -1,10 +1,7 @@
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Play, Video, ChevronRight, ChevronDown } from 'lucide-react';
+import { Play, ChevronRight } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useIsMobile } from '@/hooks/use-mobile';
 import mentorWalkthroughThumbnail from '@/assets/mentor-walkthrough-thumbnail.png';
 import buildingCourseThumbnail from '@/assets/building-course-thumbnail.png';
 import gettingStartedMentorThumbnail from '@/assets/getting-started-mentor-thumbnail.png';
@@ -54,81 +51,55 @@ export const MentorVideoResources = () => {
   const { t } = useLanguage();
   const isFrench = t('sign_in') === 'Se Connecter';
   const [selectedVideo, setSelectedVideo] = useState<VideoResource | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
-  const isMobile = useIsMobile();
-
-  // On mobile, collapse by default. On desktop, always show.
-  const shouldCollapse = isMobile;
 
   return (
     <>
-      <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-        <Collapsible open={shouldCollapse ? isOpen : true} onOpenChange={setIsOpen}>
-          <CardHeader className="pb-3">
-            <CollapsibleTrigger asChild disabled={!shouldCollapse}>
-              <div className={`flex items-center justify-between ${shouldCollapse ? 'cursor-pointer' : ''}`}>
-                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                  <Video className="h-5 w-5 text-primary" />
-                  {isFrench ? 'Ressources Vidéo pour Mentors' : 'Mentor Video Resources'}
-                </CardTitle>
-                {shouldCollapse && (
-                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {VIDEO_RESOURCES.map((video) => (
+          <button
+            key={video.id}
+            onClick={() => setSelectedVideo(video)}
+            className="group relative flex flex-col bg-card border border-border rounded-lg overflow-hidden hover:border-primary/50 hover:shadow-md transition-all text-left"
+          >
+            {/* Thumbnail / Placeholder */}
+            <div className="relative aspect-video bg-muted flex items-center justify-center">
+              {video.thumbnail ? (
+                <img 
+                  src={video.thumbnail} 
+                  alt={isFrench ? video.titleFr : video.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5" />
+              )}
+              {/* Play button overlay - always visible */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/90 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                  <Play className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground ml-0.5" fill="currentColor" />
+                </div>
               </div>
-            </CollapsibleTrigger>
-          </CardHeader>
-          <CollapsibleContent>
-            <CardContent className="pt-0">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {VIDEO_RESOURCES.map((video) => (
-                  <button
-                    key={video.id}
-                    onClick={() => setSelectedVideo(video)}
-                    className="group relative flex flex-col bg-card border border-border rounded-lg overflow-hidden hover:border-primary/50 hover:shadow-md transition-all text-left"
-                  >
-                    {/* Thumbnail / Placeholder */}
-                    <div className="relative aspect-video bg-muted flex items-center justify-center">
-                      {video.thumbnail ? (
-                        <img 
-                          src={video.thumbnail} 
-                          alt={isFrench ? video.titleFr : video.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5" />
-                      )}
-                      {/* Play button overlay - always visible */}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/90 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-                          <Play className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground ml-0.5" fill="currentColor" />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Text Content */}
-                    <div className="p-2.5 sm:p-3 flex-1">
-                      <h4 className="font-medium text-xs sm:text-sm line-clamp-1 group-hover:text-primary transition-colors">
-                        {isFrench ? video.titleFr : video.title}
-                      </h4>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2 hidden sm:block">
-                        {isFrench ? video.descriptionFr : video.description}
-                      </p>
-                    </div>
-                    
-                    {/* Watch indicator */}
-                    <div className="px-2.5 pb-2.5 sm:px-3 sm:pb-3">
-                      <span className="inline-flex items-center text-xs text-primary font-medium">
-                        {isFrench ? 'Regarder' : 'Watch'}
-                        <ChevronRight className="h-3 w-3 ml-0.5" />
-                      </span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </CardContent>
-          </CollapsibleContent>
-        </Collapsible>
-      </Card>
+            </div>
+            
+            {/* Text Content */}
+            <div className="p-2.5 sm:p-3 flex-1">
+              <h4 className="font-medium text-xs sm:text-sm line-clamp-1 group-hover:text-primary transition-colors">
+                {isFrench ? video.titleFr : video.title}
+              </h4>
+              <p className="text-xs text-muted-foreground mt-1 line-clamp-2 hidden sm:block">
+                {isFrench ? video.descriptionFr : video.description}
+              </p>
+            </div>
+            
+            {/* Watch indicator */}
+            <div className="px-2.5 pb-2.5 sm:px-3 sm:pb-3">
+              <span className="inline-flex items-center text-xs text-primary font-medium">
+                {isFrench ? 'Regarder' : 'Watch'}
+                <ChevronRight className="h-3 w-3 ml-0.5" />
+              </span>
+            </div>
+          </button>
+        ))}
+      </div>
 
       {/* Video Dialog */}
       <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
