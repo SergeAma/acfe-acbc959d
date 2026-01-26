@@ -150,7 +150,7 @@ export const ThumbnailDropzone = ({
                 or click to browse
               </p>
               <p className="text-xs text-muted-foreground">
-                Supports JPG, PNG, WEBP, HEIC • Max 10MB
+                Supports PNG, JPG, WEBP, GIF • Max 5MB
               </p>
             </div>
           )}
