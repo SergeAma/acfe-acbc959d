@@ -2,12 +2,9 @@ import { ExternalLink, FileText, Upload, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-
 const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSct5Mq4TJ84YDSROIC3MAv8V2iOj8jEhqFl8H9nl1Eron65bg/viewform';
-
 export const ContentSubmissionCard = () => {
-  return (
-    <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
+  return <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
       <CardHeader>
         <div className="flex items-start justify-between">
           <div>
@@ -49,27 +46,13 @@ export const ContentSubmissionCard = () => {
           </p>
         </div>
 
-        <Button 
-          className="w-full gap-2 h-12 text-base" 
-          size="lg"
-          onClick={() => window.open(GOOGLE_FORM_URL, '_blank')}
-        >
+        <Button className="w-full gap-2 h-12 text-base" size="lg" onClick={() => window.open(GOOGLE_FORM_URL, '_blank')}>
           <FileText className="h-5 w-5" />
           Open Content Submission Form
           <ExternalLink className="h-4 w-4 ml-1" />
         </Button>
 
-        <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground pt-2">
-          <div className="flex items-center gap-1">
-            <CheckCircle className="h-3 w-3 text-green-500" />
-            <span>Free to submit</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <CheckCircle className="h-3 w-3 text-green-500" />
-            <span>YouTube links supported</span>
-          </div>
-        </div>
+        
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
