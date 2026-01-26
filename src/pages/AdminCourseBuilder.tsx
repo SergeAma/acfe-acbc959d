@@ -11,7 +11,7 @@ import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye, Award, Info, Doll
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { SectionEditor } from '@/components/admin/SectionEditor';
+import { SimplifiedSectionEditor } from '@/components/admin/SimplifiedSectionEditor';
 import { ThumbnailDropzone } from '@/components/admin/ThumbnailDropzone';
 import { CoursePrerequisites } from '@/components/admin/CoursePrerequisites';
 import { QuizBuilder } from '@/components/admin/QuizBuilder';
@@ -1779,73 +1779,86 @@ export const AdminCourseBuilder = () => {
 
         </div>
 
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold">Course Content</h2>
-          <Dialog open={newSectionOpen} onOpenChange={setNewSectionOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Section
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create New Section</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="section-title">Section Title *</Label>
-                  <Input
-                    id="section-title"
-                    value={newSectionData.title}
-                    onChange={(e) => setNewSectionData({ ...newSectionData, title: e.target.value })}
-                    placeholder="e.g., Introduction to JavaScript"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="section-description">Description (optional)</Label>
-                  <Textarea
-                    id="section-description"
-                    value={newSectionData.description}
-                    onChange={(e) => setNewSectionData({ ...newSectionData, description: e.target.value })}
-                    placeholder="Brief description of this section"
-                    rows={3}
-                  />
-                </div>
-                <Button onClick={handleCreateSection} className="w-full" disabled={!newSectionData.title}>
-                  Create Section
+        {/* Course Content Section - Simplified */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+            <div>
+              <h2 className="text-2xl font-semibold">Course Content</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Add sections, then add lessons to each section
+              </p>
+            </div>
+            <Dialog open={newSectionOpen} onOpenChange={setNewSectionOpen}>
+              <DialogTrigger asChild>
+                <Button size="lg" className="w-full sm:w-auto h-12 text-base">
+                  <Plus className="h-5 w-5 mr-2" />
+                  Add Section
                 </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New Section</DialogTitle>
+                  <DialogDescription>
+                    A section groups related lessons together (e.g., "Week 1: Introduction")
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="section-title">Section Title</Label>
+                    <Input
+                      id="section-title"
+                      value={newSectionData.title}
+                      onChange={(e) => setNewSectionData({ ...newSectionData, title: e.target.value })}
+                      placeholder="e.g., Week 1: Getting Started"
+                      className="h-12"
+                      autoFocus
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleCreateSection} 
+                    className="w-full h-12" 
+                    disabled={!newSectionData.title.trim()}
+                  >
+                    Create Section
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
 
-        {sections.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <h3 className="text-lg font-semibold mb-2">No sections yet</h3>
-              <p className="text-muted-foreground mb-4">Create your first section to start building the course</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={sections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-              <div className="space-y-4">
-                {sections.map((section) => (
-                  <SectionEditor
-                    key={section.id}
-                    section={section}
-                    onDelete={() => handleDeleteSection(section.id)}
-                    onUpdate={handleSectionUpdate}
-                    onDuplicate={() => handleDuplicateSection(section.id)}
-                    allSections={sections}
-                    onMoveContent={handleMoveContent}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
-        )}
+          {sections.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="py-16 text-center">
+                <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <Plus className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">No sections yet</h3>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  Start building your course by adding a section. Each section can contain multiple lessons.
+                </p>
+                <Button onClick={() => setNewSectionOpen(true)} size="lg">
+                  <Plus className="h-5 w-5 mr-2" />
+                  Add Your First Section
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={sections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-4">
+                  {sections.map((section) => (
+                    <SimplifiedSectionEditor
+                      key={section.id}
+                      section={section}
+                      onDelete={() => handleDeleteSection(section.id)}
+                      onUpdate={handleSectionUpdate}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
+        </div>
 
         {/* Quiz & Assignment Section - shown after course content is built */}
         <div className="mt-8 space-y-6">
