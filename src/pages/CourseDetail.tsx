@@ -226,29 +226,7 @@ export const CourseDetail = () => {
               />
             </div>
 
-            <Card>
-              <CardContent className="pt-6">
-                <h2 className="text-2xl font-bold mb-4">What you'll learn</h2>
-                <ul className="space-y-3">
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-primary mr-3 mt-0.5 flex-shrink-0" />
-                    <span>Comprehensive understanding of core concepts and practical applications</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-primary mr-3 mt-0.5 flex-shrink-0" />
-                    <span>Hands-on projects to build your portfolio and gain real experience</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-primary mr-3 mt-0.5 flex-shrink-0" />
-                    <span>Direct mentorship and guidance from experienced professionals</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-primary mr-3 mt-0.5 flex-shrink-0" />
-                    <span>Industry-relevant skills that will boost your career prospects</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
+            {/* What you'll learn section - to be added by mentor in course builder */}
           </div>
 
           <div className="space-y-6">
