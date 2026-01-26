@@ -11,7 +11,7 @@ import { ArrowLeft, Plus, Pencil, Save, X, Upload, Image, Eye, Award, Info, Doll
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { SimplifiedSectionEditor } from '@/components/admin/SimplifiedSectionEditor';
+import { AdminSectionEditor } from '@/components/admin/AdminSectionEditor';
 import { ThumbnailDropzone } from '@/components/admin/ThumbnailDropzone';
 import { CoursePrerequisites } from '@/components/admin/CoursePrerequisites';
 import { QuizBuilder } from '@/components/admin/QuizBuilder';
@@ -1847,11 +1847,11 @@ export const AdminCourseBuilder = () => {
               <SortableContext items={sections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
                 <div className="space-y-4">
                   {sections.map((section) => (
-                    <SimplifiedSectionEditor
+                    <AdminSectionEditor
                       key={section.id}
                       section={section}
                       onDelete={() => handleDeleteSection(section.id)}
-                      onUpdate={handleSectionUpdate}
+                      onUpdate={fetchCourseData}
                     />
                   ))}
                 </div>
