@@ -53,22 +53,14 @@ export const CourseDetail = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      // Fetch course
+      // Fetch course basic data first
       const { data: courseData, error } = await supabase
         .from('courses')
-        .select(`
-          *,
-          mentor:profiles!courses_mentor_id_fkey (
-            full_name,
-            bio,
-            avatar_url,
-            profile_frame
-          )
-        `)
+        .select('*')
         .eq('id', id)
         .single();
 
-      if (error) {
+      if (error || !courseData) {
         toast({
           title: "Error",
           description: "Course not found",
@@ -78,7 +70,22 @@ export const CourseDetail = () => {
         return;
       }
 
-      setCourse(courseData as any);
+      // Fetch mentor data using secure RPC function to bypass RLS restrictions
+      let mentorData = null;
+      if (courseData.mentor_id) {
+        const { data: mentor, error: mentorError } = await supabase
+          .rpc('get_public_mentor_profile', { mentor_id: courseData.mentor_id });
+        
+        if (!mentorError && mentor) {
+          mentorData = mentor;
+        }
+      }
+
+      // Combine course with mentor data
+      setCourse({
+        ...courseData,
+        mentor: mentorData
+      } as any);
 
       // Fetch pricing override settings
       const { data: settingsData } = await supabase
@@ -145,7 +152,8 @@ export const CourseDetail = () => {
           title: "Subscription Required",
           description: data.message || "Please subscribe to access paid courses",
         });
-        navigate(data.redirectUrl || '/pricing');
+        // Always use local route /pricing - edge function may return full URL
+        navigate('/pricing');
       } else if (data.url) {
         // Redirect to Stripe checkout
         window.open(data.url, '_blank');
