@@ -85,13 +85,13 @@ export const YouTubeLessonPlayer = ({
 
     // Create new iframe element manually (outside React's control)
     const iframe = document.createElement('iframe');
-    // Note: Removed enablejsapi=1 to prevent YouTube API from modifying DOM
-    iframe.src = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&controls=1&fs=0&disablekb=1`;
+    // Hardened params: autoplay=1&mute=1 for auto-start since clicks are blocked, fs=0 disables fullscreen, disablekb=1 disables keyboard
+    iframe.src = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&controls=1&fs=0&disablekb=1&autoplay=1&mute=1`;
     iframe.setAttribute('frameborder', '0');
-    iframe.setAttribute('allow', 'encrypted-media');
+    iframe.setAttribute('allow', 'encrypted-media; autoplay');
     iframe.setAttribute('allowfullscreen', 'false');
     iframe.setAttribute('title', 'ACFE Lesson Video');
-    iframe.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;';
+    iframe.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; z-index: 1;';
 
     try {
       if (containerRef.current && isMountedRef.current) {
@@ -173,7 +173,9 @@ export const YouTubeLessonPlayer = ({
 
   return (
     <div className="acfe-video-wrapper" key={playerKey}>
-      {/* Watermark overlay - positioned above iframe, does not intercept clicks */}
+      {/* Transparent click-blocking overlay - sits on top of iframe to block all clicks */}
+      <div className="acfe-click-blocker" aria-hidden="true" />
+      {/* Watermark overlay - positioned above click blocker */}
       <div className="acfe-watermark">
         ACFE • Member Access Only • {maskedEmail}
       </div>
@@ -181,7 +183,7 @@ export const YouTubeLessonPlayer = ({
       <div 
         ref={containerRef}
         className="absolute inset-0 w-full h-full"
-        style={{ pointerEvents: 'auto' }}
+        style={{ pointerEvents: 'none', zIndex: 1 }}
       />
     </div>
   );
