@@ -50,6 +50,7 @@ export const SecureVideoContent = ({
   if (isExternal || embedInfo.isExternal) {
     return (
       <ExternalVideoPlayer
+        key={contentId} // Force clean remount on content change
         videoUrl={signedUrl}
         contentId={contentId}
         enrollmentId={enrollmentId}

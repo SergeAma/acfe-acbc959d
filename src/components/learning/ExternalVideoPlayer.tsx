@@ -146,10 +146,14 @@ export const ExternalVideoPlayer = ({
         return;
       }
 
-      // Create a div for the player
+      // Create a div for the player - safely clear existing content
       const playerDiv = document.createElement('div');
       playerDiv.id = `yt-player-${contentId || Date.now()}`;
-      containerRef.current.innerHTML = '';
+      
+      // Safely remove existing children to avoid React DOM conflicts
+      while (containerRef.current.firstChild) {
+        containerRef.current.removeChild(containerRef.current.firstChild);
+      }
       containerRef.current.appendChild(playerDiv);
 
       ytPlayer = new (window as any).YT.Player(playerDiv.id, {
@@ -222,7 +226,11 @@ export const ExternalVideoPlayer = ({
         clearInterval(progressSaveInterval.current);
       }
       if (ytPlayer && typeof ytPlayer.destroy === 'function') {
-        ytPlayer.destroy();
+        try {
+          ytPlayer.destroy();
+        } catch (e) {
+          // Ignore destroy errors during unmount
+        }
       }
     };
   }, [embedInfo.provider, embedInfo.embedUrl, savedProgress, saveProgress, onTimeUpdate, contentId]);
@@ -237,14 +245,17 @@ export const ExternalVideoPlayer = ({
     const initVimeo = async () => {
       if (!containerRef.current) return;
 
-      // Create iframe for Vimeo
+      // Create iframe for Vimeo - safely clear existing content
       const iframe = document.createElement('iframe');
       iframe.src = embedInfo.embedUrl!;
       iframe.className = 'absolute inset-0 w-full h-full';
       iframe.allow = 'autoplay; fullscreen; picture-in-picture';
       iframe.allowFullscreen = true;
       
-      containerRef.current.innerHTML = '';
+      // Safely remove existing children to avoid React DOM conflicts
+      while (containerRef.current.firstChild) {
+        containerRef.current.removeChild(containerRef.current.firstChild);
+      }
       containerRef.current.appendChild(iframe);
 
       try {
@@ -323,7 +334,11 @@ export const ExternalVideoPlayer = ({
         clearInterval(progressSaveInterval.current);
       }
       if (vimeoPlayer) {
-        vimeoPlayer.destroy();
+        try {
+          vimeoPlayer.destroy();
+        } catch (e) {
+          // Ignore destroy errors during unmount
+        }
       }
     };
   }, [embedInfo.provider, embedInfo.embedUrl, savedProgress, hasRestoredPosition, saveProgress, onTimeUpdate, onVideoComplete]);
@@ -340,7 +355,10 @@ export const ExternalVideoPlayer = ({
     iframe.allowFullscreen = true;
     iframe.title = 'Video player';
     
-    containerRef.current.innerHTML = '';
+    // Safely remove existing children to avoid React DOM conflicts
+    while (containerRef.current.firstChild) {
+      containerRef.current.removeChild(containerRef.current.firstChild);
+    }
     containerRef.current.appendChild(iframe);
     setIsLoading(false);
   }, [embedInfo.provider, embedInfo.embedUrl]);
