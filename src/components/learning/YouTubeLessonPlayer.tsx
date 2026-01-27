@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lock, Play, AlertCircle } from 'lucide-react';
@@ -41,32 +41,94 @@ export const YouTubeLessonPlayer = ({
   onVideoComplete,
 }: YouTubeLessonPlayerProps) => {
   const navigate = useNavigate();
-  const playerRef = useRef<HTMLIFrameElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const isMountedRef = useRef(true);
+  const [playerKey] = useState(() => `yt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
 
   const videoId = getYouTubeVideoId(videoUrl);
   const canView = isAuthenticated && hasActiveSubscription;
 
-  // Handle message from YouTube iframe for video completion tracking
+  // Track mount status to prevent state updates after unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // Create iframe manually to avoid React DOM reconciliation issues with YouTube
+  const createIframe = useCallback(() => {
+    if (!containerRef.current || !videoId || !isMountedRef.current) return;
+
+    // Remove existing iframe safely
+    if (iframeRef.current) {
+      try {
+        if (iframeRef.current.parentNode) {
+          iframeRef.current.parentNode.removeChild(iframeRef.current);
+        }
+      } catch (e) {
+        // Ignore - node may already be removed
+      }
+      iframeRef.current = null;
+    }
+
+    // Clear container safely
+    try {
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
+    } catch (e) {
+      // Container may have been removed
+      return;
+    }
+
+    // Create new iframe element manually (outside React's control)
+    const iframe = document.createElement('iframe');
+    // Note: Removed enablejsapi=1 to prevent YouTube API from modifying DOM
+    iframe.src = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&controls=1&fs=0&disablekb=1`;
+    iframe.setAttribute('frameborder', '0');
+    iframe.setAttribute('allow', 'encrypted-media');
+    iframe.setAttribute('allowfullscreen', 'false');
+    iframe.setAttribute('title', 'ACFE Lesson Video');
+    iframe.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;';
+
+    try {
+      if (containerRef.current && isMountedRef.current) {
+        containerRef.current.appendChild(iframe);
+        iframeRef.current = iframe;
+      }
+    } catch (e) {
+      // Container may have been removed during operation
+    }
+  }, [videoId]);
+
+  // Initialize iframe when component mounts or videoId changes
   useEffect(() => {
     if (!canView || !videoId) return;
 
-    const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== 'https://www.youtube.com') return;
-      
-      try {
-        const data = JSON.parse(event.data);
-        // YouTube sends state changes - state 0 = ended
-        if (data.event === 'onStateChange' && data.info === 0) {
-          onVideoComplete?.();
+    // Small delay to ensure container is ready
+    const timeoutId = setTimeout(() => {
+      if (isMountedRef.current) {
+        createIframe();
+      }
+    }, 50);
+
+    return () => {
+      clearTimeout(timeoutId);
+      // Cleanup iframe on unmount
+      if (iframeRef.current) {
+        try {
+          if (iframeRef.current.parentNode) {
+            iframeRef.current.parentNode.removeChild(iframeRef.current);
+          }
+        } catch (e) {
+          // Ignore cleanup errors
         }
-      } catch {
-        // Ignore non-JSON messages
+        iframeRef.current = null;
       }
     };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [canView, videoId, onVideoComplete]);
+  }, [canView, videoId, createIframe]);
 
   if (!videoId) {
     return (
@@ -104,28 +166,22 @@ export const YouTubeLessonPlayer = ({
     );
   }
 
-  // Hardened YouTube embed URL - rel=0 disables related videos, modestbranding=1 minimizes logo,
-  // fs=0 disables fullscreen, disablekb=1 disables keyboard shortcuts
-  const embedUrl = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&controls=1&fs=0&disablekb=1&enablejsapi=1`;
-
   // Mask email for watermark (show first 3 chars + domain)
   const maskedEmail = userEmail 
     ? `${userEmail.substring(0, 3)}***@${userEmail.split('@')[1] || 'member'}`
     : 'Member';
 
   return (
-    <div className="acfe-video-wrapper">
+    <div className="acfe-video-wrapper" key={playerKey}>
       {/* Watermark overlay - positioned above iframe, does not intercept clicks */}
       <div className="acfe-watermark">
         ACFE • Member Access Only • {maskedEmail}
       </div>
-      <iframe
-        ref={playerRef}
-        src={embedUrl}
-        frameBorder="0"
-        allow="encrypted-media"
-        allowFullScreen={false}
-        title="ACFE Lesson Video"
+      {/* Container for manually managed iframe - React does NOT control children */}
+      <div 
+        ref={containerRef}
+        className="absolute inset-0 w-full h-full"
+        style={{ pointerEvents: 'auto' }}
       />
     </div>
   );
