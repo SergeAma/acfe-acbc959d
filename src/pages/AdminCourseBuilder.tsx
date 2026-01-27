@@ -243,6 +243,13 @@ export const AdminCourseBuilder = () => {
       description: 'Course description (min 20 characters)',
     },
     {
+      id: 'mentor',
+      label: 'Mentor',
+      isComplete: !!course?.mentor_id,
+      isRequired: true,
+      description: 'Assign a course mentor (required to publish)',
+    },
+    {
       id: 'thumbnail',
       label: 'Thumbnail',
       isComplete: !!course?.thumbnail_url,
@@ -457,8 +464,17 @@ export const AdminCourseBuilder = () => {
     
     const newStatus = !isPublished;
     
-    // CRITICAL: Validate all lessons have YouTube URLs before publishing
+    // CRITICAL: Validate mentor is assigned before publishing
     if (newStatus === true) {
+      if (!course?.mentor_id) {
+        toast({
+          title: 'Cannot Publish',
+          description: 'A course mentor must be assigned before publishing. Please select a mentor in the Course Settings tab.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
       // Fetch all lessons for this course to validate
       const { data: allSections, error: sectionsError } = await supabase
         .from('course_sections')

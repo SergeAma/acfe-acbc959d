@@ -29,6 +29,11 @@ interface Enrollment {
     category: string;
     level: string;
     thumbnail_url: string;
+    mentor_id: string;
+    mentor: {
+      full_name: string;
+      avatar_url: string | null;
+    } | null;
   };
 }
 
@@ -50,6 +55,16 @@ export const StudentDashboard = () => {
   const { t } = useLanguage();
   const isMobile = useIsMobile();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [availableCourses, setAvailableCourses] = useState<Array<{
+    id: string;
+    title: string;
+    description: string;
+    category: string;
+    level: string;
+    thumbnail_url: string;
+    mentor_id: string;
+    mentor: { full_name: string; avatar_url: string | null } | null;
+  }>>([]);
   const [mentorshipRequests, setMentorshipRequests] = useState<MentorshipRequest[]>([]);
   const [mentorProfiles, setMentorProfiles] = useState<Record<string, { full_name: string; avatar_url: string }>>({});
   const [subscribedCourseIds, setSubscribedCourseIds] = useState<string[]>([]);
@@ -62,7 +77,7 @@ export const StudentDashboard = () => {
     const fetchData = async () => {
       if (!profile?.id) return;
 
-      // Fetch enrollments
+      // Fetch enrollments with mentor data
       const { data: enrollmentData } = await supabase
         .from('enrollments')
         .select(`
@@ -73,7 +88,12 @@ export const StudentDashboard = () => {
             description,
             category,
             level,
-            thumbnail_url
+            thumbnail_url,
+            mentor_id,
+            mentor:profiles!courses_mentor_id_fkey (
+              full_name,
+              avatar_url
+            )
           )
         `)
         .eq('student_id', profile.id)
@@ -133,6 +153,37 @@ export const StudentDashboard = () => {
         setSubscribedCourseIds(purchaseData.map(p => p.course_id));
       }
 
+      // Get enrolled course IDs for filtering available courses
+      const enrolledCourseIds = enrollmentData?.map(e => (e as any).course?.id).filter(Boolean) || [];
+
+      // Fetch available published courses (not enrolled) for empty state
+      const { data: publishedCourses } = await supabase
+        .from('courses')
+        .select(`
+          id,
+          title,
+          description,
+          category,
+          level,
+          thumbnail_url,
+          mentor_id,
+          mentor:profiles!courses_mentor_id_fkey (
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq('is_published', true)
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+      if (publishedCourses) {
+        // Filter out already enrolled courses
+        const available = publishedCourses.filter(
+          (c: any) => !enrolledCourseIds.includes(c.id)
+        );
+        setAvailableCourses(available as any);
+      }
+
       setLoading(false);
     };
 
@@ -147,6 +198,8 @@ export const StudentDashboard = () => {
   const CourseCard = ({ enrollment, showProgress = true }: { enrollment: Enrollment; showProgress?: boolean }) => {
     const isSubscribed = subscribedCourseIds.includes(enrollment.course.id);
     const isCompleted = enrollment.progress === 100;
+    const mentorName = enrollment.course.mentor?.full_name;
+    const mentorAvatar = enrollment.course.mentor?.avatar_url;
     
     return (
       <Card className={`hover:shadow-lg transition-shadow relative ${isSubscribed ? 'ring-2 ring-primary' : ''} ${isCompleted ? 'border-green-200 dark:border-green-800' : ''}`}>
@@ -178,6 +231,22 @@ export const StudentDashboard = () => {
           </div>
         </CardHeader>
         <CardContent>
+          {/* Mentor Info */}
+          {mentorName && (
+            <Link 
+              to={`/mentors/${enrollment.course.mentor_id}`}
+              className="flex items-center gap-2 mb-3 hover:opacity-80 transition-opacity"
+            >
+              <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                {mentorAvatar ? (
+                  <img src={mentorAvatar} alt={mentorName} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xs font-medium text-primary">{mentorName[0]?.toUpperCase()}</span>
+                )}
+              </div>
+              <span className="text-xs text-muted-foreground truncate">by {mentorName}</span>
+            </Link>
+          )}
           <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
             {stripHtml(enrollment.course.description)}
           </p>
@@ -258,8 +327,77 @@ export const StudentDashboard = () => {
             </div>
           )}
 
-          {/* No Courses Yet - Prompt to browse */}
-          {enrollments.length === 0 && (
+          {/* No Enrollments - Show Available Courses Directly */}
+          {enrollments.length === 0 && availableCourses.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                  <Library className="h-5 w-5 text-primary" />
+                  {t('courses.title')}
+                </h2>
+                <Link to="/courses">
+                  <Button variant="outline" size="sm">
+                    {t('common.viewAll')}
+                  </Button>
+                </Link>
+              </div>
+              <p className="text-muted-foreground mb-4">{t('studentDashboard.startLearningPrompt')}</p>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {availableCourses.map((course) => (
+                  <Card key={course.id} className="hover:shadow-lg transition-shadow">
+                    {course.thumbnail_url && (
+                      <div className="relative h-32 overflow-hidden rounded-t-lg">
+                        <img
+                          src={course.thumbnail_url}
+                          alt={course.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <CardHeader className="pb-2">
+                      <CardTitle className="line-clamp-1 text-base sm:text-lg">{course.title}</CardTitle>
+                      <div className="flex gap-2 mt-2 flex-wrap">
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                          {course.category}
+                        </span>
+                        <span className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded">
+                          {course.level}
+                        </span>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {course.mentor?.full_name && (
+                        <Link 
+                          to={`/mentors/${course.mentor_id}`}
+                          className="flex items-center gap-2 mb-3 hover:opacity-80 transition-opacity"
+                        >
+                          <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                            {course.mentor.avatar_url ? (
+                              <img src={course.mentor.avatar_url} alt={course.mentor.full_name} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-xs font-medium text-primary">{course.mentor.full_name[0]?.toUpperCase()}</span>
+                            )}
+                          </div>
+                          <span className="text-xs text-muted-foreground truncate">by {course.mentor.full_name}</span>
+                        </Link>
+                      )}
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                        {stripHtml(course.description)}
+                      </p>
+                      <Link to={`/courses/${course.id}`}>
+                        <Button className="w-full" size="sm">
+                          {t('courses.viewDetails')}
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Fallback if no courses exist at all */}
+          {enrollments.length === 0 && availableCourses.length === 0 && (
             <Card className="border-dashed border-2">
               <CardContent className="py-8 text-center">
                 <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
