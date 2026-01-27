@@ -70,14 +70,14 @@ export const CourseDetail = () => {
         return;
       }
 
-      // Fetch mentor data using secure RPC function to bypass RLS restrictions
+      // Fetch mentor data using simplified RPC function for course display
       let mentorData = null;
       if (courseData.mentor_id) {
         const { data: mentor, error: mentorError } = await supabase
-          .rpc('get_public_mentor_profile', { mentor_id: courseData.mentor_id });
+          .rpc('get_course_mentor_profile', { course_mentor_id: courseData.mentor_id });
         
-        if (!mentorError && mentor) {
-          mentorData = mentor;
+        if (!mentorError && mentor && mentor.length > 0) {
+          mentorData = mentor[0];
         }
       }
 

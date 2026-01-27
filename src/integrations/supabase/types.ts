@@ -3127,6 +3127,16 @@ export type Database = {
           unread_count: number
         }[]
       }
+      get_course_mentor_profile: {
+        Args: { course_mentor_id: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          full_name: string
+          id: string
+          profile_frame: string
+        }[]
+      }
       get_public_mentor_profile: {
         Args: { mentor_id: string }
         Returns: {
