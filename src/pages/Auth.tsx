@@ -77,8 +77,8 @@ export const Auth = () => {
   // Check if this is a mentor signup path
   const isMentorSignup = searchParams.get('role') === 'mentor';
   
-  // Get redirect URL from query params, default to dashboard
-  const redirectUrl = searchParams.get('redirect') || '/dashboard';
+  // Get redirect URL from query params, default to courses (content-first experience)
+  const redirectUrl = searchParams.get('redirect') || '/courses';
 
   const [resetEmail, setResetEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');

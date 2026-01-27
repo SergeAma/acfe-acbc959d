@@ -13,6 +13,7 @@ import { Search, BookOpen, X, GraduationCap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { CourseBadge } from '@/components/CourseBadge';
 import { stripHtml } from '@/lib/html-utils';
+import { toast } from 'sonner';
 
 interface Course {
   id: string;
@@ -40,6 +41,7 @@ export const Courses = () => {
   const { t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const mentorFilter = searchParams.get('mentor');
+  const subscriptionSuccess = searchParams.get('subscription');
   
   const [courses, setCourses] = useState<Course[]>([]);
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
@@ -51,6 +53,19 @@ export const Courses = () => {
   const [subscribedCourseIds, setSubscribedCourseIds] = useState<string[]>([]);
   const [completedCourseIds, setCompletedCourseIds] = useState<string[]>([]);
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
+
+  // Show success toast when redirected from subscription checkout
+  useEffect(() => {
+    if (subscriptionSuccess === 'success') {
+      toast.success('Welcome to ACFE!', {
+        description: 'Your subscription is now active. Start exploring courses!',
+        duration: 5000,
+      });
+      // Clean up the URL parameter
+      searchParams.delete('subscription');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [subscriptionSuccess, searchParams, setSearchParams]);
 
   useEffect(() => {
     const fetchCourses = async () => {

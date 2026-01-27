@@ -81,11 +81,11 @@ export const PaymentSuccess = () => {
                   </p>
                 )}
                 <div className="space-y-3">
-                  <Button onClick={() => navigate('/dashboard')} className="w-full">
-                    Go to Dashboard
+                  <Button onClick={() => navigate('/courses')} className="w-full">
+                    Start Learning
                   </Button>
-                  <Button variant="outline" onClick={() => navigate('/courses')} className="w-full">
-                    Browse More Courses
+                  <Button variant="outline" onClick={() => navigate('/dashboard')} className="w-full">
+                    Go to Dashboard
                   </Button>
                 </div>
               </>
@@ -100,10 +100,10 @@ export const PaymentSuccess = () => {
                 <p className="text-muted-foreground mb-6">{message}</p>
                 <div className="space-y-3">
                   <Button onClick={() => navigate('/courses')} className="w-full">
-                    Back to Courses
+                    Browse Courses
                   </Button>
-                  <Button variant="outline" onClick={() => navigate('/dashboard')} className="w-full">
-                    Go to Dashboard
+                  <Button variant="outline" onClick={() => navigate('/pricing')} className="w-full">
+                    View Pricing
                   </Button>
                 </div>
               </>
