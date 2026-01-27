@@ -328,26 +328,108 @@ export const YouTubeLessonPlayer = ({
     ? `${userEmail.substring(0, 3)}***@${userEmail.split('@')[1] || 'member'}`
     : 'Member';
 
+  // Click suppression handler - blocks all clicks except in allowed zones
+  const handleContainerClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    const rect = container.getBoundingClientRect();
+    const clickY = e.clientY - rect.top;
+    const clickX = e.clientX - rect.left;
+    const containerHeight = rect.height;
+    const containerWidth = rect.width;
+    
+    // Define allowed zones (progress bar and volume control)
+    const progressBarTop = containerHeight * 0.88; // Bottom 12% is progress bar area
+    const volumeControlLeft = containerWidth * 0.02; // Left 8% for volume
+    const volumeControlRight = containerWidth * 0.10;
+    const volumeControlTop = containerHeight * 0.88;
+    
+    const isInProgressBar = clickY >= progressBarTop;
+    const isInVolumeControl = (
+      clickY >= volumeControlTop &&
+      clickX >= volumeControlLeft &&
+      clickX <= volumeControlRight
+    );
+    
+    // Allow click only if in permitted zones
+    if (!isInProgressBar && !isInVolumeControl) {
+      e.preventDefault();
+      e.stopPropagation();
+      // Trigger unmute on any blocked click
+      handleUnmute();
+    }
+  }, [handleUnmute]);
+
   return (
-    <div className="acfe-video-wrapper" key={playerKey}>
-      {/* ===== SHIELD SYSTEM ===== */}
+    <div 
+      className="acfe-video-wrapper" 
+      key={playerKey}
+      onClick={handleContainerClick}
+      onMouseDown={(e) => {
+        // Additional safety: block mousedown on non-permitted areas
+        const container = e.currentTarget;
+        const rect = container.getBoundingClientRect();
+        const clickY = e.clientY - rect.top;
+        const containerHeight = rect.height;
+        if (clickY < containerHeight * 0.88) {
+          e.preventDefault();
+        }
+      }}
+    >
+      {/* ===== COMPREHENSIVE SHIELD SYSTEM ===== */}
       
-      {/* TOP SHIELD: Blocks YouTube title, "Watch Later", and share buttons (top 25%) */}
+      {/* TOP SHIELD: Blocks title, channel, "Watch Later", share (top 35%) */}
       <div 
         className="acfe-shield-top"
         aria-hidden="true"
-        onClick={handleUnmute}
       />
       
-      {/* BOTTOM-RIGHT SHIELD: Blocks YouTube logo in corner */}
+      {/* CENTER SHIELD: Blocks video playback area clicks (middle section) */}
+      <div 
+        className="acfe-shield-center"
+        aria-hidden="true"
+      />
+      
+      {/* LEFT SIDE SHIELD: Blocks left edge interactions */}
+      <div 
+        className="acfe-shield-left"
+        aria-hidden="true"
+      />
+      
+      {/* RIGHT SIDE SHIELD: Blocks right edge interactions */}
+      <div 
+        className="acfe-shield-right"
+        aria-hidden="true"
+      />
+      
+      {/* BOTTOM-RIGHT SHIELD: Precisely covers YouTube logo */}
       <div 
         className="acfe-shield-bottom-right"
         aria-hidden="true"
       />
       
-      {/* BOTTOM-LEFT SHIELD: Blocks "Watch on YouTube" text */}
+      {/* BOTTOM-LEFT SHIELD: Blocks "Watch on YouTube" text when paused */}
       <div 
         className="acfe-shield-bottom-left"
+        aria-hidden="true"
+      />
+      
+      {/* SETTINGS SHIELD: Blocks settings gear area */}
+      <div 
+        className="acfe-shield-settings"
+        aria-hidden="true"
+      />
+      
+      {/* ===== INTERACTION CUT-OUTS (pointer-events: none) ===== */}
+      
+      {/* PROGRESS BAR WINDOW: Only scrub bar is exposed */}
+      <div 
+        className="acfe-cutout-progress"
+        aria-hidden="true"
+      />
+      
+      {/* VOLUME CONTROL WINDOW: Only mute/unmute is exposed */}
+      <div 
+        className="acfe-cutout-volume"
         aria-hidden="true"
       />
       
@@ -356,7 +438,10 @@ export const YouTubeLessonPlayer = ({
       {/* Unmute hint button - shows until user interacts */}
       {isMuted && showUnmuteHint && (
         <button
-          onClick={handleUnmute}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleUnmute();
+          }}
           className="acfe-unmute-hint"
           aria-label="Click to unmute video"
         >
@@ -365,7 +450,7 @@ export const YouTubeLessonPlayer = ({
         </button>
       )}
       
-      {/* Watermark overlay - positioned above shields */}
+      {/* Watermark overlay - positioned above shields, non-interactive */}
       <div className="acfe-watermark">
         ACFE • Member Access Only • {maskedEmail}
       </div>

@@ -304,52 +304,118 @@ video[controls] {
   text-shadow: 0 1px 2px hsl(var(--background) / 0.5);
 }
 
-/* ===== ACFE SHIELD SYSTEM ===== */
-/* Surgical overlays that block YouTube branding while allowing progress bar interaction */
+/* ===== ACFE COMPREHENSIVE SHIELD SYSTEM ===== */
+/* Overlay-first architecture: blocks ALL interactions except progress bar and volume */
 
-/* TOP SHIELD: Blocks title, "Watch Later", share button (top 25% of video) */
-.acfe-shield-top {
+/* Base shield styles - all shields block pointer events */
+.acfe-shield-top,
+.acfe-shield-center,
+.acfe-shield-left,
+.acfe-shield-right,
+.acfe-shield-bottom-right,
+.acfe-shield-bottom-left,
+.acfe-shield-settings {
   position: absolute;
+  z-index: 10;
+  background: transparent;
+  pointer-events: auto;
+  cursor: default;
+  /* Debug: uncomment to visualize shields */
+  /* background: rgba(255, 0, 0, 0.1); */
+}
+
+/* TOP SHIELD: Blocks title, channel, "Watch Later", share (top 35%) */
+.acfe-shield-top {
   top: 0;
   left: 0;
   width: 100%;
-  height: 25%;
-  z-index: 10;
-  background: transparent;
-  cursor: pointer;
+  height: 35%;
 }
 
-/* BOTTOM-RIGHT SHIELD: Blocks YouTube logo in corner */
+/* CENTER SHIELD: Blocks entire video playback area (prevents pause/play, big play button) */
+.acfe-shield-center {
+  top: 35%;
+  left: 8%;
+  width: 84%;
+  height: 53%; /* From 35% to 88% (where progress bar starts) */
+}
+
+/* LEFT SIDE SHIELD: Blocks left edge (except volume area at bottom) */
+.acfe-shield-left {
+  top: 35%;
+  left: 0;
+  width: 8%;
+  height: 45%; /* Only cover middle section, leave bottom for volume */
+}
+
+/* RIGHT SIDE SHIELD: Blocks right edge interactions */
+.acfe-shield-right {
+  top: 35%;
+  right: 0;
+  width: 8%;
+  height: 53%;
+}
+
+/* BOTTOM-RIGHT SHIELD: Precisely covers YouTube logo and settings area */
 .acfe-shield-bottom-right {
-  position: absolute;
   bottom: 0;
   right: 0;
-  width: 120px;
-  height: 50px;
-  z-index: 10;
-  background: transparent;
-  cursor: default;
+  width: 140px;
+  height: 48px;
 }
 
 /* BOTTOM-LEFT SHIELD: Blocks "Watch on YouTube" text when paused */
 .acfe-shield-bottom-left {
-  position: absolute;
-  bottom: 40px;
+  bottom: 48px;
   left: 0;
-  width: 200px;
-  height: 40px;
-  z-index: 10;
-  background: transparent;
-  cursor: default;
+  width: 220px;
+  height: 45px;
 }
 
-/* UNMUTE HINT BUTTON: Floating button to prompt user to unmute */
+/* SETTINGS SHIELD: Blocks settings gear, captions, quality controls */
+.acfe-shield-settings {
+  bottom: 0;
+  right: 140px;
+  width: 180px;
+  height: 48px;
+}
+
+/* ===== INTERACTION CUT-OUTS ===== */
+/* These areas allow pointer events through to the iframe */
+
+/* PROGRESS BAR WINDOW: Exposes only the scrub bar */
+.acfe-cutout-progress {
+  position: absolute;
+  bottom: 0;
+  left: 50px; /* Leave space for volume on left */
+  right: 320px; /* Leave space for controls on right */
+  height: 48px;
+  z-index: 5; /* Below shields */
+  pointer-events: none; /* Allows clicks through */
+  /* Debug: uncomment to visualize */
+  /* background: rgba(0, 255, 0, 0.1); */
+}
+
+/* VOLUME CONTROL WINDOW: Exposes only the mute/unmute button */
+.acfe-cutout-volume {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 50px;
+  height: 48px;
+  z-index: 5;
+  pointer-events: none;
+  /* Debug: uncomment to visualize */
+  /* background: rgba(0, 0, 255, 0.1); */
+}
+
+/* ===== UNMUTE HINT BUTTON ===== */
 .acfe-unmute-hint {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 20;
+  z-index: 25; /* Above all shields */
   display: flex;
   align-items: center;
   padding: 12px 20px;
@@ -379,7 +445,7 @@ video[controls] {
   }
 }
 
-/* ===== END SHIELD SYSTEM ===== */
+/* ===== END COMPREHENSIVE SHIELD SYSTEM ===== */
 
 /* Lesson Content - Text extraction deterrence */
 .lesson-content {
