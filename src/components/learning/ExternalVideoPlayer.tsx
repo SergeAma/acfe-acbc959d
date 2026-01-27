@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { getVideoEmbedInfo, getProviderDisplayName } from '@/lib/video-utils';
 import { Badge } from '@/components/ui/badge';
 import { ExternalLink, Youtube, Video, Loader2 } from 'lucide-react';
@@ -55,13 +55,27 @@ export const ExternalVideoPlayer = ({
   const playerRef = useRef<any>(null);
   const progressSaveInterval = useRef<NodeJS.Timeout | null>(null);
   const hasTriggeredComplete = useRef(false);
+  const isMountedRef = useRef(true);
   const [isLoading, setIsLoading] = useState(true);
   const [hasRestoredPosition, setHasRestoredPosition] = useState(false);
   const [savedProgress, setSavedProgress] = useState<number>(0);
+  
+  // Generate a unique key for each content to force fresh DOM
+  const playerKey = useMemo(() => `player-${contentId || 'default'}-${Date.now()}`, [contentId]);
+
+  // Track mount status
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Reset completion trigger when content changes
   useEffect(() => {
     hasTriggeredComplete.current = false;
+    setIsLoading(true);
+    setHasRestoredPosition(false);
   }, [contentId]);
 
   const embedInfo = getVideoEmbedInfo(videoUrl);
@@ -130,155 +144,201 @@ export const ExternalVideoPlayer = ({
     if (embedInfo.provider !== 'youtube' || !containerRef.current) return;
 
     let ytPlayer: any = null;
-    let isMounted = true;
+    let localMounted = true;
 
     const initYouTube = async () => {
       await loadYouTubeAPI();
       
-      if (!isMounted || !containerRef.current) return;
+      if (!localMounted || !isMountedRef.current || !containerRef.current) return;
 
       // Extract video ID from embed URL
       const videoIdMatch = embedInfo.embedUrl?.match(/embed\/([a-zA-Z0-9_-]{11})/);
       const videoId = videoIdMatch?.[1];
       
       if (!videoId) {
-        setIsLoading(false);
+        if (isMountedRef.current) setIsLoading(false);
         return;
       }
 
-      // Create a div for the player - safely clear existing content
+      // Create a div for the player
       const playerDiv = document.createElement('div');
       playerDiv.id = `yt-player-${contentId || Date.now()}`;
       
-      // Safely remove existing children to avoid React DOM conflicts
-      while (containerRef.current.firstChild) {
-        containerRef.current.removeChild(containerRef.current.firstChild);
+      // Clear container safely - check if container still exists and has children
+      if (containerRef.current) {
+        try {
+          containerRef.current.innerHTML = '';
+          containerRef.current.appendChild(playerDiv);
+        } catch (e) {
+          // Container was removed from DOM during operation
+          return;
+        }
+      } else {
+        return;
       }
-      containerRef.current.appendChild(playerDiv);
 
-      ytPlayer = new (window as any).YT.Player(playerDiv.id, {
-        videoId,
-        playerVars: {
-          rel: 0,
-          modestbranding: 1,
-          start: savedProgress > 5 ? Math.floor(savedProgress) : 0,
-        },
-        events: {
-          onReady: () => {
-            setIsLoading(false);
-            setHasRestoredPosition(true);
-            playerRef.current = ytPlayer;
+      try {
+        ytPlayer = new (window as any).YT.Player(playerDiv.id, {
+          videoId,
+          playerVars: {
+            rel: 0,
+            modestbranding: 1,
+            start: savedProgress > 5 ? Math.floor(savedProgress) : 0,
           },
-          onStateChange: (event: any) => {
-            // YT.PlayerState.PLAYING = 1, YT.PlayerState.ENDED = 0
-            if (event.data === 1) {
-              // Start periodic progress saving
-              if (progressSaveInterval.current) {
-                clearInterval(progressSaveInterval.current);
-              }
-              progressSaveInterval.current = setInterval(() => {
-                if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
-                  const currentTime = ytPlayer.getCurrentTime();
-                  const duration = ytPlayer.getDuration();
-                  saveProgress(currentTime, duration);
-                  onTimeUpdate?.(currentTime, duration);
-                  
-                  // Auto-complete at 95%
-                  if (duration > 0 && !hasTriggeredComplete.current) {
-                    const watchPercentage = (currentTime / duration) * 100;
-                    if (watchPercentage >= 95) {
-                      hasTriggeredComplete.current = true;
-                      onVideoComplete?.();
+          events: {
+            onReady: () => {
+              if (!localMounted || !isMountedRef.current) return;
+              setIsLoading(false);
+              setHasRestoredPosition(true);
+              playerRef.current = ytPlayer;
+            },
+            onStateChange: (event: any) => {
+              if (!localMounted || !isMountedRef.current) return;
+              // YT.PlayerState.PLAYING = 1, YT.PlayerState.ENDED = 0
+              if (event.data === 1) {
+                // Start periodic progress saving
+                if (progressSaveInterval.current) {
+                  clearInterval(progressSaveInterval.current);
+                }
+                progressSaveInterval.current = setInterval(() => {
+                  if (!localMounted || !isMountedRef.current) {
+                    if (progressSaveInterval.current) clearInterval(progressSaveInterval.current);
+                    return;
+                  }
+                  if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
+                    try {
+                      const currentTime = ytPlayer.getCurrentTime();
+                      const duration = ytPlayer.getDuration();
+                      saveProgress(currentTime, duration);
+                      onTimeUpdate?.(currentTime, duration);
+                      
+                      // Auto-complete at 95%
+                      if (duration > 0 && !hasTriggeredComplete.current) {
+                        const watchPercentage = (currentTime / duration) * 100;
+                        if (watchPercentage >= 95) {
+                          hasTriggeredComplete.current = true;
+                          onVideoComplete?.();
+                        }
+                      }
+                    } catch (e) {
+                      // Player was destroyed
                     }
                   }
+                }, 5000);
+              } else if (event.data === 0) {
+                // Video ended
+                if (progressSaveInterval.current) {
+                  clearInterval(progressSaveInterval.current);
                 }
-              }, 5000);
-            } else if (event.data === 0) {
-              // Video ended
-              if (progressSaveInterval.current) {
-                clearInterval(progressSaveInterval.current);
+                if (!hasTriggeredComplete.current) {
+                  hasTriggeredComplete.current = true;
+                  onVideoComplete?.();
+                }
+              } else {
+                // Save on pause
+                if (progressSaveInterval.current) {
+                  clearInterval(progressSaveInterval.current);
+                }
+                if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
+                  try {
+                    const currentTime = ytPlayer.getCurrentTime();
+                    const duration = ytPlayer.getDuration();
+                    saveProgress(currentTime, duration);
+                  } catch (e) {
+                    // Player was destroyed
+                  }
+                }
               }
-              if (!hasTriggeredComplete.current) {
-                hasTriggeredComplete.current = true;
-                onVideoComplete?.();
-              }
-            } else {
-              // Save on pause
-              if (progressSaveInterval.current) {
-                clearInterval(progressSaveInterval.current);
-              }
-              if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
-                const currentTime = ytPlayer.getCurrentTime();
-                const duration = ytPlayer.getDuration();
-                saveProgress(currentTime, duration);
-              }
-            }
+            },
           },
-        },
-      });
+        });
+      } catch (e) {
+        console.error('Failed to create YouTube player:', e);
+        if (isMountedRef.current) setIsLoading(false);
+      }
     };
 
     initYouTube();
 
     return () => {
-      isMounted = false;
+      localMounted = false;
       if (progressSaveInterval.current) {
         clearInterval(progressSaveInterval.current);
+        progressSaveInterval.current = null;
       }
-      if (ytPlayer && typeof ytPlayer.destroy === 'function') {
+      if (ytPlayer) {
         try {
-          ytPlayer.destroy();
+          if (typeof ytPlayer.destroy === 'function') {
+            ytPlayer.destroy();
+          }
         } catch (e) {
           // Ignore destroy errors during unmount
         }
+        ytPlayer = null;
       }
+      playerRef.current = null;
     };
-  }, [embedInfo.provider, embedInfo.embedUrl, savedProgress, saveProgress, onTimeUpdate, contentId]);
+  }, [embedInfo.provider, embedInfo.embedUrl, savedProgress, saveProgress, onTimeUpdate, contentId, onVideoComplete]);
 
   // Initialize Vimeo player
   useEffect(() => {
     if (embedInfo.provider !== 'vimeo' || !containerRef.current || !embedInfo.embedUrl) return;
 
     let vimeoPlayer: Player | null = null;
-    let isMounted = true;
+    let localMounted = true;
 
     const initVimeo = async () => {
-      if (!containerRef.current) return;
+      if (!containerRef.current || !localMounted || !isMountedRef.current) return;
 
-      // Create iframe for Vimeo - safely clear existing content
+      // Create iframe for Vimeo
       const iframe = document.createElement('iframe');
       iframe.src = embedInfo.embedUrl!;
       iframe.className = 'absolute inset-0 w-full h-full';
       iframe.allow = 'autoplay; fullscreen; picture-in-picture';
       iframe.allowFullscreen = true;
       
-      // Safely remove existing children to avoid React DOM conflicts
-      while (containerRef.current.firstChild) {
-        containerRef.current.removeChild(containerRef.current.firstChild);
+      // Clear container safely
+      if (containerRef.current) {
+        try {
+          containerRef.current.innerHTML = '';
+          containerRef.current.appendChild(iframe);
+        } catch (e) {
+          return;
+        }
+      } else {
+        return;
       }
-      containerRef.current.appendChild(iframe);
 
       try {
         vimeoPlayer = new Player(iframe);
         playerRef.current = vimeoPlayer;
 
         vimeoPlayer.on('loaded', async () => {
-          if (!isMounted) return;
+          if (!localMounted || !isMountedRef.current) return;
           setIsLoading(false);
           
           // Restore position
           if (savedProgress > 5 && !hasRestoredPosition) {
-            await vimeoPlayer?.setCurrentTime(savedProgress);
-            setHasRestoredPosition(true);
+            try {
+              await vimeoPlayer?.setCurrentTime(savedProgress);
+              if (isMountedRef.current) setHasRestoredPosition(true);
+            } catch (e) {
+              // Player was destroyed
+            }
           }
         });
 
         vimeoPlayer.on('play', () => {
+          if (!localMounted || !isMountedRef.current) return;
           if (progressSaveInterval.current) {
             clearInterval(progressSaveInterval.current);
           }
           progressSaveInterval.current = setInterval(async () => {
-            if (vimeoPlayer) {
+            if (!localMounted || !isMountedRef.current || !vimeoPlayer) {
+              if (progressSaveInterval.current) clearInterval(progressSaveInterval.current);
+              return;
+            }
+            try {
               const currentTime = await vimeoPlayer.getCurrentTime();
               const duration = await vimeoPlayer.getDuration();
               saveProgress(currentTime, duration);
@@ -292,28 +352,40 @@ export const ExternalVideoPlayer = ({
                   onVideoComplete?.();
                 }
               }
+            } catch (e) {
+              // Player was destroyed
             }
           }, 5000);
         });
 
         vimeoPlayer.on('pause', async () => {
+          if (!localMounted || !isMountedRef.current) return;
           if (progressSaveInterval.current) {
             clearInterval(progressSaveInterval.current);
           }
           if (vimeoPlayer) {
-            const currentTime = await vimeoPlayer.getCurrentTime();
-            const duration = await vimeoPlayer.getDuration();
-            saveProgress(currentTime, duration);
+            try {
+              const currentTime = await vimeoPlayer.getCurrentTime();
+              const duration = await vimeoPlayer.getDuration();
+              saveProgress(currentTime, duration);
+            } catch (e) {
+              // Player was destroyed
+            }
           }
         });
 
         vimeoPlayer.on('ended', async () => {
+          if (!localMounted || !isMountedRef.current) return;
           if (progressSaveInterval.current) {
             clearInterval(progressSaveInterval.current);
           }
           if (vimeoPlayer) {
-            const duration = await vimeoPlayer.getDuration();
-            saveProgress(duration, duration);
+            try {
+              const duration = await vimeoPlayer.getDuration();
+              saveProgress(duration, duration);
+            } catch (e) {
+              // Player was destroyed
+            }
           }
           if (!hasTriggeredComplete.current) {
             hasTriggeredComplete.current = true;
@@ -322,16 +394,17 @@ export const ExternalVideoPlayer = ({
         });
       } catch (error) {
         console.error('Failed to initialize Vimeo player:', error);
-        setIsLoading(false);
+        if (isMountedRef.current) setIsLoading(false);
       }
     };
 
     initVimeo();
 
     return () => {
-      isMounted = false;
+      localMounted = false;
       if (progressSaveInterval.current) {
         clearInterval(progressSaveInterval.current);
+        progressSaveInterval.current = null;
       }
       if (vimeoPlayer) {
         try {
@@ -339,7 +412,9 @@ export const ExternalVideoPlayer = ({
         } catch (e) {
           // Ignore destroy errors during unmount
         }
+        vimeoPlayer = null;
       }
+      playerRef.current = null;
     };
   }, [embedInfo.provider, embedInfo.embedUrl, savedProgress, hasRestoredPosition, saveProgress, onTimeUpdate, onVideoComplete]);
 
@@ -355,11 +430,15 @@ export const ExternalVideoPlayer = ({
     iframe.allowFullscreen = true;
     iframe.title = 'Video player';
     
-    // Safely remove existing children to avoid React DOM conflicts
-    while (containerRef.current.firstChild) {
-      containerRef.current.removeChild(containerRef.current.firstChild);
+    // Clear container safely
+    if (containerRef.current) {
+      try {
+        containerRef.current.innerHTML = '';
+        containerRef.current.appendChild(iframe);
+      } catch (e) {
+        return;
+      }
     }
-    containerRef.current.appendChild(iframe);
     setIsLoading(false);
   }, [embedInfo.provider, embedInfo.embedUrl]);
 
@@ -384,6 +463,7 @@ export const ExternalVideoPlayer = ({
   return (
     <div className="space-y-2">
       <div 
+        key={playerKey}
         ref={containerRef}
         className="relative w-full aspect-video bg-black rounded-lg overflow-hidden"
       >
