@@ -85,10 +85,20 @@ export const TechNewsSection = () => {
     document.head.appendChild(script);
     
     return () => {
-      if (turnstileWidgetId.current && (window as any).turnstile) {
-        (window as any).turnstile.remove(turnstileWidgetId.current);
+      if (turnstileWidgetId.current && (window as any).turnstile?.remove) {
+        try {
+          (window as any).turnstile.remove(turnstileWidgetId.current);
+        } catch (e) {
+          // Ignore cleanup errors
+        }
       }
-      document.head.removeChild(script);
+      try {
+        if (script.parentNode) {
+          document.head.removeChild(script);
+        }
+      } catch (e) {
+        // Ignore if script was already removed
+      }
     };
   }, []);
 

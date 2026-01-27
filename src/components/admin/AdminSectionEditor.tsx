@@ -38,9 +38,10 @@ export const AdminSectionEditor = ({ section, onDelete, onUpdate }: AdminSection
   const { toast } = useToast();
   const [isExpanded, setIsExpanded] = useState(true);
   const [title, setTitle] = useState(section.title);
-  const [lessons, setLessons] = useState<LessonItem[]>(section.content || []);
+  const [lessons, setLessons] = useState<LessonItem[]>([]);
   const [addingLesson, setAddingLesson] = useState(false);
   const [savingTitle, setSavingTitle] = useState(false);
+  const [lessonsLoaded, setLessonsLoaded] = useState(false);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: section.id,
@@ -56,10 +57,15 @@ export const AdminSectionEditor = ({ section, onDelete, onUpdate }: AdminSection
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
 
+  // Only sync title from props - lessons are managed internally
   useEffect(() => {
-    setLessons(section.content || []);
     setTitle(section.title);
-  }, [section]);
+  }, [section.title]);
+
+  // Fetch lessons on mount
+  useEffect(() => {
+    fetchLessons();
+  }, [section.id]);
 
   const fetchLessons = async () => {
     const { data, error } = await supabase
@@ -71,6 +77,7 @@ export const AdminSectionEditor = ({ section, onDelete, onUpdate }: AdminSection
     if (!error && data) {
       setLessons(data);
     }
+    setLessonsLoaded(true);
   };
 
   const handleSaveTitle = async () => {
@@ -109,8 +116,10 @@ export const AdminSectionEditor = ({ section, onDelete, onUpdate }: AdminSection
     if (error) {
       toast({ title: 'Error', description: 'Failed to add lesson', variant: 'destructive' });
     } else {
+      // Directly add the new lesson to state for immediate UI update
+      setLessons(prev => [...prev, data as LessonItem]);
       toast({ title: 'Success', description: 'Lesson added' });
-      await fetchLessons();
+      // Notify parent for analytics update only (don't trigger full re-fetch)
       onUpdate();
     }
     setAddingLesson(false);
@@ -225,7 +234,7 @@ export const AdminSectionEditor = ({ section, onDelete, onUpdate }: AdminSection
               </SortableContext>
             </DndContext>
 
-            {lessons.length === 0 && (
+            {lessonsLoaded && lessons.length === 0 && (
               <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
                 <p className="mb-2">No lessons yet</p>
                 <p className="text-sm">Add your first lesson to this section</p>
