@@ -58,16 +58,21 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Parse request body to get the tier
+    // Parse request body to get the tier and promo code
     let tier = "membership"; // Default tier
+    let promoCode: string | undefined;
     try {
       const body = await req.json();
       if (body.tier && ACFE_PRODUCTS[body.tier as keyof typeof ACFE_PRODUCTS]) {
         tier = body.tier;
       }
+      if (body.promoCode && typeof body.promoCode === 'string') {
+        promoCode = body.promoCode.trim().toUpperCase();
+      }
     } catch {
       // No body or invalid JSON, use default tier
     }
+    logStep("Parsed request", { tier, promoCode: promoCode || "none" });
 
     const tierConfig = ACFE_PRODUCTS[tier as keyof typeof ACFE_PRODUCTS];
     
@@ -131,6 +136,26 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "https://acloudforeveryone.org";
 
+    // Look up promotion code if provided
+    let promotionCodeId: string | undefined;
+    if (promoCode) {
+      try {
+        const promoCodes = await stripe.promotionCodes.list({
+          code: promoCode,
+          active: true,
+          limit: 1,
+        });
+        if (promoCodes.data.length > 0) {
+          promotionCodeId = promoCodes.data[0].id;
+          logStep("Found valid promotion code", { promoCode, promotionCodeId });
+        } else {
+          logStep("Promotion code not found or inactive", { promoCode });
+        }
+      } catch (promoError) {
+        logStep("Error looking up promotion code", { promoCode, error: String(promoError) });
+      }
+    }
+
     const sessionOptions: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -147,6 +172,7 @@ serve(async (req) => {
         user_id: user.id,
         user_email: user.email,
         tier: tier,
+        promo_code: promoCode || '',
       },
       subscription_data: {
         metadata: {
@@ -157,6 +183,9 @@ serve(async (req) => {
       },
       payment_method_types: ["card"],
       billing_address_collection: "auto",
+      ...(promotionCodeId && { discounts: [{ promotion_code: promotionCodeId }] }),
+      // Allow promo code input at checkout if none was pre-applied
+      ...(!promotionCodeId && { allow_promotion_codes: true }),
     };
 
     const session = await stripe.checkout.sessions.create(sessionOptions);

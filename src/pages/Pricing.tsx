@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
 
 export const Pricing = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
@@ -35,6 +36,19 @@ export const Pricing = () => {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<HTMLDivElement>(null);
   const turnstileWidgetId = useRef<string | null>(null);
+  
+  // Get promo code from URL params (passed from course enrollment)
+  const promoCodeFromUrl = searchParams.get('promo') || '';
+  const [appliedPromoCode, setAppliedPromoCode] = useState(promoCodeFromUrl);
+  
+  // Show promo banner if code was passed
+  useEffect(() => {
+    if (promoCodeFromUrl) {
+      setAppliedPromoCode(promoCodeFromUrl);
+      toast.success(`Promo code "${promoCodeFromUrl}" will be applied at checkout`);
+    }
+  }, [promoCodeFromUrl]);
+
   const [institutionForm, setInstitutionForm] = useState({
     institutionName: '',
     institutionType: '',
@@ -134,7 +148,7 @@ export const Pricing = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
-        body: { tier },
+        body: { tier, promoCode: appliedPromoCode || undefined },
       });
       
       if (error) throw error;
