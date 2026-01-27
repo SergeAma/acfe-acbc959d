@@ -362,17 +362,19 @@ export const CourseDetail = () => {
                   <div className="flex items-center gap-3 mb-3">
                     <ProfileAvatar
                       src={course.mentor?.avatar_url}
-                      name={course.mentor?.full_name}
+                      name={course.mentor?.full_name || 'Mentor'}
                       frame={course.mentor?.profile_frame || 'none'}
                       size="md"
                     />
                     <div>
-                      <h3 className="font-semibold">Your Mentor</h3>
-                      <p className="text-sm text-muted-foreground">{course.mentor?.full_name}</p>
+                      <h3 className="font-semibold">
+                        {course.mentor?.full_name || 'Course Mentor'}
+                      </h3>
+                      <p className="text-xs text-primary">Click to view profile</p>
                     </div>
                   </div>
                   {course.mentor?.bio && (
-                    <p className="text-sm text-muted-foreground">{course.mentor.bio}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-3">{course.mentor.bio}</p>
                   )}
                 </CardContent>
               </Card>

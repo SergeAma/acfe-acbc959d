@@ -248,7 +248,7 @@ export const StudentDashboard = () => {
             <div>
               <h2 className="text-xl sm:text-2xl font-bold mb-4 flex items-center gap-2">
                 <Clock className="h-5 w-5 text-muted-foreground" />
-                {t('studentDashboard.notStarted') || 'Not Started'}
+                {t('studentDashboard.notStarted')}
               </h2>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {notStartedCourses.map((enrollment) => (
@@ -263,8 +263,8 @@ export const StudentDashboard = () => {
             <Card className="border-dashed border-2">
               <CardContent className="py-8 text-center">
                 <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-semibold mb-2">{t('studentDashboard.noEnrollments') || 'No courses yet'}</h3>
-                <p className="text-muted-foreground mb-4">{t('studentDashboard.startLearningPrompt') || 'Browse our course catalog to start your learning journey'}</p>
+                <h3 className="text-xl font-semibold mb-2">{t('studentDashboard.noEnrollments')}</h3>
+                <p className="text-muted-foreground mb-4">{t('studentDashboard.startLearningPrompt')}</p>
                 <Link to="/courses">
                   <Button size="lg">
                     <Library className="h-5 w-5 mr-2" />
@@ -387,7 +387,7 @@ export const StudentDashboard = () => {
               <div className={`flex items-center justify-between ${isMobile ? 'cursor-pointer' : ''}`}>
                 <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                   <BookOpenCheck className="h-5 w-5 text-primary" />
-                  {t('studentDashboard.videoResources') || 'Getting Started Videos'}
+                  {t('studentDashboard.videoResources')}
                 </CardTitle>
                 {isMobile && (
                   <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${videoResourcesOpen ? 'rotate-180' : ''}`} />

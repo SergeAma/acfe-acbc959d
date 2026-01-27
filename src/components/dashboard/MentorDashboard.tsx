@@ -92,51 +92,8 @@ export const MentorDashboard = () => {
   // Overview content as a separate component for tabs
   const OverviewContent = () => (
     <div className="space-y-6">
-      {/* Stats Cards - Priority 1 */}
-      <div className="grid grid-cols-3 gap-3 sm:gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6">
-            <CardTitle className="text-xs sm:text-sm font-medium">{t('mentorDashboard.totalCourses')}</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground hidden sm:block" />
-          </CardHeader>
-          <CardContent className="px-3 sm:px-6">
-            <div className="text-2xl sm:text-3xl font-bold">{courses.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {publishedCourses.length} {t('mentorDashboard.published')}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6">
-            <CardTitle className="text-xs sm:text-sm font-medium">{t('mentorDashboard.totalStudents')}</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground hidden sm:block" />
-          </CardHeader>
-          <CardContent className="px-3 sm:px-6">
-            <div className="text-2xl sm:text-3xl font-bold">{totalStudents}</div>
-            <p className="text-xs text-muted-foreground mt-1">{t('studentDashboard.acrossAllCourses')}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6">
-            <CardTitle className="text-xs sm:text-sm font-medium">{t('mentorDashboard.engagement')}</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground hidden sm:block" />
-          </CardHeader>
-          <CardContent className="px-3 sm:px-6">
-            <div className="text-2xl sm:text-3xl font-bold">
-              {courses.length > 0 ? Math.round(totalStudents / courses.length) : 0}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1 hidden sm:block">{t('mentorDashboard.avgStudentsPerCourse')}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Content Submission - Priority 2 */}
-      <ContentSubmissionCard />
-
-      {/* My Published Courses (Read-Only View) */}
-      {courses.length > 0 && (
+      {/* Priority 1: My Published Courses */}
+      {courses.length > 0 ? (
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
@@ -187,12 +144,61 @@ export const MentorDashboard = () => {
             ))}
           </div>
         </div>
+      ) : (
+        <Card className="border-dashed border-2">
+          <CardContent className="py-8 text-center">
+            <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-xl font-semibold mb-2">{t('mentorDashboard.noCoursesYet')}</h3>
+            <p className="text-muted-foreground mb-4">{t('mentorDashboard.createFirstCourse')}</p>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Student Submissions Review - Priority 3 */}
+      {/* Priority 2: Student Metrics / Stats Cards */}
+      <div className="grid grid-cols-3 gap-3 sm:gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">{t('mentorDashboard.totalCourses')}</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground hidden sm:block" />
+          </CardHeader>
+          <CardContent className="px-3 sm:px-6">
+            <div className="text-2xl sm:text-3xl font-bold">{courses.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {publishedCourses.length} {t('mentorDashboard.published')}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">{t('mentorDashboard.totalStudents')}</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground hidden sm:block" />
+          </CardHeader>
+          <CardContent className="px-3 sm:px-6">
+            <div className="text-2xl sm:text-3xl font-bold">{totalStudents}</div>
+            <p className="text-xs text-muted-foreground mt-1">{t('studentDashboard.acrossAllCourses')}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">{t('mentorDashboard.engagement')}</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground hidden sm:block" />
+          </CardHeader>
+          <CardContent className="px-3 sm:px-6">
+            <div className="text-2xl sm:text-3xl font-bold">
+              {courses.length > 0 ? Math.round(totalStudents / courses.length) : 0}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1 hidden sm:block">{t('mentorDashboard.avgStudentsPerCourse')}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Priority 3: Content Submission + Student Submissions Review */}
+      <ContentSubmissionCard />
       <SubmissionsReview />
 
-      {/* Institution Partners Section */}
+      {/* Priority 4: Career Development / Institution Partners */}
       <InstitutionPartnersSection />
 
       {/* Video Resources - Collapsible */}
