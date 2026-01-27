@@ -36,9 +36,23 @@ serve(async (req) => {
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    
+    // Handle invalid/expired sessions gracefully - return unsubscribed state instead of error
+    if (userError || !userData?.user?.email) {
+      logStep("Session invalid or expired, returning unsubscribed state", { 
+        error: userError?.message || 'No user email' 
+      });
+      return new Response(JSON.stringify({ 
+        subscribed: false,
+        subscriptions: [],
+        sessionExpired: true
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+    
     const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });

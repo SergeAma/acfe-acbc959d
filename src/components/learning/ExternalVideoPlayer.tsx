@@ -506,23 +506,24 @@ export const ExternalVideoPlayer = ({
     : 'Member';
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" key={playerKey}>
       <div className="acfe-video-wrapper">
         {/* Watermark overlay - positioned above iframe, does not intercept clicks */}
         <div className="acfe-watermark">
           ACFE • Member Access Only • {maskedEmail}
         </div>
+        {/* Loading spinner - positioned outside the container to avoid React reconciliation issues */}
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10 pointer-events-none">
+            <Loader2 className="h-8 w-8 animate-spin text-white" />
+          </div>
+        )}
+        {/* Container for manually managed iframes - React does NOT control children */}
         <div 
-          key={playerKey}
           ref={containerRef}
           className="absolute inset-0 w-full h-full"
-        >
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
-              <Loader2 className="h-8 w-8 animate-spin text-white" />
-            </div>
-          )}
-        </div>
+          style={{ pointerEvents: 'auto' }}
+        />
       </div>
       <div className="flex items-center justify-between">
         <Badge variant="secondary" className="gap-1.5 text-xs">
