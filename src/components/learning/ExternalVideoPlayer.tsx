@@ -507,26 +507,101 @@ export const ExternalVideoPlayer = ({
     ? `${userEmail.substring(0, 3)}***@${userEmail.split('@')[1] || 'member'}`
     : 'Member';
 
+  // Click suppression handler - blocks all clicks except in allowed zones
+  const handleContainerClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    const rect = container.getBoundingClientRect();
+    const clickY = e.clientY - rect.top;
+    const clickX = e.clientX - rect.left;
+    const containerHeight = rect.height;
+    const containerWidth = rect.width;
+    
+    // Define allowed zones (progress bar and volume control)
+    const progressBarTop = containerHeight * 0.88; // Bottom 12% is progress bar area
+    const volumeControlLeft = containerWidth * 0.02; // Left 8% for volume
+    const volumeControlRight = containerWidth * 0.10;
+    const volumeControlTop = containerHeight * 0.88;
+    
+    const isInProgressBar = clickY >= progressBarTop;
+    const isInVolumeControl = (
+      clickY >= volumeControlTop &&
+      clickX >= volumeControlLeft &&
+      clickX <= volumeControlRight
+    );
+    
+    // Allow click only if in permitted zones
+    if (!isInProgressBar && !isInVolumeControl) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, []);
+
   return (
     <div className="space-y-2" key={playerKey}>
-      <div className="acfe-video-wrapper">
-        {/* Transparent click-blocking overlay - sits on top of iframe to block all clicks */}
-        <div className="acfe-click-blocker" aria-hidden="true" />
-        {/* Watermark overlay - positioned above click blocker */}
+      <div 
+        className="acfe-video-wrapper"
+        onClick={handleContainerClick}
+        onMouseDown={(e) => {
+          // Additional safety: block mousedown on non-permitted areas
+          const container = e.currentTarget;
+          const rect = container.getBoundingClientRect();
+          const clickY = e.clientY - rect.top;
+          const containerHeight = rect.height;
+          if (clickY < containerHeight * 0.88) {
+            e.preventDefault();
+          }
+        }}
+      >
+        {/* ===== COMPREHENSIVE SHIELD SYSTEM ===== */}
+        
+        {/* TOP SHIELD: Blocks title, channel, "Watch Later", share (top 35%) */}
+        <div className="acfe-shield-top" aria-hidden="true" />
+        
+        {/* CENTER SHIELD: Blocks video playback area clicks (middle section) */}
+        <div className="acfe-shield-center" aria-hidden="true" />
+        
+        {/* LEFT SIDE SHIELD: Blocks left edge interactions */}
+        <div className="acfe-shield-left" aria-hidden="true" />
+        
+        {/* RIGHT SIDE SHIELD: Blocks right edge interactions */}
+        <div className="acfe-shield-right" aria-hidden="true" />
+        
+        {/* BOTTOM-RIGHT SHIELD: Precisely covers YouTube logo */}
+        <div className="acfe-shield-bottom-right" aria-hidden="true" />
+        
+        {/* BOTTOM-LEFT SHIELD: Blocks "Watch on YouTube" text when paused */}
+        <div className="acfe-shield-bottom-left" aria-hidden="true" />
+        
+        {/* SETTINGS SHIELD: Blocks settings gear area */}
+        <div className="acfe-shield-settings" aria-hidden="true" />
+        
+        {/* ===== INTERACTION CUT-OUTS (pointer-events: none) ===== */}
+        
+        {/* PROGRESS BAR WINDOW: Only scrub bar is exposed */}
+        <div className="acfe-cutout-progress" aria-hidden="true" />
+        
+        {/* VOLUME CONTROL WINDOW: Only mute/unmute is exposed */}
+        <div className="acfe-cutout-volume" aria-hidden="true" />
+        
+        {/* ===== END SHIELD SYSTEM ===== */}
+
+        {/* Watermark overlay - positioned above shields, non-interactive */}
         <div className="acfe-watermark">
           ACFE • Member Access Only • {maskedEmail}
         </div>
-        {/* Loading spinner - positioned outside the container to avoid React reconciliation issues */}
+        
+        {/* Loading spinner - positioned above shields */}
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20 pointer-events-none">
             <Loader2 className="h-8 w-8 animate-spin text-white" />
           </div>
         )}
+        
         {/* Container for manually managed iframes - React does NOT control children */}
         <div 
           ref={containerRef}
           className="absolute inset-0 w-full h-full"
-          style={{ pointerEvents: 'auto' }}
+          style={{ zIndex: 1 }}
         />
       </div>
       <div className="flex items-center justify-between">
