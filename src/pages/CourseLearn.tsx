@@ -198,6 +198,48 @@ export const CourseLearn = () => {
   const [assignmentSubmitted, setAssignmentSubmitted] = useState(false);
   const [hasQuiz, setHasQuiz] = useState(false);
   const [hasAssignment, setHasAssignment] = useState(false);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+
+  // Check subscription status on mount
+  useEffect(() => {
+    const checkSubscription = async () => {
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session.session?.access_token) return;
+        
+        // Check Stripe subscription
+        const { data, error } = await supabase.functions.invoke('check-subscription', {
+          headers: {
+            Authorization: `Bearer ${session.session.access_token}`,
+          },
+        });
+        
+        if (!error && data?.subscribed) {
+          setHasActiveSubscription(true);
+          return;
+        }
+        
+        // Also check institution membership (career centre students get access)
+        const { data: institutionMembership } = await supabase
+          .from('institution_students')
+          .select('id')
+          .eq('user_id', user?.id)
+          .eq('status', 'active')
+          .limit(1)
+          .maybeSingle();
+        
+        if (institutionMembership) {
+          setHasActiveSubscription(true);
+        }
+      } catch (err) {
+        console.error('Failed to check subscription:', err);
+      }
+    };
+    
+    if (user && !isPreviewMode) {
+      checkSubscription();
+    }
+  }, [user, isPreviewMode]);
 
   useEffect(() => {
     if (id && user) {
@@ -972,6 +1014,8 @@ export const CourseLearn = () => {
                 videoUrl={currentContent.video_url}
                 enrollmentId={enrollmentId}
                 userEmail={user?.email}
+                hasActiveSubscription={hasActiveSubscription}
+                isPreviewMode={isMentorPreview}
                 onBookmark={(timestamp) => {
                   if ((window as any).__addBookmark) {
                     (window as any).__addBookmark(timestamp);

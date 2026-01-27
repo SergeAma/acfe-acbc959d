@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getVideoEmbedInfo, getProviderDisplayName } from '@/lib/video-utils';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Youtube, Video, Loader2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ExternalLink, Youtube, Video, Loader2, Lock, Play } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import Player from '@vimeo/player';
 
@@ -10,6 +13,8 @@ interface ExternalVideoPlayerProps {
   contentId?: string;
   enrollmentId?: string;
   userEmail?: string;
+  hasActiveSubscription?: boolean;
+  isPreviewMode?: boolean;
   onTimeUpdate?: (currentTime: number, duration: number) => void;
   onVideoComplete?: () => void;
 }
@@ -50,9 +55,15 @@ export const ExternalVideoPlayer = ({
   contentId, 
   enrollmentId,
   userEmail,
+  hasActiveSubscription = false,
+  isPreviewMode = false,
   onTimeUpdate,
   onVideoComplete,
 }: ExternalVideoPlayerProps) => {
+  const navigate = useNavigate();
+  
+  // Allow access in preview mode OR with active subscription
+  const canView = isPreviewMode || hasActiveSubscription;
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
   const progressSaveInterval = useRef<NodeJS.Timeout | null>(null);
@@ -453,6 +464,30 @@ export const ExternalVideoPlayer = ({
         <Video className="h-12 w-12 mx-auto mb-4 opacity-50" />
         <p>Unable to load video</p>
       </div>
+    );
+  }
+
+  // Show subscription required message if not allowed to view
+  if (!canView) {
+    return (
+      <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
+        <CardContent className="py-12 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/50 mb-4">
+            <Lock className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+          </div>
+          <h3 className="text-xl font-semibold mb-2">Subscription Required</h3>
+          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+            Please subscribe to access this lesson content.
+          </p>
+          <Button 
+            onClick={() => navigate('/pricing')}
+            className="gap-2"
+          >
+            <Play className="h-4 w-4" />
+            View Subscription Plans
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
