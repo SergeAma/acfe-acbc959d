@@ -304,17 +304,82 @@ video[controls] {
   text-shadow: 0 1px 2px hsl(var(--background) / 0.5);
 }
 
-/* ACFE Click Blocker Overlay - Transparent div blocking all iframe clicks */
-.acfe-click-blocker {
+/* ===== ACFE SHIELD SYSTEM ===== */
+/* Surgical overlays that block YouTube branding while allowing progress bar interaction */
+
+/* TOP SHIELD: Blocks title, "Watch Later", share button (top 25% of video) */
+.acfe-shield-top {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: 25%;
+  z-index: 10;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* BOTTOM-RIGHT SHIELD: Blocks YouTube logo in corner */
+.acfe-shield-bottom-right {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 120px;
+  height: 50px;
   z-index: 10;
   background: transparent;
   cursor: default;
 }
+
+/* BOTTOM-LEFT SHIELD: Blocks "Watch on YouTube" text when paused */
+.acfe-shield-bottom-left {
+  position: absolute;
+  bottom: 40px;
+  left: 0;
+  width: 200px;
+  height: 40px;
+  z-index: 10;
+  background: transparent;
+  cursor: default;
+}
+
+/* UNMUTE HINT BUTTON: Floating button to prompt user to unmute */
+.acfe-unmute-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 20px hsl(var(--primary) / 0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: acfe-pulse 2s ease-in-out infinite;
+}
+
+.acfe-unmute-hint:hover {
+  transform: translate(-50%, -50%) scale(1.05);
+  box-shadow: 0 6px 24px hsl(var(--primary) / 0.5);
+}
+
+@keyframes acfe-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+/* ===== END SHIELD SYSTEM ===== */
 
 /* Lesson Content - Text extraction deterrence */
 .lesson-content {

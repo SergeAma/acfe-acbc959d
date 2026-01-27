@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Lock, Play, AlertCircle } from 'lucide-react';
+import { Lock, Play, AlertCircle, Volume2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface YouTubeLessonPlayerProps {
@@ -10,6 +10,63 @@ interface YouTubeLessonPlayerProps {
   hasActiveSubscription: boolean;
   userEmail?: string;
   onVideoComplete?: () => void;
+}
+
+// YouTube Iframe API types
+interface YTPlayer {
+  destroy: () => void;
+  unMute: () => void;
+  setVolume: (volume: number) => void;
+  getIframe: () => HTMLIFrameElement;
+}
+
+interface YTPlayerEvent {
+  target: YTPlayer;
+  data: number;
+}
+
+interface YTPlayerOptions {
+  videoId: string;
+  playerVars?: {
+    autoplay?: number;
+    mute?: number;
+    controls?: number;
+    modestbranding?: number;
+    rel?: number;
+    iv_load_policy?: number;
+    fs?: number;
+    disablekb?: number;
+    playsinline?: number;
+    enablejsapi?: number;
+    origin?: string;
+  };
+  events?: {
+    onReady?: (event: YTPlayerEvent) => void;
+    onStateChange?: (event: YTPlayerEvent) => void;
+  };
+}
+
+interface YTPlayerConstructor {
+  new (elementId: string, options: YTPlayerOptions): YTPlayer;
+}
+
+interface YTNamespace {
+  Player: YTPlayerConstructor;
+  PlayerState: {
+    ENDED: number;
+    PLAYING: number;
+    PAUSED: number;
+    BUFFERING: number;
+    CUED: number;
+  };
+}
+
+// Extend window for YouTube Iframe API
+declare global {
+  interface Window {
+    YT: YTNamespace;
+    onYouTubeIframeAPIReady: () => void;
+  }
 }
 
 // Extract YouTube video ID from various URL formats
@@ -33,6 +90,45 @@ function getYouTubeVideoId(url: string): string | null {
   return null;
 }
 
+// Load YouTube Iframe API script once
+let ytApiLoaded = false;
+let ytApiLoadPromise: Promise<void> | null = null;
+
+function loadYouTubeAPI(): Promise<void> {
+  if (ytApiLoaded && window.YT?.Player) {
+    return Promise.resolve();
+  }
+  
+  if (ytApiLoadPromise) {
+    return ytApiLoadPromise;
+  }
+
+  ytApiLoadPromise = new Promise((resolve) => {
+    // Check if already loaded
+    if (window.YT?.Player) {
+      ytApiLoaded = true;
+      resolve();
+      return;
+    }
+
+    // Set callback before loading script
+    window.onYouTubeIframeAPIReady = () => {
+      ytApiLoaded = true;
+      resolve();
+    };
+
+    // Check if script already exists
+    if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+      const script = document.createElement('script');
+      script.src = 'https://www.youtube.com/iframe_api';
+      script.async = true;
+      document.head.appendChild(script);
+    }
+  });
+
+  return ytApiLoadPromise;
+}
+
 export const YouTubeLessonPlayer = ({
   videoUrl,
   isAuthenticated,
@@ -42,9 +138,12 @@ export const YouTubeLessonPlayer = ({
 }: YouTubeLessonPlayerProps) => {
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const playerRef = useRef<YTPlayer | null>(null);
   const isMountedRef = useRef(true);
+  const hasUnmutedRef = useRef(false);
   const [playerKey] = useState(() => `yt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+  const [isMuted, setIsMuted] = useState(true);
+  const [showUnmuteHint, setShowUnmuteHint] = useState(true);
 
   const videoId = getYouTubeVideoId(videoUrl);
   const canView = isAuthenticated && hasActiveSubscription;
@@ -57,78 +156,136 @@ export const YouTubeLessonPlayer = ({
     };
   }, []);
 
-  // Create iframe manually to avoid React DOM reconciliation issues with YouTube
-  const createIframe = useCallback(() => {
-    if (!containerRef.current || !videoId || !isMountedRef.current) return;
-
-    // Remove existing iframe safely
-    if (iframeRef.current) {
-      try {
-        if (iframeRef.current.parentNode) {
-          iframeRef.current.parentNode.removeChild(iframeRef.current);
-        }
-      } catch (e) {
-        // Ignore - node may already be removed
-      }
-      iframeRef.current = null;
-    }
-
-    // Clear container safely
+  // Unmute handler - triggered on first user interaction
+  const handleUnmute = useCallback(() => {
+    if (hasUnmutedRef.current || !playerRef.current) return;
+    
     try {
-      if (containerRef.current) {
-        containerRef.current.innerHTML = '';
+      playerRef.current.unMute();
+      playerRef.current.setVolume(100);
+      hasUnmutedRef.current = true;
+      if (isMountedRef.current) {
+        setIsMuted(false);
+        setShowUnmuteHint(false);
       }
     } catch (e) {
-      // Container may have been removed
+      console.warn('Could not unmute video:', e);
+    }
+  }, []);
+
+  // Create YouTube player using Iframe API
+  const createPlayer = useCallback(async () => {
+    if (!containerRef.current || !videoId || !isMountedRef.current) return;
+
+    try {
+      await loadYouTubeAPI();
+    } catch (e) {
+      console.error('Failed to load YouTube API:', e);
       return;
     }
 
-    // Create new iframe element manually (outside React's control)
-    const iframe = document.createElement('iframe');
-    // Hardened params: autoplay=1&mute=1 for auto-start since clicks are blocked, fs=0 disables fullscreen, disablekb=1 disables keyboard
-    iframe.src = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&controls=1&fs=0&disablekb=1&autoplay=1&mute=1`;
-    iframe.setAttribute('frameborder', '0');
-    iframe.setAttribute('allow', 'encrypted-media; autoplay');
-    iframe.setAttribute('allowfullscreen', 'false');
-    iframe.setAttribute('title', 'ACFE Lesson Video');
-    iframe.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; z-index: 1;';
+    if (!isMountedRef.current || !containerRef.current) return;
 
-    try {
-      if (containerRef.current && isMountedRef.current) {
-        containerRef.current.appendChild(iframe);
-        iframeRef.current = iframe;
+    // Destroy existing player
+    if (playerRef.current) {
+      try {
+        playerRef.current.destroy();
+      } catch (e) {
+        // Ignore
       }
-    } catch (e) {
-      // Container may have been removed during operation
+      playerRef.current = null;
     }
-  }, [videoId]);
 
-  // Initialize iframe when component mounts or videoId changes
+    // Clear container
+    try {
+      containerRef.current.innerHTML = '';
+    } catch (e) {
+      return;
+    }
+
+    // Create player div
+    const playerDiv = document.createElement('div');
+    playerDiv.id = `youtube-player-${playerKey}`;
+    containerRef.current.appendChild(playerDiv);
+
+    // Initialize YouTube player with API
+    playerRef.current = new window.YT.Player(playerDiv.id, {
+      videoId: videoId,
+      playerVars: {
+        autoplay: 1,
+        mute: 1, // Start muted for autoplay compliance
+        controls: 1,
+        modestbranding: 1,
+        rel: 0,
+        iv_load_policy: 3, // Hide video annotations
+        fs: 0, // Disable fullscreen button
+        disablekb: 0, // Allow keyboard for seeking
+        playsinline: 1,
+        enablejsapi: 1,
+        origin: window.location.origin,
+      },
+      events: {
+        onReady: (event) => {
+          // Style the iframe
+          const iframe = event.target.getIframe();
+          if (iframe) {
+            iframe.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; z-index: 1;';
+            // Apply sandbox for security (blocks popups and top-navigation)
+            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
+          }
+        },
+        onStateChange: (event) => {
+          // Track video completion
+          if (event.data === window.YT.PlayerState.ENDED && onVideoComplete) {
+            onVideoComplete();
+          }
+        },
+      },
+    });
+  }, [videoId, playerKey, onVideoComplete]);
+
+  // Initialize player when component mounts or videoId changes
   useEffect(() => {
     if (!canView || !videoId) return;
 
-    // Small delay to ensure container is ready
     const timeoutId = setTimeout(() => {
       if (isMountedRef.current) {
-        createIframe();
+        createPlayer();
       }
     }, 50);
 
     return () => {
       clearTimeout(timeoutId);
-      // Cleanup iframe on unmount
-      if (iframeRef.current) {
+      if (playerRef.current) {
         try {
-          if (iframeRef.current.parentNode) {
-            iframeRef.current.parentNode.removeChild(iframeRef.current);
-          }
+          playerRef.current.destroy();
         } catch (e) {
           // Ignore cleanup errors
         }
-        iframeRef.current = null;
+        playerRef.current = null;
       }
     };
-  }, [canView, videoId, createIframe]);
+  }, [canView, videoId, createPlayer]);
+
+  // Add global first-interaction listener for unmuting
+  useEffect(() => {
+    if (!canView) return;
+
+    const handleFirstInteraction = () => {
+      handleUnmute();
+    };
+
+    // Listen for various user interactions
+    document.addEventListener('click', handleFirstInteraction, { once: true });
+    document.addEventListener('scroll', handleFirstInteraction, { once: true });
+    document.addEventListener('keydown', handleFirstInteraction, { once: true });
+
+    return () => {
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('scroll', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+    };
+  }, [canView, handleUnmute]);
 
   if (!videoId) {
     return (
@@ -173,17 +330,51 @@ export const YouTubeLessonPlayer = ({
 
   return (
     <div className="acfe-video-wrapper" key={playerKey}>
-      {/* Transparent click-blocking overlay - sits on top of iframe to block all clicks */}
-      <div className="acfe-click-blocker" aria-hidden="true" />
-      {/* Watermark overlay - positioned above click blocker */}
+      {/* ===== SHIELD SYSTEM ===== */}
+      
+      {/* TOP SHIELD: Blocks YouTube title, "Watch Later", and share buttons (top 25%) */}
+      <div 
+        className="acfe-shield-top"
+        aria-hidden="true"
+        onClick={handleUnmute}
+      />
+      
+      {/* BOTTOM-RIGHT SHIELD: Blocks YouTube logo in corner */}
+      <div 
+        className="acfe-shield-bottom-right"
+        aria-hidden="true"
+      />
+      
+      {/* BOTTOM-LEFT SHIELD: Blocks "Watch on YouTube" text */}
+      <div 
+        className="acfe-shield-bottom-left"
+        aria-hidden="true"
+      />
+      
+      {/* ===== END SHIELD SYSTEM ===== */}
+      
+      {/* Unmute hint button - shows until user interacts */}
+      {isMuted && showUnmuteHint && (
+        <button
+          onClick={handleUnmute}
+          className="acfe-unmute-hint"
+          aria-label="Click to unmute video"
+        >
+          <Volume2 className="h-4 w-4 mr-2" />
+          Click to unmute
+        </button>
+      )}
+      
+      {/* Watermark overlay - positioned above shields */}
       <div className="acfe-watermark">
         ACFE • Member Access Only • {maskedEmail}
       </div>
-      {/* Container for manually managed iframe - React does NOT control children */}
+      
+      {/* Container for YouTube player - React does NOT control children */}
       <div 
         ref={containerRef}
         className="absolute inset-0 w-full h-full"
-        style={{ pointerEvents: 'none', zIndex: 1 }}
+        style={{ zIndex: 1 }}
       />
     </div>
   );
