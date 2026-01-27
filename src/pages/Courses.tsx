@@ -31,6 +31,7 @@ interface Course {
   } | null;
   mentor: {
     full_name: string;
+    avatar_url: string | null;
   };
 }
 
@@ -58,7 +59,8 @@ export const Courses = () => {
         .select(`
           *,
           mentor:profiles!courses_mentor_id_fkey (
-            full_name
+            full_name,
+            avatar_url
           ),
           institution:institutions (
             id,
@@ -317,7 +319,19 @@ export const Courses = () => {
                     {stripHtml(course.description)}
                   </p>
                   <div className="flex items-center justify-between text-sm mb-4">
-                    <span className="text-muted-foreground">{t('courses.mentorBy')} {course.mentor?.full_name}</span>
+                    <Link 
+                      to={`/mentors/${course.mentor_id}`}
+                      className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                    >
+                      <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {course.mentor?.avatar_url ? (
+                          <img src={course.mentor.avatar_url} alt={course.mentor.full_name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xs font-medium text-primary">{course.mentor?.full_name?.[0]?.toUpperCase() || 'M'}</span>
+                        )}
+                      </div>
+                      <span className="text-muted-foreground truncate">by {course.mentor?.full_name}</span>
+                    </Link>
                     <span className="text-muted-foreground">{course.duration_weeks} {t('courses.weeks')}</span>
                   </div>
                   <Link to={`/courses/${course.id}`}>
