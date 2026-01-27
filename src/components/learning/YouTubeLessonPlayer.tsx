@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lock, Play, AlertCircle } from 'lucide-react';
@@ -8,6 +8,7 @@ interface YouTubeLessonPlayerProps {
   videoUrl: string;
   isAuthenticated: boolean;
   hasActiveSubscription: boolean;
+  userEmail?: string;
   onVideoComplete?: () => void;
 }
 
@@ -36,11 +37,11 @@ export const YouTubeLessonPlayer = ({
   videoUrl,
   isAuthenticated,
   hasActiveSubscription,
+  userEmail,
   onVideoComplete,
 }: YouTubeLessonPlayerProps) => {
   const navigate = useNavigate();
   const playerRef = useRef<HTMLIFrameElement>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const videoId = getYouTubeVideoId(videoUrl);
   const canView = isAuthenticated && hasActiveSubscription;
@@ -103,18 +104,28 @@ export const YouTubeLessonPlayer = ({
     );
   }
 
-  // Show embedded YouTube player for subscribed users
-  const embedUrl = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&enablejsapi=1`;
+  // Hardened YouTube embed URL - rel=0 disables related videos, modestbranding=1 minimizes logo,
+  // fs=0 disables fullscreen, disablekb=1 disables keyboard shortcuts
+  const embedUrl = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&controls=1&fs=0&disablekb=1&enablejsapi=1`;
+
+  // Mask email for watermark (show first 3 chars + domain)
+  const maskedEmail = userEmail 
+    ? `${userEmail.substring(0, 3)}***@${userEmail.split('@')[1] || 'member'}`
+    : 'Member';
 
   return (
-    <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+    <div className="acfe-video-wrapper">
+      {/* Watermark overlay - positioned above iframe, does not intercept clicks */}
+      <div className="acfe-watermark">
+        ACFE • Member Access Only • {maskedEmail}
+      </div>
       <iframe
         ref={playerRef}
         src={embedUrl}
-        className="absolute inset-0 w-full h-full"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowFullScreen
-        title="YouTube video player"
+        frameBorder="0"
+        allow="encrypted-media"
+        allowFullScreen={false}
+        title="ACFE Lesson Video"
       />
     </div>
   );

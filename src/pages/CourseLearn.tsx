@@ -797,7 +797,7 @@ export const CourseLearn = () => {
     }
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 lesson-content">
         {/* Title and Metadata - Always at Top */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
@@ -971,6 +971,7 @@ export const CourseLearn = () => {
                 contentId={currentContent.id}
                 videoUrl={currentContent.video_url}
                 enrollmentId={enrollmentId}
+                userEmail={user?.email}
                 onBookmark={(timestamp) => {
                   if ((window as any).__addBookmark) {
                     (window as any).__addBookmark(timestamp);
@@ -1109,6 +1110,7 @@ export const CourseLearn = () => {
                 contentId={currentContent.id}
                 videoUrl={currentContent.video_url}
                 enrollmentId={enrollmentId}
+                userEmail={user?.email}
                 onBookmark={(timestamp) => {
                   if ((window as any).__addBookmark) {
                     (window as any).__addBookmark(timestamp);

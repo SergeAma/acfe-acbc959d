@@ -9,6 +9,7 @@ interface ExternalVideoPlayerProps {
   videoUrl: string;
   contentId?: string;
   enrollmentId?: string;
+  userEmail?: string;
   onTimeUpdate?: (currentTime: number, duration: number) => void;
   onVideoComplete?: () => void;
 }
@@ -48,6 +49,7 @@ export const ExternalVideoPlayer = ({
   videoUrl, 
   contentId, 
   enrollmentId,
+  userEmail,
   onTimeUpdate,
   onVideoComplete,
 }: ExternalVideoPlayerProps) => {
@@ -183,6 +185,9 @@ export const ExternalVideoPlayer = ({
           playerVars: {
             rel: 0,
             modestbranding: 1,
+            controls: 1,
+            fs: 0, // Disable fullscreen
+            disablekb: 1, // Disable keyboard shortcuts
             start: savedProgress > 5 ? Math.floor(savedProgress) : 0,
           },
           events: {
@@ -460,18 +465,29 @@ export const ExternalVideoPlayer = ({
     }
   };
 
+  // Mask email for watermark (show first 3 chars + domain)
+  const maskedEmail = userEmail 
+    ? `${userEmail.substring(0, 3)}***@${userEmail.split('@')[1] || 'member'}`
+    : 'Member';
+
   return (
     <div className="space-y-2">
-      <div 
-        key={playerKey}
-        ref={containerRef}
-        className="relative w-full aspect-video bg-black rounded-lg overflow-hidden"
-      >
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-            <Loader2 className="h-8 w-8 animate-spin text-white" />
-          </div>
-        )}
+      <div className="acfe-video-wrapper">
+        {/* Watermark overlay - positioned above iframe, does not intercept clicks */}
+        <div className="acfe-watermark">
+          ACFE • Member Access Only • {maskedEmail}
+        </div>
+        <div 
+          key={playerKey}
+          ref={containerRef}
+          className="absolute inset-0 w-full h-full"
+        >
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+              <Loader2 className="h-8 w-8 animate-spin text-white" />
+            </div>
+          )}
+        </div>
       </div>
       <div className="flex items-center justify-between">
         <Badge variant="secondary" className="gap-1.5 text-xs">
