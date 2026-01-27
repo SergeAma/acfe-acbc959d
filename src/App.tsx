@@ -24,6 +24,7 @@ import { CreateCourse } from "./pages/CreateCourse";
 import { MentorCourses } from "./pages/MentorCourses";
 import { AdminCourses } from "./pages/AdminCourses";
 import { AdminCourseBuilder } from "./pages/AdminCourseBuilder";
+import { AdminCreateCourse } from "./pages/AdminCreateCourse";
 import { AdminIdeaSubmissions } from "./pages/AdminIdeaSubmissions";
 import { AdminContacts } from "./pages/AdminContacts";
 import { AdminEmailTemplates } from "./pages/AdminEmailTemplates";
@@ -135,6 +136,7 @@ const App = () => (
               <Route path="/admin/donors" element={<ProtectedRoute requiredRole="admin"><AdminDonors /></ProtectedRoute>} />
               <Route path="/admin/translations" element={<ProtectedRoute requiredRole="admin"><AdminTranslations /></ProtectedRoute>} />
               <Route path="/admin/courses" element={<ProtectedRoute requiredRole="admin"><AdminCourses /></ProtectedRoute>} />
+              <Route path="/admin/courses/new" element={<ProtectedRoute requiredRole="admin"><AdminCreateCourse /></ProtectedRoute>} />
               <Route path="/admin/courses/:courseId/build" element={<ProtectedRoute requiredRole="admin"><AdminCourseBuilder /></ProtectedRoute>} />
               <Route path="/admin/mentor-view" element={<ProtectedRoute requiredRole="admin"><AdminMentorView /></ProtectedRoute>} />
               <Route path="/admin/email-preview" element={<ProtectedRoute requiredRole="admin"><AdminEmailPreview /></ProtectedRoute>} />
