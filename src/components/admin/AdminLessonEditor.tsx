@@ -66,9 +66,13 @@ function getYouTubeEmbedUrl(url: string): string | null {
 
 export const AdminLessonEditor = ({ item, onDelete, onUpdate, sectionDescription }: AdminLessonEditorProps) => {
   const { toast } = useToast();
+  
+  // Use section description as fallback when lesson has no text content
+  const getInitialContent = () => item.text_content || sectionDescription || '';
+  
   const [isExpanded, setIsExpanded] = useState(!item.video_url && !item.text_content);
   const [title, setTitle] = useState(item.title);
-  const [textContent, setTextContent] = useState(item.text_content || '');
+  const [textContent, setTextContent] = useState(getInitialContent);
   const [youtubeUrl, setYoutubeUrl] = useState(item.video_url || '');
   const [saving, setSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -86,9 +90,9 @@ export const AdminLessonEditor = ({ item, onDelete, onUpdate, sectionDescription
 
   useEffect(() => {
     setTitle(item.title);
-    setTextContent(item.text_content || '');
+    setTextContent(item.text_content || sectionDescription || '');
     setYoutubeUrl(item.video_url || '');
-  }, [item]);
+  }, [item, sectionDescription]);
 
   const getIcon = () => {
     if (item.video_url) return <Video className="h-4 w-4 text-primary" />;
@@ -246,7 +250,7 @@ export const AdminLessonEditor = ({ item, onDelete, onUpdate, sectionDescription
             <div className="space-y-3">
               <Label>Lesson Text Content</Label>
               <RichTextEditor
-                content={textContent || sectionDescription || ''}
+                content={textContent}
                 onChange={(content) => {
                   setTextContent(content);
                   setHasUnsavedChanges(true);
