@@ -210,12 +210,21 @@ export const AdminPricing = () => {
       setLoadingCoupons(true);
     }
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
+      // Wait for auth state to be ready - use onAuthStateChange to get current session
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        if (isInitialLoad) setLoadingCoupons(false);
+        return;
+      }
+      
       const accessToken = sessionData.session?.access_token;
       
       if (!accessToken) {
-        console.error('No access token available');
-        if (isInitialLoad) setLoadingCoupons(false);
+        // Session not ready yet, retry after a short delay
+        console.log('No access token available, retrying...');
+        setTimeout(() => fetchCoupons(isInitialLoad), 500);
         return;
       }
 
