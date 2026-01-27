@@ -22,7 +22,7 @@ export function getVideoEmbedInfo(url: string): VideoEmbedInfo {
   if (youtubeMatch) {
     return {
       isExternal: true,
-      embedUrl: `https://www.youtube.com/embed/${youtubeMatch[1]}?rel=0&modestbranding=1`,
+      embedUrl: `https://www.youtube.com/embed/${youtubeMatch[1]}?rel=0&modestbranding=1&autoplay=1&mute=1`,
       provider: 'youtube',
     };
   }

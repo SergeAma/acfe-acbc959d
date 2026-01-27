@@ -199,6 +199,8 @@ export const ExternalVideoPlayer = ({
             controls: 1,
             fs: 0, // Disable fullscreen
             disablekb: 1, // Disable keyboard shortcuts
+            autoplay: 1, // Auto-start since clicks are blocked
+            mute: 1, // Muted for autoplay policy compliance
             start: savedProgress > 5 ? Math.floor(savedProgress) : 0,
           },
           events: {
@@ -508,13 +510,15 @@ export const ExternalVideoPlayer = ({
   return (
     <div className="space-y-2" key={playerKey}>
       <div className="acfe-video-wrapper">
-        {/* Watermark overlay - positioned above iframe, does not intercept clicks */}
+        {/* Transparent click-blocking overlay - sits on top of iframe to block all clicks */}
+        <div className="acfe-click-blocker" aria-hidden="true" />
+        {/* Watermark overlay - positioned above click blocker */}
         <div className="acfe-watermark">
           ACFE • Member Access Only • {maskedEmail}
         </div>
         {/* Loading spinner - positioned outside the container to avoid React reconciliation issues */}
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10 pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20 pointer-events-none">
             <Loader2 className="h-8 w-8 animate-spin text-white" />
           </div>
         )}
