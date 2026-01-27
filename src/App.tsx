@@ -77,6 +77,19 @@ import { ContributorSubmit } from "./pages/ContributorSubmit";
 
 const queryClient = new QueryClient();
 
+// Global right-click block to discourage casual content extraction
+if (typeof document !== 'undefined') {
+  document.addEventListener('contextmenu', (e) => {
+    // Allow right-click on input elements for paste functionality
+    const target = e.target as HTMLElement;
+    const tagName = target.tagName?.toLowerCase();
+    if (tagName === 'input' || tagName === 'textarea' || target.isContentEditable) {
+      return;
+    }
+    e.preventDefault();
+  });
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>

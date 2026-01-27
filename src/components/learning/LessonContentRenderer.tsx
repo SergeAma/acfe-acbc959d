@@ -51,6 +51,7 @@ interface LessonContentRendererProps {
   onVideoComplete: () => void;
   isAuthenticated?: boolean;
   hasActiveSubscription?: boolean;
+  userEmail?: string;
 }
 
 // Calculate reading time based on word count (average 200 words per minute)
@@ -75,6 +76,7 @@ export const LessonContentRenderer = ({
   onVideoComplete,
   isAuthenticated = true,
   hasActiveSubscription = true,
+  userEmail,
 }: LessonContentRendererProps) => {
   const allContent = sections.flatMap(s => s.content);
 
@@ -193,7 +195,7 @@ export const LessonContentRenderer = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 lesson-content">
       {/* Title and Metadata - Always at Top */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
@@ -251,6 +253,7 @@ export const LessonContentRenderer = ({
               videoUrl={currentContent.video_url}
               isAuthenticated={isAuthenticated}
               hasActiveSubscription={hasActiveSubscription}
+              userEmail={userEmail}
               onVideoComplete={onVideoComplete}
             />
           </CardContent>

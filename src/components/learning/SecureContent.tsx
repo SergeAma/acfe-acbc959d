@@ -9,6 +9,7 @@ interface SecureVideoContentProps {
   contentId: string;
   videoUrl: string;
   enrollmentId: string;
+  userEmail?: string;
   onBookmark?: (timestamp: number) => void;
   onVideoComplete?: () => void;
 }
@@ -17,6 +18,7 @@ export const SecureVideoContent = ({
   contentId,
   videoUrl,
   enrollmentId,
+  userEmail,
   onBookmark,
   onVideoComplete,
 }: SecureVideoContentProps) => {
@@ -54,6 +56,7 @@ export const SecureVideoContent = ({
         videoUrl={signedUrl}
         contentId={contentId}
         enrollmentId={enrollmentId}
+        userEmail={userEmail}
         onVideoComplete={onVideoComplete}
       />
     );
