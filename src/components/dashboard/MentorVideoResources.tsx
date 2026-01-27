@@ -42,7 +42,7 @@ const VIDEO_RESOURCES: VideoResource[] = [
     titleFr: 'Créer Votre Premier Cours sur ACFE',
     description: 'Learn how to build engaging courses step by step',
     descriptionFr: 'Apprenez à créer des cours captivants étape par étape',
-    embedUrl: 'https://drive.google.com/file/d/1pRYPxcZXTqov664snTKRSAZ9GoDZ1IHl/preview',
+    embedUrl: 'https://drive.google.com/file/d/13EtjM3xJOn7BbmJujyscE1guUvspul2f/preview',
     thumbnail: buildingCourseThumbnail,
   },
 ];
