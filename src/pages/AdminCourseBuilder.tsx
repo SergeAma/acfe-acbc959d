@@ -1916,7 +1916,7 @@ export const AdminCourseBuilder = () => {
                       key={section.id}
                       section={section}
                       onDelete={() => handleDeleteSection(section.id)}
-                      onUpdate={fetchCourseData}
+                      onUpdate={fetchAnalytics}
                     />
                   ))}
                 </div>
