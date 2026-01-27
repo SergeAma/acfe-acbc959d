@@ -203,7 +203,7 @@ export const MentorDashboard = () => {
               <div className={`flex items-center justify-between ${isMobile ? 'cursor-pointer' : ''}`}>
                 <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                   <Video className="h-5 w-5 text-primary" />
-                  {t('mentorDashboard.videoResources') || 'Mentor Video Resources'}
+                  Mentor How to Video Resources
                 </CardTitle>
                 {isMobile && (
                   <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${videoResourcesOpen ? 'rotate-180' : ''}`} />
