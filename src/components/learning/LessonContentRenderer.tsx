@@ -247,6 +247,7 @@ export const LessonContentRenderer = ({
         <Card>
           <CardContent className="pt-6">
             <YouTubeLessonPlayer
+              key={currentContent.id}
               videoUrl={currentContent.video_url}
               isAuthenticated={isAuthenticated}
               hasActiveSubscription={hasActiveSubscription}
