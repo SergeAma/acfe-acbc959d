@@ -124,9 +124,16 @@ export const Navbar = () => {
                       <Link to="/courses">{t('nav.browseCourses')}</Link>
                     </DropdownMenuItem>
                   )}
-                  {(profile?.role === "mentor" || profile?.role === "admin") && (
+                  {/* Mentors (contributors) only see Submit Content - no course management */}
+                  {profile?.role === "mentor" && (
                     <DropdownMenuItem asChild>
-                      <Link to="/mentor/courses">{t('nav.manageCourses')}</Link>
+                      <Link to="/contributor/submit">Submit Content</Link>
+                    </DropdownMenuItem>
+                  )}
+                  {/* Admins get full course management access */}
+                  {profile?.role === "admin" && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin/courses">{t('nav.manageCourses')}</Link>
                     </DropdownMenuItem>
                   )}
                   {profile?.role === "admin" && (
@@ -243,9 +250,20 @@ export const Navbar = () => {
                     {t('nav.browseCourses')}
                   </Link>
                 )}
-                {(profile?.role === "mentor" || profile?.role === "admin") && (
+                {/* Mentors (contributors) only see Submit Content */}
+                {profile?.role === "mentor" && (
                   <Link
-                    to="/mentor/courses"
+                    to="/contributor/submit"
+                    className="text-base font-semibold text-white hover:text-primary transition-colors py-3 px-4 rounded-lg hover:bg-white/10"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Submit Content
+                  </Link>
+                )}
+                {/* Admins get course management access */}
+                {profile?.role === "admin" && (
+                  <Link
+                    to="/admin/courses"
                     className="text-base font-semibold text-white hover:text-primary transition-colors py-3 px-4 rounded-lg hover:bg-white/10"
                     onClick={() => setMobileMenuOpen(false)}
                   >

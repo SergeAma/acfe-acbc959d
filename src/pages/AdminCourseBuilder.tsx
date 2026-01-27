@@ -453,9 +453,74 @@ export const AdminCourseBuilder = () => {
   const handleTogglePublish = async () => {
     if (!courseId) return;
     
+    const newStatus = !isPublished;
+    
+    // CRITICAL: Validate all lessons have YouTube URLs before publishing
+    if (newStatus === true) {
+      // Fetch all lessons for this course to validate
+      const { data: allSections, error: sectionsError } = await supabase
+        .from('course_sections')
+        .select('id')
+        .eq('course_id', courseId);
+      
+      if (sectionsError) {
+        toast({
+          title: 'Error',
+          description: 'Failed to validate course content',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      if (!allSections || allSections.length === 0) {
+        toast({
+          title: 'Cannot Publish',
+          description: 'Course must have at least one section with lessons before publishing.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      const sectionIds = allSections.map(s => s.id);
+      const { data: lessons, error: lessonsError } = await supabase
+        .from('course_content')
+        .select('id, title, video_url')
+        .in('section_id', sectionIds);
+      
+      if (lessonsError) {
+        toast({
+          title: 'Error',
+          description: 'Failed to validate lessons',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      if (!lessons || lessons.length === 0) {
+        toast({
+          title: 'Cannot Publish',
+          description: 'Course must have at least one lesson before publishing.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Check if any lesson is missing a YouTube URL
+      const lessonsWithoutVideo = lessons.filter(l => !l.video_url || !l.video_url.trim());
+      if (lessonsWithoutVideo.length > 0) {
+        const lessonNames = lessonsWithoutVideo.slice(0, 3).map(l => l.title).join(', ');
+        const remaining = lessonsWithoutVideo.length > 3 ? ` and ${lessonsWithoutVideo.length - 3} more` : '';
+        toast({
+          title: 'Cannot Publish',
+          description: `Every lesson must have a YouTube URL. Missing: ${lessonNames}${remaining}`,
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+    
     setTogglingPublish(true);
     setShowUnpublishDialog(false);
-    const newStatus = !isPublished;
     
     const { error } = await supabase
       .from('courses')
