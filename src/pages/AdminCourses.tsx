@@ -101,7 +101,7 @@ export const AdminCourses = () => {
           </div>
           <div className="flex gap-2">
             <InviteMentorDialog />
-            <Button onClick={() => navigate('/mentor/courses/new')}>
+            <Button onClick={() => navigate('/admin/courses/new')}>
               <Plus className="h-4 w-4 mr-2" />
               Create Course
             </Button>
@@ -116,7 +116,7 @@ export const AdminCourses = () => {
               <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-lg font-semibold mb-2">No courses yet</h3>
               <p className="text-muted-foreground mb-4">Create your first course to get started</p>
-              <Button onClick={() => navigate('/mentor/courses/new')}>
+              <Button onClick={() => navigate('/admin/courses/new')}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create Course
               </Button>
