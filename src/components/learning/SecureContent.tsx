@@ -10,6 +10,8 @@ interface SecureVideoContentProps {
   videoUrl: string;
   enrollmentId: string;
   userEmail?: string;
+  hasActiveSubscription?: boolean;
+  isPreviewMode?: boolean;
   onBookmark?: (timestamp: number) => void;
   onVideoComplete?: () => void;
 }
@@ -19,6 +21,8 @@ export const SecureVideoContent = ({
   videoUrl,
   enrollmentId,
   userEmail,
+  hasActiveSubscription = false,
+  isPreviewMode = false,
   onBookmark,
   onVideoComplete,
 }: SecureVideoContentProps) => {
@@ -57,6 +61,8 @@ export const SecureVideoContent = ({
         contentId={contentId}
         enrollmentId={enrollmentId}
         userEmail={userEmail}
+        hasActiveSubscription={hasActiveSubscription}
+        isPreviewMode={isPreviewMode}
         onVideoComplete={onVideoComplete}
       />
     );
