@@ -312,6 +312,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'studentDashboard.noCompletedCourses': 'No completed courses yet',
     'studentDashboard.completeCourseForCertificate': 'Complete a course to earn your certificate',
     'studentDashboard.completed': 'Completed',
+    'studentDashboard.noEnrollments': 'No courses yet',
+    'studentDashboard.startLearningPrompt': 'Browse our course catalog to start your learning journey',
+    'studentDashboard.notStarted': 'Not Started',
+    'studentDashboard.videoResources': 'Getting Started Videos',
 
     // ==================== MENTOR DASHBOARD ====================
     'mentorDashboard.title': 'Mentor Dashboard',
@@ -1255,6 +1259,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'studentDashboard.noCompletedCourses': 'Aucun cours terminé',
     'studentDashboard.completeCourseForCertificate': 'Terminez un cours pour obtenir votre certificat',
     'studentDashboard.completed': 'Terminé',
+    'studentDashboard.noEnrollments': 'Aucun cours pour le moment',
+    'studentDashboard.startLearningPrompt': 'Parcourez notre catalogue de cours pour commencer votre apprentissage',
+    'studentDashboard.notStarted': 'Non Commencé',
+    'studentDashboard.videoResources': 'Vidéos de Démarrage',
 
     // ==================== MENTOR DASHBOARD ====================
     'mentorDashboard.title': 'Tableau de Bord Mentor',

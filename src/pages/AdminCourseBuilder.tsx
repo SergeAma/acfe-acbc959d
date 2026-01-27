@@ -16,6 +16,7 @@ import { ThumbnailDropzone } from '@/components/admin/ThumbnailDropzone';
 import { CoursePrerequisites } from '@/components/admin/CoursePrerequisites';
 import { QuizBuilder } from '@/components/admin/QuizBuilder';
 import { AssignmentBuilder } from '@/components/admin/AssignmentBuilder';
+import { MentorSelector } from '@/components/admin/MentorSelector';
 
 import { AutosaveIndicator } from '@/components/admin/AutosaveIndicator';
 import { CourseBuilderProgress, type BuilderStep } from '@/components/admin/CourseBuilderProgress';
@@ -133,6 +134,7 @@ export const AdminCourseBuilder = () => {
   const [institutionId, setInstitutionId] = useState<string | null>(null);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [savingInstitution, setSavingInstitution] = useState(false);
+  const [savingMentor, setSavingMentor] = useState(false);
   const [showEditingTip, setShowEditingTip] = useState(() => {
     return localStorage.getItem('courseBuilderTipDismissed') !== 'true';
   });
@@ -1345,6 +1347,50 @@ export const AdminCourseBuilder = () => {
 
         {/* Course Settings Grid */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">
+          {/* Mentor Assignment - Admin Only */}
+          {isActualAdmin && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Course Mentor Assignment
+                </CardTitle>
+                <CardDescription>
+                  Assign a mentor who will be credited for this course
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <MentorSelector
+                  selectedMentorId={course?.mentor_id || null}
+                  onMentorSelect={async (mentorId) => {
+                    if (!courseId) return;
+                    setSavingMentor(true);
+                    const { error } = await supabase
+                      .from('courses')
+                      .update({ mentor_id: mentorId })
+                      .eq('id', courseId);
+                    
+                    if (error) {
+                      toast({
+                        title: 'Error',
+                        description: 'Failed to assign mentor',
+                        variant: 'destructive',
+                      });
+                    } else {
+                      setCourse(prev => prev ? { ...prev, mentor_id: mentorId } : null);
+                      toast({
+                        title: 'Saved',
+                        description: 'Course mentor has been updated',
+                      });
+                    }
+                    setSavingMentor(false);
+                  }}
+                  disabled={savingMentor}
+                />
+              </CardContent>
+            </Card>
+          )}
+
           {/* Prerequisites */}
           {course && user && (
             <CoursePrerequisites courseId={course.id} mentorId={course.mentor_id} />
