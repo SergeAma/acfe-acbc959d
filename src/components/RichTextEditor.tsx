@@ -52,6 +52,13 @@ export const RichTextEditor = ({ content, onChange, placeholder }: RichTextEdito
     editable: true,
   });
 
+  // Sync editor content when prop changes (e.g., when loading existing lesson data)
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content || '');
+    }
+  }, [content, editor]);
+
   const setLink = useCallback(() => {
     if (!editor) return;
     const previousUrl = editor.getAttributes('link').href;
