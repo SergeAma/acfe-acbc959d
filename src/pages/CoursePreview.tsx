@@ -110,6 +110,12 @@ export const CoursePreview = () => {
   const [prerequisites, setPrerequisites] = useState<PrerequisiteCourse[]>([]);
   const [prerequisitesMet, setPrerequisitesMet] = useState(true);
   const [promoCode, setPromoCode] = useState('');
+  const [validatingPromo, setValidatingPromo] = useState(false);
+  const [promoValidation, setPromoValidation] = useState<{
+    valid: boolean;
+    message: string;
+    discountDescription?: string;
+  } | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -120,6 +126,48 @@ export const CoursePreview = () => {
       }
     }
   }, [id, user]);
+
+  // Promo code validation with debounce
+  const validatePromoCode = async (code: string) => {
+    if (!code.trim()) {
+      setPromoValidation(null);
+      return;
+    }
+    
+    setValidatingPromo(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-promo-code', {
+        body: { promoCode: code.trim() }
+      });
+      
+      if (error) throw error;
+      
+      setPromoValidation({
+        valid: data.valid,
+        message: data.message,
+        discountDescription: data.discountDescription
+      });
+    } catch (error) {
+      setPromoValidation({
+        valid: false,
+        message: "Failed to validate promo code"
+      });
+    } finally {
+      setValidatingPromo(false);
+    }
+  };
+
+  // Debounced promo code validation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (promoCode.trim()) {
+        validatePromoCode(promoCode);
+      } else {
+        setPromoValidation(null);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [promoCode]);
 
   const fetchPrerequisites = async () => {
     if (!id) return;
@@ -278,6 +326,17 @@ export const CoursePreview = () => {
           title: 'Success!',
           description: data.message || 'You have enrolled in this course',
         });
+      } else if (data.requiresSubscription) {
+        // User needs to subscribe first - redirect to pricing with promo code
+        toast({
+          title: 'Subscription Required',
+          description: data.message || 'Please subscribe to access paid courses',
+        });
+        // Pass validated promo code to pricing page via URL params
+        const pricingUrl = promoCode.trim() && promoValidation?.valid 
+          ? `/pricing?promo=${encodeURIComponent(promoCode.trim().toUpperCase())}`
+          : '/pricing';
+        navigate(pricingUrl);
       } else if (data.url) {
         // Redirect to Stripe checkout for paid courses
         window.open(data.url, '_blank');
@@ -596,17 +655,45 @@ export const CoursePreview = () => {
               <div className="space-y-4">
                 {/* Promo Code Input for Paid Courses */}
                 {course.is_paid && (
-                  <div className="flex gap-2 max-w-md">
-                    <div className="relative flex-1">
-                      <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="text"
-                        placeholder="Enter promo code (optional)"
-                        value={promoCode}
-                        onChange={(e) => setPromoCode(e.target.value)}
-                        className="pl-10"
-                      />
+                  <div className="space-y-2 max-w-md">
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="text"
+                          placeholder="Enter promo code (optional)"
+                          value={promoCode}
+                          onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                          className="pl-10 uppercase"
+                        />
+                      </div>
+                      {promoCode && (
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setPromoCode('')}
+                        >
+                          Clear
+                        </Button>
+                      )}
                     </div>
+                    {/* Promo validation feedback */}
+                    {promoCode && validatingPromo && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Validating code...
+                      </p>
+                    )}
+                    {promoCode && promoValidation && (
+                      <p className={`text-xs ${promoValidation.valid ? 'text-green-600' : 'text-destructive'}`}>
+                        {promoValidation.valid ? (
+                          <>✓ {promoValidation.discountDescription || 'Valid code'} - will apply at checkout</>
+                        ) : (
+                          <>✗ {promoValidation.message}</>
+                        )}
+                      </p>
+                    )}
                   </div>
                 )}
                 <Button 
@@ -623,7 +710,7 @@ export const CoursePreview = () => {
                   {!prerequisitesMet 
                     ? 'Complete Prerequisites First' 
                     : course.is_paid 
-                      ? 'Buy Course' 
+                      ? 'Subscribe to Enroll' 
                       : 'Enroll in Course'}
                 </Button>
               </div>
