@@ -29,6 +29,7 @@ interface AdminLessonEditorProps {
   item: LessonItem;
   onDelete: () => void;
   onUpdate: () => void;
+  sectionDescription?: string | null;
 }
 
 // Validate YouTube URL and extract video ID
@@ -63,7 +64,7 @@ function getYouTubeEmbedUrl(url: string): string | null {
   return null;
 }
 
-export const AdminLessonEditor = ({ item, onDelete, onUpdate }: AdminLessonEditorProps) => {
+export const AdminLessonEditor = ({ item, onDelete, onUpdate, sectionDescription }: AdminLessonEditorProps) => {
   const { toast } = useToast();
   const [isExpanded, setIsExpanded] = useState(!item.video_url && !item.text_content);
   const [title, setTitle] = useState(item.title);
@@ -243,7 +244,32 @@ export const AdminLessonEditor = ({ item, onDelete, onUpdate }: AdminLessonEdito
 
             {/* Text Content */}
             <div className="space-y-3">
-              <Label>Lesson Text Content</Label>
+              <Label className="flex items-center justify-between">
+                <span>Lesson Text Content</span>
+                {!textContent && sectionDescription && (
+                  <span className="text-xs text-muted-foreground font-normal">
+                    Using section description as fallback
+                  </span>
+                )}
+              </Label>
+              
+              {/* Show section description as preview if no lesson-specific content */}
+              {!textContent && sectionDescription && (
+                <div className="rounded-lg border border-dashed border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20 p-4 mb-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-400 mb-2">
+                    <FileText className="h-4 w-4" />
+                    Section Description (shown to students)
+                  </div>
+                  <div 
+                    className="prose prose-sm max-w-none text-muted-foreground"
+                    dangerouslySetInnerHTML={{ __html: sectionDescription }}
+                  />
+                  <p className="text-xs text-amber-600 dark:text-amber-500 mt-3">
+                    Add lesson-specific text below to override this section description
+                  </p>
+                </div>
+              )}
+              
               <RichTextEditor
                 content={textContent}
                 onChange={(content) => {

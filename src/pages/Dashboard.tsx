@@ -25,11 +25,8 @@ export const Dashboard = () => {
     );
   }
 
-  // CRITICAL: Mentors (contributors) are redirected to submission page only
-  // Admins are exempt - they can access the full dashboard
-  if (profile?.role === 'mentor' && !isActualAdmin) {
-    return <Navigate to="/contributor/submit" replace />;
-  }
+  // Mentors see the full MentorDashboard for analytics
+  // Non-admin mentors can view but not create courses (handled in ContentSubmissionCard)
 
   // Determine which dashboard to show
   // Admins see MentorDashboard by default (they are also mentors)
