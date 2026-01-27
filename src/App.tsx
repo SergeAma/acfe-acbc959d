@@ -72,6 +72,8 @@ import AdminEmailPreview from "./pages/AdminEmailPreview";
 import AdminMassMailer from "./pages/AdminMassMailer";
 import AdminBroadcasts from "./pages/AdminBroadcasts";
 import AdminMessagesOversight from "./pages/AdminMessagesOversight";
+import { ContributorSubmit } from "./pages/ContributorSubmit";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -144,14 +146,18 @@ const App = () => (
               <Route path="/moderator/:slug" element={<ProtectedRoute><ModeratorDashboard /></ProtectedRoute>} />
               <Route path="/payment-success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
               <Route path="/donation-success" element={<DonationSuccess />} />
-              <Route path="/mentor/courses" element={<ProtectedRoute><MentorCourses /></ProtectedRoute>} />
-              <Route path="/mentor/courses/new" element={<ProtectedRoute><CreateCourse /></ProtectedRoute>} />
-              {/* Course builder is admin-only - mentors submit via Google Form */}
+              {/* Contributor (Mentor) submission page - the ONLY page mentors can access */}
+              <Route path="/contributor/submit" element={<ProtectedRoute requiredRole="mentor"><ContributorSubmit /></ProtectedRoute>} />
+              
+              {/* Legacy mentor routes - redirect mentors to submission page, allow admins */}
+              <Route path="/mentor/courses" element={<ProtectedRoute requiredRole="admin"><MentorCourses /></ProtectedRoute>} />
+              <Route path="/mentor/courses/new" element={<ProtectedRoute requiredRole="admin"><CreateCourse /></ProtectedRoute>} />
+              {/* Course builder is admin-only */}
               <Route path="/mentor/courses/:courseId/build" element={<ProtectedRoute requiredRole="admin"><AdminCourseBuilder /></ProtectedRoute>} />
-              <Route path="/mentor/cohort" element={<ProtectedRoute><MentorCohort /></ProtectedRoute>} />
-              <Route path="/mentor/sessions" element={<ProtectedRoute><MentorSessions /></ProtectedRoute>} />
-              <Route path="/mentor/cohort/community" element={<ProtectedRoute><CohortCommunity /></ProtectedRoute>} />
-              <Route path="/cohort/community" element={<ProtectedRoute><CohortCommunity /></ProtectedRoute>} />
+              <Route path="/mentor/cohort" element={<ProtectedRoute requiredRole="admin"><MentorCohort /></ProtectedRoute>} />
+              <Route path="/mentor/sessions" element={<ProtectedRoute requiredRole="admin"><MentorSessions /></ProtectedRoute>} />
+              <Route path="/cohort/community" element={<ProtectedRoute requiredRole="admin"><CohortCommunity /></ProtectedRoute>} />
+              <Route path="/mentor/cohort/community" element={<ProtectedRoute requiredRole="admin"><CohortCommunity /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
               <Route path="/certificates" element={<ProtectedRoute><MyCertificates /></ProtectedRoute>} />
               <Route path="/subscriptions" element={<ProtectedRoute><MySubscriptions /></ProtectedRoute>} />
