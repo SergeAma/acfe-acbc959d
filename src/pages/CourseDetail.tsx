@@ -5,13 +5,14 @@ import { useAuth, ProfileFrame } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Clock, BarChart, Loader2, CheckCircle, DollarSign, Gift, Ticket, Crown } from 'lucide-react';
+import { ArrowLeft, Clock, BarChart, Loader2, CheckCircle, Gift, Crown } from 'lucide-react';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { createSafeHtml } from '@/lib/sanitize-html';
 import { CoursePrerequisitesDisplay } from '@/components/course/CoursePrerequisitesDisplay';
+import { usePromoCodeValidation } from '@/hooks/usePromoCodeValidation';
+import { PromoCodeInput } from '@/components/PromoCodeInput';
 
 interface Course {
   id: string;
@@ -48,8 +49,18 @@ export const CourseDetail = () => {
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [pricingOverride, setPricingOverride] = useState<PricingOverride | null>(null);
-  const [promoCode, setPromoCode] = useState('');
   const [showPromoInput, setShowPromoInput] = useState(false);
+  
+  // Use consolidated promo code validation hook
+  const {
+    promoCode,
+    setPromoCode,
+    isValidating: validatingPromo,
+    validation: promoValidation,
+    validatedCode,
+    clearPromoCode,
+    getPricingUrl,
+  } = usePromoCodeValidation();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -115,53 +126,7 @@ export const CourseDetail = () => {
     fetchData();
   }, [id, profile, navigate, toast]);
 
-  const [validatingPromo, setValidatingPromo] = useState(false);
-  const [promoValidation, setPromoValidation] = useState<{
-    valid: boolean;
-    message: string;
-    discountDescription?: string;
-  } | null>(null);
-
-  const validatePromoCode = async (code: string) => {
-    if (!code.trim()) {
-      setPromoValidation(null);
-      return;
-    }
-    
-    setValidatingPromo(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('validate-promo-code', {
-        body: { promoCode: code.trim() }
-      });
-      
-      if (error) throw error;
-      
-      setPromoValidation({
-        valid: data.valid,
-        message: data.message,
-        discountDescription: data.discountDescription
-      });
-    } catch (error) {
-      setPromoValidation({
-        valid: false,
-        message: "Failed to validate promo code"
-      });
-    } finally {
-      setValidatingPromo(false);
-    }
-  };
-
-  // Debounced promo code validation
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (promoCode.trim()) {
-        validatePromoCode(promoCode);
-      } else {
-        setPromoValidation(null);
-      }
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [promoCode]);
+  // OLD PROMO VALIDATION LOGIC REMOVED - now using usePromoCodeValidation hook
 
   const handleEnroll = async () => {
     if (!profile) {
@@ -182,7 +147,7 @@ export const CourseDetail = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke('create-course-checkout', {
-        body: { courseId: id, promoCode: promoCode.trim() || undefined }
+        body: { courseId: id, promoCode: validatedCode || undefined }
       });
 
       if (error) throw error;
@@ -200,11 +165,8 @@ export const CourseDetail = () => {
           title: "Subscription Required",
           description: data.message || "Please subscribe to access paid courses",
         });
-        // Pass validated promo code to pricing page via URL params
-        const pricingUrl = promoCode.trim() && promoValidation?.valid 
-          ? `/pricing?promo=${encodeURIComponent(promoCode.trim().toUpperCase())}`
-          : '/pricing';
-        navigate(pricingUrl);
+        // Use hook's getPricingUrl for consistent URL generation
+        navigate(getPricingUrl('/pricing'));
       } else if (data.url) {
         // Redirect to Stripe checkout
         window.open(data.url, '_blank');
@@ -354,47 +316,25 @@ export const CourseDetail = () => {
                     {priceInfo?.type === 'subscription' && (
                       <div className="space-y-2">
                         {showPromoInput ? (
-                          <div className="flex gap-2">
-                            <Input
-                              placeholder="Enter promo code"
-                              value={promoCode}
-                              onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                              className="uppercase"
-                            />
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => {
-                                setShowPromoInput(false);
-                                setPromoCode('');
-                              }}
-                            >
-                              Cancel
-                            </Button>
-                          </div>
+                          <PromoCodeInput
+                            value={promoCode}
+                            onChange={setPromoCode}
+                            onClear={() => {
+                              setShowPromoInput(false);
+                              clearPromoCode();
+                            }}
+                            validation={promoValidation}
+                            isValidating={validatingPromo}
+                            placeholder="Enter promo code"
+                            size="sm"
+                          />
                         ) : (
                           <button
                             onClick={() => setShowPromoInput(true)}
                             className="flex items-center gap-1 text-sm text-primary hover:underline mx-auto"
                           >
-                            <Ticket className="h-3 w-3" />
                             Have a promo code?
                           </button>
-                        )}
-                        {promoCode && promoValidation && (
-                          <p className={`text-xs text-center ${promoValidation.valid ? 'text-green-600' : 'text-destructive'}`}>
-                            {promoValidation.valid ? (
-                              <>✓ {promoValidation.discountDescription || 'Valid code'} - will be applied at checkout</>
-                            ) : (
-                              <>✗ {promoValidation.message}</>
-                            )}
-                          </p>
-                        )}
-                        {promoCode && validatingPromo && (
-                          <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                            Validating code...
-                          </p>
                         )}
                       </div>
                     )}
@@ -402,7 +342,7 @@ export const CourseDetail = () => {
                       {enrolling ? (
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
                       ) : null}
-                      {priceInfo?.type === 'subscription' ? 'Enroll Now' : 'Enroll Now'}
+                      Subscribe to Enroll
                     </Button>
                     {priceInfo?.type === 'subscription' && (
                       <p className="text-xs text-center text-muted-foreground">
