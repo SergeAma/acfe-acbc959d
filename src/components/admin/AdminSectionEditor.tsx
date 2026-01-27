@@ -228,6 +228,7 @@ export const AdminSectionEditor = ({ section, onDelete, onUpdate }: AdminSection
                       item={lesson}
                       onDelete={() => handleDeleteLesson(lesson.id)}
                       onUpdate={fetchLessons}
+                      sectionDescription={section.description}
                     />
                   ))}
                 </div>
