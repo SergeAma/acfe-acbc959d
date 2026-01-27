@@ -226,10 +226,10 @@ export const YouTubeLessonPlayer = ({
       },
       events: {
         onReady: (event) => {
-          // Style the iframe
+          // Style the iframe - CRITICAL: z-index must stay at 1 so shields (z-index: 50) stay above
           const iframe = event.target.getIframe();
           if (iframe) {
-            iframe.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; z-index: 1;';
+            iframe.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; z-index: 1 !important; pointer-events: auto;';
             // Apply sandbox for security (blocks popups and top-navigation)
             iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
           }

@@ -293,7 +293,7 @@ video[controls] {
   right: 12px;
   opacity: 0.7;
   pointer-events: none;
-  z-index: 15;
+  z-index: 60 !important; /* Above shields (z-index: 50) */
   font-size: 12px;
   color: hsl(var(--foreground));
   background: hsl(var(--background) / 0.6);
@@ -316,12 +316,18 @@ video[controls] {
 .acfe-shield-bottom-left,
 .acfe-shield-settings {
   position: absolute;
-  z-index: 10;
+  z-index: 50 !important; /* Must be higher than iframe (which YouTube API sets to z-index:1) */
   background: transparent;
-  pointer-events: auto;
+  pointer-events: auto !important; /* Force pointer interception */
   cursor: default;
   /* Debug: uncomment to visualize shields */
-  /* background: rgba(255, 0, 0, 0.1); */
+  /* background: rgba(255, 0, 0, 0.2); */
+}
+
+/* Ensure iframe stays below shields */
+.acfe-video-wrapper iframe {
+  z-index: 1 !important;
+  pointer-events: auto;
 }
 
 /* TOP SHIELD: Blocks title, channel, "Watch Later", share (top 35%) */
