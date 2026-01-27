@@ -115,6 +115,54 @@ export const CourseDetail = () => {
     fetchData();
   }, [id, profile, navigate, toast]);
 
+  const [validatingPromo, setValidatingPromo] = useState(false);
+  const [promoValidation, setPromoValidation] = useState<{
+    valid: boolean;
+    message: string;
+    discountDescription?: string;
+  } | null>(null);
+
+  const validatePromoCode = async (code: string) => {
+    if (!code.trim()) {
+      setPromoValidation(null);
+      return;
+    }
+    
+    setValidatingPromo(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-promo-code', {
+        body: { promoCode: code.trim() }
+      });
+      
+      if (error) throw error;
+      
+      setPromoValidation({
+        valid: data.valid,
+        message: data.message,
+        discountDescription: data.discountDescription
+      });
+    } catch (error) {
+      setPromoValidation({
+        valid: false,
+        message: "Failed to validate promo code"
+      });
+    } finally {
+      setValidatingPromo(false);
+    }
+  };
+
+  // Debounced promo code validation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (promoCode.trim()) {
+        validatePromoCode(promoCode);
+      } else {
+        setPromoValidation(null);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [promoCode]);
+
   const handleEnroll = async () => {
     if (!profile) {
       navigate('/auth');
@@ -147,13 +195,16 @@ export const CourseDetail = () => {
           description: data.message || "You're now enrolled in this course",
         });
       } else if (data.requiresSubscription) {
-        // User needs to subscribe first - redirect to pricing
+        // User needs to subscribe first - redirect to pricing with promo code
         toast({
           title: "Subscription Required",
           description: data.message || "Please subscribe to access paid courses",
         });
-        // Always use local route /pricing - edge function may return full URL
-        navigate('/pricing');
+        // Pass validated promo code to pricing page via URL params
+        const pricingUrl = promoCode.trim() && promoValidation?.valid 
+          ? `/pricing?promo=${encodeURIComponent(promoCode.trim().toUpperCase())}`
+          : '/pricing';
+        navigate(pricingUrl);
       } else if (data.url) {
         // Redirect to Stripe checkout
         window.open(data.url, '_blank');
@@ -330,9 +381,19 @@ export const CourseDetail = () => {
                             Have a promo code?
                           </button>
                         )}
-                        {promoCode && (
-                          <p className="text-xs text-center text-green-600">
-                            Code "{promoCode}" will be applied at checkout
+                        {promoCode && promoValidation && (
+                          <p className={`text-xs text-center ${promoValidation.valid ? 'text-green-600' : 'text-destructive'}`}>
+                            {promoValidation.valid ? (
+                              <>✓ {promoValidation.discountDescription || 'Valid code'} - will be applied at checkout</>
+                            ) : (
+                              <>✗ {promoValidation.message}</>
+                            )}
+                          </p>
+                        )}
+                        {promoCode && validatingPromo && (
+                          <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Validating code...
                           </p>
                         )}
                       </div>
