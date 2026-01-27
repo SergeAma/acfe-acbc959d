@@ -142,7 +142,7 @@ serve(async (req) => {
       .from("institution_students")
       .select("id, status")
       .eq("user_id", user.id)
-      .eq("status", "joined")
+      .eq("status", "active")
       .limit(1)
       .maybeSingle();
     

@@ -73,38 +73,48 @@ serve(async (req) => {
     logStep("Found Stripe customer", { customerId });
 
     // Get all active and paused subscriptions
+    // Note: Using only 3 levels of expansion to avoid Stripe API limits
     const activeSubscriptions = await stripe.subscriptions.list({
       customer: customerId,
       status: "active",
-      expand: ["data.items.data.price.product"],
     });
 
     const pausedSubscriptions = await stripe.subscriptions.list({
       customer: customerId,
       status: "paused",
-      expand: ["data.items.data.price.product"],
     });
 
     // Combine active and paused subscriptions
     const allSubscriptions = [...activeSubscriptions.data, ...pausedSubscriptions.data];
 
-    const subscriptionDetails = allSubscriptions.map((sub: Stripe.Subscription) => {
-      const item = sub.items.data[0];
-      const product = item.price.product as Stripe.Product;
-      return {
-        id: sub.id,
-        status: sub.status,
-        cancel_at_period_end: sub.cancel_at_period_end,
-        current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
-        product_id: typeof item.price.product === 'string' ? item.price.product : product.id,
-        product_name: product.name,
-        price_id: item.price.id,
-        amount: item.price.unit_amount,
-        currency: item.price.currency,
-        interval: item.price.recurring?.interval,
-        pause_collection: sub.pause_collection,
-      };
-    });
+    // Fetch product details separately for each subscription to avoid expansion limits
+    const subscriptionDetails = await Promise.all(
+      allSubscriptions.map(async (sub: Stripe.Subscription) => {
+        const item = sub.items.data[0];
+        const priceId = item.price.id;
+        
+        // Fetch the price with product expansion (only 1 level deep)
+        const price = await stripe.prices.retrieve(priceId, {
+          expand: ['product'],
+        });
+        
+        const product = price.product as Stripe.Product;
+        
+        return {
+          id: sub.id,
+          status: sub.status,
+          cancel_at_period_end: sub.cancel_at_period_end,
+          current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+          product_id: product.id,
+          product_name: product.name,
+          price_id: priceId,
+          amount: price.unit_amount,
+          currency: price.currency,
+          interval: price.recurring?.interval,
+          pause_collection: sub.pause_collection,
+        };
+      })
+    );
 
     logStep("Subscription check complete", { 
       hasSubscriptions: subscriptionDetails.length > 0,

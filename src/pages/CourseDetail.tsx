@@ -42,10 +42,11 @@ interface PricingOverride {
 export const CourseDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { profile, session } = useAuth();
   const { toast } = useToast();
   const [course, setCourse] = useState<Course | null>(null);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [pricingOverride, setPricingOverride] = useState<PricingOverride | null>(null);
@@ -61,6 +62,31 @@ export const CourseDetail = () => {
     clearPromoCode,
     getPricingUrl,
   } = usePromoCodeValidation();
+
+  // Check subscription status on mount
+  useEffect(() => {
+    const checkSubscription = async () => {
+      if (!session?.access_token) return;
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('check-subscription', {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+        
+        if (!error && data?.subscribed) {
+          setHasActiveSubscription(true);
+        }
+      } catch (err) {
+        console.error('Failed to check subscription:', err);
+      }
+    };
+    
+    if (session) {
+      checkSubscription();
+    }
+  }, [session]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -310,6 +336,23 @@ export const CourseDetail = () => {
                         Start Learning
                       </Button>
                     </Link>
+                  </div>
+                ) : hasActiveSubscription ? (
+                  // User has subscription but isn't enrolled in this course yet
+                  <div className="space-y-4">
+                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-center">
+                      <Crown className="h-8 w-8 text-primary mx-auto mb-2" />
+                      <p className="text-sm font-medium">You're an ACFE subscriber!</p>
+                      <p className="text-xs text-muted-foreground mt-1">Click below to access this course</p>
+                    </div>
+                    <Button onClick={handleEnroll} disabled={enrolling} className="w-full" size="lg">
+                      {enrolling ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                      )}
+                      Start Learning
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-3">
