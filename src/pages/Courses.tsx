@@ -54,14 +54,11 @@ export const Courses = () => {
 
   useEffect(() => {
     const fetchCourses = async () => {
+      // Fetch courses first without mentor join (RLS may block it)
       const { data, error } = await supabase
         .from('courses')
         .select(`
           *,
-          mentor:profiles!courses_mentor_id_fkey (
-            full_name,
-            avatar_url
-          ),
           institution:institutions (
             id,
             name
@@ -71,12 +68,36 @@ export const Courses = () => {
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        setCourses(data as any);
-        setFilteredCourses(data as any);
+        // Batch fetch mentor data for all courses using the simplified RPC
+        const uniqueMentorIds = [...new Set(data.map(c => c.mentor_id).filter(Boolean))];
+        const mentorDataMap: Record<string, { full_name: string; avatar_url: string | null }> = {};
+        
+        // Fetch each mentor's profile using the course-specific RPC
+        await Promise.all(
+          uniqueMentorIds.map(async (mentorId) => {
+            const { data: mentorData } = await supabase
+              .rpc('get_course_mentor_profile', { course_mentor_id: mentorId });
+            if (mentorData && mentorData.length > 0) {
+              mentorDataMap[mentorId] = {
+                full_name: mentorData[0].full_name,
+                avatar_url: mentorData[0].avatar_url
+              };
+            }
+          })
+        );
+
+        // Hydrate courses with mentor data
+        const coursesWithMentors = data.map(course => ({
+          ...course,
+          mentor: mentorDataMap[course.mentor_id] || null
+        }));
+
+        setCourses(coursesWithMentors as any);
+        setFilteredCourses(coursesWithMentors as any);
         
         // If filtering by mentor, get mentor name
-        if (mentorFilter && data.length > 0) {
-          const mentorCourse = data.find((c: any) => c.mentor_id === mentorFilter);
+        if (mentorFilter && coursesWithMentors.length > 0) {
+          const mentorCourse = coursesWithMentors.find((c: any) => c.mentor_id === mentorFilter);
           if (mentorCourse) {
             setMentorName((mentorCourse as any).mentor?.full_name || 'Mentor');
           }

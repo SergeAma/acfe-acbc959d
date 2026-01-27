@@ -77,7 +77,7 @@ export const StudentDashboard = () => {
     const fetchData = async () => {
       if (!profile?.id) return;
 
-      // Fetch enrollments with mentor data
+      // Fetch enrollments without mentor join (RLS may block it)
       const { data: enrollmentData } = await supabase
         .from('enrollments')
         .select(`
@@ -89,19 +89,16 @@ export const StudentDashboard = () => {
             category,
             level,
             thumbnail_url,
-            mentor_id,
-            mentor:profiles!courses_mentor_id_fkey (
-              full_name,
-              avatar_url
-            )
+            mentor_id
           )
         `)
         .eq('student_id', profile.id)
         .order('enrolled_at', { ascending: false });
 
-      if (enrollmentData) {
-        setEnrollments(enrollmentData as any);
-      }
+      // Collect all mentor IDs from enrollments
+      const enrollmentMentorIds = enrollmentData
+        ?.map(e => (e as any).course?.mentor_id)
+        .filter(Boolean) || [];
 
       // Fetch mentorship requests
       const { data: requestData } = await supabase
@@ -121,37 +118,7 @@ export const StudentDashboard = () => {
         .eq('student_id', profile.id)
         .order('created_at', { ascending: false });
 
-      if (requestData) {
-        setMentorshipRequests(requestData as any);
-        
-        // Fetch mentor profiles
-        const mentorIds = [...new Set(requestData.map(r => r.mentor_id))];
-        if (mentorIds.length > 0) {
-          const { data: profiles } = await supabase
-            .rpc('get_public_mentor_profiles');
-          
-          if (profiles) {
-            const profileMap: Record<string, { full_name: string; avatar_url: string }> = {};
-            profiles.forEach((p: any) => {
-              if (mentorIds.includes(p.id)) {
-                profileMap[p.id] = { full_name: p.full_name, avatar_url: p.avatar_url };
-              }
-            });
-            setMentorProfiles(profileMap);
-          }
-        }
-      }
-
-      // Fetch subscribed courses
-      const { data: purchaseData } = await supabase
-        .from('course_purchases')
-        .select('course_id')
-        .eq('student_id', profile.id)
-        .eq('status', 'completed');
-
-      if (purchaseData) {
-        setSubscribedCourseIds(purchaseData.map(p => p.course_id));
-      }
+      const requestMentorIds = requestData?.map(r => r.mentor_id) || [];
 
       // Get enrolled course IDs for filtering available courses
       const enrolledCourseIds = enrollmentData?.map(e => (e as any).course?.id).filter(Boolean) || [];
@@ -166,21 +133,69 @@ export const StudentDashboard = () => {
           category,
           level,
           thumbnail_url,
-          mentor_id,
-          mentor:profiles!courses_mentor_id_fkey (
-            full_name,
-            avatar_url
-          )
+          mentor_id
         `)
         .eq('is_published', true)
         .order('created_at', { ascending: false })
         .limit(6);
 
-      if (publishedCourses) {
-        // Filter out already enrolled courses
-        const available = publishedCourses.filter(
-          (c: any) => !enrolledCourseIds.includes(c.id)
+      const publishedMentorIds = publishedCourses?.map(c => c.mentor_id).filter(Boolean) || [];
+
+      // Collect ALL unique mentor IDs and batch fetch their profiles
+      const allMentorIds = [...new Set([...enrollmentMentorIds, ...requestMentorIds, ...publishedMentorIds])];
+      const mentorDataMap: Record<string, { full_name: string; avatar_url: string }> = {};
+
+      if (allMentorIds.length > 0) {
+        await Promise.all(
+          allMentorIds.map(async (mentorId) => {
+            const { data: mentorData } = await supabase
+              .rpc('get_course_mentor_profile', { course_mentor_id: mentorId });
+            if (mentorData && mentorData.length > 0) {
+              mentorDataMap[mentorId] = {
+                full_name: mentorData[0].full_name,
+                avatar_url: mentorData[0].avatar_url
+              };
+            }
+          })
         );
+      }
+
+      // Hydrate enrollments with mentor data
+      if (enrollmentData) {
+        const hydratedEnrollments = enrollmentData.map(e => ({
+          ...e,
+          course: {
+            ...(e as any).course,
+            mentor: mentorDataMap[(e as any).course?.mentor_id] || null
+          }
+        }));
+        setEnrollments(hydratedEnrollments as any);
+      }
+
+      if (requestData) {
+        setMentorshipRequests(requestData as any);
+        setMentorProfiles(mentorDataMap);
+      }
+
+      // Fetch subscribed courses
+      const { data: purchaseData } = await supabase
+        .from('course_purchases')
+        .select('course_id')
+        .eq('student_id', profile.id)
+        .eq('status', 'completed');
+
+      if (purchaseData) {
+        setSubscribedCourseIds(purchaseData.map(p => p.course_id));
+      }
+
+      if (publishedCourses) {
+        // Filter out already enrolled courses and hydrate with mentor data
+        const available = publishedCourses
+          .filter((c: any) => !enrolledCourseIds.includes(c.id))
+          .map(course => ({
+            ...course,
+            mentor: mentorDataMap[course.mentor_id] || null
+          }));
         setAvailableCourses(available as any);
       }
 
