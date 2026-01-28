@@ -25,11 +25,13 @@ export default function MentorContractAgreement() {
   const [submitting, setSubmitting] = useState(false);
   const [hasContract, setHasContract] = useState<boolean | null>(null);
   const [checkingContract, setCheckingContract] = useState(true);
-  const [sessionPriceCents, setSessionPriceCents] = useState<number>(3000); // Default $30
+  const [sessionPriceCents, setSessionPriceCents] = useState<number | null>(null);
+  const [priceLoading, setPriceLoading] = useState(true);
 
   // Fetch session price from platform settings
   useEffect(() => {
     const fetchSessionPrice = async () => {
+      setPriceLoading(true);
       try {
         const { data, error } = await supabase
           .from('platform_settings')
@@ -43,19 +45,21 @@ export default function MentorContractAgreement() {
         }
       } catch (error) {
         console.error("Error fetching session price:", error);
+      } finally {
+        setPriceLoading(false);
       }
     };
 
     fetchSessionPrice();
   }, []);
 
-  const sessionPriceDollars = Math.round(sessionPriceCents / 100);
+  const sessionPriceDollars = sessionPriceCents !== null ? Math.round(sessionPriceCents / 100) : null;
 
   // Contract conditions using translation keys
   const CONTRACT_CONDITIONS = [
     { id: "condition_respect_students", title: t('mentor.term1_title'), description: t('mentor.term1_desc') },
     { id: "condition_free_courses", title: t('mentor.term2_title'), description: t('mentor.term2_desc') },
-    { id: "condition_session_pricing", title: t('mentor.term3_title'), description: t('mentor.term3_desc').replace('${price}', `$${sessionPriceDollars}`) },
+    { id: "condition_session_pricing", title: t('mentor.term3_title'), description: t('mentor.term3_desc').replace('${price}', sessionPriceDollars !== null ? `$${sessionPriceDollars}` : '...') },
     { id: "condition_minimum_courses", title: t('mentor.term4_title'), description: t('mentor.term4_desc') },
     { id: "condition_quarterly_events", title: t('mentor.term5_title'), description: t('mentor.term5_desc') },
     { id: "condition_data_privacy", title: t('mentor.term6_title'), description: t('mentor.term6_desc') },
