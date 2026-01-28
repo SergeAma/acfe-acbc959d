@@ -44,53 +44,54 @@ const handler = async (req: Request): Promise<Response> => {
     let failed = 0;
     const errors: string[] = [];
 
-    // Send emails in batches of 10
-    const batchSize = 10;
-    for (let i = 0; i < recipients.length; i += batchSize) {
-      const batch = recipients.slice(i, i + batchSize);
+    // Send emails sequentially with delay to respect Resend rate limits
+    // Resend free tier: 2 emails/second, paid: 10 emails/second
+    // Using 600ms delay ensures we stay under 2/second limit
+    for (let i = 0; i < recipients.length; i++) {
+      const recipient = recipients[i];
       
-      await Promise.all(batch.map(async (recipient) => {
-        try {
-          // Personalize content
-          const personalizedHtml = html_content.replace(/\{\{first_name\}\}/g, recipient.first_name);
+      try {
+        // Personalize content
+        const personalizedHtml = html_content.replace(/\{\{first_name\}\}/g, recipient.first_name);
 
-          const res = await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${RESEND_API_KEY}`,
-            },
-            body: JSON.stringify({
-              from: "ACFE <noreply@acloudforeveryone.org>",
-              to: [recipient.email],
-              subject,
-              html: personalizedHtml,
-            }),
-          });
+        const res = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${RESEND_API_KEY}`,
+          },
+          body: JSON.stringify({
+            from: "ACFE <noreply@acloudforeveryone.org>",
+            to: [recipient.email],
+            subject,
+            html: personalizedHtml,
+          }),
+        });
 
-          if (res.ok) {
-            sent++;
-            // Update recipient record
-            await supabase
-              .from('broadcast_recipients')
-              .update({ email_sent: true })
-              .eq('broadcast_id', broadcast_id)
-              .eq('recipient_id', recipient.id);
-          } else {
-            failed++;
-            const error = await res.text();
-            errors.push(`${recipient.email}: ${error}`);
-          }
-        } catch (err: unknown) {
+        if (res.ok) {
+          sent++;
+          // Update recipient record
+          await supabase
+            .from('broadcast_recipients')
+            .update({ email_sent: true })
+            .eq('broadcast_id', broadcast_id)
+            .eq('recipient_id', recipient.id);
+        } else {
           failed++;
-          const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-          errors.push(`${recipient.email}: ${errorMessage}`);
+          const error = await res.text();
+          errors.push(`${recipient.email}: ${error}`);
+          console.error(`Failed to send to ${recipient.email}:`, error);
         }
-      }));
+      } catch (err: unknown) {
+        failed++;
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        errors.push(`${recipient.email}: ${errorMessage}`);
+        console.error(`Error sending to ${recipient.email}:`, errorMessage);
+      }
 
-      // Small delay between batches to avoid rate limiting
-      if (i + batchSize < recipients.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+      // Rate limit delay: 600ms between emails (stays under 2/second)
+      if (i < recipients.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 600));
       }
     }
 
