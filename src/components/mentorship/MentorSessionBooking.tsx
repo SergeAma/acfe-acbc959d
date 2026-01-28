@@ -35,7 +35,7 @@ export const MentorSessionBooking = ({ mentorId, mentorName, isEmbedded = false 
   const [loading, setLoading] = useState(false);
   const [priceLoading, setPriceLoading] = useState(true);
   const [availabilityLoading, setAvailabilityLoading] = useState(true);
-  const [priceCents, setPriceCents] = useState<number>(2000);
+  const [priceCents, setPriceCents] = useState<number | null>(null);
   const [enabled, setEnabled] = useState<boolean>(true);
   const [showSuccess, setShowSuccess] = useState(false);
   
@@ -218,8 +218,8 @@ export const MentorSessionBooking = ({ mentorId, mentorName, isEmbedded = false 
           <DollarSign className="h-5 w-5 text-muted-foreground" />
           <span className="text-sm text-muted-foreground">Session Price</span>
         </div>
-        {priceLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+        {priceLoading || priceCents === null ? (
+          <span className="text-2xl font-bold text-muted-foreground/50 animate-pulse">$--</span>
         ) : (
           <span className="text-2xl font-bold text-primary">
             ${(priceCents / 100).toFixed(0)}
@@ -339,8 +339,8 @@ export const MentorSessionBooking = ({ mentorId, mentorName, isEmbedded = false 
           <Video className="h-4 w-4 mr-2" />
         )}
         {selectedSlot 
-          ? `Book ${format(selectedDate!, 'MMM d')} at ${selectedSlot.start} – $${(priceCents / 100).toFixed(0)}`
-          : `Select a time slot – $${(priceCents / 100).toFixed(0)}`
+          ? `Book ${format(selectedDate!, 'MMM d')} at ${selectedSlot.start} – ${priceCents !== null ? `$${(priceCents / 100).toFixed(0)}` : '--'}`
+          : `Select a time slot – ${priceCents !== null ? `$${(priceCents / 100).toFixed(0)}` : '--'}`
         }
       </Button>
     </div>
