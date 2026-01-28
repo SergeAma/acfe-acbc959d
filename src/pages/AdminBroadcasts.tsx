@@ -136,6 +136,12 @@ export const AdminBroadcasts = () => {
     setSending(true);
 
     try {
+      // Refresh session to ensure valid JWT for RLS policy check
+      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+      if (sessionError || !session) {
+        throw new Error("Session expired. Please log in again.");
+      }
+
       // Create broadcast record
       const filters = {
         country: filterCountry || null,
