@@ -13,6 +13,7 @@ interface PausedEmailRequest {
   email: string;
   name: string;
   language?: EmailLanguage;
+  tier_name?: string;
 }
 
 serve(async (req) => {
@@ -21,36 +22,59 @@ serve(async (req) => {
   }
 
   try {
-    const { email, name, language = 'en' }: PausedEmailRequest = await req.json();
+    const { email, name, language = 'en', tier_name }: PausedEmailRequest = await req.json();
     const lang: EmailLanguage = language === 'fr' ? 'fr' : 'en';
 
-    console.log("[SEND-SUBSCRIPTION-PAUSED] Sending email to:", email);
+    console.log("[SEND-SUBSCRIPTION-PAUSED] Sending email to:", email, "tier:", tier_name, "language:", lang);
 
     const displayName = name || (lang === 'fr' ? 'Abonné' : 'Subscriber');
     const greeting = lang === 'fr' ? 'Bonjour' : 'Hi';
+    const tierDisplay = tier_name || (lang === 'fr' ? 'Abonnement ACFE' : 'ACFE Subscription');
 
-    const subject = getSubTranslation('subscription.paused.subject', lang);
-    const headline = getSubTranslation('subscription.paused.headline', lang);
+    const subject = lang === 'fr'
+      ? `Votre ${tierDisplay} a été Mis en Pause`
+      : `Your ${tierDisplay} Has Been Paused`;
+    
+    const headline = lang === 'fr'
+      ? `${tierDisplay} en Pause`
+      : `${tierDisplay} Paused`;
+
+    // Build status summary table
+    const statusSummary = `
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; background-color: #f8f9fa; border-radius: 6px;">
+        <tr>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-weight: 600;">${lang === 'fr' ? 'Abonnement' : 'Subscription'}</td>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: right;">${tierDisplay}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 12px; font-weight: 600;">${lang === 'fr' ? 'Statut' : 'Status'}</td>
+          <td style="padding: 8px 12px; text-align: right; color: #f59e0b; font-weight: 600;">${lang === 'fr' ? 'En pause' : 'Paused'}</td>
+        </tr>
+      </table>`;
 
     const bodyContent = lang === 'fr'
       ? `<p style="margin: 0 0 16px 0;">${greeting} ${displayName},</p>
-         <p style="margin: 0;">Votre abonnement a été mis en pause. Vous pouvez le reprendre à tout moment pour continuer votre parcours d'apprentissage.</p>`
+         <p style="margin: 0 0 16px 0;">Votre abonnement <strong>${tierDisplay}</strong> a été mis en pause.</p>
+         ${statusSummary}
+         <p style="margin: 0;">Vous pouvez le reprendre à tout moment pour continuer votre parcours d'apprentissage.</p>`
       : `<p style="margin: 0 0 16px 0;">${greeting} ${displayName},</p>
-         <p style="margin: 0;">Your subscription has been paused. You can resume it at any time to continue your learning journey.</p>`;
+         <p style="margin: 0 0 16px 0;">Your <strong>${tierDisplay}</strong> subscription has been paused.</p>
+         ${statusSummary}
+         <p style="margin: 0;">You can resume it at any time to continue your learning journey.</p>`;
 
     const emailHtml = buildCanonicalEmail({
       headline,
       body_primary: bodyContent,
       impact_block: {
-        title: getSubTranslation('subscription.paused.impact_title', lang),
+        title: lang === 'fr' ? 'Pendant la pause:' : 'While paused:',
         items: [
-          getSubTranslation('subscription.paused.item1', lang),
-          getSubTranslation('subscription.paused.item2', lang),
-          getSubTranslation('subscription.paused.item3', lang),
+          lang === 'fr' ? 'La facturation est suspendue' : 'Billing is suspended',
+          lang === 'fr' ? 'Votre progression est sauvegardée' : 'Your progress is saved',
+          lang === 'fr' ? 'Reprenez à tout moment pour continuer' : 'Resume anytime to continue',
         ]
       },
       primary_cta: {
-        label: getSubTranslation('subscription.paused.cta', lang),
+        label: lang === 'fr' ? 'Reprendre l\'Abonnement' : 'Resume Subscription',
         url: 'https://acloudforeveryone.org/my-subscriptions'
       }
     }, lang);

@@ -279,7 +279,7 @@ async function processEventAsync(event: Stripe.Event) {
             break;
           }
 
-          // Find user by email
+          // Find user by email and get profile
           const { data: userData, error: userError } = await supabase.auth.admin.listUsers();
           if (userError) {
             logStep("Error listing users", { error: userError.message });
@@ -287,33 +287,58 @@ async function processEventAsync(event: Stripe.Event) {
           }
 
           const user = userData.users.find(u => u.email === customerEmail);
-          if (!user) {
-            logStep("User not found for email", { email: customerEmail });
-            break;
+          let language: 'en' | 'fr' = 'en';
+          let fullName = customer.name || 'Learner';
+          
+          if (user) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('full_name, preferred_language')
+              .eq('id', user.id)
+              .single();
+            
+            if (profile?.full_name) fullName = profile.full_name;
+            if (profile?.preferred_language === 'fr') language = 'fr';
+            
+            // Update course purchases status
+            await supabase
+              .from('course_purchases')
+              .update({ status: 'cancelled' })
+              .eq('student_id', user.id)
+              .eq('stripe_subscription_id', subscription.id);
           }
 
-          // Update course purchases status
-          await supabase
-            .from('course_purchases')
-            .update({ status: 'cancelled' })
-            .eq('student_id', user.id)
-            .eq('stripe_subscription_id', subscription.id);
+          // Get tier information from subscription
+          const priceId = subscription.items.data[0]?.price?.id;
+          const price = priceId ? await stripe.prices.retrieve(priceId) : null;
+          const productId = price?.product as string;
+          const tierConfig = productId && SUBSCRIPTION_TIERS[productId] 
+            ? SUBSCRIPTION_TIERS[productId] 
+            : DEFAULT_TIER;
 
-          // Send cancellation email
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('id', user.id)
-            .single();
+          // Format dates properly
+          const subscriptionEnd = new Date(subscription.current_period_end * 1000);
+          const formattedEndDate = subscriptionEnd.toLocaleDateString(
+            language === 'fr' ? 'fr-FR' : 'en-US', 
+            { year: 'numeric', month: 'long', day: 'numeric' }
+          );
 
+          // Send cancellation email with full details
           await supabase.functions.invoke('send-subscription-cancelled', {
             body: {
               email: customerEmail,
-              name: profile?.full_name || 'Learner',
-              subscription_end: new Date(subscription.current_period_end * 1000).toLocaleDateString(),
+              name: fullName,
+              subscription_end: formattedEndDate,
+              language,
+              tier_name: language === 'fr' ? tierConfig.nameFr : tierConfig.name,
             },
           });
-          logStep("Cancellation email sent");
+          logStep("Cancellation email sent", { 
+            email: customerEmail, 
+            tier: tierConfig.name,
+            endDate: formattedEndDate,
+            language 
+          });
         } catch (error) {
           logStep("Error in subscription.deleted handler", { error: String(error) });
         }
@@ -331,15 +356,41 @@ async function processEventAsync(event: Stripe.Event) {
 
         try {
           const customer = await stripe.customers.retrieve(customerId);
-          if (!customer.deleted && customer.email) {
-            await supabase.functions.invoke('send-subscription-paused', {
-              body: {
-                email: customer.email,
-                name: customer.name || 'Learner',
-              },
-            });
-            logStep("Subscription paused email sent");
+          if (customer.deleted || !customer.email) break;
+
+          // Get user profile for name and language
+          const { data: userData } = await supabase.auth.admin.listUsers();
+          const user = userData?.users?.find(u => u.email === customer.email);
+          let language: 'en' | 'fr' = 'en';
+          let fullName = customer.name || 'Learner';
+          
+          if (user) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('full_name, preferred_language')
+              .eq('id', user.id)
+              .single();
+            if (profile?.full_name) fullName = profile.full_name;
+            if (profile?.preferred_language === 'fr') language = 'fr';
           }
+
+          // Get tier information
+          const priceId = subscription.items.data[0]?.price?.id;
+          const price = priceId ? await stripe.prices.retrieve(priceId) : null;
+          const productId = price?.product as string;
+          const tierConfig = productId && SUBSCRIPTION_TIERS[productId] 
+            ? SUBSCRIPTION_TIERS[productId] 
+            : DEFAULT_TIER;
+
+          await supabase.functions.invoke('send-subscription-paused', {
+            body: {
+              email: customer.email,
+              name: fullName,
+              language,
+              tier_name: language === 'fr' ? tierConfig.nameFr : tierConfig.name,
+            },
+          });
+          logStep("Subscription paused email sent", { tier: tierConfig.name, language });
         } catch (error) {
           logStep("Error in subscription.paused handler", { error: String(error) });
         }
@@ -357,16 +408,50 @@ async function processEventAsync(event: Stripe.Event) {
 
         try {
           const customer = await stripe.customers.retrieve(customerId);
-          if (!customer.deleted && customer.email) {
-            await supabase.functions.invoke('send-subscription-resumed', {
-              body: {
-                email: customer.email,
-                name: customer.name || 'Learner',
-                next_billing: new Date(subscription.current_period_end * 1000).toLocaleDateString(),
-              },
-            });
-            logStep("Subscription resumed email sent");
+          if (customer.deleted || !customer.email) break;
+
+          // Get user profile for name and language
+          const { data: userData } = await supabase.auth.admin.listUsers();
+          const user = userData?.users?.find(u => u.email === customer.email);
+          let language: 'en' | 'fr' = 'en';
+          let fullName = customer.name || 'Learner';
+          
+          if (user) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('full_name, preferred_language')
+              .eq('id', user.id)
+              .single();
+            if (profile?.full_name) fullName = profile.full_name;
+            if (profile?.preferred_language === 'fr') language = 'fr';
           }
+
+          // Get tier and pricing info
+          const priceId = subscription.items.data[0]?.price?.id;
+          const price = priceId ? await stripe.prices.retrieve(priceId) : null;
+          const productId = price?.product as string;
+          const tierConfig = productId && SUBSCRIPTION_TIERS[productId] 
+            ? SUBSCRIPTION_TIERS[productId] 
+            : DEFAULT_TIER;
+
+          const nextBillingDate = new Date(subscription.current_period_end * 1000);
+          const formattedNextBilling = nextBillingDate.toLocaleDateString(
+            language === 'fr' ? 'fr-FR' : 'en-US',
+            { year: 'numeric', month: 'long', day: 'numeric' }
+          );
+
+          await supabase.functions.invoke('send-subscription-resumed', {
+            body: {
+              email: customer.email,
+              name: fullName,
+              next_billing: formattedNextBilling,
+              language,
+              tier_name: language === 'fr' ? tierConfig.nameFr : tierConfig.name,
+              amount: ((price?.unit_amount || 0) / 100).toFixed(2),
+              currency: (price?.currency || 'usd').toUpperCase(),
+            },
+          });
+          logStep("Subscription resumed email sent", { tier: tierConfig.name, language });
         } catch (error) {
           logStep("Error in subscription.resumed handler", { error: String(error) });
         }
@@ -390,16 +475,48 @@ async function processEventAsync(event: Stripe.Event) {
             const customerId = subscription.customer as string;
             const customer = await stripe.customers.retrieve(customerId);
             
-            if (!customer.deleted && customer.email) {
-              await supabase.functions.invoke('send-subscription-ending-reminder', {
-                body: {
-                  email: customer.email,
-                  name: customer.name || 'Learner',
-                  subscription_end: new Date(subscription.current_period_end * 1000).toLocaleDateString(),
-                },
-              });
-              logStep("Subscription ending reminder sent");
+            if (customer.deleted || !customer.email) break;
+
+            // Get user profile for name and language
+            const { data: userData } = await supabase.auth.admin.listUsers();
+            const user = userData?.users?.find(u => u.email === customer.email);
+            let language: 'en' | 'fr' = 'en';
+            let fullName = customer.name || 'Learner';
+            
+            if (user) {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('full_name, preferred_language')
+                .eq('id', user.id)
+                .single();
+              if (profile?.full_name) fullName = profile.full_name;
+              if (profile?.preferred_language === 'fr') language = 'fr';
             }
+
+            // Get tier info
+            const priceId = subscription.items.data[0]?.price?.id;
+            const price = priceId ? await stripe.prices.retrieve(priceId) : null;
+            const productId = price?.product as string;
+            const tierConfig = productId && SUBSCRIPTION_TIERS[productId] 
+              ? SUBSCRIPTION_TIERS[productId] 
+              : DEFAULT_TIER;
+
+            const endDate = new Date(subscription.current_period_end * 1000);
+            const formattedEndDate = endDate.toLocaleDateString(
+              language === 'fr' ? 'fr-FR' : 'en-US',
+              { year: 'numeric', month: 'long', day: 'numeric' }
+            );
+
+            await supabase.functions.invoke('send-subscription-ending-reminder', {
+              body: {
+                email: customer.email,
+                name: fullName,
+                subscription_end: formattedEndDate,
+                language,
+                tier_name: language === 'fr' ? tierConfig.nameFr : tierConfig.name,
+              },
+            });
+            logStep("Subscription ending reminder sent", { tier: tierConfig.name, language });
           } catch (error) {
             logStep("Error sending ending reminder", { error: String(error) });
           }
@@ -421,18 +538,51 @@ async function processEventAsync(event: Stripe.Event) {
             const customerId = invoice.customer as string;
             const customer = await stripe.customers.retrieve(customerId);
             
-            if (!customer.deleted && customer.email) {
-              await supabase.functions.invoke('send-subscription-renewed', {
-                body: {
-                  email: customer.email,
-                  name: customer.name || 'Learner',
-                  amount: (invoice.amount_paid / 100).toFixed(2),
-                  currency: invoice.currency.toUpperCase(),
-                  next_billing: new Date((invoice.lines.data[0]?.period?.end || 0) * 1000).toLocaleDateString(),
-                },
-              });
-              logStep("Renewal confirmation email sent");
+            if (customer.deleted || !customer.email) break;
+
+            // Get user profile for name and language
+            const { data: userData } = await supabase.auth.admin.listUsers();
+            const user = userData?.users?.find(u => u.email === customer.email);
+            let language: 'en' | 'fr' = 'en';
+            let fullName = customer.name || 'Learner';
+            
+            if (user) {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('full_name, preferred_language')
+                .eq('id', user.id)
+                .single();
+              if (profile?.full_name) fullName = profile.full_name;
+              if (profile?.preferred_language === 'fr') language = 'fr';
             }
+
+            // Get tier info from invoice line items
+            const lineItem = invoice.lines.data[0];
+            const priceId = lineItem?.price?.id;
+            const price = priceId ? await stripe.prices.retrieve(priceId) : null;
+            const productId = price?.product as string;
+            const tierConfig = productId && SUBSCRIPTION_TIERS[productId] 
+              ? SUBSCRIPTION_TIERS[productId] 
+              : DEFAULT_TIER;
+
+            const nextBillingDate = new Date((lineItem?.period?.end || 0) * 1000);
+            const formattedNextBilling = nextBillingDate.toLocaleDateString(
+              language === 'fr' ? 'fr-FR' : 'en-US',
+              { year: 'numeric', month: 'long', day: 'numeric' }
+            );
+
+            await supabase.functions.invoke('send-subscription-renewed', {
+              body: {
+                email: customer.email,
+                name: fullName,
+                amount: (invoice.amount_paid / 100).toFixed(2),
+                currency: invoice.currency.toUpperCase(),
+                next_billing: formattedNextBilling,
+                language,
+                tier_name: language === 'fr' ? tierConfig.nameFr : tierConfig.name,
+              },
+            });
+            logStep("Renewal confirmation email sent", { tier: tierConfig.name, language });
           } catch (error) {
             logStep("Error in invoice.payment_succeeded handler", { error: String(error) });
           }
