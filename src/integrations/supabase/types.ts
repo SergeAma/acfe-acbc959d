@@ -2743,6 +2743,63 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_webhook_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          processed_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id: string
+          processed_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          processed_at?: string
+        }
+        Relationships: []
+      }
+      subscription_lifecycle_logs: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          new_status: string | null
+          previous_status: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          new_status?: string | null
+          previous_status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          new_status?: string | null
+          previous_status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       tags: {
         Row: {
           color: string | null
@@ -3230,6 +3287,15 @@ export type Database = {
         Returns: boolean
       }
       is_platform_moderator: { Args: { _user_id: string }; Returns: boolean }
+      log_admin_action: {
+        Args: {
+          _action: string
+          _admin_id: string
+          _metadata?: Json
+          _target_user_id?: string
+        }
+        Returns: string
+      }
       reinstate_mentor: {
         Args: { _admin_id: string; _user_id: string }
         Returns: boolean

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { escapeHtml } from "../_shared/html-escape.ts";
 
 const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET") || "";
 
@@ -64,6 +65,54 @@ const DEFAULT_TIER = {
   ],
 };
 
+// Check if event has already been processed (replay protection)
+async function checkEventIdempotency(supabase: any, eventId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('stripe_webhook_events')
+    .select('id')
+    .eq('id', eventId)
+    .single();
+  
+  if (error && error.code !== 'PGRST116') { // PGRST116 = not found
+    logStep("Error checking event idempotency", { error: error.message });
+    return false; // Proceed with processing if check fails
+  }
+  
+  return !!data; // Return true if event already exists
+}
+
+// Mark event as processed
+async function markEventProcessed(supabase: any, eventId: string, eventType: string): Promise<void> {
+  await supabase
+    .from('stripe_webhook_events')
+    .insert({ id: eventId, event_type: eventType })
+    .single();
+}
+
+// Log subscription lifecycle event
+async function logSubscriptionLifecycle(
+  supabase: any,
+  subscriptionId: string,
+  customerId: string | null,
+  userId: string | null,
+  eventType: string,
+  previousStatus: string | null,
+  newStatus: string | null,
+  metadata: Record<string, any> = {}
+): Promise<void> {
+  await supabase
+    .from('subscription_lifecycle_logs')
+    .insert({
+      stripe_subscription_id: subscriptionId,
+      stripe_customer_id: customerId,
+      user_id: userId,
+      event_type: eventType,
+      previous_status: previousStatus,
+      new_status: newStatus,
+      metadata,
+    });
+}
+
 // Async event processor - runs AFTER 200 response is sent
 async function processEventAsync(event: Stripe.Event) {
   const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
@@ -77,6 +126,16 @@ async function processEventAsync(event: Stripe.Event) {
   );
 
   try {
+    // REPLAY PROTECTION: Check if event already processed
+    const alreadyProcessed = await checkEventIdempotency(supabase, event.id);
+    if (alreadyProcessed) {
+      logStep("Event already processed (replay protection)", { id: event.id });
+      return;
+    }
+    
+    // Mark event as being processed
+    await markEventProcessed(supabase, event.id, event.type);
+    
     logStep("Processing event asynchronously", { type: event.type, id: event.id });
 
     switch (event.type) {
@@ -93,9 +152,12 @@ async function processEventAsync(event: Stripe.Event) {
           customerId: session.customer 
         });
 
-        // Get customer email
+        // Get customer email (escape for logging, raw for lookup)
         const customerEmail = session.customer_details?.email || session.customer_email;
         const customerName = session.customer_details?.name || 'Learner';
+        
+        // SECURITY: Escape user-provided data for email rendering
+        const safeCustomerName = escapeHtml(customerName);
 
         if (!customerEmail) {
           logStep("No customer email found in session");
@@ -127,8 +189,8 @@ async function processEventAsync(event: Stripe.Event) {
           await supabase.functions.invoke('send-purchase-confirmation', {
             body: {
               email: customerEmail,
-              firstName: customerName.split(' ')[0],
-              courseTitle: courseTitle,
+              firstName: escapeHtml(customerName.split(' ')[0]),
+              courseTitle: escapeHtml(courseTitle),
               amount: amountTotal,
               isSubscription: isSubscription,
               isTrial: false,
