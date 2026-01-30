@@ -70,7 +70,7 @@ const formatTrialDays = (days: number) => {
 
 export const AdminPricing = () => {
   const navigate = useNavigate();
-  const { profile, loading: authLoading } = useAuth();
+  const { profile, session, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -199,10 +199,11 @@ export const AdminPricing = () => {
     fetchSubscriptionPrice();
     fetchMentorshipPlusPrice();
     fetchSessionPrice();
-    if (!couponsInitialized) {
+    // Only fetch coupons when session is available
+    if (!couponsInitialized && session?.access_token) {
       fetchCoupons(true);
     }
-  }, [authLoading, profile, couponsInitialized]);
+  }, [authLoading, profile, session, couponsInitialized]);
 
   const fetchCoupons = async (isInitialLoad = false) => {
     // Only show loading spinner on initial load
@@ -210,21 +211,14 @@ export const AdminPricing = () => {
       setLoadingCoupons(true);
     }
     try {
-      // Wait for auth state to be ready - use onAuthStateChange to get current session
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error('Session error:', sessionError);
-        if (isInitialLoad) setLoadingCoupons(false);
-        return;
-      }
-      
-      const accessToken = sessionData.session?.access_token;
+      // Use session from AuthContext - it's properly managed and refreshed
+      const accessToken = session?.access_token;
       
       if (!accessToken) {
-        // Session not ready yet, retry after a short delay
-        console.log('No access token available, retrying...');
-        setTimeout(() => fetchCoupons(isInitialLoad), 500);
+        // Session not ready yet - this is expected on initial load
+        // Don't retry infinitely, just wait for the useEffect to re-run when session updates
+        console.log('No access token available yet');
+        if (isInitialLoad) setLoadingCoupons(false);
         return;
       }
 
