@@ -1696,6 +1696,7 @@ export type Database = {
       }
       institutions: {
         Row: {
+          complimentary_access_enabled: boolean
           created_at: string | null
           description: string | null
           email_domain: string | null
@@ -1707,6 +1708,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          complimentary_access_enabled?: boolean
           created_at?: string | null
           description?: string | null
           email_domain?: string | null
@@ -1718,6 +1720,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          complimentary_access_enabled?: boolean
           created_at?: string | null
           description?: string | null
           email_domain?: string | null

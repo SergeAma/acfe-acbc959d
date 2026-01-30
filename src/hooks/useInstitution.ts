@@ -10,6 +10,7 @@ export interface Institution {
   email_domain: string | null;
   description: string | null;
   is_active: boolean;
+  complimentary_access_enabled: boolean;
 }
 
 export interface InstitutionMembership {

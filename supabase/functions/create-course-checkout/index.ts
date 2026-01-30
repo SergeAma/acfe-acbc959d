@@ -137,24 +137,39 @@ serve(async (req) => {
       logStep("Subscription check", { customerId, hasActiveSubscription, subscriptionCount: subscriptions.data.length });
     }
 
-    // Check if user is part of an institution (career development centre)
+    // Check if user is part of an institution (career development centre) with complimentary access enabled
     const { data: institutionMembership } = await serviceClient
       .from("institution_students")
-      .select("id, status")
+      .select("id, status, institution_id")
       .eq("user_id", user.id)
       .eq("status", "active")
       .limit(1)
       .maybeSingle();
     
-    const isInstitutionMember = !!institutionMembership;
-    logStep("Institution membership check", { isInstitutionMember });
+    let isInstitutionMemberWithAccess = false;
+    if (institutionMembership) {
+      // Check if institution has complimentary access enabled
+      const { data: institution } = await serviceClient
+        .from("institutions")
+        .select("complimentary_access_enabled")
+        .eq("id", institutionMembership.institution_id)
+        .single();
+      
+      isInstitutionMemberWithAccess = institution?.complimentary_access_enabled === true;
+      logStep("Institution membership check", { 
+        isInstitutionMember: true, 
+        complimentaryAccessEnabled: institution?.complimentary_access_enabled 
+      });
+    } else {
+      logStep("Institution membership check", { isInstitutionMember: false });
+    }
 
-    // If user has active subscription or is institution member, enroll for free
-    if (hasActiveSubscription || isInstitutionMember) {
+    // If user has active subscription or is institution member with complimentary access, enroll for free
+    if (hasActiveSubscription || isInstitutionMemberWithAccess) {
       const reason = hasActiveSubscription 
         ? "Enrolled as an ACFE subscriber" 
         : "Enrolled as institution member";
-      logStep("User qualifies for free enrollment", { hasActiveSubscription, isInstitutionMember });
+      logStep("User qualifies for free enrollment", { hasActiveSubscription, isInstitutionMemberWithAccess });
       return await enrollFree(reason);
     }
 
