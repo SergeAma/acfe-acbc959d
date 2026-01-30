@@ -4,35 +4,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { FileText, MessageSquare, CheckCircle, XCircle, Clock, ExternalLink, Download } from 'lucide-react';
-
-interface AssignmentSubmission {
-  id: string;
-  text_content: string | null;
-  video_url: string | null;
-  file_url: string | null;
-  file_name: string | null;
-  status: string;
-  submitted_at: string;
-  student_id: string;
-  enrollment_id: string;
-  assignment_id: string;
-  student: {
-    full_name: string | null;
-    email: string;
-  };
-  assignment: {
-    title: string;
-    course: {
-      title: string;
-    };
-  };
-}
+import { MessageSquare, CheckCircle, XCircle, Clock, ExternalLink } from 'lucide-react';
 
 interface QuizAnswer {
   id: string;
@@ -60,14 +35,13 @@ interface QuizAnswer {
   };
 }
 
+const GOOGLE_FORM_RESPONSES_URL = 'https://docs.google.com/forms/d/1UNC2B8aRJzQX2xOZmeEsGiwmq7o2viwgL-ALx01ZYLs/edit#responses';
+
 export const SubmissionsReview = () => {
   const { profile } = useAuth();
-  const [assignmentSubmissions, setAssignmentSubmissions] = useState<AssignmentSubmission[]>([]);
   const [quizAnswers, setQuizAnswers] = useState<QuizAnswer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedAssignment, setSelectedAssignment] = useState<AssignmentSubmission | null>(null);
   const [selectedQuizAnswer, setSelectedQuizAnswer] = useState<QuizAnswer | null>(null);
-  const [feedback, setFeedback] = useState('');
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [pointsEarned, setPointsEarned] = useState<number>(0);
   const [submitting, setSubmitting] = useState(false);
@@ -80,30 +54,6 @@ export const SubmissionsReview = () => {
     if (!profile?.id) return;
 
     setLoading(true);
-
-    // Fetch pending assignment submissions for mentor's courses
-    const { data: assignments, error: assignmentsError } = await supabase
-      .from('assignment_submissions')
-      .select(`
-        *,
-        student:profiles!assignment_submissions_student_id_fkey(full_name, email),
-        assignment:course_assignments!assignment_submissions_assignment_id_fkey(
-          title,
-          course:courses!course_assignments_course_id_fkey(title, mentor_id)
-        )
-      `)
-      .eq('status', 'pending')
-      .order('submitted_at', { ascending: true });
-
-    if (assignmentsError) {
-      console.error('Error fetching assignments:', assignmentsError);
-    }
-
-    // Filter to only mentor's courses
-    const mentorAssignments = (assignments || []).filter(
-      (sub: any) => sub.assignment?.course?.mentor_id === profile.id
-    );
-    setAssignmentSubmissions(mentorAssignments as any);
 
     // Fetch ungraded short-answer quiz responses for mentor's courses
     const { data: answers } = await supabase
@@ -136,50 +86,6 @@ export const SubmissionsReview = () => {
     setQuizAnswers(mentorQuizAnswers as any);
 
     setLoading(false);
-  };
-
-  const handleAssignmentReview = async (status: 'approved' | 'revision_needed') => {
-    if (!selectedAssignment || !profile?.id) return;
-
-    setSubmitting(true);
-
-    const { error } = await supabase
-      .from('assignment_submissions')
-      .update({
-        status,
-        mentor_feedback: feedback,
-        reviewed_at: new Date().toISOString(),
-        reviewed_by: profile.id,
-      })
-      .eq('id', selectedAssignment.id);
-
-    if (error) {
-      toast.error('Failed to submit review');
-    } else {
-      toast.success(`Assignment ${status === 'approved' ? 'approved' : 'sent back for revision'}`);
-      
-      // Send notification email to student
-      try {
-        await supabase.functions.invoke('send-assignment-graded-notification', {
-          body: {
-            studentId: selectedAssignment.student_id,
-            mentorName: profile.full_name || 'Your Mentor',
-            courseTitle: selectedAssignment.assignment?.course?.title || 'Course',
-            assignmentTitle: selectedAssignment.assignment?.title || 'Assignment',
-            status: status === 'revision_needed' ? 'revision_requested' : status,
-            feedback: feedback || null,
-          }
-        });
-      } catch (emailError) {
-        console.error('Failed to send notification email:', emailError);
-      }
-      
-      setSelectedAssignment(null);
-      setFeedback('');
-      fetchSubmissions();
-    }
-
-    setSubmitting(false);
   };
 
   const handleQuizAnswerGrade = async () => {
@@ -253,9 +159,7 @@ export const SubmissionsReview = () => {
       .eq('id', attemptId);
   };
 
-  const pendingAssignmentsCount = assignmentSubmissions.length;
   const pendingQuizAnswersCount = quizAnswers.length;
-  const totalPending = pendingAssignmentsCount + pendingQuizAnswersCount;
 
   if (loading) {
     return (
@@ -271,242 +175,98 @@ export const SubmissionsReview = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Student Submissions</h2>
-        {totalPending > 0 && (
+        {pendingQuizAnswersCount > 0 && (
           <Badge variant="secondary" className="text-sm">
-            {totalPending} pending review
+            {pendingQuizAnswersCount} pending review
           </Badge>
         )}
       </div>
 
-      {totalPending === 0 ? (
+      {/* Google Form Responses Link */}
+      <Card className="bg-primary/5 border-primary/20">
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-sm">Assignment Submissions</p>
+              <p className="text-xs text-muted-foreground">
+                View and manage assignment submissions in Google Forms
+              </p>
+            </div>
+            <a
+              href={GOOGLE_FORM_RESPONSES_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="outline" size="sm" className="gap-2">
+                <ExternalLink className="h-4 w-4" />
+                View Responses
+              </Button>
+            </a>
+          </div>
+        </CardContent>
+      </Card>
+
+      {pendingQuizAnswersCount === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
             <h3 className="text-xl font-semibold mb-2">All caught up!</h3>
-            <p className="text-muted-foreground">No submissions need your review right now.</p>
+            <p className="text-muted-foreground">No quiz answers need grading right now.</p>
           </CardContent>
         </Card>
       ) : (
-        <Tabs defaultValue="assignments" className="w-full">
-          <TabsList>
-            <TabsTrigger value="assignments" className="relative">
-              Assignments
-              {pendingAssignmentsCount > 0 && (
-                <Badge variant="destructive" className="ml-2 h-5 min-w-[20px] flex items-center justify-center">
-                  {pendingAssignmentsCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="quizzes" className="relative">
-              Quiz Answers
-              {pendingQuizAnswersCount > 0 && (
-                <Badge variant="destructive" className="ml-2 h-5 min-w-[20px] flex items-center justify-center">
-                  {pendingQuizAnswersCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="assignments" className="mt-4">
-            <div className="space-y-4">
-              {assignmentSubmissions.length === 0 ? (
-                <Card>
-                  <CardContent className="py-8 text-center text-muted-foreground">
-                    <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    No pending assignment submissions
-                  </CardContent>
-                </Card>
-              ) : (
-                assignmentSubmissions.map((submission) => (
-                  <Card key={submission.id}>
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-lg">{submission.assignment?.title}</CardTitle>
-                          <p className="text-sm text-muted-foreground">
-                            {submission.assignment?.course?.title}
-                          </p>
-                        </div>
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          Pending
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm">
-                          <span className="font-medium">{submission.student?.full_name || 'Unknown'}</span>
-                          <span className="text-muted-foreground ml-2">
-                            submitted {new Date(submission.submitted_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <Button onClick={() => setSelectedAssignment(submission)}>
-                          Review Submission
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="quizzes" className="mt-4">
-            <div className="space-y-4">
-              {quizAnswers.length === 0 ? (
-                <Card>
-                  <CardContent className="py-8 text-center text-muted-foreground">
-                    <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    No pending quiz answers to grade
-                  </CardContent>
-                </Card>
-              ) : (
-                quizAnswers.map((answer) => (
-                  <Card key={answer.id}>
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-lg">{answer.question?.quiz?.title}</CardTitle>
-                          <p className="text-sm text-muted-foreground">
-                            {answer.question?.quiz?.course?.title}
-                          </p>
-                        </div>
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          Needs Grading
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="mb-3 p-3 bg-muted/50 rounded-lg">
-                        <p className="text-sm font-medium mb-1">Question:</p>
-                        <p className="text-sm">{answer.question?.question_text}</p>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm">
-                          <span className="font-medium">
-                            {answer.attempt?.student?.full_name || 'Unknown'}
-                          </span>
-                          <span className="text-muted-foreground ml-2">
-                            ({answer.question?.points} points)
-                          </span>
-                        </div>
-                        <Button
-                          onClick={() => {
-                            setSelectedQuizAnswer(answer);
-                            setPointsEarned(answer.question?.points || 0);
-                          }}
-                        >
-                          Grade Answer
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
-      )}
-
-      {/* Assignment Review Dialog */}
-      <Dialog open={!!selectedAssignment} onOpenChange={() => setSelectedAssignment(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Review Assignment Submission</DialogTitle>
-          </DialogHeader>
-
-          {selectedAssignment && (
-            <div className="space-y-4">
-              <div>
-                <Label className="text-muted-foreground">Assignment</Label>
-                <p className="font-medium">{selectedAssignment.assignment?.title}</p>
-                <p className="text-sm text-muted-foreground">
-                  {selectedAssignment.assignment?.course?.title}
-                </p>
-              </div>
-
-              <div>
-                <Label className="text-muted-foreground">Student</Label>
-                <p className="font-medium">{selectedAssignment.student?.full_name}</p>
-                <p className="text-sm text-muted-foreground">{selectedAssignment.student?.email}</p>
-              </div>
-
-              {selectedAssignment.text_content && (
-                <div>
-                  <Label className="text-muted-foreground">Text Submission</Label>
-                  <div className="mt-1 p-3 bg-muted/50 rounded-lg whitespace-pre-wrap break-words text-sm overflow-hidden">
-                    {selectedAssignment.text_content}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            Quiz Answers
+            <Badge variant="destructive" className="h-5 min-w-[20px] flex items-center justify-center">
+              {pendingQuizAnswersCount}
+            </Badge>
+          </h3>
+          
+          {quizAnswers.map((answer) => (
+            <Card key={answer.id}>
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-lg">{answer.question?.quiz?.title}</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {answer.question?.quiz?.course?.title}
+                    </p>
                   </div>
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Needs Grading
+                  </Badge>
                 </div>
-              )}
-
-              {selectedAssignment.video_url && (
-                <div>
-                  <Label className="text-muted-foreground">Video Submission</Label>
-                  <a
-                    href={selectedAssignment.video_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 mt-1 text-primary hover:underline"
+              </CardHeader>
+              <CardContent>
+                <div className="mb-3 p-3 bg-muted/50 rounded-lg">
+                  <p className="text-sm font-medium mb-1">Question:</p>
+                  <p className="text-sm">{answer.question?.question_text}</p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="text-sm">
+                    <span className="font-medium">
+                      {answer.attempt?.student?.full_name || 'Unknown'}
+                    </span>
+                    <span className="text-muted-foreground ml-2">
+                      ({answer.question?.points} points)
+                    </span>
+                  </div>
+                  <Button
+                    onClick={() => {
+                      setSelectedQuizAnswer(answer);
+                      setPointsEarned(answer.question?.points || 0);
+                    }}
                   >
-                    <ExternalLink className="h-4 w-4" />
-                    View Video
-                  </a>
+                    Grade Answer
+                  </Button>
                 </div>
-              )}
-
-              {selectedAssignment.file_url && (
-                <div>
-                  <Label className="text-muted-foreground">File Submission</Label>
-                  <a
-                    href={selectedAssignment.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 mt-1 text-primary hover:underline"
-                  >
-                    <Download className="h-4 w-4" />
-                    {selectedAssignment.file_name || 'Download File'}
-                  </a>
-                </div>
-              )}
-
-              <div>
-                <Label htmlFor="feedback">Feedback (optional)</Label>
-                <Textarea
-                  id="feedback"
-                  value={feedback}
-                  onChange={(e) => setFeedback(e.target.value)}
-                  placeholder="Provide feedback to the student..."
-                  className="mt-1"
-                  rows={4}
-                />
-              </div>
-            </div>
-          )}
-
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              onClick={() => handleAssignmentReview('revision_needed')}
-              disabled={submitting}
-              className="text-yellow-600 border-yellow-600 hover:bg-yellow-50"
-            >
-              <XCircle className="h-4 w-4 mr-2" />
-              Request Revision
-            </Button>
-            <Button
-              onClick={() => handleAssignmentReview('approved')}
-              disabled={submitting}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Approve
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Quiz Answer Grading Dialog */}
       <Dialog open={!!selectedQuizAnswer} onOpenChange={() => setSelectedQuizAnswer(null)}>

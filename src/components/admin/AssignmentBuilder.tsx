@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Plus, FileUp, Video, FileText, Briefcase, Save, Loader2 } from 'lucide-react';
+import { Plus, Briefcase, Save, Loader2, ExternalLink } from 'lucide-react';
 import { RichTextEditor } from '@/components/RichTextEditor';
 
 interface AssignmentBuilderProps {
@@ -20,10 +20,9 @@ interface Assignment {
   description: string | null;
   instructions: string | null;
   is_required: boolean;
-  allow_video: boolean;
-  allow_file: boolean;
-  allow_text: boolean;
 }
+
+const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/1UNC2B8aRJzQX2xOZmeEsGiwmq7o2viwgL-ALx01ZYLs/edit';
 
 export const AssignmentBuilder = ({ courseId }: AssignmentBuilderProps) => {
   const { toast } = useToast();
@@ -43,7 +42,7 @@ export const AssignmentBuilder = ({ courseId }: AssignmentBuilderProps) => {
     
     const { data, error } = await supabase
       .from('course_assignments')
-      .select('*')
+      .select('id, course_id, title, description, instructions, is_required')
       .eq('course_id', courseId)
       .maybeSingle();
 
@@ -68,30 +67,27 @@ export const AssignmentBuilder = ({ courseId }: AssignmentBuilderProps) => {
         description: 'Complete this assignment to demonstrate your understanding of the course material.',
         instructions: `## Assignment Instructions
 
-Submit your work showcasing what you've learned in this course. Your submission can include:
-
-1. **Video Pitch** - Record a 2-5 minute video explaining your project or solution
-2. **Written Description** - Provide context and details about your work  
-3. **Supporting Files** - Upload any relevant documents, code, or presentations
+Submit your work showcasing what you've learned in this course via the embedded Google Form below.
 
 ### Tips for a Great Submission:
 - Be clear and concise
 - Demonstrate practical application of course concepts
 - Show your unique perspective and creativity
 
-This assignment will be reviewed by your mentor and shared with Spectrogram Consulting for potential job opportunities.`,
+This assignment will be reviewed by your mentor.`,
         is_required: true,
-        allow_video: true,
-        allow_file: true,
-        allow_text: true,
+        allow_video: false,
+        allow_file: false,
+        allow_text: false,
       })
-      .select()
+      .select('id, course_id, title, description, instructions, is_required')
       .single();
 
     if (error) {
       toast({ title: 'Error', description: 'Failed to create assignment', variant: 'destructive' });
     } else {
       setAssignment(data);
+      setLocalInstructions(data.instructions || '');
       toast({ title: 'Success', description: 'Assignment created' });
     }
     
@@ -154,7 +150,7 @@ This assignment will be reviewed by your mentor and shared with Spectrogram Cons
           </CardTitle>
           <CardDescription>
             Create an assignment that students must complete before receiving their certificate.
-            Submissions are shared with Spectrogram Consulting for job opportunities.
+            Submissions are collected via Google Form.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -175,7 +171,7 @@ This assignment will be reviewed by your mentor and shared with Spectrogram Cons
           Course Assignment
         </CardTitle>
         <CardDescription>
-          Students submit this assignment which is shared with Spectrogram Consulting
+          Students submit assignments via embedded Google Form
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -238,57 +234,6 @@ This assignment will be reviewed by your mentor and shared with Spectrogram Cons
           )}
         </div>
 
-        {/* Submission Types */}
-        <div className="space-y-4">
-          <Label>Allowed Submission Types</Label>
-          <div className="grid md:grid-cols-3 gap-4">
-            <div className="flex items-center gap-3 p-3 border rounded-lg">
-              <Video className="h-5 w-5 text-muted-foreground" />
-              <div className="flex-1">
-                <p className="font-medium text-sm">Video</p>
-                <p className="text-xs text-muted-foreground">Video pitch or demo</p>
-              </div>
-              <Switch
-                checked={assignment.allow_video}
-                onCheckedChange={(checked) => {
-                  setAssignment({ ...assignment, allow_video: checked });
-                  updateAssignment({ allow_video: checked });
-                }}
-              />
-            </div>
-            
-            <div className="flex items-center gap-3 p-3 border rounded-lg">
-              <FileText className="h-5 w-5 text-muted-foreground" />
-              <div className="flex-1">
-                <p className="font-medium text-sm">Text</p>
-                <p className="text-xs text-muted-foreground">Written response</p>
-              </div>
-              <Switch
-                checked={assignment.allow_text}
-                onCheckedChange={(checked) => {
-                  setAssignment({ ...assignment, allow_text: checked });
-                  updateAssignment({ allow_text: checked });
-                }}
-              />
-            </div>
-            
-            <div className="flex items-center gap-3 p-3 border rounded-lg">
-              <FileUp className="h-5 w-5 text-muted-foreground" />
-              <div className="flex-1">
-                <p className="font-medium text-sm">File</p>
-                <p className="text-xs text-muted-foreground">Upload documents</p>
-              </div>
-              <Switch
-                checked={assignment.allow_file}
-                onCheckedChange={(checked) => {
-                  setAssignment({ ...assignment, allow_file: checked });
-                  updateAssignment({ allow_file: checked });
-                }}
-              />
-            </div>
-          </div>
-        </div>
-
         {/* Required Toggle */}
         <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
           <Switch
@@ -306,17 +251,27 @@ This assignment will be reviewed by your mentor and shared with Spectrogram Cons
           </div>
         </div>
 
-        {/* Spectrogram Info */}
+        {/* Google Form Info */}
         <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
           <div className="flex items-start gap-4">
             <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-background flex items-center justify-center border">
               <Briefcase className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm">Shared with Spectrogram Consulting</p>
+              <p className="font-medium text-sm">Submissions via Google Form</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Assignment submissions are automatically shared with Spectrogram Consulting's talent network. Students can use these submissions when applying for jobs through the Spectrogram platform.
+                All assignment submissions are collected through an embedded Google Form. 
+                Students see the form directly on the assignment page.
               </p>
+              <a 
+                href={GOOGLE_FORM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-2"
+              >
+                <ExternalLink className="h-3 w-3" />
+                Edit Google Form
+              </a>
             </div>
           </div>
         </div>
