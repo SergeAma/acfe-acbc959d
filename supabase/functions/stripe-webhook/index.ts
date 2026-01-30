@@ -9,6 +9,61 @@ const logStep = (step: string, details?: any) => {
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
 
+// Tier configuration - maps product IDs to tier details
+const SUBSCRIPTION_TIERS: Record<string, { 
+  name: string; 
+  nameFr: string;
+  benefits: string[]; 
+  benefitsFr: string[];
+}> = {
+  'prod_TkCdNAxRmKONyc': {
+    name: 'ACFE Membership',
+    nameFr: 'Abonnement ACFE',
+    benefits: [
+      'Unlimited access to all courses',
+      'Course completion certificates',
+      'Community forum access',
+    ],
+    benefitsFr: [
+      'Accès illimité à tous les cours',
+      'Certificats de fin de cours',
+      'Accès au forum communautaire',
+    ],
+  },
+  'prod_TkDR4mktfjQo8r': {
+    name: 'ACFE Mentorship Plus',
+    nameFr: 'ACFE Mentorat Plus',
+    benefits: [
+      'Everything in Membership',
+      'Priority mentor support sessions',
+      '1-on-1 career coaching',
+      'Resume and portfolio review',
+    ],
+    benefitsFr: [
+      'Tout dans Abonnement',
+      'Sessions de mentorat prioritaires',
+      'Coaching carrière individuel',
+      'Révision CV et portfolio',
+    ],
+  },
+};
+
+// Default benefits for unknown tiers
+const DEFAULT_TIER = {
+  name: 'ACFE Premium',
+  nameFr: 'ACFE Premium',
+  benefits: [
+    'Full platform access',
+    'Course completion certificates',
+    'Community features',
+  ],
+  benefitsFr: [
+    'Accès complet à la plateforme',
+    'Certificats de fin de cours',
+    'Fonctionnalités communautaires',
+  ],
+};
+
 // Async event processor - runs AFTER 200 response is sent
 async function processEventAsync(event: Stripe.Event) {
   const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
@@ -27,6 +82,7 @@ async function processEventAsync(event: Stripe.Event) {
     switch (event.type) {
       // ==========================================
       // CHECKOUT COMPLETED - Initial purchase/subscription
+      // This is the SOLE source of subscription confirmation emails
       // ==========================================
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
@@ -83,17 +139,98 @@ async function processEventAsync(event: Stripe.Event) {
           logStep("Error sending purchase confirmation", { error: String(emailError) });
         }
 
-        // Also send subscription created if it's a subscription
-        if (isSubscription) {
+        // Send subscription confirmation with full details
+        if (isSubscription && session.subscription) {
           try {
+            // Fetch full subscription details from Stripe
+            const subscriptionId = typeof session.subscription === 'string' 
+              ? session.subscription 
+              : session.subscription.id;
+            
+            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+            
+            // Get price and product information - fetch separately to avoid deep expansion
+            const priceId = subscription.items.data[0]?.price?.id;
+            const price = priceId ? await stripe.prices.retrieve(priceId) : null;
+            const productId = price?.product as string;
+            const product = productId ? await stripe.products.retrieve(productId) : null;
+            
+            // Get tier details
+            const tierConfig = productId && SUBSCRIPTION_TIERS[productId] 
+              ? SUBSCRIPTION_TIERS[productId] 
+              : DEFAULT_TIER;
+            
+            // Calculate next billing date from Stripe's actual period end
+            const nextBillingDate = new Date(subscription.current_period_end * 1000);
+            
+            // Check for applied discount/coupon
+            let discountInfo: { code: string; percentOff?: number; amountOff?: number } | null = null;
+            let originalPrice = (price?.unit_amount || 0) / 100;
+            let discountedPrice = amountTotal;
+            
+            if (subscription.discount) {
+              const coupon = subscription.discount.coupon;
+              discountInfo = {
+                code: subscription.discount.promotion_code 
+                  ? (typeof subscription.discount.promotion_code === 'string' 
+                    ? subscription.discount.promotion_code 
+                    : subscription.discount.promotion_code.code)
+                  : coupon.name || 'Discount applied',
+                percentOff: coupon.percent_off || undefined,
+                amountOff: coupon.amount_off ? coupon.amount_off / 100 : undefined,
+              };
+              logStep("Discount detected", discountInfo);
+            }
+            
+            // Get user language preference
+            const { data: userData } = await supabase.auth.admin.listUsers();
+            const user = userData?.users?.find(u => u.email === customerEmail);
+            let language: 'en' | 'fr' = 'en';
+            
+            if (user) {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('preferred_language')
+                .eq('id', user.id)
+                .single();
+              if (profile?.preferred_language === 'fr') {
+                language = 'fr';
+              }
+            }
+            
             await supabase.functions.invoke('send-subscription-created', {
               body: {
                 email: customerEmail,
                 name: customerName,
-                subscription_start: new Date().toLocaleDateString(),
+                language,
+                // Tier information
+                tier_name: language === 'fr' ? tierConfig.nameFr : tierConfig.name,
+                tier_benefits: language === 'fr' ? tierConfig.benefitsFr : tierConfig.benefits,
+                // Billing information
+                subscription_start: new Date(subscription.current_period_start * 1000).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', {
+                  year: 'numeric', month: 'long', day: 'numeric'
+                }),
+                next_billing_date: nextBillingDate.toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', {
+                  year: 'numeric', month: 'long', day: 'numeric'
+                }),
+                billing_interval: subscription.items.data[0]?.price?.recurring?.interval || 'month',
+                // Pricing
+                amount_paid: discountedPrice,
+                original_price: originalPrice,
+                currency: (price?.currency || 'usd').toUpperCase(),
+                // Discount information
+                discount_applied: discountInfo !== null,
+                discount_code: discountInfo?.code || null,
+                discount_percent: discountInfo?.percentOff || null,
+                discount_amount: discountInfo?.amountOff || null,
               },
             });
-            logStep("Subscription created email sent", { email: customerEmail });
+            logStep("Subscription created email sent with full details", { 
+              email: customerEmail,
+              tier: tierConfig.name,
+              hasDiscount: discountInfo !== null,
+              nextBilling: nextBillingDate.toISOString(),
+            });
           } catch (emailError) {
             logStep("Error sending subscription created email", { error: String(emailError) });
           }
@@ -102,29 +239,20 @@ async function processEventAsync(event: Stripe.Event) {
       }
 
       // ==========================================
-      // SUBSCRIPTION CREATED - New subscription activated
+      // SUBSCRIPTION CREATED - DISABLED FOR EMAIL
+      // Email is now ONLY sent from checkout.session.completed to prevent duplicates
+      // This handler is kept for logging/database operations only
       // ==========================================
       case "customer.subscription.created": {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
         
-        logStep("Subscription created", { subscriptionId: subscription.id, customerId });
-
-        try {
-          const customer = await stripe.customers.retrieve(customerId);
-          if (!customer.deleted && customer.email) {
-            await supabase.functions.invoke('send-subscription-created', {
-              body: {
-                email: customer.email,
-                name: customer.name || 'Learner',
-                subscription_start: new Date(subscription.current_period_start * 1000).toLocaleDateString(),
-              },
-            });
-            logStep("Subscription created email sent");
-          }
-        } catch (error) {
-          logStep("Error in subscription.created handler", { error: String(error) });
-        }
+        logStep("Subscription created (no email - handled by checkout)", { 
+          subscriptionId: subscription.id, 
+          customerId,
+          status: subscription.status 
+        });
+        // NO EMAIL SENT - checkout.session.completed handles this
         break;
       }
 
