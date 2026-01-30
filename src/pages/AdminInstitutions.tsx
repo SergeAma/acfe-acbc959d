@@ -67,7 +67,7 @@ export const AdminInstitutions = () => {
 
   // Form states
   const [newInstitution, setNewInstitution] = useState({ name: '', slug: '', email_domain: '', description: '' });
-  const [editInstitution, setEditInstitution] = useState({ name: '', slug: '', email_domain: '', description: '', is_active: true });
+  const [editInstitution, setEditInstitution] = useState({ name: '', slug: '', email_domain: '', description: '', is_active: true, complimentary_access_enabled: true });
   const [inviteEmails, setInviteEmails] = useState('');
   const [newEvent, setNewEvent] = useState({ title: '', description: '', event_date: '', event_url: '' });
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '', is_pinned: false });
@@ -348,6 +348,7 @@ export const AdminInstitutions = () => {
           email_domain: data.email_domain || null,
           description: data.description || null,
           is_active: data.is_active,
+          complimentary_access_enabled: data.complimentary_access_enabled,
         })
         .eq('id', selectedInstitution!.id);
       if (error) throw error;
@@ -451,6 +452,7 @@ export const AdminInstitutions = () => {
       email_domain: institution.email_domain || '',
       description: institution.description || '',
       is_active: institution.is_active,
+      complimentary_access_enabled: institution.complimentary_access_enabled,
     });
     setActiveTab('overview');
   };
@@ -1241,6 +1243,22 @@ export const AdminInstitutions = () => {
                                   Inactive institutions won't appear in the career centre
                                 </span>
                               </div>
+
+                              <div className="flex items-center gap-3 pt-2 pb-2 border-t mt-4">
+                                <Label htmlFor="edit-complimentary-access" className="flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    id="edit-complimentary-access"
+                                    checked={editInstitution.complimentary_access_enabled}
+                                    onChange={(e) => setEditInstitution(prev => ({ ...prev, complimentary_access_enabled: e.target.checked }))}
+                                    className="w-4 h-4 rounded border-border"
+                                  />
+                                  Complimentary Course Access
+                                </Label>
+                              </div>
+                              <p className="text-xs text-muted-foreground -mt-1">
+                                When enabled, institution members get free access to all courses. When disabled, members must subscribe like regular users.
+                              </p>
                             </div>
 
                             <div className="pt-4 border-t">
