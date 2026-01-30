@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { buildCanonicalEmail, EmailLanguage } from "../_shared/email-template.ts";
+import { escapeHtml } from "../_shared/html-escape.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -92,20 +93,24 @@ const handler = async (req: Request): Promise<Response> => {
       ? `https://spectrogramconsulting.com/acfe-callback?token=${spectrogram_token}&email=${encodeURIComponent(student_email)}`
       : null;
 
-    const displayName = student_name || (lang === 'fr' ? 'Apprenant' : 'Learner');
+    // SECURITY: Escape all user-provided data
+    const safeDisplayName = escapeHtml(student_name) || (lang === 'fr' ? 'Apprenant' : 'Learner');
+    const safeCourseName = escapeHtml(course_name);
+    const safeMentorName = escapeHtml(mentorName);
+    const safeCertNumber = escapeHtml(certificate_number);
     const greeting = lang === 'fr' ? 'Cher' : 'Dear';
 
     const subject = lang === 'fr' 
-      ? `Félicitations! Vous avez obtenu votre certificat ${course_name}`
-      : `Congratulations! You've earned your ${course_name} certificate`;
+      ? `Félicitations! Vous avez obtenu votre certificat ${safeCourseName}`
+      : `Congratulations! You've earned your ${safeCourseName} certificate`;
 
     let bodyContent = lang === 'fr'
-      ? `<p style="margin: 0 0 16px 0;">${greeting} ${displayName},</p>
-         <p style="margin: 0 0 16px 0;">Vous avez terminé avec succès <strong>${course_name}</strong> et obtenu votre certificat de fin de formation!</p>
-         <p style="margin: 0;"><strong>ID Certificat:</strong> ${certificate_number}<br><strong>Instructeur:</strong> ${mentorName}<br><strong>Date:</strong> ${formattedDate}</p>`
-      : `<p style="margin: 0 0 16px 0;">${greeting} ${displayName},</p>
-         <p style="margin: 0 0 16px 0;">You've successfully completed <strong>${course_name}</strong> and earned your certificate of completion!</p>
-         <p style="margin: 0;"><strong>Certificate ID:</strong> ${certificate_number}<br><strong>Instructor:</strong> ${mentorName}<br><strong>Date:</strong> ${formattedDate}</p>`;
+      ? `<p style="margin: 0 0 16px 0;">${greeting} ${safeDisplayName},</p>
+         <p style="margin: 0 0 16px 0;">Vous avez terminé avec succès <strong>${safeCourseName}</strong> et obtenu votre certificat de fin de formation!</p>
+         <p style="margin: 0;"><strong>ID Certificat:</strong> ${safeCertNumber}<br><strong>Instructeur:</strong> ${safeMentorName}<br><strong>Date:</strong> ${formattedDate}</p>`
+      : `<p style="margin: 0 0 16px 0;">${greeting} ${safeDisplayName},</p>
+         <p style="margin: 0 0 16px 0;">You've successfully completed <strong>${safeCourseName}</strong> and earned your certificate of completion!</p>
+         <p style="margin: 0;"><strong>Certificate ID:</strong> ${safeCertNumber}<br><strong>Instructor:</strong> ${safeMentorName}<br><strong>Date:</strong> ${formattedDate}</p>`;
 
     if (spectrogramUrl) {
       bodyContent += lang === 'fr'
@@ -114,7 +119,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailHtml = buildCanonicalEmail({
-      headline: lang === 'fr' ? `Félicitations, ${displayName}!` : `Congratulations, ${displayName}!`,
+      headline: lang === 'fr' ? `Félicitations, ${safeDisplayName}!` : `Congratulations, ${safeDisplayName}!`,
       body_primary: bodyContent,
       impact_block: {
         title: lang === 'fr' ? 'Prochaines étapes' : 'What\'s Next',
@@ -148,7 +153,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Certificate email sent successfully");
 
     await adminClient.from("email_logs").insert({
-      subject: `Certificate: ${course_name}`,
+      subject: `Certificate: ${safeCourseName}`,
       status: "sent",
       sent_at: new Date().toISOString(),
     });

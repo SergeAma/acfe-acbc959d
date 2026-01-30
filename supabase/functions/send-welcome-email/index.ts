@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { buildCanonicalEmail, EmailLanguage, getSubTranslation } from "../_shared/email-template.ts";
+import { escapeHtml } from "../_shared/html-escape.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -91,7 +92,9 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const firstName = first_name || (lang === 'fr' ? 'Apprenant' : 'Learner');
+    // SECURITY: Escape all user-provided data
+    const safeFirstName = escapeHtml(first_name) || (lang === 'fr' ? 'Apprenant' : 'Learner');
+    const safeEmail = escapeHtml(email);
     const greeting = lang === 'fr' ? 'Cher' : 'Dear';
 
     let subject: string;
@@ -100,19 +103,19 @@ const handler = async (req: Request): Promise<Response> => {
     if (wants_mentor) {
       // User wants to become a mentor
       subject = lang === 'fr' 
-        ? `Bienvenue sur ACFE, ${firstName}!`
-        : `Welcome to ACFE, ${firstName}!`;
+        ? `Bienvenue sur ACFE, ${safeFirstName}!`
+        : `Welcome to ACFE, ${safeFirstName}!`;
       
       const bodyContent = lang === 'fr'
-        ? `<p style="margin: 0 0 16px 0;">${greeting} ${firstName},</p>
+        ? `<p style="margin: 0 0 16px 0;">${greeting} ${safeFirstName},</p>
            <p style="margin: 0 0 16px 0;">Merci de rejoindre A Cloud for Everyone. Nous avons bien reçu votre intérêt pour devenir mentor et notre équipe examinera votre candidature prochainement.</p>
            <p style="margin: 0;">Tous les comptes commencent comme comptes apprenant. Notre équipe examinera votre candidature dans les 3-5 jours ouvrables et vous recevrez une notification par email.</p>`
-        : `<p style="margin: 0 0 16px 0;">${greeting} ${firstName},</p>
+        : `<p style="margin: 0 0 16px 0;">${greeting} ${safeFirstName},</p>
            <p style="margin: 0 0 16px 0;">Thank you for joining A Cloud for Everyone. We've received your interest in becoming a mentor and our team will review your application shortly.</p>
            <p style="margin: 0;">All accounts start as learner accounts. Our team will review your application within 3-5 business days and you'll receive an email notification with our decision.</p>`;
 
       htmlContent = buildCanonicalEmail({
-        headline: lang === 'fr' ? `Bienvenue, ${firstName}!` : `Welcome, ${firstName}!`,
+        headline: lang === 'fr' ? `Bienvenue, ${safeFirstName}!` : `Welcome, ${safeFirstName}!`,
         body_primary: bodyContent,
         impact_block: {
           title: lang === 'fr' ? 'En attendant, vous pouvez' : 'In the meantime, you can',
@@ -175,9 +178,9 @@ const handler = async (req: Request): Promise<Response> => {
 
               const adminHtml = buildCanonicalEmail({
                 headline: 'New Mentor Application',
-                body_primary: `<p style="margin: 0 0 16px 0;">Hello ${admin.full_name?.split(' ')[0] || 'Admin'},</p>
+                body_primary: `<p style="margin: 0 0 16px 0;">Hello ${escapeHtml(admin.full_name?.split(' ')[0]) || 'Admin'},</p>
                   <p style="margin: 0 0 16px 0;">A new user has registered and expressed interest in becoming a mentor.</p>
-                  <p style="margin: 0;"><strong>Name:</strong> ${firstName}<br><strong>Email:</strong> ${email}</p>`,
+                  <p style="margin: 0;"><strong>Name:</strong> ${safeFirstName}<br><strong>Email:</strong> ${safeEmail}</p>`,
                 primary_cta: approveUrl ? { label: 'Approve', url: approveUrl } : undefined,
                 secondary_cta: declineUrl ? { label: 'Decline', url: declineUrl } : undefined
               }, 'en');
@@ -186,7 +189,7 @@ const handler = async (req: Request): Promise<Response> => {
                 await resend.emails.send({
                   from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
                   to: [admin.email],
-                  subject: `New Mentor Application: ${firstName}`,
+                  subject: `New Mentor Application: ${safeFirstName}`,
                   html: adminHtml,
                 });
               } catch (adminEmailError) {
@@ -199,17 +202,17 @@ const handler = async (req: Request): Promise<Response> => {
     } else {
       // Regular student welcome
       subject = lang === 'fr' 
-        ? `Bienvenue sur ACFE, ${firstName}!`
-        : `Welcome to ACFE, ${firstName}!`;
+        ? `Bienvenue sur ACFE, ${safeFirstName}!`
+        : `Welcome to ACFE, ${safeFirstName}!`;
 
       const bodyContent = lang === 'fr'
-        ? `<p style="margin: 0 0 16px 0;">${greeting} ${firstName},</p>
+        ? `<p style="margin: 0 0 16px 0;">${greeting} ${safeFirstName},</p>
            <p style="margin: 0;">Nous sommes ravis de vous accueillir dans notre communauté d'apprenants et de mentors dédiée à l'avancement des compétences numériques en Afrique.</p>`
-        : `<p style="margin: 0 0 16px 0;">${greeting} ${firstName},</p>
+        : `<p style="margin: 0 0 16px 0;">${greeting} ${safeFirstName},</p>
            <p style="margin: 0;">We're thrilled to have you join our community of learners and mentors dedicated to advancing digital skills across Africa.</p>`;
 
       htmlContent = buildCanonicalEmail({
-        headline: lang === 'fr' ? `Bienvenue, ${firstName}!` : `Welcome, ${firstName}!`,
+        headline: lang === 'fr' ? `Bienvenue, ${safeFirstName}!` : `Welcome, ${safeFirstName}!`,
         body_primary: bodyContent,
         impact_block: {
           title: lang === 'fr' ? 'Ce que vous pouvez faire' : 'What you can do',
