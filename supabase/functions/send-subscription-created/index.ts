@@ -89,14 +89,21 @@ serve(async (req) => {
       billingSummary += `<tr><td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-weight: 600;">${startLabel}</td><td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: right;">${data.subscription_start}</td></tr>`;
     }
     
-    // Amount paid (with discount if applicable)
+    // Discount information - ALWAYS show (explicit "None" when no discount)
+    const discountLabel = lang === 'fr' ? 'Réduction appliquée' : 'Discount Applied';
+    
     if (data.discount_applied && data.discount_code) {
-      const discountLabel = lang === 'fr' ? 'Code promo appliqué' : 'Promo Code Applied';
       const originalLabel = lang === 'fr' ? 'Prix original' : 'Original Price';
       const paidLabel = lang === 'fr' ? 'Montant payé aujourd\'hui' : 'Amount Paid Today';
       
-      // Show discount code
-      billingSummary += `<tr><td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-weight: 600;">${discountLabel}</td><td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: right; color: #22c55e; font-weight: 600;">${data.discount_code}</td></tr>`;
+      // Show discount code with savings info
+      let discountDisplay = data.discount_code;
+      if (data.discount_percent) {
+        discountDisplay += ` (${data.discount_percent}% off)`;
+      } else if (data.discount_amount) {
+        discountDisplay += ` (${currencySymbol}${data.discount_amount} off)`;
+      }
+      billingSummary += `<tr><td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-weight: 600;">${discountLabel}</td><td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: right; color: #22c55e; font-weight: 600;">${discountDisplay}</td></tr>`;
       
       // Show original price (struck through)
       billingSummary += `<tr><td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-weight: 600;">${originalLabel}</td><td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: right; text-decoration: line-through; color: #888;">${currencySymbol}${originalPrice} ${intervalText}</td></tr>`;
@@ -104,6 +111,10 @@ serve(async (req) => {
       // Show discounted amount
       billingSummary += `<tr><td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-weight: 600;">${paidLabel}</td><td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: right; font-weight: 600; color: #22c55e;">${currencySymbol}${amountPaid}</td></tr>`;
     } else {
+      // Explicitly show "None" when no discount applied
+      const noneText = lang === 'fr' ? 'Aucune' : 'None';
+      billingSummary += `<tr><td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-weight: 600;">${discountLabel}</td><td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: right; color: #888;">${noneText}</td></tr>`;
+      
       const paidLabel = lang === 'fr' ? 'Montant' : 'Amount';
       billingSummary += `<tr><td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-weight: 600;">${paidLabel}</td><td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: right;">${currencySymbol}${amountPaid} ${intervalText}</td></tr>`;
     }
