@@ -16,6 +16,8 @@ const FRANCOPHONE_COUNTRIES = [
 ];
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
+  // Note: We don't pass profile country here since LanguageContext is above AuthProvider
+  // Language detection uses IP/locale only; profile country is used in Navbar for flag display
   const { countryCode } = useCountryFlag();
   
   const [language, setLanguageState] = useState<Language>(() => {
