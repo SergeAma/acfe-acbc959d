@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useCountryFlag } from '@/hooks/useCountryFlag';
 import { translations, Language } from '@/lib/translations';
+import { COUNTRIES } from '@/data/countries';
 
 interface LanguageContextType {
   language: Language;
@@ -15,10 +15,26 @@ const FRANCOPHONE_COUNTRIES = [
   'SN', 'CI', 'CM', 'CD', 'CG', 'BJ', 'TG', 'BF', 'ML', 'NE', 'TD', 'GA', 'GN', 'CF', 'MG', 'DJ', 'KM', 'RW', 'BI', 'SC', 'MU', 'MA', 'DZ', 'TN',
 ];
 
+// Parse country code from browser locale (mirrors useCountryFlag logic)
+const getLocaleCountryCode = (): string | null => {
+  try {
+    const locale = navigator.language || (navigator as any).userLanguage;
+    if (locale && locale.includes('-')) {
+      const parts = locale.split('-');
+      const countryPart = parts[parts.length - 1].toUpperCase();
+      if (COUNTRIES.find(c => c.code === countryPart)) {
+        return countryPart;
+      }
+    }
+  } catch {
+    // Silent fail
+  }
+  return null;
+};
+
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  // Note: We don't pass profile country here since LanguageContext is above AuthProvider
-  // Language detection uses IP/locale only; profile country is used in Navbar for flag display
-  const { countryCode } = useCountryFlag();
+  // Language detection uses browser locale only (no external APIs)
+  const countryCode = getLocaleCountryCode();
   
   const [language, setLanguageState] = useState<Language>(() => {
     const stored = localStorage.getItem('user_language');
