@@ -23,17 +23,46 @@ interface Profile {
   website_url: string | null;
 }
 
+// Pending signup data stored temporarily until OTP verification
+interface PendingSignupData {
+  email: string;
+  fullName: string;
+  linkedinUrl?: string;
+  wantsMentor?: boolean;
+  university?: string;
+  mentorBio?: string;
+  portfolioLinks?: string;
+  preferredLanguage?: 'en' | 'fr';
+  gender?: 'male' | 'female';
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
-  signUp: (email: string, password: string, fullName: string, linkedinUrl?: string, wantsMentor?: boolean, university?: string, mentorBio?: string, portfolioLinks?: string, preferredLanguage?: 'en' | 'fr', gender?: 'male' | 'female') => Promise<{ error: AuthError | null }>;
+  // OTP-based authentication
+  sendOtp: (email: string) => Promise<{ error: AuthError | null }>;
+  verifyOtp: (email: string, token: string) => Promise<{ error: AuthError | null }>;
+  // Signup with OTP (sends code after collecting profile data)
+  signUpWithOtp: (
+    email: string, 
+    fullName: string, 
+    linkedinUrl?: string, 
+    wantsMentor?: boolean, 
+    university?: string, 
+    mentorBio?: string, 
+    portfolioLinks?: string, 
+    preferredLanguage?: 'en' | 'fr', 
+    gender?: 'male' | 'female'
+  ) => Promise<{ error: AuthError | null }>;
+  // Complete signup after OTP verification
+  completeSignup: (email: string, token: string) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
-  updatePassword: (newPassword: string) => Promise<{ error: AuthError | null }>;
+  // Pending signup data (for OTP verification flow)
+  pendingSignup: PendingSignupData | null;
+  clearPendingSignup: () => void;
   // Role simulation for admins
   simulatedRole: SimulatableRole;
   setSimulatedRole: (role: SimulatableRole) => void;
@@ -44,6 +73,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Session storage key for pending signup data
+const PENDING_SIGNUP_KEY = 'acfe_pending_signup';
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -51,6 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [simulatedRole, setSimulatedRoleState] = useState<SimulatableRole>(null);
+  const [pendingSignup, setPendingSignup] = useState<PendingSignupData | null>(null);
   const { toast } = useToast();
   
   // Track last profile fetch to prevent rapid re-fetches
@@ -87,6 +120,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       : (profile?.role || 'student');
 
   const isSimulating = isActualAdmin && simulatedRole !== null;
+
+  // Load pending signup from sessionStorage on init
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem(PENDING_SIGNUP_KEY);
+      if (stored) {
+        setPendingSignup(JSON.parse(stored));
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }, []);
+
+  const clearPendingSignup = () => {
+    setPendingSignup(null);
+    sessionStorage.removeItem(PENDING_SIGNUP_KEY);
+  };
 
   const fetchProfile = async (userId: string, force = false) => {
     // Prevent duplicate/rapid fetches for the same user
@@ -202,6 +252,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setProfile(null);
           setSimulatedRoleState(null); // Clear simulation on sign out
           lastProfileFetchRef.current = null;
+          clearPendingSignup();
           setLoading(false);
           return;
         }
@@ -235,22 +286,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [isInitialized]);
 
-  const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
+  // Send OTP to email (for sign-in of existing users)
+  const sendOtp = async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
       email,
-      password,
+      options: {
+        shouldCreateUser: false, // Don't create user on sign-in flow
+      },
+    });
+
+    if (error) {
+      // Check if user doesn't exist
+      if (error.message.includes('not found') || error.message.includes('Signups not allowed')) {
+        toast({
+          title: "Account not found",
+          description: "No account exists with this email. Please sign up first.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Failed to send code",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+      return { error };
+    }
+
+    toast({
+      title: "Code sent!",
+      description: "Check your email for your 6-digit login code.",
+    });
+
+    return { error: null };
+  };
+
+  // Verify OTP code (for existing user sign-in)
+  const verifyOtp = async (email: string, token: string) => {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'email',
     });
 
     if (error) {
       toast({
-        title: "Login failed",
-        description: error.message,
+        title: "Invalid code",
+        description: "The code you entered is incorrect or has expired.",
         variant: "destructive",
       });
       return { error };
     }
 
-    // Successfully signed in - update state immediately
+    // Successfully verified - update state immediately
     if (data.session && data.user) {
       setSession(data.session);
       setUser(data.user);
@@ -263,90 +351,158 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error: null };
   };
 
-  const signUp = async (email: string, password: string, fullName: string, linkedinUrl?: string, wantsMentor?: boolean, university?: string, mentorBio?: string, portfolioLinks?: string, preferredLanguage: 'en' | 'fr' = 'en', gender?: 'male' | 'female') => {
-    const { data, error } = await supabase.auth.signUp({
+  // Sign up with OTP - stores data and sends verification code
+  const signUpWithOtp = async (
+    email: string, 
+    fullName: string, 
+    linkedinUrl?: string, 
+    wantsMentor?: boolean, 
+    university?: string, 
+    mentorBio?: string, 
+    portfolioLinks?: string, 
+    preferredLanguage: 'en' | 'fr' = 'en', 
+    gender?: 'male' | 'female'
+  ) => {
+    // Store pending signup data in sessionStorage
+    const signupData: PendingSignupData = {
       email,
-      password,
+      fullName,
+      linkedinUrl,
+      wantsMentor,
+      university,
+      mentorBio,
+      portfolioLinks,
+      preferredLanguage,
+      gender,
+    };
+    
+    sessionStorage.setItem(PENDING_SIGNUP_KEY, JSON.stringify(signupData));
+    setPendingSignup(signupData);
+
+    // Send OTP to the user's email (this creates the user in Supabase)
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
       options: {
+        shouldCreateUser: true, // Create user on signup flow
         data: {
           full_name: fullName,
         },
-        emailRedirectTo: `${window.location.origin}/`,
       },
     });
 
     if (error) {
+      clearPendingSignup();
       toast({
         title: "Signup failed",
         description: error.message,
         variant: "destructive",
       });
-    } else {
+      return { error };
+    }
+
+    toast({
+      title: "Verification code sent!",
+      description: "Check your email for your 6-digit code to complete registration.",
+    });
+
+    return { error: null };
+  };
+
+  // Complete signup after OTP verification
+  const completeSignup = async (email: string, token: string) => {
+    // Verify the OTP
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'email',
+    });
+
+    if (error) {
       toast({
-        title: "Account created!",
-        description: wantsMentor 
-          ? "Welcome! Your mentor application will be reviewed by our team." 
-          : "Welcome to A Cloud for Everyone. All users start as learners.",
+        title: "Invalid code",
+        description: "The code you entered is incorrect or has expired.",
+        variant: "destructive",
       });
-      
-      // Update profile with LinkedIn URL, university, gender, and language preference if provided
-      if (data.user) {
+      return { error };
+    }
+
+    // Successfully verified
+    if (data.session && data.user) {
+      setSession(data.session);
+      setUser(data.user);
+
+      // Now update the profile with the stored signup data
+      const stored = pendingSignup;
+      if (stored) {
         const updateData: Record<string, string> = {};
-        if (linkedinUrl) updateData.linkedin_url = linkedinUrl;
-        if (university) updateData.university = university;
-        if (gender) updateData.gender = gender;
-        updateData.preferred_language = preferredLanguage;
+        if (stored.linkedinUrl) updateData.linkedin_url = stored.linkedinUrl;
+        if (stored.university) updateData.university = stored.university;
+        if (stored.gender) updateData.gender = stored.gender;
+        updateData.preferred_language = stored.preferredLanguage || 'en';
         
         await supabase
           .from('profiles')
           .update(updateData)
           .eq('id', data.user.id);
-      }
 
-      // If user wants to become a mentor, create a mentor request with bio and portfolio
-      if (wantsMentor && data.user) {
-        try {
-          const reasonParts = [];
-          if (mentorBio) reasonParts.push(`Bio: ${mentorBio}`);
-          if (portfolioLinks) reasonParts.push(`Portfolio/Links: ${portfolioLinks}`);
-          
-          await supabase
-            .from('mentor_role_requests')
-            .insert({
-              user_id: data.user.id,
-              reason: reasonParts.length > 0 ? reasonParts.join('\n\n') : 'Applied during registration',
-              status: 'pending'
-            });
-        } catch {
-          // Mentor request failure is non-critical
+        // If user wants to become a mentor, create a mentor request
+        if (stored.wantsMentor) {
+          try {
+            const reasonParts = [];
+            if (stored.mentorBio) reasonParts.push(`Bio: ${stored.mentorBio}`);
+            if (stored.portfolioLinks) reasonParts.push(`Portfolio/Links: ${stored.portfolioLinks}`);
+            
+            await supabase
+              .from('mentor_role_requests')
+              .insert({
+                user_id: data.user.id,
+                reason: reasonParts.length > 0 ? reasonParts.join('\n\n') : 'Applied during registration',
+                status: 'pending'
+              });
+          } catch {
+            // Mentor request failure is non-critical
+          }
         }
-      }
 
-      // Send welcome email automatically
-      if (data.user) {
-        const firstName = fullName?.split(' ')[0] || 'there';
+        // Send welcome email
+        const firstName = stored.fullName?.split(' ')[0] || 'there';
         try {
           await supabase.functions.invoke('send-welcome-email', {
             body: {
               email: email,
               first_name: firstName,
               role: 'student',
-              wants_mentor: wantsMentor || false,
+              wants_mentor: stored.wantsMentor || false,
               user_id: data.user.id,
-              preferred_language: preferredLanguage,
+              preferred_language: stored.preferredLanguage || 'en',
             },
           });
         } catch {
           // Welcome email failure is non-critical
         }
+
+        toast({
+          title: "Account created!",
+          description: stored.wantsMentor 
+            ? "Welcome! Your mentor application will be reviewed by our team." 
+            : "Welcome to A Cloud for Everyone. All users start as learners.",
+        });
       }
+
+      // Clear pending signup data
+      clearPendingSignup();
+
+      // Fetch profile
+      const profileData = await fetchProfile(data.user.id, true);
+      if (profileData) setProfile(profileData);
     }
 
-    return { error };
+    return { error: null };
   };
 
   const signOut = async () => {
     setSimulatedRoleState(null); // Clear simulation
+    clearPendingSignup();
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
@@ -357,60 +513,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth?mode=reset`,
-    });
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Check your email",
-        description: "We've sent you a password reset link.",
-      });
-    }
-
-    return { error };
-  };
-
-  const updatePassword = async (newPassword: string) => {
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Password updated",
-        description: "Your password has been changed successfully.",
-      });
-    }
-
-    return { error };
-  };
-
   return (
     <AuthContext.Provider value={{ 
       user, 
       session, 
       profile, 
       loading, 
-      signIn, 
-      signUp, 
+      sendOtp,
+      verifyOtp,
+      signUpWithOtp,
+      completeSignup,
       signOut, 
       refreshProfile, 
-      resetPassword, 
-      updatePassword,
+      pendingSignup,
+      clearPendingSignup,
       simulatedRole,
       setSimulatedRole,
       effectiveRole,

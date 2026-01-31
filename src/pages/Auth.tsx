@@ -10,21 +10,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Globe } from 'lucide-react';
+import { Loader2, Globe, Mail, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
 import acfeIcon from '@/assets/acfe-icon.png';
 import { Navbar } from '@/components/Navbar';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { AutocompleteInput } from '@/components/ui/autocomplete-input';
-import { PasswordInput } from '@/components/ui/password-input';
 import { UNIVERSITIES } from '@/data/universities';
 import { AFRICAN_CITIES } from '@/data/cities';
 import { toast } from 'sonner';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
-const baseAuthSchema = z.object({
+
+// Signup form validation schema (no password required)
+const baseSignupSchema = z.object({
   email: z.string().email('Invalid email address').max(255),
-  password: z.string().min(6, 'Password must be at least 6 characters').max(100),
   firstName: z.string().min(2, 'First name must be at least 2 characters').max(100),
   lastName: z.string().min(2, 'Last name must be at least 2 characters').max(100),
   phone: z.string().min(10, 'Phone number must be at least 10 digits').max(20),
@@ -37,7 +38,7 @@ const baseAuthSchema = z.object({
   emailConsent: z.boolean().optional(),
 });
 
-const mentorAuthSchema = baseAuthSchema.extend({
+const mentorSignupSchema = baseSignupSchema.extend({
   mentorBio: z.string()
     .min(100, 'Please provide at least 100 characters describing your experience')
     .max(2000, 'Bio must be less than 2000 characters')
@@ -62,27 +63,31 @@ const mentorAuthSchema = baseAuthSchema.extend({
   portfolioLinks: z.string().max(1000).optional(),
 });
 
+// Sign-in only requires email
+const signInSchema = z.object({
+  email: z.string().email('Invalid email address').max(255),
+});
+
 export const Auth = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user, signIn, signUp, resetPassword, updatePassword } = useAuth();
+  const { user, sendOtp, verifyOtp, signUpWithOtp, completeSignup, pendingSignup, clearPendingSignup } = useAuth();
   const { setLanguage } = useLanguage();
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<'signin' | 'signup' | 'forgot' | 'reset'>(
-    searchParams.get('mode') === 'signup' ? 'signup' : 
-    searchParams.get('mode') === 'forgot' ? 'forgot' :
-    searchParams.get('mode') === 'reset' ? 'reset' : 'signin'
+  
+  // Auth flow states
+  const [mode, setMode] = useState<'signin' | 'signup'>(
+    searchParams.get('mode') === 'signup' ? 'signup' : 'signin'
   );
+  const [authStep, setAuthStep] = useState<'form' | 'otp'>('form');
+  const [otpValue, setOtpValue] = useState('');
+  const [emailForOtp, setEmailForOtp] = useState('');
   
   // Check if this is a mentor signup path
   const isMentorSignup = searchParams.get('role') === 'mentor';
   
   // Get redirect URL from query params, default to courses (content-first experience)
   const redirectUrl = searchParams.get('redirect') || '/courses';
-
-  const [resetEmail, setResetEmail] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
 
   // Turnstile CAPTCHA state
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -91,7 +96,6 @@ export const Auth = () => {
 
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
     firstName: '',
     lastName: '',
     phone: '',
@@ -107,15 +111,23 @@ export const Auth = () => {
     mentorBio: '',
     portfolioLinks: '',
     mentorPledge: false,
-    rememberMe: false,
     preferredLanguage: 'en' as 'en' | 'fr',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Check for pending signup on mount (user might have refreshed during OTP entry)
+  useEffect(() => {
+    if (pendingSignup && !user) {
+      setEmailForOtp(pendingSignup.email);
+      setAuthStep('otp');
+      setMode('signup');
+    }
+  }, [pendingSignup, user]);
+
   // Initialize Turnstile when on signup mode
   useEffect(() => {
-    if (mode !== 'signup') {
+    if (mode !== 'signup' || authStep !== 'form') {
       setTurnstileToken(null);
       if (turnstileWidgetId.current && (window as any).turnstile) {
         (window as any).turnstile.remove(turnstileWidgetId.current);
@@ -154,24 +166,20 @@ export const Auth = () => {
         turnstileWidgetId.current = null;
       }
     };
-  }, [mode]);
+  }, [mode, authStep]);
 
   useEffect(() => {
     if (user) {
-      navigate(redirectUrl);
+      navigate(redirectUrl, { replace: true });
     }
   }, [user, navigate, redirectUrl]);
 
-  const validateForm = () => {
+  const validateSignupForm = () => {
     try {
-      if (mode === 'signup') {
-        if (isMentorSignup) {
-          mentorAuthSchema.parse(formData);
-        } else {
-          baseAuthSchema.parse(formData);
-        }
+      if (isMentorSignup) {
+        mentorSignupSchema.parse(formData);
       } else {
-        baseAuthSchema.pick({ email: true, password: true }).parse(formData);
+        baseSignupSchema.parse(formData);
       }
       setErrors({});
       return true;
@@ -189,95 +197,208 @@ export const Auth = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const validateSignInForm = () => {
+    try {
+      signInSchema.parse({ email: formData.email });
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path) {
+            newErrors[err.path[0]] = err.message;
+          }
+        });
+        setErrors(newErrors);
+      }
+      return false;
+    }
+  };
+
+  // Handle sign-in: send OTP to existing user
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    if (!validateSignInForm()) return;
     
-    // Check terms acceptance for signup
-    if (mode === 'signup' && !formData.termsAccepted) {
+    setLoading(true);
+    const { error } = await sendOtp(formData.email);
+    setLoading(false);
+    
+    if (!error) {
+      setEmailForOtp(formData.email);
+      setAuthStep('otp');
+    }
+  };
+
+  // Handle signup form submission: collect data and send OTP
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateSignupForm()) return;
+    
+    // Check terms acceptance
+    if (!formData.termsAccepted) {
       setErrors(prev => ({ ...prev, termsAccepted: 'You must accept the terms of service to continue' }));
       return;
     }
 
     // Check mentor pledge for mentor signup
-    if (mode === 'signup' && isMentorSignup && !formData.mentorPledge) {
+    if (isMentorSignup && !formData.mentorPledge) {
       setErrors(prev => ({ ...prev, mentorPledge: 'You must confirm your intent to become a mentor and accept the terms' }));
       return;
     }
 
-    // Check Turnstile CAPTCHA for signup
-    if (mode === 'signup' && !turnstileToken) {
+    // Check Turnstile CAPTCHA
+    if (!turnstileToken) {
       toast.error('Please complete the security verification');
       return;
     }
 
     setLoading(true);
-
-    try {
-      if (mode === 'signin') {
-        const { error } = await signIn(formData.email, formData.password);
-        if (!error) {
-          // Use replace to prevent back button returning to login
-          navigate(redirectUrl, { replace: true });
-          return; // Exit early, don't set loading to false
-        }
-      } else {
-        const fullName = `${formData.firstName} ${formData.lastName}`.trim();
-        const { error } = await signUp(
-          formData.email,
-          formData.password,
-          fullName,
-          formData.linkedinUrl,
-          isMentorSignup,
-          formData.university,
-          isMentorSignup ? formData.mentorBio : undefined,
-          isMentorSignup ? formData.portfolioLinks : undefined,
-          formData.preferredLanguage,
-          formData.gender as 'male' | 'female'
-        );
-        if (!error) {
-          // Update the language context with user's preference
-          setLanguage(formData.preferredLanguage);
-          navigate(redirectUrl, { replace: true });
-          return; // Exit early, don't set loading to false
-        }
-      }
-    } finally {
-      // Only set loading to false if we didn't navigate away
-      setLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!resetEmail) return;
     
-    setLoading(true);
-    await resetPassword(resetEmail);
+    const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+    const { error } = await signUpWithOtp(
+      formData.email,
+      fullName,
+      formData.linkedinUrl,
+      isMentorSignup,
+      formData.university,
+      isMentorSignup ? formData.mentorBio : undefined,
+      isMentorSignup ? formData.portfolioLinks : undefined,
+      formData.preferredLanguage,
+      formData.gender as 'male' | 'female'
+    );
+    
     setLoading(false);
-  };
-
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
     
-    if (newPassword !== confirmPassword) {
-      return;
-    }
-    
-    if (newPassword.length < 6) {
-      return;
-    }
-
-    setLoading(true);
-    const { error } = await updatePassword(newPassword);
     if (!error) {
-      setMode('signin');
-      setNewPassword('');
-      setConfirmPassword('');
+      setLanguage(formData.preferredLanguage);
+      setEmailForOtp(formData.email);
+      setAuthStep('otp');
     }
-    setLoading(false);
   };
+
+  // Handle OTP verification
+  const handleVerifyOtp = async () => {
+    if (otpValue.length !== 6) {
+      toast.error('Please enter the complete 6-digit code');
+      return;
+    }
+
+    setLoading(true);
+    
+    let error;
+    if (mode === 'signup') {
+      // Complete signup flow
+      const result = await completeSignup(emailForOtp, otpValue);
+      error = result.error;
+    } else {
+      // Sign-in flow
+      const result = await verifyOtp(emailForOtp, otpValue);
+      error = result.error;
+    }
+    
+    setLoading(false);
+    
+    if (!error) {
+      navigate(redirectUrl, { replace: true });
+    } else {
+      setOtpValue(''); // Clear OTP on error
+    }
+  };
+
+  // Go back from OTP screen
+  const handleBackFromOtp = () => {
+    setAuthStep('form');
+    setOtpValue('');
+    setEmailForOtp('');
+    if (mode === 'signup') {
+      clearPendingSignup();
+    }
+  };
+
+  // Resend OTP
+  const handleResendOtp = async () => {
+    setLoading(true);
+    const { error } = await sendOtp(emailForOtp);
+    setLoading(false);
+    
+    if (!error) {
+      toast.success('A new code has been sent to your email');
+    }
+  };
+
+  // OTP Verification Screen
+  if (authStep === 'otp') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-accent/10">
+        <Navbar />
+        <div className="flex items-center justify-center p-4 pt-20">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <div className="flex justify-center mb-4">
+                <div className="p-3 bg-primary/10 rounded-full">
+                  <Mail className="h-8 w-8 text-primary" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl">Check your email</CardTitle>
+              <CardDescription>
+                We sent a 6-digit code to <strong>{emailForOtp}</strong>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex justify-center">
+                <InputOTP 
+                  maxLength={6} 
+                  value={otpValue} 
+                  onChange={setOtpValue}
+                  onComplete={handleVerifyOtp}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+              
+              <Button 
+                onClick={handleVerifyOtp} 
+                className="w-full" 
+                disabled={loading || otpValue.length !== 6}
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verify Code'}
+              </Button>
+              
+              <div className="text-center space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Didn't receive the code?{' '}
+                  <button 
+                    onClick={handleResendOtp} 
+                    disabled={loading}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Resend
+                  </button>
+                </p>
+                <button 
+                  onClick={handleBackFromOtp}
+                  className="text-sm text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 mx-auto"
+                >
+                  <ArrowLeft className="h-3 w-3" /> Use a different email
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-accent/10">
@@ -290,14 +411,13 @@ export const Auth = () => {
           </div>
           <CardTitle className="text-2xl">Welcome to A Cloud for Everyone</CardTitle>
           <CardDescription>
-            {mode === 'signin' ? 'Sign in to your account' : 
-             mode === 'signup' ? (isMentorSignup ? 'Apply to become a mentor at ACFE' : 'Create your account to start learning') :
-             mode === 'forgot' ? 'Enter your email to reset your password' :
-             'Enter your new password'}
+            {mode === 'signin' 
+              ? 'Sign in to your account with email' 
+              : (isMentorSignup ? 'Apply to become a mentor at ACFE' : 'Create your account to start learning')
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {(mode === 'signin' || mode === 'signup') ? (
           <Tabs value={mode} onValueChange={(v) => setMode(v as 'signin' | 'signup')}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
@@ -305,7 +425,7 @@ export const Auth = () => {
             </TabsList>
 
             <TabsContent value="signin">
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="signin-email">Email</Label>
                   <Input
@@ -318,44 +438,17 @@ export const Auth = () => {
                   />
                   {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="signin-password">Password</Label>
-                    <button
-                      type="button"
-                      onClick={() => setMode('forgot')}
-                      className="text-xs text-primary hover:underline"
-                    >
-                      Forgot password?
-                    </button>
-                  </div>
-                  <PasswordInput
-                    id="signin-password"
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    required
-                  />
-                  {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="remember-me"
-                    checked={formData.rememberMe}
-                    onCheckedChange={(checked) => setFormData({ ...formData, rememberMe: !!checked })}
-                  />
-                  <label htmlFor="remember-me" className="text-sm cursor-pointer">
-                    Remember me
-                  </label>
-                </div>
+                <p className="text-sm text-muted-foreground">
+                  We'll send a 6-digit code to your email to sign in securely.
+                </p>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Sign In'}
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send Login Code'}
                 </Button>
               </form>
             </TabsContent>
 
             <TabsContent value="signup">
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSignup} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-firstname">First Name</Label>
@@ -477,19 +570,6 @@ export const Auth = () => {
                     onChange={(e) => setFormData({ ...formData, linkedinUrl: e.target.value })}
                   />
                   {errors.linkedinUrl && <p className="text-sm text-destructive">{errors.linkedinUrl}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <PasswordInput
-                    id="signup-password"
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    showStrength
-                    required
-                  />
-                  {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                 </div>
 
                 <div className="space-y-3">
@@ -695,67 +775,6 @@ export const Auth = () => {
               </form>
             </TabsContent>
           </Tabs>
-          ) : mode === 'forgot' ? (
-            <form onSubmit={handleForgotPassword} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="reset-email">Email</Label>
-                <Input
-                  id="reset-email"
-                  type="email"
-                  placeholder="your@email.com"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send Reset Link'}
-              </Button>
-              <Button 
-                type="button" 
-                variant="ghost" 
-                className="w-full"
-                onClick={() => setMode('signin')}
-              >
-                Back to Sign In
-              </Button>
-            </form>
-          ) : (
-            <form onSubmit={handleResetPassword} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="new-password">New Password</Label>
-                <PasswordInput
-                  id="new-password"
-                  placeholder="••••••••"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  minLength={6}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm Password</Label>
-                <PasswordInput
-                  id="confirm-password"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  minLength={6}
-                />
-                {newPassword && confirmPassword && newPassword !== confirmPassword && (
-                  <p className="text-sm text-destructive">Passwords do not match</p>
-                )}
-              </div>
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={loading || newPassword !== confirmPassword || newPassword.length < 6}
-              >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Update Password'}
-              </Button>
-            </form>
-          )}
         </CardContent>
       </Card>
       </div>
