@@ -27,8 +27,8 @@ export const Navbar = () => {
   const { t } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { data: userInstitutions = [] } = useUserInstitutions();
-  // Pass profile country for priority-based detection
-  const { flag, countryName, loading: flagLoading } = useCountryFlag(profile?.country);
+  // Simple flag: profile country → locale → globe
+  const { flag, countryName } = useCountryFlag(profile?.country);
   const { totalUnread } = usePrivateMessages();
   
   // Only mentors and admins can access private messaging
@@ -50,15 +50,13 @@ export const Navbar = () => {
         {/* Logo with Country Flag */}
         <Link to="/home" className="flex items-center gap-2 hover:opacity-80 transition-opacity flex-shrink-0">
           <img src={acfeLogo} alt="A Cloud for Everyone" className="h-12 sm:h-16 md:h-20 w-auto" />
-          {!flagLoading && (
-            <span 
-              className="text-2xl sm:text-3xl" 
-              title={countryName}
-              aria-label={`Visiting from ${countryName}`}
-            >
-              {flag}
-            </span>
-          )}
+          <span 
+            className="text-2xl sm:text-3xl" 
+            title={countryName || 'Global'}
+            aria-label={countryName ? `Visiting from ${countryName}` : 'Global'}
+          >
+            {flag}
+          </span>
         </Link>
 
         {/* Desktop Navigation */}
