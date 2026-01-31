@@ -27,7 +27,8 @@ export const Navbar = () => {
   const { t } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { data: userInstitutions = [] } = useUserInstitutions();
-  const { flag, countryName, loading: flagLoading } = useCountryFlag();
+  // Pass profile country for priority-based detection
+  const { flag, countryName, loading: flagLoading } = useCountryFlag(profile?.country);
   const { totalUnread } = usePrivateMessages();
   
   // Only mentors and admins can access private messaging
