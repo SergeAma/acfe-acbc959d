@@ -523,7 +523,7 @@ export const CourseLearn = () => {
     }
   };
 
-  const markAsComplete = async (contentId: string) => {
+  const markAsComplete = async (contentId: string, autoAdvance: boolean = true) => {
     if (!enrollmentId || isMentorPreview) return;
 
     const { error } = await supabase
@@ -547,16 +547,17 @@ export const CourseLearn = () => {
     }
 
     // Update local state
-    setSections(sections.map(section => ({
+    const updatedSections = sections.map(section => ({
       ...section,
       content: section.content.map(item =>
         item.id === contentId ? { ...item, completed: true } : item
       )
-    })));
+    }));
+    setSections(updatedSections);
 
     // Recalculate progress including assessments
-    const allContent = sections.flatMap(s => s.content);
-    const completedCount = allContent.filter(c => c.id === contentId || c.completed).length;
+    const allContent = updatedSections.flatMap(s => s.content);
+    const completedCount = allContent.filter(c => c.completed).length;
     
     // Determine assignment status for progress calculation
     const assignmentStatus: 'none' | 'submitted' | 'approved' = 
@@ -578,22 +579,26 @@ export const CourseLearn = () => {
       .update({ progress: newProgress })
       .eq('id', enrollmentId);
 
-    toast({
-      title: 'Progress saved',
-      description: 'Lesson marked as complete',
-    });
-
-    // Check if all lessons are complete (60% base or 100% if no assessments)
+    // Check if all lessons are complete
     const lessonsComplete = completedCount === allContent.length;
     
+    // Find next available lesson
+    const currentIndex = allContent.findIndex(c => c.id === contentId);
+    const nextLesson = allContent.slice(currentIndex + 1).find(c => c.available && !c.completed);
+    const hasMoreLessons = currentIndex < allContent.length - 1;
+    
     if (lessonsComplete && user && course) {
+      // All lessons complete
+      toast({
+        title: 'All lessons complete! 🎉',
+        description: (hasQuiz || hasAssignment) 
+          ? 'Proceeding to course assessments...' 
+          : 'Congratulations on completing the course!',
+      });
+      
       // If course has assessments (quiz or assignment), show assessments section
       if (hasQuiz || hasAssignment) {
         setShowAssessments(true);
-        toast({
-          title: 'Lessons Complete!',
-          description: 'Complete the assessments to earn your certificate.',
-        });
       } else {
         // No assessments required - issue certificate directly
         // Notify mentors about course completion for pending mentorship requests
@@ -658,6 +663,25 @@ export const CourseLearn = () => {
           }
         }
       }
+    } else if (autoAdvance && hasMoreLessons) {
+      // Auto-advance to next lesson after a brief delay for UX
+      toast({
+        title: 'Lesson complete! ✓',
+        description: nextLesson ? 'Moving to next lesson...' : 'Great progress!',
+      });
+      
+      setTimeout(() => {
+        const availableContent = allContent.filter(c => c.available);
+        const currentAvailableIndex = availableContent.findIndex(c => c.id === contentId);
+        if (currentAvailableIndex < availableContent.length - 1) {
+          setCurrentContent(availableContent[currentAvailableIndex + 1]);
+        }
+      }, 800);
+    } else {
+      toast({
+        title: 'Lesson complete! ✓',
+        description: 'Great job!',
+      });
     }
   };
 
@@ -678,8 +702,19 @@ export const CourseLearn = () => {
   const navigateNext = () => {
     const allContent = sections.flatMap(s => s.content).filter(c => c.available);
     const currentIndex = allContent.findIndex(c => c.id === currentContent?.id);
+    
     if (currentIndex < allContent.length - 1) {
       setCurrentContent(allContent[currentIndex + 1]);
+    } else {
+      // At the last lesson - check if all lessons are complete and assessments exist
+      const allComplete = allContent.every(c => c.completed);
+      if (allComplete && (hasQuiz || hasAssignment)) {
+        setShowAssessments(true);
+        toast({
+          title: 'All lessons complete!',
+          description: 'Time to complete your course assessments.',
+        });
+      }
     }
   };
 
@@ -691,16 +726,10 @@ export const CourseLearn = () => {
     }
   };
 
-  // Handle video completion - mark lesson complete and auto-advance
+  // Handle video completion - mark lesson complete (auto-advance is handled by markAsComplete)
   const handleVideoComplete = async () => {
     if (!currentContent || currentContent.completed) return;
-    
-    await markAsComplete(currentContent.id);
-    
-    // Auto-advance to next lesson after a short delay
-    setTimeout(() => {
-      navigateNext();
-    }, 1500);
+    await markAsComplete(currentContent.id, true);
   };
 
   const getContentIcon = (type: string, completed: boolean) => {
@@ -1052,26 +1081,49 @@ export const CourseLearn = () => {
         )}
 
         {/* Navigation */}
-        <div className="flex justify-between pt-6">
-          <Button
-            variant="outline"
-            onClick={navigatePrevious}
-            disabled={sections.flatMap(s => s.content).findIndex(c => c.id === currentContent.id) === 0}
-          >
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Previous
-          </Button>
-          <Button
-            onClick={navigateNext}
-            disabled={
-              sections.flatMap(s => s.content).findIndex(c => c.id === currentContent.id) === 
-              sections.flatMap(s => s.content).length - 1
-            }
-          >
-            Next
-            <ChevronRight className="h-4 w-4 ml-2" />
-          </Button>
-        </div>
+        {(() => {
+          const allContent = sections.flatMap(s => s.content);
+          const currentIndex = allContent.findIndex(c => c.id === currentContent.id);
+          const isLastLesson = currentIndex === allContent.length - 1;
+          const allComplete = allContent.every(c => c.completed);
+          const hasAssessments = hasQuiz || hasAssignment;
+          
+          return (
+            <div className="flex justify-between pt-6">
+              <Button
+                variant="outline"
+                onClick={navigatePrevious}
+                disabled={currentIndex === 0}
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Previous
+              </Button>
+              
+              {isLastLesson && allComplete && hasAssessments ? (
+                <Button onClick={() => setShowAssessments(true)}>
+                  <ClipboardCheck className="h-4 w-4 mr-2" />
+                  Go to Assessments
+                </Button>
+              ) : isLastLesson && allComplete && !hasAssessments ? (
+                <Button
+                  variant="outline"
+                  disabled
+                >
+                  <Award className="h-4 w-4 mr-2" />
+                  Course Complete
+                </Button>
+              ) : (
+                <Button
+                  onClick={navigateNext}
+                  disabled={isLastLesson}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Drip Content Notification - Show after completing first lesson */}
         {(() => {
