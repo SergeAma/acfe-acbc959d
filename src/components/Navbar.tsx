@@ -17,7 +17,6 @@ import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
 import { useUserInstitutions } from "@/hooks/useInstitution";
-import { useCountryFlag } from "@/hooks/useCountryFlag";
 import { usePrivateMessages } from "@/hooks/usePrivateMessages";
 import { Badge } from "@/components/ui/badge";
 import acfeLogo from "@/assets/acfe-logo.png";
@@ -27,8 +26,6 @@ export const Navbar = () => {
   const { t } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { data: userInstitutions = [] } = useUserInstitutions();
-  // Simple flag: profile country → locale → globe
-  const { flag, countryName } = useCountryFlag(profile?.country);
   const { totalUnread } = usePrivateMessages();
   
   // Only mentors and admins can access private messaging
@@ -47,16 +44,9 @@ export const Navbar = () => {
     <>
     <nav className="border-b border-border bg-background/95 backdrop-blur-sm fixed top-0 left-0 right-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
-        {/* Logo with Country Flag */}
-        <Link to="/home" className="flex items-center gap-2 hover:opacity-80 transition-opacity flex-shrink-0">
+        {/* Logo */}
+        <Link to="/home" className="flex items-center hover:opacity-80 transition-opacity flex-shrink-0">
           <img src={acfeLogo} alt="A Cloud for Everyone" className="h-12 sm:h-16 md:h-20 w-auto" />
-          <span 
-            className="text-2xl sm:text-3xl" 
-            title={countryName || 'Global'}
-            aria-label={countryName ? `Visiting from ${countryName}` : 'Global'}
-          >
-            {flag}
-          </span>
         </Link>
 
         {/* Desktop Navigation */}
