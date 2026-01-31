@@ -444,6 +444,7 @@ export type Database = {
           course_id: string
           created_at: string
           description: string | null
+          google_form_url: string | null
           id: string
           instructions: string | null
           is_required: boolean
@@ -457,6 +458,7 @@ export type Database = {
           course_id: string
           created_at?: string
           description?: string | null
+          google_form_url?: string | null
           id?: string
           instructions?: string | null
           is_required?: boolean
@@ -470,6 +472,7 @@ export type Database = {
           course_id?: string
           created_at?: string
           description?: string | null
+          google_form_url?: string | null
           id?: string
           instructions?: string | null
           is_required?: boolean

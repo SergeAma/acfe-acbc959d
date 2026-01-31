@@ -20,9 +20,10 @@ interface Assignment {
   description: string | null;
   instructions: string | null;
   is_required: boolean;
+  google_form_url: string | null;
 }
 
-const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/1UNC2B8aRJzQX2xOZmeEsGiwmq7o2viwgL-ALx01ZYLs/edit';
+const DEFAULT_GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/1UNC2B8aRJzQX2xOZmeEsGiwmq7o2viwgL-ALx01ZYLs/edit';
 
 export const AssignmentBuilder = ({ courseId }: AssignmentBuilderProps) => {
   const { toast } = useToast();
@@ -32,6 +33,8 @@ export const AssignmentBuilder = ({ courseId }: AssignmentBuilderProps) => {
   const [localInstructions, setLocalInstructions] = useState<string>('');
   const [instructionsDirty, setInstructionsDirty] = useState(false);
   const [savingInstructions, setSavingInstructions] = useState(false);
+  const [localFormUrl, setLocalFormUrl] = useState<string>('');
+  const [savingFormUrl, setSavingFormUrl] = useState(false);
 
   useEffect(() => {
     fetchAssignment();
@@ -42,7 +45,7 @@ export const AssignmentBuilder = ({ courseId }: AssignmentBuilderProps) => {
     
     const { data, error } = await supabase
       .from('course_assignments')
-      .select('id, course_id, title, description, instructions, is_required')
+      .select('id, course_id, title, description, instructions, is_required, google_form_url')
       .eq('course_id', courseId)
       .maybeSingle();
 
@@ -51,6 +54,7 @@ export const AssignmentBuilder = ({ courseId }: AssignmentBuilderProps) => {
     } else {
       setAssignment(data);
       setLocalInstructions(data?.instructions || '');
+      setLocalFormUrl(data?.google_form_url || '');
     }
     
     setLoading(false);
@@ -79,8 +83,9 @@ This assignment will be reviewed by your mentor.`,
         allow_video: false,
         allow_file: false,
         allow_text: false,
+        google_form_url: null,
       })
-      .select('id, course_id, title, description, instructions, is_required')
+      .select('id, course_id, title, description, instructions, is_required, google_form_url')
       .single();
 
     if (error) {
@@ -251,29 +256,63 @@ This assignment will be reviewed by your mentor.`,
           </div>
         </div>
 
-        {/* Google Form Info */}
-        <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-background flex items-center justify-center border">
-              <Briefcase className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm">Submissions via Google Form</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                All assignment submissions are collected through an embedded Google Form. 
-                Students see the form directly on the assignment page.
-              </p>
-              <a 
-                href={GOOGLE_FORM_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-2"
-              >
-                <ExternalLink className="h-3 w-3" />
-                Edit Google Form
-              </a>
-            </div>
+        {/* Google Form URL Input */}
+        <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="google-form-url">Google Form URL</Label>
+            <Button 
+              onClick={async () => {
+                if (!assignment) return;
+                setSavingFormUrl(true);
+                const { error } = await supabase
+                  .from('course_assignments')
+                  .update({ google_form_url: localFormUrl || null })
+                  .eq('id', assignment.id);
+                if (error) {
+                  toast({ title: 'Error', description: 'Failed to save form URL', variant: 'destructive' });
+                } else {
+                  setAssignment({ ...assignment, google_form_url: localFormUrl || null });
+                  toast({ title: 'Saved', description: 'Google Form URL updated' });
+                }
+                setSavingFormUrl(false);
+              }}
+              disabled={savingFormUrl || localFormUrl === (assignment?.google_form_url || '')}
+              size="sm"
+              className="gap-2"
+            >
+              {savingFormUrl ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Save URL
+                </>
+              )}
+            </Button>
           </div>
+          <Input
+            id="google-form-url"
+            value={localFormUrl}
+            onChange={(e) => setLocalFormUrl(e.target.value)}
+            placeholder="https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform"
+          />
+          <p className="text-xs text-muted-foreground">
+            Paste the full Google Form URL. Students will see this form embedded on the assignment page.
+          </p>
+          {localFormUrl && (
+            <a 
+              href={localFormUrl.replace('/viewform', '/edit').replace('?embedded=true', '')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Edit Form in Google
+            </a>
+          )}
         </div>
       </CardContent>
     </Card>
