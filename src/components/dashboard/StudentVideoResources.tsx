@@ -20,9 +20,9 @@ const VIDEO_RESOURCES: VideoResource[] = [
     id: 'acfe-walkthrough',
     title: 'Welcome to ACFE: Platform Walkthrough',
     titleFr: 'Bienvenue sur ACFE: Présentation de la Plateforme',
-    description: 'Learn how to navigate the platform and make the most of your learning journey. CLICK on the purple boxes for next steps!',
-    descriptionFr: 'Apprenez à naviguer sur la plateforme et à tirer le meilleur parti de votre parcours d\'apprentissage. CLIQUEZ sur les cases violettes pour les prochaines étapes!',
-    embedUrl: 'https://app.storylane.io/share/70er0b80dgh2',
+    description: 'Learn how to navigate the platform and make the most of your learning journey.',
+    descriptionFr: 'Apprenez à naviguer sur la plateforme et à tirer le meilleur parti de votre parcours d\'apprentissage.',
+    embedUrl: 'https://drive.google.com/file/d/1iyoiuHjCdADe8AyKT-CMPStolKgYqDDs/preview',
     thumbnail: walkthroughThumbnail,
   },
   // Future videos can be added here
