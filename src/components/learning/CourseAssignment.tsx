@@ -116,14 +116,35 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
 
 // Helper to ensure URL has embed parameters
 function getEmbedUrl(url: string): string {
-  if (!url) return '';
-  let embedUrl = url;
-  // Ensure it ends with viewform or has embedded=true
-  if (!embedUrl.includes('viewform')) {
-    embedUrl = embedUrl.replace('/edit', '/viewform');
+  if (!url || url.trim() === '') return '';
+  
+  try {
+    let embedUrl = url.trim();
+    
+    // Convert edit URLs to viewform URLs
+    if (embedUrl.includes('/edit')) {
+      embedUrl = embedUrl.replace('/edit', '/viewform');
+    }
+    
+    // Parse URL to handle query parameters properly
+    const urlObj = new URL(embedUrl);
+    
+    // Remove usp parameter as it can cause issues with embedding
+    urlObj.searchParams.delete('usp');
+    
+    // Add embedded=true if not present
+    if (!urlObj.searchParams.has('embedded')) {
+      urlObj.searchParams.set('embedded', 'true');
+    }
+    
+    return urlObj.toString();
+  } catch (e) {
+    // If URL parsing fails, try basic string manipulation
+    console.error('Failed to parse Google Form URL:', e);
+    let embedUrl = url.trim();
+    if (!embedUrl.includes('embedded=true')) {
+      embedUrl += embedUrl.includes('?') ? '&embedded=true' : '?embedded=true';
+    }
+    return embedUrl;
   }
-  if (!embedUrl.includes('embedded=true')) {
-    embedUrl += embedUrl.includes('?') ? '&embedded=true' : '?embedded=true';
-  }
-  return embedUrl;
 }
