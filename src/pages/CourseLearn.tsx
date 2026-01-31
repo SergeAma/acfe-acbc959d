@@ -48,7 +48,6 @@ import { CourseCertificate } from '@/components/CourseCertificate';
 import { SecureVideoContent, SecureFileContent } from '@/components/learning/SecureContent';
 import { SecureAudioContent } from '@/components/learning/SecureAudioContent';
 import { NotesPanel } from '@/components/learning/NotesPanel';
-import { BookmarksPanel, useBookmarks } from '@/components/learning/BookmarksPanel';
 import { createSafeHtml } from '@/lib/sanitize-html';
 import { CourseQuiz } from '@/components/learning/CourseQuiz';
 import { CourseAssignment } from '@/components/learning/CourseAssignment';
@@ -1389,17 +1388,12 @@ export const CourseLearn = () => {
                   </CardContent>
                 </Card>
                 
-                {/* Notes and Bookmarks Panels */}
+                {/* Notes Panel */}
                 {currentContent && (
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <NotesPanel 
-                      contentId={currentContent.id} 
-                      currentTime={0}
-                    />
-                    <BookmarksPanel 
-                      contentId={currentContent.id}
-                    />
-                  </div>
+                  <NotesPanel 
+                    contentId={currentContent.id} 
+                    currentTime={0}
+                  />
                 )}
               </>
             )}
