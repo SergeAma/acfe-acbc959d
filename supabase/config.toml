@@ -1,5 +1,38 @@
 project_id = "mefwbcbnctqjxrwldmjm"
 
+# ============================================================================
+# AUTH EMAIL TEMPLATES (OTP - 6-digit code)
+# ============================================================================
+
+[auth]
+site_url = "https://acfe.lovable.app"
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+otp_length = 6
+otp_expiry = 600
+
+# Signup / Email Confirmation - OTP code (no magic link)
+[auth.email.template.confirmation]
+subject = "Your ACFE login code"
+content_path = "./templates/confirmation.html"
+
+# Magic Link / OTP for existing users
+[auth.email.template.magic_link]
+subject = "Your ACFE login code"  
+content_path = "./templates/magic_link.html"
+
+# Email change verification
+[auth.email.template.email_change]
+subject = "Confirm your new email address"
+content_path = "./templates/email_change.html"
+
+# ============================================================================
+# EDGE FUNCTIONS
+# ============================================================================
+
 [functions.fetch-tech-news]
 verify_jwt = false
 
