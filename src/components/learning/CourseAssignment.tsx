@@ -16,10 +16,11 @@ interface Assignment {
   description: string | null;
   instructions: string | null;
   is_required: boolean;
+  google_form_url: string | null;
 }
 
-const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfVKxhq8Z_y7qZ4Z8Z4Z8Z4Z8Z4Z8Z4Z8Z4Z8Z4Z8Z4Z8Z4Z8/viewform?embedded=true';
-const GOOGLE_FORM_EMBED_URL = 'https://docs.google.com/forms/d/1UNC2B8aRJzQX2xOZmeEsGiwmq7o2viwgL-ALx01ZYLs/viewform?embedded=true';
+// Legacy fallback for courses without a custom form URL
+const LEGACY_GOOGLE_FORM_EMBED_URL = 'https://docs.google.com/forms/d/1UNC2B8aRJzQX2xOZmeEsGiwmq7o2viwgL-ALx01ZYLs/viewform?embedded=true';
 
 export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseAssignmentProps) => {
   const [assignment, setAssignment] = useState<Assignment | null>(null);
@@ -34,7 +35,7 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
 
     const { data: assignmentData, error: assignmentError } = await supabase
       .from('course_assignments')
-      .select('id, title, description, instructions, is_required')
+      .select('id, title, description, instructions, is_required, google_form_url')
       .eq('course_id', courseId)
       .maybeSingle();
 
@@ -87,22 +88,42 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
         {/* Embedded Google Form */}
         <div className="space-y-3">
           <p className="text-sm font-medium">Submit Your Assignment</p>
-          <div className="w-full rounded-lg overflow-hidden border bg-background">
-            <iframe
-              src={GOOGLE_FORM_EMBED_URL}
-              width="100%"
-              height="800"
-              frameBorder="0"
-              marginHeight={0}
-              marginWidth={0}
-              title="Assignment Submission Form"
-              className="w-full"
-            >
-              Loading form...
-            </iframe>
-          </div>
+          {assignment.google_form_url || LEGACY_GOOGLE_FORM_EMBED_URL ? (
+            <div className="w-full rounded-lg overflow-hidden border bg-background">
+              <iframe
+                src={getEmbedUrl(assignment.google_form_url || LEGACY_GOOGLE_FORM_EMBED_URL)}
+                width="100%"
+                height="800"
+                frameBorder="0"
+                marginHeight={0}
+                marginWidth={0}
+                title="Assignment Submission Form"
+                className="w-full"
+              >
+                Loading form...
+              </iframe>
+            </div>
+          ) : (
+            <div className="p-4 text-center text-muted-foreground bg-muted rounded-lg">
+              No submission form configured for this assignment.
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
   );
 };
+
+// Helper to ensure URL has embed parameters
+function getEmbedUrl(url: string): string {
+  if (!url) return '';
+  let embedUrl = url;
+  // Ensure it ends with viewform or has embedded=true
+  if (!embedUrl.includes('viewform')) {
+    embedUrl = embedUrl.replace('/edit', '/viewform');
+  }
+  if (!embedUrl.includes('embedded=true')) {
+    embedUrl += embedUrl.includes('?') ? '&embedded=true' : '?embedded=true';
+  }
+  return embedUrl;
+}
