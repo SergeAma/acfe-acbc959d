@@ -28,12 +28,11 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
-  signUp: (email: string, password: string, fullName: string, linkedinUrl?: string, wantsMentor?: boolean, university?: string, mentorBio?: string, portfolioLinks?: string, preferredLanguage?: 'en' | 'fr', gender?: 'male' | 'female') => Promise<{ error: AuthError | null }>;
+  // OTP-based authentication
+  sendOtp: (email: string) => Promise<{ error: AuthError | null }>;
+  verifyOtp: (email: string, token: string) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
-  updatePassword: (newPassword: string) => Promise<{ error: AuthError | null }>;
   // Role simulation for admins
   simulatedRole: SimulatableRole;
   setSimulatedRole: (role: SimulatableRole) => void;
@@ -235,114 +234,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [isInitialized]);
 
-  const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
+  const sendOtp = async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
       email,
-      password,
+      options: {
+        shouldCreateUser: true,
+      },
     });
 
     if (error) {
       toast({
-        title: "Login failed",
+        title: "Failed to send code",
         description: error.message,
         variant: "destructive",
       });
       return { error };
     }
 
-    // Successfully signed in - update state immediately
-    if (data.session && data.user) {
-      setSession(data.session);
-      setUser(data.user);
-      
-      // Fetch profile immediately
-      const profileData = await fetchProfile(data.user.id, true);
-      if (profileData) setProfile(profileData);
-    }
+    toast({
+      title: "Code sent!",
+      description: "Check your email for the 6-digit verification code.",
+    });
 
     return { error: null };
   };
 
-  const signUp = async (email: string, password: string, fullName: string, linkedinUrl?: string, wantsMentor?: boolean, university?: string, mentorBio?: string, portfolioLinks?: string, preferredLanguage: 'en' | 'fr' = 'en', gender?: 'male' | 'female') => {
-    const { data, error } = await supabase.auth.signUp({
+  const verifyOtp = async (email: string, token: string) => {
+    const { data, error } = await supabase.auth.verifyOtp({
       email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-        },
-        emailRedirectTo: `${window.location.origin}/`,
-      },
+      token,
+      type: 'email',
     });
 
     if (error) {
       toast({
-        title: "Signup failed",
+        title: "Verification failed",
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Account created!",
-        description: wantsMentor 
-          ? "Welcome! Your mentor application will be reviewed by our team." 
-          : "Welcome to A Cloud for Everyone. All users start as learners.",
-      });
-      
-      // Update profile with LinkedIn URL, university, gender, and language preference if provided
-      if (data.user) {
-        const updateData: Record<string, string> = {};
-        if (linkedinUrl) updateData.linkedin_url = linkedinUrl;
-        if (university) updateData.university = university;
-        if (gender) updateData.gender = gender;
-        updateData.preferred_language = preferredLanguage;
-        
-        await supabase
-          .from('profiles')
-          .update(updateData)
-          .eq('id', data.user.id);
-      }
-
-      // If user wants to become a mentor, create a mentor request with bio and portfolio
-      if (wantsMentor && data.user) {
-        try {
-          const reasonParts = [];
-          if (mentorBio) reasonParts.push(`Bio: ${mentorBio}`);
-          if (portfolioLinks) reasonParts.push(`Portfolio/Links: ${portfolioLinks}`);
-          
-          await supabase
-            .from('mentor_role_requests')
-            .insert({
-              user_id: data.user.id,
-              reason: reasonParts.length > 0 ? reasonParts.join('\n\n') : 'Applied during registration',
-              status: 'pending'
-            });
-        } catch {
-          // Mentor request failure is non-critical
-        }
-      }
-
-      // Send welcome email automatically
-      if (data.user) {
-        const firstName = fullName?.split(' ')[0] || 'there';
-        try {
-          await supabase.functions.invoke('send-welcome-email', {
-            body: {
-              email: email,
-              first_name: firstName,
-              role: 'student',
-              wants_mentor: wantsMentor || false,
-              user_id: data.user.id,
-              preferred_language: preferredLanguage,
-            },
-          });
-        } catch {
-          // Welcome email failure is non-critical
-        }
-      }
+      return { error };
     }
 
-    return { error };
+    // Successfully verified - update state
+    if (data.session && data.user) {
+      setSession(data.session);
+      setUser(data.user);
+      
+      // Fetch profile
+      const profileData = await fetchProfile(data.user.id, true);
+      if (profileData) setProfile(profileData);
+      
+      toast({
+        title: "Welcome!",
+        description: "You've been successfully authenticated.",
+      });
+    }
+
+    return { error: null };
   };
 
   const signOut = async () => {
@@ -357,60 +305,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth?mode=reset`,
-    });
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Check your email",
-        description: "We've sent you a password reset link.",
-      });
-    }
-
-    return { error };
-  };
-
-  const updatePassword = async (newPassword: string) => {
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Password updated",
-        description: "Your password has been changed successfully.",
-      });
-    }
-
-    return { error };
-  };
-
   return (
     <AuthContext.Provider value={{ 
       user, 
       session, 
       profile, 
       loading, 
-      signIn, 
-      signUp, 
+      sendOtp,
+      verifyOtp,
       signOut, 
       refreshProfile, 
-      resetPassword, 
-      updatePassword,
       simulatedRole,
       setSimulatedRole,
       effectiveRole,
