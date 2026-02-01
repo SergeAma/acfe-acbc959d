@@ -288,10 +288,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Send OTP to email (for sign-in of existing users)
   const sendOtp = async (email: string) => {
+    // Use type: 'email' to explicitly request 6-digit OTP code instead of magic link
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
         shouldCreateUser: false, // Don't create user on sign-in flow
+        emailRedirectTo: undefined, // Disable magic link redirect - use OTP only
       },
     });
 
@@ -380,10 +382,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setPendingSignup(signupData);
 
     // Send OTP to the user's email (this creates the user in Supabase)
+    // Use emailRedirectTo: undefined to force 6-digit OTP code instead of magic link
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
         shouldCreateUser: true, // Create user on signup flow
+        emailRedirectTo: undefined, // Disable magic link redirect - use OTP only
         data: {
           full_name: fullName,
         },
