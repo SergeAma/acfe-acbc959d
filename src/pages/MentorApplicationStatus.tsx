@@ -145,11 +145,11 @@ export const MentorApplicationStatus = () => {
               You haven't submitted a mentor application yet. Would you like to apply?
             </p>
             <div className="flex gap-4 justify-center">
-              <Button onClick={() => navigate('/auth?mode=signup&role=mentor')}>
+              <Button onClick={() => navigate('/dashboard')}>
                 Apply to Become a Mentor
               </Button>
-              <Button variant="outline" onClick={() => navigate('/dashboard')}>
-                Back to Dashboard
+              <Button variant="outline" onClick={() => navigate('/')}>
+                Back to Home
               </Button>
             </div>
           </div>
