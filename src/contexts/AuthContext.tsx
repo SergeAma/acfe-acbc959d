@@ -286,14 +286,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [isInitialized]);
 
-  // Send OTP to email (for sign-in of existing users)
+  // Send magic link to email (for sign-in of existing users)
   const sendOtp = async (email: string) => {
-    // Use type: 'email' to explicitly request 6-digit OTP code instead of magic link
+    // Get redirect URL based on current location
+    const redirectUrl = `${window.location.origin}/auth`;
+    
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
         shouldCreateUser: false, // Don't create user on sign-in flow
-        emailRedirectTo: undefined, // Disable magic link redirect - use OTP only
+        emailRedirectTo: redirectUrl, // Redirect to auth page after clicking link
       },
     });
 
@@ -307,7 +309,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       } else {
         toast({
-          title: "Failed to send code",
+          title: "Failed to send email",
           description: error.message,
           variant: "destructive",
         });
@@ -316,25 +318,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     toast({
-      title: "Code sent!",
-      description: "Check your email for your 6-digit login code.",
+      title: "Email sent!",
+      description: "Check your email for a verification link.",
     });
 
     return { error: null };
   };
 
-  // Verify OTP code (for existing user sign-in)
+  // Verify OTP code (kept for backward compatibility, but magic link handles auth automatically)
   const verifyOtp = async (email: string, token: string) => {
     const { data, error } = await supabase.auth.verifyOtp({
       email,
       token,
-      type: 'email',
+      type: 'magiclink',
     });
 
     if (error) {
       toast({
-        title: "Invalid code",
-        description: "The code you entered is incorrect or has expired.",
+        title: "Invalid link",
+        description: "The link is incorrect or has expired.",
         variant: "destructive",
       });
       return { error };
@@ -381,13 +383,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     sessionStorage.setItem(PENDING_SIGNUP_KEY, JSON.stringify(signupData));
     setPendingSignup(signupData);
 
-    // Send OTP to the user's email (this creates the user in Supabase)
-    // Use emailRedirectTo: undefined to force 6-digit OTP code instead of magic link
+    // Get redirect URL for magic link
+    const redirectUrl = `${window.location.origin}/auth`;
+    
+    // Send magic link to the user's email (this creates the user in Supabase)
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
         shouldCreateUser: true, // Create user on signup flow
-        emailRedirectTo: undefined, // Disable magic link redirect - use OTP only
+        emailRedirectTo: redirectUrl, // Redirect to auth page after clicking link
         data: {
           full_name: fullName,
         },
@@ -405,26 +409,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     toast({
-      title: "Verification code sent!",
-      description: "Check your email for your 6-digit code to complete registration.",
+      title: "Verification email sent!",
+      description: "Check your email and click the link to complete registration.",
     });
 
     return { error: null };
   };
 
-  // Complete signup after OTP verification
+  // Complete signup after magic link verification (called automatically by onAuthStateChange)
   const completeSignup = async (email: string, token: string) => {
-    // Verify the OTP
+    // Verify the magic link token
     const { data, error } = await supabase.auth.verifyOtp({
       email,
       token,
-      type: 'email',
+      type: 'magiclink',
     });
 
     if (error) {
       toast({
-        title: "Invalid code",
-        description: "The code you entered is incorrect or has expired.",
+        title: "Invalid link",
+        description: "The link is incorrect or has expired.",
         variant: "destructive",
       });
       return { error };
