@@ -15,6 +15,7 @@ interface PaymentFailedEmailRequest {
   amount: string;
   currency: string;
   language?: EmailLanguage;
+  tier_name?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -23,40 +24,62 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, name, amount, currency, language = 'en' }: PaymentFailedEmailRequest = await req.json();
+    const { email, name, amount, currency, language = 'en', tier_name }: PaymentFailedEmailRequest = await req.json();
     const lang: EmailLanguage = language === 'fr' ? 'fr' : 'en';
 
-    console.log("[SEND-PAYMENT-FAILED] Sending to:", email);
+    console.log("[SEND-PAYMENT-FAILED] Sending to:", email, "tier:", tier_name, "language:", lang);
 
     const displayName = name || (lang === 'fr' ? 'Abonné' : 'Subscriber');
     const displayAmount = amount || 'N/A';
     const displayCurrency = currency || 'USD';
     const greeting = lang === 'fr' ? 'Bonjour' : 'Hi';
+    const tierDisplay = tier_name || (lang === 'fr' ? 'Abonnement ACFE' : 'ACFE Subscription');
+    const currencySymbol = displayCurrency === 'EUR' ? '€' : '$';
 
-    const subject = getSubTranslation('payment.failed.subject', lang);
-    const headline = getSubTranslation('payment.failed.headline', lang);
+    const subject = lang === 'fr'
+      ? `Échec du paiement pour ${tierDisplay}`
+      : `Payment Failed for ${tierDisplay}`;
+    
+    const headline = lang === 'fr'
+      ? 'Échec du Paiement'
+      : 'Payment Failed';
+
+    // Build payment details table
+    const paymentDetails = `
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; background-color: #fef2f2; border-radius: 6px; border: 1px solid #fecaca;">
+        <tr>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #fecaca; font-weight: 600;">${lang === 'fr' ? 'Abonnement' : 'Subscription'}</td>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #fecaca; text-align: right;">${tierDisplay}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 12px; font-weight: 600;">${lang === 'fr' ? 'Montant' : 'Amount'}</td>
+          <td style="padding: 8px 12px; text-align: right; font-weight: 600;">${currencySymbol}${displayAmount}</td>
+        </tr>
+      </table>`;
 
     const bodyContent = lang === 'fr'
       ? `<p style="margin: 0 0 16px 0;">${greeting} ${displayName},</p>
          <p style="margin: 0 0 16px 0;">Nous n'avons pas pu traiter votre paiement d'abonnement.</p>
-         <p style="margin: 0;"><strong>Montant:</strong> ${displayCurrency} ${displayAmount}</p>`
+         ${paymentDetails}
+         <p style="margin: 0;">Veuillez mettre à jour vos informations de paiement pour éviter l'interruption de votre accès.</p>`
       : `<p style="margin: 0 0 16px 0;">${greeting} ${displayName},</p>
          <p style="margin: 0 0 16px 0;">We were unable to process your subscription payment.</p>
-         <p style="margin: 0;"><strong>Amount:</strong> ${displayCurrency} ${displayAmount}</p>`;
+         ${paymentDetails}
+         <p style="margin: 0;">Please update your payment information to avoid interruption of your access.</p>`;
 
     const emailHtml = buildCanonicalEmail({
       headline,
       body_primary: bodyContent,
       impact_block: {
-        title: getSubTranslation('payment.failed.impact_title', lang),
+        title: lang === 'fr' ? 'Ce que cela signifie:' : 'What this means:',
         items: [
-          getSubTranslation('payment.failed.item1', lang),
-          getSubTranslation('payment.failed.item2', lang),
-          getSubTranslation('payment.failed.item3', lang),
+          lang === 'fr' ? 'Votre accès peut être suspendu' : 'Your access may be suspended',
+          lang === 'fr' ? 'Nous réessaierons automatiquement' : 'We will automatically retry',
+          lang === 'fr' ? 'Mettez à jour votre mode de paiement' : 'Update your payment method',
         ]
       },
       primary_cta: {
-        label: getSubTranslation('payment.failed.cta', lang),
+        label: lang === 'fr' ? 'Mettre à jour le paiement' : 'Update Payment',
         url: 'https://acloudforeveryone.org/my-subscriptions'
       }
     }, lang);
