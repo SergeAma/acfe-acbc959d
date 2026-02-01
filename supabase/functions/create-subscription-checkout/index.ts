@@ -19,7 +19,7 @@ const ACFE_PRODUCTS = {
     productId: "prod_TkCdNAxRmKONyc",
     name: "ACFE Membership",
     settingKey: "subscription_price",
-    defaultPriceId: "price_1SmiEGJv3w1nJBLYw5Wi2f4b",
+    defaultPriceId: "price_1So8qzJv3w1nJBLYyJRKAP7P", // Updated to current $20/month price
   },
   mentorship_plus: {
     productId: "prod_TkDR4mktfjQo8r",
