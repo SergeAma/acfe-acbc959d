@@ -27,7 +27,9 @@ export const CareerCentreLanding = () => {
     institutionName: '',
     institutionType: '',
     firstName: '',
+    lastName: '',
     contactEmail: '',
+    country: '',
     contactPhone: '',
     estimatedStudents: '',
     message: ''
@@ -69,7 +71,7 @@ export const CareerCentreLanding = () => {
   }, [showInstitutionDialog]);
   const handleInstitutionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!institutionForm.institutionName || !institutionForm.institutionType || !institutionForm.firstName || !institutionForm.contactEmail || !institutionForm.contactPhone || !institutionForm.estimatedStudents || !institutionForm.message) {
+    if (!institutionForm.institutionName || !institutionForm.institutionType || !institutionForm.firstName || !institutionForm.contactEmail || !institutionForm.country || !institutionForm.contactPhone || !institutionForm.estimatedStudents) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -98,7 +100,9 @@ export const CareerCentreLanding = () => {
         institutionName: '',
         institutionType: '',
         firstName: '',
+        lastName: '',
         contactEmail: '',
+        country: '',
         contactPhone: '',
         estimatedStudents: '',
         message: ''
@@ -253,19 +257,42 @@ export const CareerCentreLanding = () => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="firstName">Your Name *</Label>
+                <Label htmlFor="firstName">First Name *</Label>
                 <Input id="firstName" value={institutionForm.firstName} onChange={e => setInstitutionForm(prev => ({
                 ...prev,
                 firstName: e.target.value
               }))} placeholder="First name" className="mt-1" required />
               </div>
               <div>
-                <Label htmlFor="contactEmail">Email Address *</Label>
-                <Input id="contactEmail" type="email" value={institutionForm.contactEmail} onChange={e => setInstitutionForm(prev => ({
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input id="lastName" value={institutionForm.lastName} onChange={e => setInstitutionForm(prev => ({
                 ...prev,
-                contactEmail: e.target.value
-              }))} placeholder="you@institution.edu" className="mt-1" required />
+                lastName: e.target.value
+              }))} placeholder="Last name" className="mt-1" />
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor="contactEmail">Email Address *</Label>
+              <Input id="contactEmail" type="email" value={institutionForm.contactEmail} onChange={e => setInstitutionForm(prev => ({
+              ...prev,
+              contactEmail: e.target.value
+            }))} placeholder="you@institution.edu" className="mt-1" required />
+            </div>
+
+            <div>
+              <Label htmlFor="country">Country *</Label>
+              <AutocompleteInput 
+                id="country" 
+                value={institutionForm.country} 
+                onChange={value => setInstitutionForm(prev => ({
+                  ...prev,
+                  country: value
+                }))} 
+                suggestions={['Kenya', 'Nigeria', 'South Africa', 'Ghana', 'Ethiopia', 'Tanzania', 'Uganda', 'Rwanda', 'Egypt', 'Morocco', 'Cameroon', 'Ivory Coast', 'Senegal', 'Democratic Republic of Congo', 'Zambia', 'Zimbabwe', 'Botswana', 'Namibia', 'Mozambique', 'Angola']} 
+                placeholder="Select country" 
+                className="mt-1" 
+              />
             </div>
 
             <div>
@@ -293,7 +320,7 @@ export const CareerCentreLanding = () => {
             </div>
 
             <div>
-              <Label htmlFor="message">Tell us about your goals *</Label>
+              <Label htmlFor="message">Tell us about your goals (optional)</Label>
               <Textarea id="message" value={institutionForm.message} onChange={e => setInstitutionForm(prev => ({
               ...prev,
               message: e.target.value
