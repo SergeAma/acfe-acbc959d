@@ -158,20 +158,19 @@ export const DonationDialog = ({ open, onOpenChange }: DonationDialogProps) => {
       }
     };
 
-    // Check if script is already loaded
+    // Script is preloaded in index.html - just init when ready
     if (window.turnstile) {
-      setTimeout(loadTurnstile, 100);
+      loadTurnstile();
     } else {
-      const existingScript = document.querySelector('script[src*="turnstile"]');
-      if (!existingScript) {
-        const script = document.createElement('script');
-        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-        script.async = true;
-        script.onload = () => setTimeout(loadTurnstile, 100);
-        document.body.appendChild(script);
-      } else {
-        setTimeout(loadTurnstile, 500);
-      }
+      // Fallback: wait for script to load
+      const checkTurnstile = setInterval(() => {
+        if (window.turnstile) {
+          clearInterval(checkTurnstile);
+          loadTurnstile();
+        }
+      }, 50);
+      // Cleanup interval after 5 seconds
+      setTimeout(() => clearInterval(checkTurnstile), 5000);
     }
 
     return () => {
