@@ -10,8 +10,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Globe, Mail, ArrowLeft } from 'lucide-react';
+import { Loader2, Globe, Mail, ArrowLeft, Lock } from 'lucide-react';
 import { z } from 'zod';
+import { supabase } from '@/integrations/supabase/client';
+
+// Admin email that has password login option
+const ADMIN_EMAIL = 'sergebushoki@icloud.com';
 import acfeIcon from '@/assets/acfe-icon.png';
 import { Navbar } from '@/components/Navbar';
 import { PhoneInput } from '@/components/ui/phone-input';
@@ -63,9 +67,10 @@ const mentorSignupSchema = baseSignupSchema.extend({
   portfolioLinks: z.string().max(1000).optional(),
 });
 
-// Sign-in only requires email
+// Sign-in only requires email (password optional for admin)
 const signInSchema = z.object({
   email: z.string().email('Invalid email address').max(255),
+  password: z.string().optional(),
 });
 
 export const Auth = () => {
@@ -95,6 +100,7 @@ export const Auth = () => {
 
   const [formData, setFormData] = useState({
     email: '',
+    password: '',
     firstName: '',
     lastName: '',
     phone: '',
@@ -112,6 +118,9 @@ export const Auth = () => {
     mentorPledge: false,
     preferredLanguage: 'en' as 'en' | 'fr',
   });
+  
+  // Check if current email is admin (for password option)
+  const isAdminEmail = formData.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -218,13 +227,31 @@ export const Auth = () => {
     }
   };
 
-  // Handle sign-in: send magic link to existing user
+  // Handle sign-in: send magic link OR use password for admin
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateSignInForm()) return;
     
     setLoading(true);
+    
+    // Admin with password - use password auth
+    if (isAdminEmail && formData.password) {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
+      
+      setLoading(false);
+      
+      if (error) {
+        toast.error(error.message);
+      }
+      // Success will trigger redirect via useEffect
+      return;
+    }
+    
+    // Default: magic link
     const { error } = await sendOtp(formData.email);
     setLoading(false);
     
@@ -391,16 +418,46 @@ export const Auth = () => {
                     type="email"
                     placeholder="your@email.com"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value, password: '' })}
                     required
                   />
                   {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  We'll send a verification link to your email to sign in securely.
-                </p>
+                
+                {/* Password field - only shown for admin email */}
+                {isAdminEmail && (
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-password" className="flex items-center gap-2">
+                      <Lock className="h-4 w-4" />
+                      Password (Admin)
+                    </Label>
+                    <Input
+                      id="signin-password"
+                      type="password"
+                      placeholder="Enter your password"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      You can use password or magic link to sign in.
+                    </p>
+                  </div>
+                )}
+                
+                {!isAdminEmail && (
+                  <p className="text-sm text-muted-foreground">
+                    We'll send a verification link to your email to sign in securely.
+                  </p>
+                )}
+                
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send Login Link'}
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : isAdminEmail && formData.password ? (
+                    'Sign In with Password'
+                  ) : (
+                    'Send Login Link'
+                  )}
                 </Button>
               </form>
             </TabsContent>
