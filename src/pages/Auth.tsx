@@ -90,8 +90,13 @@ export const Auth = () => {
   // Check if this is a mentor signup path
   const isMentorSignup = searchParams.get('role') === 'mentor';
   
-  // Get redirect URL from query params, default to courses (content-first experience)
-  const redirectUrl = searchParams.get('redirect') || '/courses';
+  // Get redirect URL from query params
+  // For mentor signup, redirect to application status page; otherwise dashboard
+  const getDefaultRedirect = () => {
+    if (isMentorSignup) return '/mentor-application-status';
+    return '/dashboard';
+  };
+  const redirectUrl = searchParams.get('redirect') || getDefaultRedirect();
 
   // Turnstile CAPTCHA state
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);

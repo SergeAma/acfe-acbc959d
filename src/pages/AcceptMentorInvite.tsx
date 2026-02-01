@@ -101,10 +101,11 @@ export default function AcceptMentorInvite() {
 
       toast({
         title: "Welcome, Mentor!",
-        description: "You now have mentor privileges. Let's set up your profile!",
+        description: "You now have mentor privileges. Please sign the mentor agreement to continue.",
       });
 
-      navigate("/profile");
+      // Redirect directly to mentor contract - required before dashboard access
+      navigate("/mentor-contract");
     } catch (error: any) {
       console.error("Error accepting invitation:", error);
       toast({
@@ -152,7 +153,7 @@ export default function AcceptMentorInvite() {
         {status === "accepted" && (
           <Card>
             <CardHeader className="text-center">
-              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+              <CheckCircle className="h-16 w-16 text-primary mx-auto mb-4" />
               <CardTitle>Already Accepted</CardTitle>
               <CardDescription>
                 This invitation has already been accepted.
