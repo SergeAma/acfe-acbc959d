@@ -97,30 +97,35 @@ export const ReferralDialog = ({ open, onOpenChange }: ReferralDialogProps) => {
   const [referredPhone, setReferredPhone] = useState('');
 
   useEffect(() => {
-    if (open) {
-      // Load Turnstile script
-      const script = document.createElement('script');
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-      script.async = true;
-      document.body.appendChild(script);
+    if (!open) {
+      setCaptchaToken(null);
+      return;
+    }
 
-      script.onload = () => {
+    const initTurnstile = () => {
+      const container = document.getElementById('referral-captcha-container');
+      if (window.turnstile && container) {
+        window.turnstile.render(container, {
+          sitekey: TURNSTILE_SITE_KEY,
+          callback: (token: string) => setCaptchaToken(token),
+          'error-callback': () => setCaptchaToken(null),
+        });
+      }
+    };
+
+    // Script is preloaded in index.html - just init when ready
+    if (window.turnstile) {
+      // Small delay to ensure DOM is ready
+      requestAnimationFrame(initTurnstile);
+    } else {
+      // Fallback: wait for script to load
+      const checkTurnstile = setInterval(() => {
         if (window.turnstile) {
-          const container = document.getElementById('referral-captcha-container');
-          if (container) {
-            window.turnstile.render(container, {
-              sitekey: TURNSTILE_SITE_KEY,
-              callback: (token: string) => setCaptchaToken(token),
-              'error-callback': () => setCaptchaToken(null),
-            });
-          }
+          clearInterval(checkTurnstile);
+          initTurnstile();
         }
-      };
-
-      return () => {
-        document.body.removeChild(script);
-        setCaptchaToken(null);
-      };
+      }, 50);
+      setTimeout(() => clearInterval(checkTurnstile), 5000);
     }
   }, [open]);
 

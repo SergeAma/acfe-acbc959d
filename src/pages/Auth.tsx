@@ -147,16 +147,19 @@ export const Auth = () => {
       });
     };
 
-    // Load Turnstile script if not already loaded
-    const existingScript = document.querySelector('script[src*="turnstile"]');
-    if (existingScript) {
-      setTimeout(initTurnstile, 100);
+    // Script is preloaded in index.html - just init when ready
+    if ((window as any).turnstile) {
+      initTurnstile();
     } else {
-      const script = document.createElement('script');
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-      script.async = true;
-      script.onload = () => setTimeout(initTurnstile, 100);
-      document.body.appendChild(script);
+      // Fallback: wait for script to load
+      const checkTurnstile = setInterval(() => {
+        if ((window as any).turnstile) {
+          clearInterval(checkTurnstile);
+          initTurnstile();
+        }
+      }, 50);
+      // Cleanup interval after 5 seconds
+      setTimeout(() => clearInterval(checkTurnstile), 5000);
     }
 
     return () => {
