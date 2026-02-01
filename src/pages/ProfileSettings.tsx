@@ -14,6 +14,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Upload, Pencil, Trash2, X, Plus, AlertTriangle, Pause, Play } from 'lucide-react';
 import { ProfilePhotoEditor } from '@/components/profile/ProfilePhotoEditor';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
+import { OnboardingBanner } from '@/components/profile/OnboardingBanner';
 import { Badge } from '@/components/ui/badge';
 import { AutocompleteInput } from '@/components/ui/autocomplete-input';
 import { UNIVERSITIES, COMPANIES, COUNTRY_NAMES } from '@/data';
@@ -453,6 +454,7 @@ export const ProfileSettings = () => {
       <Navbar />
       <PageBreadcrumb items={[{ label: "Profile Settings" }]} />
       <div className="container mx-auto px-4 py-4 max-w-2xl">
+        <OnboardingBanner />
         <Card>
           <CardHeader>
             <CardTitle>Profile Settings</CardTitle>

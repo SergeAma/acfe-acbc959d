@@ -112,14 +112,14 @@ export const MentorApplicationStatus = () => {
         <Navbar />
         <div className="container mx-auto px-4 py-20">
           <div className="max-w-2xl mx-auto text-center">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+            <CheckCircle className="h-16 w-16 text-primary mx-auto mb-4" />
             <h1 className="text-3xl font-bold mb-4">You're Already a Mentor!</h1>
             <p className="text-muted-foreground mb-8">
-              You have full mentor access. Start creating courses and mentoring students.
+              You have full mentor access. Please sign the mentor agreement to start creating courses.
             </p>
             <div className="flex gap-4 justify-center">
-              <Button onClick={() => navigate('/mentor/courses')}>
-                My Courses
+              <Button onClick={() => navigate('/mentor-contract')}>
+                Sign Mentor Agreement
               </Button>
               <Button variant="outline" onClick={() => navigate('/dashboard')}>
                 Dashboard
@@ -226,8 +226,8 @@ export const MentorApplicationStatus = () => {
 
               {request.status === 'approved' && (
                 <div className="flex justify-center pt-4">
-                  <Button onClick={() => navigate('/mentor/courses')}>
-                    Start Creating Courses
+                  <Button onClick={() => navigate('/mentor-contract')}>
+                    Sign Mentor Agreement & Get Started
                   </Button>
                 </div>
               )}
