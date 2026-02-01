@@ -138,6 +138,8 @@ serve(async (req) => {
 
     // Look up promotion code if provided
     let promotionCodeId: string | undefined;
+    let trialDays: number | undefined;
+    
     if (promoCode) {
       try {
         const promoCodes = await stripe.promotionCodes.list({
@@ -146,14 +148,47 @@ serve(async (req) => {
           limit: 1,
         });
         if (promoCodes.data.length > 0) {
-          promotionCodeId = promoCodes.data[0].id;
-          logStep("Found valid promotion code", { promoCode, promotionCodeId });
+          const promoCodeData = promoCodes.data[0];
+          promotionCodeId = promoCodeData.id;
+          
+          // Check for trial_days in promotion code or coupon metadata
+          const trialDaysStr = promoCodeData.metadata?.trial_days || 
+            promoCodeData.coupon?.metadata?.trial_days;
+          
+          if (trialDaysStr) {
+            trialDays = parseInt(trialDaysStr, 10);
+            if (isNaN(trialDays) || trialDays < 1) {
+              trialDays = undefined;
+            }
+          }
+          
+          logStep("Found valid promotion code", { 
+            promoCode, 
+            promotionCodeId, 
+            trialDays: trialDays || 'none (discount only)' 
+          });
         } else {
           logStep("Promotion code not found or inactive", { promoCode });
         }
       } catch (promoError) {
         logStep("Error looking up promotion code", { promoCode, error: String(promoError) });
       }
+    }
+
+    // Build subscription_data with optional trial period
+    const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {
+      metadata: {
+        user_id: user.id,
+        user_email: user.email,
+        tier: tier,
+      },
+    };
+    
+    // If promo code specifies trial_days, use Stripe's native trial period
+    // This ensures "2 days free" means exactly 2 days, not "first month free"
+    if (trialDays) {
+      subscriptionData.trial_period_days = trialDays;
+      logStep("Applying trial period from promo code", { trialDays });
     }
 
     const sessionOptions: Stripe.Checkout.SessionCreateParams = {
@@ -174,16 +209,11 @@ serve(async (req) => {
         tier: tier,
         promo_code: promoCode || '',
       },
-      subscription_data: {
-        metadata: {
-          user_id: user.id,
-          user_email: user.email,
-          tier: tier,
-        },
-      },
+      subscription_data: subscriptionData,
       payment_method_types: ["card"],
       billing_address_collection: "auto",
-      ...(promotionCodeId && { discounts: [{ promotion_code: promotionCodeId }] }),
+      // Only apply as discount if NO trial_days - trial codes use trial_period_days instead
+      ...(promotionCodeId && !trialDays && { discounts: [{ promotion_code: promotionCodeId }] }),
       // Allow promo code input at checkout if none was pre-applied
       ...(!promotionCodeId && { allow_promotion_codes: true }),
     };
