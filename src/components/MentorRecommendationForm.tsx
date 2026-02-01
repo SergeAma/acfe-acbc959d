@@ -16,6 +16,7 @@ interface FormData {
   company: string;
   linkedinUrl: string;
   email: string;
+  recommenderEmail: string;
 }
 
 export const MentorRecommendationForm = () => {
@@ -26,6 +27,7 @@ export const MentorRecommendationForm = () => {
     company: '',
     linkedinUrl: '',
     email: '',
+    recommenderEmail: '',
   });
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -97,11 +99,19 @@ export const MentorRecommendationForm = () => {
       toast.error('Please enter a valid LinkedIn profile URL');
       return false;
     }
-    // Optional email validation
+    // Optional mentor email validation
     if (formData.email.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.email.trim())) {
-        toast.error('Please enter a valid email address');
+        toast.error('Please enter a valid mentor email address');
+        return false;
+      }
+    }
+    // Optional recommender email validation
+    if (formData.recommenderEmail.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.recommenderEmail.trim())) {
+        toast.error('Please enter a valid email address for confirmation');
         return false;
       }
     }
@@ -127,6 +137,7 @@ export const MentorRecommendationForm = () => {
             linkedinUrl: formData.linkedinUrl.trim(),
             email: formData.email.trim() || null,
           },
+          recommenderEmail: formData.recommenderEmail.trim() || null,
           captchaToken,
         },
       });
@@ -222,7 +233,7 @@ export const MentorRecommendationForm = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="mentor-email">Email (Optional)</Label>
+            <Label htmlFor="mentor-email">Mentor's Email (Optional)</Label>
             <Input
               id="mentor-email"
               type="email"
@@ -231,6 +242,24 @@ export const MentorRecommendationForm = () => {
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               maxLength={255}
             />
+            <p className="text-xs text-muted-foreground">
+              If provided, we'll notify them about this recommendation.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="recommender-email">Your Email (Optional)</Label>
+            <Input
+              id="recommender-email"
+              type="email"
+              placeholder="your@email.com"
+              value={formData.recommenderEmail}
+              onChange={(e) => setFormData({ ...formData, recommenderEmail: e.target.value })}
+              maxLength={255}
+            />
+            <p className="text-xs text-muted-foreground">
+              Receive a confirmation email about your recommendation.
+            </p>
           </div>
 
           <div ref={captchaRef} className="flex justify-center" />
