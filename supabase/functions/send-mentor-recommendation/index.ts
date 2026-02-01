@@ -157,8 +157,8 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        from: "ACFE <noreply@acloudforeveryone.org>",
-        to: ["team@acloudforeveryone.org"],
+        from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
+        to: ["contact@acloudforeveryone.org"],
         subject: `New Mentor Recommendation: ${escapeHtml(sanitizedMentor.firstName)} ${escapeHtml(sanitizedMentor.lastName)}`,
         html: adminEmailHtml,
       }),
