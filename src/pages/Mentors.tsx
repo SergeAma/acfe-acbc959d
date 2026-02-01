@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { MentorCard } from '@/components/MentorCard';
+import { MentorRecommendationForm } from '@/components/MentorRecommendationForm';
 import { UserPlus, LogIn, X, Filter, Search, ChevronDown } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -332,6 +333,11 @@ export const Mentors = () => {
             )}
           </div>
         )}
+
+        {/* Mentor Recommendation Form */}
+        <div className="mt-16">
+          <MentorRecommendationForm />
+        </div>
       </main>
 
       <Footer />
