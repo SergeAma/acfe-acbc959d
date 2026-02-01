@@ -19,7 +19,7 @@ import { AutocompleteInput } from '@/components/ui/autocomplete-input';
 import { UNIVERSITIES } from '@/data/universities';
 import { AFRICAN_CITIES } from '@/data/cities';
 import { toast } from 'sonner';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+// Magic link flow - no OTP input needed
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
 
@@ -79,9 +79,8 @@ export const Auth = () => {
   const [mode, setMode] = useState<'signin' | 'signup'>(
     searchParams.get('mode') === 'signup' ? 'signup' : 'signin'
   );
-  const [authStep, setAuthStep] = useState<'form' | 'otp'>('form');
-  const [otpValue, setOtpValue] = useState('');
-  const [emailForOtp, setEmailForOtp] = useState('');
+  const [authStep, setAuthStep] = useState<'form' | 'email-sent'>('form');
+  const [emailForMagicLink, setEmailForMagicLink] = useState('');
   
   // Check if this is a mentor signup path
   const isMentorSignup = searchParams.get('role') === 'mentor';
@@ -116,16 +115,16 @@ export const Auth = () => {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Check for pending signup on mount (user might have refreshed during OTP entry)
+  // Check for pending signup on mount (user might have refreshed while waiting for magic link)
   useEffect(() => {
     if (pendingSignup && !user) {
-      setEmailForOtp(pendingSignup.email);
-      setAuthStep('otp');
+      setEmailForMagicLink(pendingSignup.email);
+      setAuthStep('email-sent');
       setMode('signup');
     }
   }, [pendingSignup, user]);
 
-  // Initialize Turnstile when on signup mode
+  // Initialize Turnstile when on signup mode and form step
   useEffect(() => {
     if (mode !== 'signup' || authStep !== 'form') {
       setTurnstileToken(null);
@@ -216,7 +215,7 @@ export const Auth = () => {
     }
   };
 
-  // Handle sign-in: send OTP to existing user
+  // Handle sign-in: send magic link to existing user
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -227,12 +226,12 @@ export const Auth = () => {
     setLoading(false);
     
     if (!error) {
-      setEmailForOtp(formData.email);
-      setAuthStep('otp');
+      setEmailForMagicLink(formData.email);
+      setAuthStep('email-sent');
     }
   };
 
-  // Handle signup form submission: collect data and send OTP
+  // Handle signup form submission: collect data and send magic link
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -275,63 +274,33 @@ export const Auth = () => {
     
     if (!error) {
       setLanguage(formData.preferredLanguage);
-      setEmailForOtp(formData.email);
-      setAuthStep('otp');
+      setEmailForMagicLink(formData.email);
+      setAuthStep('email-sent');
     }
   };
 
-  // Handle OTP verification
-  const handleVerifyOtp = async () => {
-    if (otpValue.length !== 6) {
-      toast.error('Please enter the complete 6-digit code');
-      return;
-    }
-
-    setLoading(true);
-    
-    let error;
-    if (mode === 'signup') {
-      // Complete signup flow
-      const result = await completeSignup(emailForOtp, otpValue);
-      error = result.error;
-    } else {
-      // Sign-in flow
-      const result = await verifyOtp(emailForOtp, otpValue);
-      error = result.error;
-    }
-    
-    setLoading(false);
-    
-    if (!error) {
-      navigate(redirectUrl, { replace: true });
-    } else {
-      setOtpValue(''); // Clear OTP on error
-    }
-  };
-
-  // Go back from OTP screen
-  const handleBackFromOtp = () => {
+  // Go back from email sent screen
+  const handleBackFromEmailSent = () => {
     setAuthStep('form');
-    setOtpValue('');
-    setEmailForOtp('');
+    setEmailForMagicLink('');
     if (mode === 'signup') {
       clearPendingSignup();
     }
   };
 
-  // Resend OTP
-  const handleResendOtp = async () => {
+  // Resend magic link
+  const handleResendMagicLink = async () => {
     setLoading(true);
-    const { error } = await sendOtp(emailForOtp);
+    const { error } = await sendOtp(emailForMagicLink);
     setLoading(false);
     
     if (!error) {
-      toast.success('A new code has been sent to your email');
+      toast.success('A new verification link has been sent to your email');
     }
   };
 
-  // OTP Verification Screen
-  if (authStep === 'otp') {
+  // Email Sent Screen (Magic Link)
+  if (authStep === 'email-sent') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-accent/10">
         <Navbar />
@@ -345,50 +314,36 @@ export const Auth = () => {
               </div>
               <CardTitle className="text-2xl">Check your email</CardTitle>
               <CardDescription>
-                We sent a 6-digit code to <strong>{emailForOtp}</strong>
+                We sent a verification link to <strong>{emailForMagicLink}</strong>
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex justify-center">
-                <InputOTP 
-                  maxLength={6} 
-                  value={otpValue} 
-                  onChange={setOtpValue}
-                  onComplete={handleVerifyOtp}
-                >
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
-                  </InputOTPGroup>
-                </InputOTP>
+              <div className="text-center p-6 bg-muted/50 rounded-lg border">
+                <p className="text-sm text-muted-foreground">
+                  Click the link in your email to {mode === 'signup' ? 'complete your registration' : 'sign in to your account'}.
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  The link will expire in 10 minutes.
+                </p>
               </div>
-              
-              <Button 
-                onClick={handleVerifyOtp} 
-                className="w-full" 
-                disabled={loading || otpValue.length !== 6}
-              >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verify Code'}
-              </Button>
               
               <div className="text-center space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  Didn't receive the code?{' '}
+                  Didn't receive the email?{' '}
                   <button 
-                    onClick={handleResendOtp} 
+                    onClick={handleResendMagicLink} 
                     disabled={loading}
                     className="text-primary hover:underline font-medium"
                   >
-                    Resend
+                    {loading ? 'Sending...' : 'Resend'}
                   </button>
                 </p>
+                <p className="text-xs text-muted-foreground">
+                  Check your spam folder if you don't see it.
+                </p>
                 <button 
-                  onClick={handleBackFromOtp}
-                  className="text-sm text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 mx-auto"
+                  onClick={handleBackFromEmailSent}
+                  className="text-sm text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 mx-auto mt-4"
                 >
                   <ArrowLeft className="h-3 w-3" /> Use a different email
                 </button>
@@ -439,10 +394,10 @@ export const Auth = () => {
                   {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  We'll send a 6-digit code to your email to sign in securely.
+                  We'll send a verification link to your email to sign in securely.
                 </p>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send Login Code'}
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send Login Link'}
                 </Button>
               </form>
             </TabsContent>
