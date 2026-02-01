@@ -268,29 +268,28 @@ export const CareerCentreLanding = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="contactPhone">Phone Number *</Label>
-                <PhoneInput value={institutionForm.contactPhone} onChange={value => setInstitutionForm(prev => ({
-                ...prev,
-                contactPhone: value || ''
-                }))} id="contactPhone" className="mt-1" required />
-              </div>
-              <div>
-                <Label htmlFor="estimatedStudents">Estimated Students *</Label>
-                <Input 
-                  id="estimatedStudents" 
-                  type="number" 
-                  value={institutionForm.estimatedStudents} 
-                  onChange={e => setInstitutionForm(prev => ({
-                    ...prev,
-                    estimatedStudents: e.target.value
-                  }))} 
-                  placeholder="e.g. 500" 
-                  className="mt-1" 
-                  required 
-                />
-              </div>
+            <div>
+              <Label htmlFor="contactPhone">Phone Number *</Label>
+              <PhoneInput value={institutionForm.contactPhone} onChange={value => setInstitutionForm(prev => ({
+              ...prev,
+              contactPhone: value || ''
+              }))} id="contactPhone" className="mt-1" required />
+            </div>
+
+            <div>
+              <Label htmlFor="estimatedStudents">Estimated Students *</Label>
+              <Input 
+                id="estimatedStudents" 
+                type="number" 
+                value={institutionForm.estimatedStudents} 
+                onChange={e => setInstitutionForm(prev => ({
+                  ...prev,
+                  estimatedStudents: e.target.value
+                }))} 
+                placeholder="e.g. 500" 
+                className="mt-1" 
+                required 
+              />
             </div>
 
             <div>
