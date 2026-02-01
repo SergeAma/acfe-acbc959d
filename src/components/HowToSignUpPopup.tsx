@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Play } from 'lucide-react';
+import { X, Play, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import walkthroughThumbnail from '@/assets/walkthrough-thumbnail.png';
@@ -9,7 +9,8 @@ const POPUP_SHOW_COUNT_KEY = 'acfe_popup_show_count';
 const MAX_POPUP_SHOWS = 2;
 const INITIAL_DELAY_MS = 7000;
 const REAPPEAR_DELAY_MS = 10000;
-const WALKTHROUGH_VIDEO_URL = 'https://drive.google.com/file/d/1iyoiuHjCdADe8AyKT-CMPStolKgYqDDs/preview';
+// Use /view URL for opening in new tab (not /preview which is blocked in iframes)
+const WALKTHROUGH_VIDEO_URL = 'https://drive.google.com/file/d/1iyoiuHjCdADe8AyKT-CMPStolKgYqDDs/view?usp=sharing';
 
 export const HowToSignUpPopup = () => {
   const [showPopup, setShowPopup] = useState(false);
@@ -59,6 +60,12 @@ export const HowToSignUpPopup = () => {
         }
       }, REAPPEAR_DELAY_MS);
     }
+  }, []);
+
+  const handleOpenVideo = useCallback(() => {
+    window.open(WALKTHROUGH_VIDEO_URL, '_blank', 'noopener,noreferrer');
+    sessionStorage.setItem(POPUP_WATCHED_KEY, 'true');
+    setShowVideoDialog(false);
   }, []);
 
   return (
@@ -113,25 +120,38 @@ export const HowToSignUpPopup = () => {
         </div>
       )}
 
-      {/* Video Dialog */}
+      {/* Video Dialog - Opens video in new tab instead of iframe */}
       <Dialog open={showVideoDialog} onOpenChange={setShowVideoDialog}>
-        <DialogContent className="max-w-4xl w-[95vw] p-0 overflow-hidden">
+        <DialogContent className="max-w-md w-[95vw] p-0 overflow-hidden">
           <DialogHeader className="p-4 pb-2">
             <DialogTitle>Welcome to ACFE: Platform Walkthrough</DialogTitle>
           </DialogHeader>
-          <div className="relative w-full aspect-video bg-black">
-            <iframe
-              src={WALKTHROUGH_VIDEO_URL}
-              className="absolute inset-0 w-full h-full"
-              allow="autoplay; encrypted-media"
-              allowFullScreen
-              title="ACFE Platform Walkthrough"
+          
+          {/* Thumbnail with play overlay */}
+          <div className="relative w-full aspect-video bg-muted">
+            <img
+              src={walkthroughThumbnail}
+              alt="Platform walkthrough video thumbnail"
+              className="w-full h-full object-cover"
             />
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center">
+                <Play className="h-8 w-8 text-primary-foreground ml-1" fill="currentColor" />
+              </div>
+            </div>
           </div>
-          <div className="p-4 pt-2">
+          
+          <div className="p-4 space-y-3">
             <p className="text-sm text-muted-foreground">
               Learn how to navigate the platform and make the most of your learning journey.
             </p>
+            <Button 
+              onClick={handleOpenVideo}
+              className="w-full gap-2"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Watch Video
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
