@@ -149,7 +149,8 @@ async function processEventAsync(event: Stripe.Event) {
           sessionId: session.id, 
           mode: session.mode,
           paymentStatus: session.payment_status,
-          customerId: session.customer 
+          customerId: session.customer,
+          metadata: session.metadata
         });
 
         // Get customer email (escape for logging, raw for lookup)
@@ -164,6 +165,111 @@ async function processEventAsync(event: Stripe.Event) {
           break;
         }
 
+        // ==========================================
+        // HANDLE DONATION CHECKOUT (new)
+        // ==========================================
+        if (session.metadata?.type === 'donation') {
+          logStep("Processing donation checkout", { sessionId: session.id });
+          
+          try {
+            // Update donation status in database
+            const { data: donation, error: updateError } = await supabase
+              .from('donations')
+              .update({ 
+                status: 'active',
+                stripe_subscription_id: session.subscription as string,
+              })
+              .eq('stripe_checkout_session_id', session.id)
+              .select()
+              .single();
+            
+            if (updateError) {
+              logStep("Error updating donation", { error: updateError.message });
+            }
+            
+            if (donation) {
+              // Send donation welcome email
+              await supabase.functions.invoke('send-donation-welcome', {
+                body: {
+                  email: donation.email,
+                  firstName: escapeHtml(donation.first_name),
+                  lastName: escapeHtml(donation.last_name),
+                  amountCents: donation.amount_cents,
+                }
+              });
+              logStep("Donation welcome email sent via webhook", { email: donation.email });
+            }
+          } catch (donationError) {
+            logStep("Error processing donation checkout", { error: String(donationError) });
+          }
+          break;
+        }
+
+        // ==========================================
+        // HANDLE MENTORSHIP SESSION CHECKOUT (new)
+        // ==========================================
+        if (session.metadata?.session_id) {
+          logStep("Processing mentorship session checkout", { 
+            sessionId: session.metadata.session_id 
+          });
+          
+          try {
+            const mentorshipSessionId = session.metadata.session_id;
+            
+            // Get session record
+            const { data: mentorshipSession, error: sessionError } = await supabase
+              .from('mentorship_sessions')
+              .select('*')
+              .eq('id', mentorshipSessionId)
+              .single();
+
+            if (sessionError || !mentorshipSession) {
+              logStep("Mentorship session not found", { id: mentorshipSessionId });
+              break;
+            }
+
+            if (mentorshipSession.status === 'confirmed') {
+              logStep("Mentorship session already confirmed");
+              break;
+            }
+
+            // Update session status to confirmed
+            const { error: updateError } = await supabase
+              .from('mentorship_sessions')
+              .update({ 
+                status: 'confirmed', 
+                updated_at: new Date().toISOString(),
+                stripe_payment_intent_id: session.payment_intent as string,
+              })
+              .eq('id', mentorshipSessionId);
+
+            if (updateError) {
+              logStep("Error confirming mentorship session", { error: updateError.message });
+            } else {
+              logStep("Mentorship session confirmed via webhook", { id: mentorshipSessionId });
+              
+              // Send notification emails
+              try {
+                await supabase.functions.invoke('send-session-notification', {
+                  body: {
+                    sessionId: mentorshipSessionId,
+                    notificationType: 'booking_confirmed',
+                  },
+                });
+                logStep("Mentorship session notification sent");
+              } catch (emailError) {
+                logStep("Warning: Failed to send session notification", { error: String(emailError) });
+              }
+            }
+          } catch (sessionError) {
+            logStep("Error processing mentorship session checkout", { error: String(sessionError) });
+          }
+          break;
+        }
+
+        // ==========================================
+        // HANDLE REGULAR COURSE/SUBSCRIPTION CHECKOUT
+        // ==========================================
         // Determine if this is a subscription or one-time payment
         const isSubscription = session.mode === 'subscription';
         const amountTotal = (session.amount_total || 0) / 100;
@@ -666,15 +772,46 @@ async function processEventAsync(event: Stripe.Event) {
           const customer = await stripe.customers.retrieve(customerId);
           
           if (!customer.deleted && customer.email) {
+            // Get user profile for name and language
+            const { data: userData } = await supabase.auth.admin.listUsers();
+            const user = userData?.users?.find(u => u.email === customer.email);
+            let language: 'en' | 'fr' = 'en';
+            let fullName = customer.name || 'Learner';
+            
+            if (user) {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('full_name, preferred_language')
+                .eq('id', user.id)
+                .single();
+              if (profile?.full_name) fullName = profile.full_name;
+              if (profile?.preferred_language === 'fr') language = 'fr';
+            }
+
+            // Get tier info from invoice line items
+            const lineItem = invoice.lines.data[0];
+            const priceId = lineItem?.price?.id;
+            const price = priceId ? await stripe.prices.retrieve(priceId) : null;
+            const productId = price?.product as string;
+            const tierConfig = productId && SUBSCRIPTION_TIERS[productId] 
+              ? SUBSCRIPTION_TIERS[productId] 
+              : DEFAULT_TIER;
+
             await supabase.functions.invoke('send-payment-failed', {
               body: {
                 email: customer.email,
-                name: customer.name || 'Learner',
+                name: fullName,
                 amount: ((invoice.amount_due || 0) / 100).toFixed(2),
                 currency: (invoice.currency || 'USD').toUpperCase(),
+                language,
+                tier_name: language === 'fr' ? tierConfig.nameFr : tierConfig.name,
               },
             });
-            logStep("Payment failed notification sent");
+            logStep("Payment failed notification sent", { 
+              email: customer.email, 
+              tier: tierConfig.name, 
+              language 
+            });
           }
         } catch (error) {
           logStep("Error in invoice.payment_failed handler", { error: String(error) });
