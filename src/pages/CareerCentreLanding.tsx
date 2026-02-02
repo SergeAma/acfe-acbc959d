@@ -23,6 +23,10 @@ export const CareerCentreLanding = () => {
   const isMobile = useIsMobile();
   const [showInstitutionDialog, setShowInstitutionDialog] = useState(false);
   const [brochureOpen, setBrochureOpen] = useState(false);
+  const [brochureUnlocked, setBrochureUnlocked] = useState(() => {
+    return localStorage.getItem('acfe_brochure_unlocked') === 'true';
+  });
+  const [openBrochureSource, setOpenBrochureSource] = useState<'cta' | 'brochure' | null>(null);
   const [institutionLoading, setInstitutionLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<HTMLDivElement>(null);
@@ -112,6 +116,16 @@ export const CareerCentreLanding = () => {
         message: ''
       });
       setTurnstileToken(null);
+      
+      // Unlock brochure after successful form submission
+      localStorage.setItem('acfe_brochure_unlocked', 'true');
+      setBrochureUnlocked(true);
+      
+      // If opened from brochure section, auto-open the brochure viewer
+      if (openBrochureSource === 'brochure') {
+        setBrochureOpen(true);
+      }
+      setOpenBrochureSource(null);
     } catch (error: any) {
       console.error('Institution inquiry error:', error);
       toast.error(error.message || 'Failed to submit inquiry. Please try again.');
@@ -166,7 +180,10 @@ export const CareerCentreLanding = () => {
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
               {t('career_hero_subtitle')}
             </p>
-            <Button size="lg" onClick={() => setShowInstitutionDialog(true)} className="text-white h-14 px-8 text-lg bg-amber-600 hover:bg-amber-500">
+            <Button size="lg" onClick={() => {
+              setOpenBrochureSource('cta');
+              setShowInstitutionDialog(true);
+            }} className="text-white h-14 px-8 text-lg bg-amber-600 hover:bg-amber-500">
               <Building2 className="h-5 w-5 mr-2" />
               {t('career_partner_cta')}
             </Button>
@@ -177,40 +194,57 @@ export const CareerCentreLanding = () => {
         <section className="py-8 md:py-12 bg-stone-50 dark:bg-stone-900/20">
           <div className="container mx-auto px-4 max-w-7xl">
             <div className="w-full">
-              <Collapsible open={brochureOpen} onOpenChange={setBrochureOpen}>
-                <CollapsibleTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="w-full flex items-center justify-between gap-2 h-14 text-base border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800"
-                  >
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-amber-600" />
-                      <span className="font-medium">View ACFE 2026 Brochure</span>
-                    </div>
-                    <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${brochureOpen ? 'rotate-180' : ''}`} />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-4">
-                  <div className="rounded-lg border border-stone-200 dark:border-stone-700 overflow-hidden bg-white dark:bg-stone-900">
-                    <iframe
-                      src="/documents/acfe-brochure-2026.pdf"
-                      className="w-full"
-                      style={{ height: isMobile ? '60vh' : '70vh' }}
-                      title="ACFE 2026 Brochure"
-                    />
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2 text-center">
-                    <a 
-                      href="/documents/acfe-brochure-2026.pdf" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="underline hover:text-foreground"
+              {brochureUnlocked ? (
+                <Collapsible open={brochureOpen} onOpenChange={setBrochureOpen}>
+                  <CollapsibleTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className="w-full flex items-center justify-between gap-2 h-14 text-base border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800"
                     >
-                      Open PDF in new tab
-                    </a>
-                  </p>
-                </CollapsibleContent>
-              </Collapsible>
+                      <div className="flex items-center gap-3">
+                        <FileText className="h-5 w-5 text-amber-600" />
+                        <span className="font-medium">View ACFE 2026 Brochure</span>
+                      </div>
+                      <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${brochureOpen ? 'rotate-180' : ''}`} />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-4">
+                    <div className="rounded-lg border border-stone-200 dark:border-stone-700 overflow-hidden bg-white dark:bg-stone-900">
+                      <iframe
+                        src="/documents/acfe-brochure-2026.pdf"
+                        className="w-full"
+                        style={{ height: isMobile ? '60vh' : '70vh' }}
+                        title="ACFE 2026 Brochure"
+                      />
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2 text-center">
+                      <a 
+                        href="/documents/acfe-brochure-2026.pdf" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="underline hover:text-foreground"
+                      >
+                        Open PDF in new tab
+                      </a>
+                    </p>
+                  </CollapsibleContent>
+                </Collapsible>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setOpenBrochureSource('brochure');
+                    setShowInstitutionDialog(true);
+                  }}
+                  className="w-full flex items-center justify-between gap-2 h-14 text-base border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-amber-600" />
+                    <span className="font-medium">ACFE 2026 Brochure</span>
+                  </div>
+                  <span className="text-sm text-amber-600 font-medium">Fill form to download →</span>
+                </Button>
+              )}
             </div>
           </div>
         </section>
