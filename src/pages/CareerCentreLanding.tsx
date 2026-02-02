@@ -175,8 +175,8 @@ export const CareerCentreLanding = () => {
 
         {/* Brochure Section */}
         <section className="py-8 md:py-12 bg-stone-50 dark:bg-stone-900/20">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
+          <div className="container mx-auto px-4 max-w-7xl">
+            <div className="w-full">
               <Collapsible open={brochureOpen} onOpenChange={setBrochureOpen}>
                 <CollapsibleTrigger asChild>
                   <Button 
