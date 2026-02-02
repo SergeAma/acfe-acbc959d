@@ -10,7 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Check, GraduationCap, Building2, Users, Briefcase, Award, BarChart3, MessageSquare, Globe, Loader2 } from 'lucide-react';
+import { Check, GraduationCap, Building2, Users, Briefcase, Award, BarChart3, MessageSquare, Globe, Loader2, FileText, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { AutocompleteInput } from '@/components/ui/autocomplete-input';
 import { UNIVERSITIES } from '@/data/universities';
@@ -18,7 +20,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
 export const CareerCentreLanding = () => {
   const { t } = useLanguage();
+  const isMobile = useIsMobile();
   const [showInstitutionDialog, setShowInstitutionDialog] = useState(false);
+  const [brochureOpen, setBrochureOpen] = useState(false);
   const [institutionLoading, setInstitutionLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<HTMLDivElement>(null);
@@ -166,6 +170,48 @@ export const CareerCentreLanding = () => {
               <Building2 className="h-5 w-5 mr-2" />
               {t('career_partner_cta')}
             </Button>
+          </div>
+        </section>
+
+        {/* Brochure Section */}
+        <section className="py-8 md:py-12 bg-stone-50 dark:bg-stone-900/20">
+          <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto">
+              <Collapsible open={brochureOpen} onOpenChange={setBrochureOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="w-full flex items-center justify-between gap-2 h-14 text-base border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-5 w-5 text-amber-600" />
+                      <span className="font-medium">View ACFE 2026 Brochure</span>
+                    </div>
+                    <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${brochureOpen ? 'rotate-180' : ''}`} />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-4">
+                  <div className="rounded-lg border border-stone-200 dark:border-stone-700 overflow-hidden bg-white dark:bg-stone-900">
+                    <iframe
+                      src="/documents/acfe-brochure-2026.pdf"
+                      className="w-full"
+                      style={{ height: isMobile ? '60vh' : '70vh' }}
+                      title="ACFE 2026 Brochure"
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2 text-center">
+                    <a 
+                      href="/documents/acfe-brochure-2026.pdf" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="underline hover:text-foreground"
+                    >
+                      Open PDF in new tab
+                    </a>
+                  </p>
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
           </div>
         </section>
 
