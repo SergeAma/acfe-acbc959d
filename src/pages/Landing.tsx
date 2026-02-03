@@ -39,17 +39,17 @@ export const Landing = () => {
             
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
               {user ? <Link to="/dashboard" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
+                  <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full cta-shiny">
                     {t('hero.dashboard')}
                   </Button>
                 </Link> : <>
                   <Link to="/auth?mode=signup&role=student" className="w-full sm:w-auto">
-                    <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
+                    <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full cta-shiny">
                       {t('hero.startLearning')}
                     </Button>
                   </Link>
                   <Link to="/auth?mode=signup&role=mentor" className="w-full sm:w-auto">
-                    <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
+                    <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full cta-shiny">
                       {t('hero.becomeMentor')}
                     </Button>
                   </Link>

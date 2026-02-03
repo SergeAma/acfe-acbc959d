@@ -331,11 +331,11 @@ export const Courses = () => {
                   />
                 </div>
                 {course.thumbnail_url && (
-                  <div className="relative h-40 overflow-hidden rounded-t-lg">
+                  <div className="relative aspect-video overflow-hidden rounded-t-lg">
                     <img
                       src={course.thumbnail_url}
                       alt={course.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-center"
                     />
                   </div>
                 )}
