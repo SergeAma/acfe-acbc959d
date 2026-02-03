@@ -45,11 +45,21 @@ serve(async (req) => {
     }
     logStep("Admin verified");
 
-    const { code, name, trialDays = 2 } = await req.json();
+    const { code, name, trialDays } = await req.json();
     if (!code) throw new Error("Coupon code is required");
     
+    // CRITICAL: trialDays must be explicitly provided to prevent full free billing cycle
+    if (trialDays === undefined || trialDays === null) {
+      throw new Error("Trial days must be specified");
+    }
+    
+    const parsedTrialDays = parseInt(trialDays);
+    if (isNaN(parsedTrialDays) || parsedTrialDays < 1) {
+      throw new Error("Trial days must be a positive number");
+    }
+    
     // Validate trial days (min 1, max 90)
-    const validTrialDays = Math.min(Math.max(parseInt(trialDays) || 7, 1), 90);
+    const validTrialDays = Math.min(Math.max(parsedTrialDays, 1), 90);
     logStep("Coupon details", { code, name, trialDays: validTrialDays });
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");

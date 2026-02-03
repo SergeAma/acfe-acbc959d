@@ -199,11 +199,18 @@ export const AdminPricing = () => {
     fetchSubscriptionPrice();
     fetchMentorshipPlusPrice();
     fetchSessionPrice();
-    // Only fetch coupons when session is available
-    if (!couponsInitialized && session?.access_token) {
+  }, [authLoading, profile]);
+
+  // Separate effect for coupons - waits for session to be fully ready
+  useEffect(() => {
+    if (authLoading || !profile || profile.role !== 'admin') return;
+    if (couponsInitialized) return;
+    
+    // Only fetch when we have a valid access token
+    if (session?.access_token) {
       fetchCoupons(true);
     }
-  }, [authLoading, profile, session, couponsInitialized]);
+  }, [authLoading, profile, session?.access_token, couponsInitialized]);
 
   const fetchCoupons = async (isInitialLoad = false) => {
     // Only show loading spinner on initial load
