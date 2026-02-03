@@ -166,19 +166,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return null;
       }
 
-      // Fetch role from user_roles table (source of truth)
-      const { data: roleData, error: roleError } = await supabase
+      // Fetch ALL roles from user_roles table (source of truth)
+      // User may have multiple roles - we prioritize: admin > mentor > student
+      const { data: rolesData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .eq('user_id', userId);
 
       // Role error is non-fatal, we fall back to profile role
-
-      // Use role from user_roles if available, fallback to profile role
-      const role = roleData?.role || profileData.role;
+      // Determine highest-priority role: admin > mentor > student
+      let role: 'admin' | 'mentor' | 'student' = profileData.role || 'student'; // fallback
+      if (rolesData && rolesData.length > 0) {
+        const roles = rolesData.map(r => r.role);
+        if (roles.includes('admin')) {
+          role = 'admin';
+        } else if (roles.includes('mentor')) {
+          role = 'mentor';
+        } else if (roles.includes('student')) {
+          role = 'student';
+        }
+      }
 
       lastProfileFetchRef.current = { userId, timestamp: Date.now() };
 
