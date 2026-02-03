@@ -687,7 +687,11 @@ export const Auth = () => {
                     htmlFor="terms-consent"
                     className={`text-sm cursor-pointer leading-tight ${errors.termsAccepted ? 'text-destructive' : 'text-muted-foreground'}`}
                   >
-                    I accept the Terms of Service and Privacy Policy *
+                    I accept the{' '}
+                    <a href="/terms" target="_blank" className="text-primary hover:underline">Terms of Service</a>
+                    {' '}and{' '}
+                    <a href="/privacy" target="_blank" className="text-primary hover:underline">Privacy Policy</a>
+                    {' '}*
                   </label>
                 </div>
                 {errors.termsAccepted && <p className="text-sm text-destructive">{errors.termsAccepted}</p>}

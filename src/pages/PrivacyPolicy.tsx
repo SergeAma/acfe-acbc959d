@@ -78,7 +78,12 @@ export const PrivacyPolicy = () => {
               The collection of data for the provision of the website and the storage of the data in log files is mandatory for the operation of the website. Consequently, there is no possibility of objection on the part of the user.
             </p>
 
-            <h3 className="text-xl font-medium text-foreground mt-6 mb-3">6. Analytics</h3>
+            <h3 className="text-xl font-medium text-foreground mt-6 mb-3">6. Session Security and Fraud Prevention</h3>
+            <p className="text-muted-foreground">
+              We collect IP addresses and device fingerprints for security purposes, including session management and fraud prevention. This data helps us detect unauthorized account access and protect your account from potential threats. By using our service, you consent to this collection as necessary for the security of your account.
+            </p>
+
+            <h3 className="text-xl font-medium text-foreground mt-6 mb-3">7. Analytics</h3>
             <p className="text-muted-foreground">
               We use various analytics services to set log files on our website. Details about these services and data processing will be provided as applicable.
             </p>

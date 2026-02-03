@@ -364,6 +364,7 @@ export const SecureVideoPlayer = ({
           <button
             onClick={handlePlayPause}
             className="absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity hover:bg-black/30"
+            aria-label="Play video"
           >
             <div className="w-20 h-20 flex items-center justify-center bg-primary/90 rounded-full">
               <Play className="h-8 w-8 text-primary-foreground ml-1" />
@@ -399,6 +400,7 @@ export const SecureVideoPlayer = ({
                     size="icon"
                     onClick={handlePlayPause}
                     className="text-white hover:bg-white/20"
+                    aria-label={isPlaying ? 'Pause video' : 'Play video'}
                   >
                     {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                   </Button>
@@ -414,6 +416,7 @@ export const SecureVideoPlayer = ({
                     size="icon"
                     onClick={() => skip(-10)}
                     className="text-white hover:bg-white/20"
+                    aria-label="Skip 10 seconds back"
                   >
                     <SkipBack className="h-4 w-4" />
                   </Button>
@@ -429,6 +432,7 @@ export const SecureVideoPlayer = ({
                     size="icon"
                     onClick={() => skip(10)}
                     className="text-white hover:bg-white/20"
+                    aria-label="Skip 10 seconds forward"
                   >
                     <SkipForward className="h-4 w-4" />
                   </Button>
@@ -445,6 +449,7 @@ export const SecureVideoPlayer = ({
                       size="icon"
                       onClick={toggleMute}
                       className="text-white hover:bg-white/20"
+                      aria-label={isMuted ? 'Unmute' : 'Mute'}
                     >
                       {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
                     </Button>
@@ -477,6 +482,7 @@ export const SecureVideoPlayer = ({
                     size="icon"
                     onClick={handleBookmark}
                     className="text-white hover:bg-white/20"
+                    aria-label="Bookmark this moment"
                   >
                     <Bookmark className="h-4 w-4" />
                   </Button>
@@ -564,6 +570,7 @@ export const SecureVideoPlayer = ({
                     size="icon"
                     onClick={toggleFullscreen}
                     className="text-white hover:bg-white/20"
+                    aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
                   >
                     {isFullscreen ? (
                       <Minimize className="h-4 w-4" />
