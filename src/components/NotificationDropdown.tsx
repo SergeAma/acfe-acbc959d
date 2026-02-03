@@ -19,7 +19,10 @@ export const NotificationDropdown = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="relative p-2 text-foreground hover:text-primary transition-colors">
+        <button 
+          className="relative p-2 text-foreground hover:text-primary transition-colors"
+          aria-label={pendingCount > 0 ? `Notifications (${pendingCount} pending)` : 'Notifications'}
+        >
           <Bell className="h-5 w-5" />
           {pendingCount > 0 && (
             <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
