@@ -451,6 +451,40 @@ video[controls] {
   }
 }
 
+/* ===== CTA BUTTON SHINY GLOSS EFFECT ===== */
+.cta-shiny {
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-shiny::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    hsla(0, 0%, 100%, 0.1) 40%,
+    hsla(0, 0%, 100%, 0.35) 50%,
+    hsla(0, 0%, 100%, 0.1) 60%,
+    transparent 100%
+  );
+  animation: cta-shimmer 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes cta-shimmer {
+  0% {
+    left: -100%;
+  }
+  50%, 100% {
+    left: 150%;
+  }
+}
+
 /* ===== END COMPREHENSIVE SHIELD SYSTEM ===== */
 
 /* Lesson Content - Text extraction deterrence */

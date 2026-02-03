@@ -24,6 +24,7 @@ interface Course {
   is_paid: boolean;
   price_cents: number;
   mentor_id: string;
+  thumbnail_url: string | null;
   mentor: {
     full_name: string;
     bio: string;
@@ -262,6 +263,17 @@ export const CourseDetail = () => {
 
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
+            {/* Course Thumbnail */}
+            {course.thumbnail_url && (
+              <div className="relative aspect-video overflow-hidden rounded-xl shadow-md">
+                <img
+                  src={course.thumbnail_url}
+                  alt={course.title}
+                  className="w-full h-full object-cover object-center"
+                />
+              </div>
+            )}
+            
             <div>
               <div className="flex gap-2 mb-4">
                 <span className="text-sm bg-primary/10 text-primary px-3 py-1 rounded">
