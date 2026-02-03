@@ -242,7 +242,7 @@ export const Auth = () => {
     
     // Admin with password - use password auth
     if (isAdminEmail && formData.password) {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
@@ -251,8 +251,18 @@ export const Auth = () => {
       
       if (error) {
         toast.error(error.message);
+        return;
       }
-      // Success will trigger redirect via useEffect
+      
+      // Success - the onAuthStateChange listener will handle state update
+      // Force a small delay to allow the listener to process
+      if (data.session) {
+        // Redirect will happen automatically via useEffect when user state updates
+        // If that doesn't work immediately, manually navigate after a brief delay
+        setTimeout(() => {
+          navigate(redirectUrl, { replace: true });
+        }, 100);
+      }
       return;
     }
     
