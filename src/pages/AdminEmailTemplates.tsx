@@ -318,13 +318,30 @@ export const AdminEmailTemplates = () => {
               </div>
               <div>
                 <Label>HTML Content *</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Paste your full HTML email code below. For best results, use inline CSS styles.
+                </p>
                 <Textarea
                   value={formData.html_content}
                   onChange={(e) => setFormData({ ...formData, html_content: e.target.value })}
-                  placeholder="<html><body>Hello {{first_name}}...</body></html>"
-                  rows={15}
-                  className="font-mono text-sm"
+                  placeholder={`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 20px; font-family: Arial, sans-serif;">
+  <h1>Hello {{first_name}},</h1>
+  <p>Your email content here...</p>
+</body>
+</html>`}
+                  rows={20}
+                  className="font-mono text-xs leading-relaxed"
+                  spellCheck={false}
                 />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Emails will be sent from: <strong>serge@acloudforeveryone.org</strong>
+                </p>
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleSave} className="flex-1">

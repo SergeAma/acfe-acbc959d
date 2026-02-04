@@ -436,7 +436,7 @@ export const AdminMassMailer = () => {
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                  Replies will be sent to serge@acloudforeveryone.org
+                  Emails sent from: <strong>serge@acloudforeveryone.org</strong>
                 </p>
               </CardContent>
             </Card>
