@@ -90,40 +90,62 @@ serve(async (req) => {
     // Fetch product details separately for each subscription to avoid expansion limits
     const subscriptionDetails = await Promise.all(
       allSubscriptions.map(async (sub: Stripe.Subscription) => {
-        const item = sub.items.data[0];
-        const priceId = item.price.id;
-        
-        // Fetch the price with product expansion (only 1 level deep)
-        const price = await stripe.prices.retrieve(priceId, {
-          expand: ['product'],
-        });
-        
-        const product = price.product as Stripe.Product;
-        
-        return {
-          id: sub.id,
-          status: sub.status,
-          cancel_at_period_end: sub.cancel_at_period_end,
-          current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
-          product_id: product.id,
-          product_name: product.name,
-          price_id: priceId,
-          amount: price.unit_amount,
-          currency: price.currency,
-          interval: price.recurring?.interval,
-          pause_collection: sub.pause_collection,
-        };
+        try {
+          const item = sub.items.data[0];
+          if (!item || !item.price) {
+            logStep("Skipping subscription with missing item/price", { subId: sub.id });
+            return null;
+          }
+          
+          const priceId = item.price.id;
+          
+          // Fetch the price with product expansion (only 1 level deep)
+          const price = await stripe.prices.retrieve(priceId, {
+            expand: ['product'],
+          });
+          
+          const product = price.product as Stripe.Product;
+          
+          // Safely handle period_end - use current_period_end from subscription or fallback
+          let periodEnd: string | null = null;
+          if (sub.current_period_end && typeof sub.current_period_end === 'number') {
+            periodEnd = new Date(sub.current_period_end * 1000).toISOString();
+          } else if (sub.trial_end && typeof sub.trial_end === 'number') {
+            // For trialing subscriptions, use trial_end as fallback
+            periodEnd = new Date(sub.trial_end * 1000).toISOString();
+          }
+          
+          return {
+            id: sub.id,
+            status: sub.status,
+            cancel_at_period_end: sub.cancel_at_period_end ?? false,
+            current_period_end: periodEnd,
+            product_id: product.id,
+            product_name: product.name,
+            price_id: priceId,
+            amount: price.unit_amount,
+            currency: price.currency,
+            interval: price.recurring?.interval ?? null,
+            pause_collection: sub.pause_collection ?? null,
+          };
+        } catch (subError) {
+          logStep("Error processing subscription", { subId: sub.id, error: String(subError) });
+          return null;
+        }
       })
     );
+    
+    // Filter out any null results from failed processing
+    const validSubscriptions = subscriptionDetails.filter(s => s !== null);
 
     logStep("Subscription check complete", { 
-      hasSubscriptions: subscriptionDetails.length > 0,
-      count: subscriptionDetails.length
+      hasSubscriptions: validSubscriptions.length > 0,
+      count: validSubscriptions.length
     });
 
     return new Response(JSON.stringify({
-      subscribed: subscriptionDetails.some(s => s.status === 'active'),
-      subscriptions: subscriptionDetails,
+      subscribed: validSubscriptions.some(s => s.status === 'active'),
+      subscriptions: validSubscriptions,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
