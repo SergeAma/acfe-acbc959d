@@ -1,9 +1,16 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart, Quote } from 'lucide-react';
+import { Heart, Quote, Linkedin, Globe } from 'lucide-react';
 import { SupportSection } from '@/components/SupportSection';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import founderPortrait from '@/assets/founder-portrait.jpg';
+
+// Founder profile data (from database: Serge Amani)
+const FOUNDER = {
+  name: 'Serge Amani',
+  linkedinUrl: 'https://www.linkedin.com/in/corporaterasta/',
+  websiteUrl: 'https://spectrogramconsulting.com/home',
+};
 
 export const SupportMission = () => {
   return (
@@ -63,9 +70,31 @@ export const SupportMission = () => {
                       <p className="font-semibold text-foreground mb-1">
                         With gratitude and hope,
                       </p>
-                      <p className="text-lg font-bold text-primary">
-                        The ACFE Founding Team
-                      </p>
+                      <div className="flex items-center gap-3">
+                        <p className="text-lg font-bold text-primary">
+                          {FOUNDER.name}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <a 
+                            href={FOUNDER.linkedinUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-muted-foreground hover:text-primary transition-colors"
+                            aria-label="LinkedIn profile"
+                          >
+                            <Linkedin className="h-5 w-5" />
+                          </a>
+                          <a 
+                            href={FOUNDER.websiteUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-muted-foreground hover:text-primary transition-colors"
+                            aria-label="Personal website"
+                          >
+                            <Globe className="h-5 w-5" />
+                          </a>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
