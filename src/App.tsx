@@ -74,6 +74,7 @@ import AdminMassMailer from "./pages/AdminMassMailer";
 import AdminBroadcasts from "./pages/AdminBroadcasts";
 import AdminMessagesOversight from "./pages/AdminMessagesOversight";
 import { ContributorSubmit } from "./pages/ContributorSubmit";
+import { SupportMission } from "./pages/SupportMission";
 
 const queryClient = new QueryClient();
 
@@ -117,6 +118,7 @@ const App = () => (
               <Route path="/connect-acfe" element={<SpectrogramConnect />} />
               <Route path="/spectrogram-connect" element={<SpectrogramConnect />} />
               <Route path="/spectrogram-jobs" element={<SpectrogramJobs />} />
+              <Route path="/support-mission" element={<SupportMission />} />
               <Route path="/accept-mentor-invite" element={<AcceptMentorInvite />} />
               <Route path="/courses" element={<Courses />} />
               <Route path="/courses/:id" element={<CourseDetail />} />
