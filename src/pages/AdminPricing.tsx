@@ -55,8 +55,8 @@ interface CouponAnalytics {
 }
 
 const TRIAL_OPTIONS = [
+  { value: '1', label: '24 Hours' },
   { value: '2', label: '48 Hours' },
-  { value: '3', label: '3 Days' },
   { value: '7', label: '1 Week' },
   { value: '14', label: '2 Weeks' },
   { value: '30', label: '1 Month' },
@@ -78,9 +78,8 @@ const MONTHS_OPTIONS = [
 
 const formatTrialDays = (days: number | null) => {
   if (!days) return "";
-  if (days === 1) return "1 day";
+  if (days === 1) return "24 hours";
   if (days === 2) return "48 hours";
-  if (days < 7) return `${days} days`;
   if (days === 7) return "1 week";
   if (days === 14) return "2 weeks";
   if (days === 30) return "1 month";
@@ -159,7 +158,7 @@ export const AdminPricing = () => {
   const [couponToDeactivate, setCouponToDeactivate] = useState<{ id: string; code: string } | null>(null);
   const [newCouponCode, setNewCouponCode] = useState('');
   const [newCouponName, setNewCouponName] = useState('');
-  const [newCouponTrialDays, setNewCouponTrialDays] = useState('2');
+  const [newCouponTrialDays, setNewCouponTrialDays] = useState('1');
   // New coupon type state
   const [newCouponType, setNewCouponType] = useState<'trial' | 'discount'>('trial');
   const [newCouponPercentOff, setNewCouponPercentOff] = useState('');
