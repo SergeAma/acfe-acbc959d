@@ -69,22 +69,32 @@ serve(async (req) => {
     const coupons = allPromoCodes.map((promo: any) => {
       const trialDays = promo.metadata?.trial_days || 
         (typeof promo.coupon === 'object' && promo.coupon.metadata?.trial_days) || 
-        7;
+        null;
+      
+      const couponType = promo.metadata?.coupon_type || 
+        (typeof promo.coupon === 'object' && promo.coupon.metadata?.coupon_type) || 
+        (trialDays ? 'trial' : 'discount');
       
       totalRedemptions += promo.times_redeemed || 0;
       if (promo.active) totalActiveCoupons++;
 
+      const couponObj = typeof promo.coupon === 'object' ? promo.coupon : null;
+
       return {
         id: promo.id,
         code: promo.code,
-        coupon_id: promo.coupon.id,
-        name: typeof promo.coupon === 'object' ? promo.coupon.name : null,
-        percent_off: typeof promo.coupon === 'object' ? promo.coupon.percent_off : null,
+        coupon_id: promo.coupon.id || promo.coupon,
+        name: couponObj?.name || null,
+        percent_off: couponObj?.percent_off || null,
+        amount_off: couponObj?.amount_off || null,
+        duration: couponObj?.duration || null,
+        duration_in_months: couponObj?.duration_in_months || null,
         times_redeemed: promo.times_redeemed,
         max_redemptions: promo.max_redemptions,
         active: promo.active,
         created: promo.created,
-        trial_days: parseInt(trialDays) || 7,
+        trial_days: trialDays ? parseInt(trialDays) : null,
+        coupon_type: couponType,
       };
     });
 
