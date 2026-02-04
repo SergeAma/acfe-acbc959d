@@ -36,11 +36,15 @@ interface Coupon {
   code: string;
   name: string | null;
   percent_off: number | null;
+  amount_off: number | null;
+  duration: 'once' | 'repeating' | 'forever' | null;
+  duration_in_months: number | null;
   times_redeemed: number;
   max_redemptions: number | null;
   active: boolean;
   created: number;
-  trial_days: number;
+  trial_days: number | null;
+  coupon_type: 'trial' | 'discount';
 }
 
 interface CouponAnalytics {
@@ -58,7 +62,22 @@ const TRIAL_OPTIONS = [
   { value: '30', label: '1 Month' },
 ];
 
-const formatTrialDays = (days: number) => {
+const DURATION_OPTIONS = [
+  { value: 'once', label: 'One-time' },
+  { value: 'repeating', label: 'Multiple months' },
+  { value: 'forever', label: 'Forever' },
+];
+
+const MONTHS_OPTIONS = [
+  { value: '1', label: '1 month' },
+  { value: '2', label: '2 months' },
+  { value: '3', label: '3 months' },
+  { value: '6', label: '6 months' },
+  { value: '12', label: '12 months' },
+];
+
+const formatTrialDays = (days: number | null) => {
+  if (!days) return "";
   if (days === 1) return "1 day";
   if (days === 2) return "48 hours";
   if (days < 7) return `${days} days`;
@@ -66,6 +85,31 @@ const formatTrialDays = (days: number) => {
   if (days === 14) return "2 weeks";
   if (days === 30) return "1 month";
   return `${days} days`;
+};
+
+const formatCouponBadge = (coupon: Coupon): string => {
+  if (coupon.coupon_type === 'trial' && coupon.trial_days) {
+    return `${formatTrialDays(coupon.trial_days)} free`;
+  }
+  
+  // Discount coupon
+  let discountText = '';
+  if (coupon.percent_off) {
+    discountText = `${coupon.percent_off}% off`;
+  } else if (coupon.amount_off) {
+    discountText = `$${(coupon.amount_off / 100).toFixed(0)} off`;
+  }
+  
+  let durationText = '';
+  if (coupon.duration === 'once') {
+    durationText = '(once)';
+  } else if (coupon.duration === 'forever') {
+    durationText = '(forever)';
+  } else if (coupon.duration === 'repeating' && coupon.duration_in_months) {
+    durationText = `(${coupon.duration_in_months}mo)`;
+  }
+  
+  return `${discountText} ${durationText}`.trim();
 };
 
 export const AdminPricing = () => {
@@ -116,6 +160,11 @@ export const AdminPricing = () => {
   const [newCouponCode, setNewCouponCode] = useState('');
   const [newCouponName, setNewCouponName] = useState('');
   const [newCouponTrialDays, setNewCouponTrialDays] = useState('2');
+  // New coupon type state
+  const [newCouponType, setNewCouponType] = useState<'trial' | 'discount'>('trial');
+  const [newCouponPercentOff, setNewCouponPercentOff] = useState('');
+  const [newCouponDuration, setNewCouponDuration] = useState<'once' | 'repeating' | 'forever'>('once');
+  const [newCouponDurationMonths, setNewCouponDurationMonths] = useState('3');
 
   // Only redirect if auth is fully loaded AND profile explicitly has non-admin role
   useEffect(() => {
@@ -466,15 +515,42 @@ export const AdminPricing = () => {
       return;
     }
 
+    // Validate discount coupon inputs
+    if (newCouponType === 'discount') {
+      const percentValue = parseFloat(newCouponPercentOff);
+      if (isNaN(percentValue) || percentValue <= 0 || percentValue > 100) {
+        toast({
+          title: "Error",
+          description: "Please enter a valid discount percentage (1-100)",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setCreatingCoupon(true);
     try {
       const { data: session } = await supabase.auth.getSession();
+      
+      // Build request body based on coupon type
+      const requestBody: Record<string, unknown> = {
+        code: newCouponCode.trim(),
+        name: newCouponName.trim() || undefined,
+        couponType: newCouponType,
+      };
+
+      if (newCouponType === 'trial') {
+        requestBody.trialDays = parseInt(newCouponTrialDays);
+      } else {
+        requestBody.percentOff = parseFloat(newCouponPercentOff);
+        requestBody.duration = newCouponDuration;
+        if (newCouponDuration === 'repeating') {
+          requestBody.durationInMonths = parseInt(newCouponDurationMonths);
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke('create-coupon', {
-        body: { 
-          code: newCouponCode.trim(),
-          name: newCouponName.trim() || undefined,
-          trialDays: parseInt(newCouponTrialDays),
-        },
+        body: requestBody,
         headers: {
           Authorization: `Bearer ${session.session?.access_token}`,
         },
@@ -487,9 +563,13 @@ export const AdminPricing = () => {
         description: data.message,
       });
       
+      // Reset form
       setNewCouponCode('');
       setNewCouponName('');
       setNewCouponTrialDays('2');
+      setNewCouponPercentOff('');
+      setNewCouponDuration('once');
+      setNewCouponDurationMonths('3');
       fetchCoupons(false);
     } catch (error: any) {
       toast({
@@ -647,36 +727,116 @@ export const AdminPricing = () => {
                 Discount Codes
               </CardTitle>
               <CardDescription>
-                Create discount codes with custom trial periods. After the trial, learners are charged normally.
+                Create trial codes (100% off for a period) or discount codes (X% off).
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+                {/* Coupon Type Selector */}
+                <div className="space-y-2">
+                  <Label>Coupon Type</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={newCouponType === 'trial' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setNewCouponType('trial')}
+                      className="flex-1"
+                    >
+                      Free Trial
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={newCouponType === 'discount' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setNewCouponType('discount')}
+                      className="flex-1"
+                    >
+                      Percentage Discount
+                    </Button>
+                  </div>
+                </div>
+
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="coupon_code">Coupon Code</Label>
                     <Input
                       id="coupon_code"
-                      placeholder="e.g., FREEWEEK"
+                      placeholder={newCouponType === 'trial' ? 'e.g., FREEWEEK' : 'e.g., SAVE25'}
                       value={newCouponCode}
                       onChange={(e) => setNewCouponCode(e.target.value.toUpperCase())}
                       className="uppercase"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="trial_duration">Trial Duration</Label>
-                    <Select value={newCouponTrialDays} onValueChange={setNewCouponTrialDays}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TRIAL_OPTIONS.map(opt => (
-                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  
+                  {newCouponType === 'trial' ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="trial_duration">Trial Duration</Label>
+                      <Select value={newCouponTrialDays} onValueChange={setNewCouponTrialDays}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TRIAL_OPTIONS.map(opt => (
+                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label htmlFor="percent_off">Discount Percentage</Label>
+                      <div className="relative">
+                        <Input
+                          id="percent_off"
+                          type="number"
+                          min="1"
+                          max="100"
+                          placeholder="25"
+                          value={newCouponPercentOff}
+                          onChange={(e) => setNewCouponPercentOff(e.target.value)}
+                          className="pr-8"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
+
+                {/* Discount Duration (only for discount coupons) */}
+                {newCouponType === 'discount' && (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="discount_duration">Duration</Label>
+                      <Select value={newCouponDuration} onValueChange={(v) => setNewCouponDuration(v as 'once' | 'repeating' | 'forever')}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DURATION_OPTIONS.map(opt => (
+                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {newCouponDuration === 'repeating' && (
+                      <div className="space-y-2">
+                        <Label htmlFor="duration_months">Number of Months</Label>
+                        <Select value={newCouponDurationMonths} onValueChange={setNewCouponDurationMonths}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {MONTHS_OPTIONS.map(opt => (
+                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <Label htmlFor="coupon_name">Name (optional)</Label>
                   <Input
@@ -715,7 +875,7 @@ export const AdminPricing = () => {
                         <div className="flex items-center gap-2 flex-wrap">
                           <code className="font-mono font-bold text-primary">{coupon.code}</code>
                           <Badge variant="outline" className="text-xs">
-                            {formatTrialDays(coupon.trial_days)} free
+                            {formatCouponBadge(coupon)}
                           </Badge>
                           {coupon.name && (
                             <span className="text-sm text-muted-foreground hidden sm:inline">{coupon.name}</span>
@@ -771,7 +931,7 @@ export const AdminPricing = () => {
                         <div className="flex items-center gap-2 flex-wrap">
                           <code className="font-mono font-bold text-muted-foreground">{coupon.code}</code>
                           <Badge variant="secondary" className="text-xs">
-                            {formatTrialDays(coupon.trial_days)} free
+                            {formatCouponBadge(coupon)}
                           </Badge>
                           {coupon.name && (
                             <span className="text-sm text-muted-foreground hidden sm:inline">{coupon.name}</span>
