@@ -123,7 +123,7 @@ const handler = async (req: Request): Promise<Response> => {
           const personalizedSubject = replaceVariables(subject, recipient);
 
           const emailResponse = await resend.emails.send({
-            from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
+            from: "Serge - ACFE <serge@acloudforeveryone.org>",
             reply_to: "serge@acloudforeveryone.org",
             to: [recipient.email],
             subject: personalizedSubject,
