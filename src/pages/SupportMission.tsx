@@ -51,7 +51,7 @@ export const SupportMission = () => {
                       Thank you for taking the time to learn more about our mission. Every great journey begins with a single step, and your interest in learning more about us is greatly encouraging.
                     </p>
                     <p className="leading-relaxed mb-5">
-                      We founded ACFE with a simple but powerful belief: that every young African has the potential to become a changemaker. Our role is to unlock that potential through world-class mentorship, practical skills training, and a supportive community that believes in their dreams.
+                      We founded ACFE with a simple but powerful belief: that every young African has the potential to become a changemaker. Our role is to unlock that potential through world-class mentorship, practical skills training, through a supportive community that believes in their dreams.
                     </p>
                     <p className="leading-relaxed mb-5">
                       Whether you choose to volunteer <strong className="text-foreground">your time as a mentor, contribute financially, or connect us with institutions and sponsors</strong> who share our vision, every act of support creates ripples of impact that extend far beyond what we can measure.
