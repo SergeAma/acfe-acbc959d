@@ -87,7 +87,7 @@ export const SupportMission = () => {
               Thank You for Considering Us
             </h2>
             <p className="text-lg text-muted-foreground leading-relaxed mb-8">
-              Your support—in whatever form it takes—helps us continue empowering the next generation of African entrepreneurs. Whether you mentor a single student, make a contribution, or connect us with like-minded partners, you become part of a movement that is reshaping Africa's future.
+              Your support, in whatever form it takes, helps us continue empowering the next generation of African entrepreneurs. Whether you mentor a single student, make a contribution, or connect us with like-minded partners, you become part of a movement that is reshaping digital skills across Africa.
             </p>
             <p className="text-lg text-muted-foreground leading-relaxed">
               We are deeply grateful for your consideration and look forward to the possibility of working together to create lasting impact.
