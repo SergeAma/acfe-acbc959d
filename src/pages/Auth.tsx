@@ -76,9 +76,12 @@ const signInSchema = z.object({
 export const Auth = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user, sendOtp, verifyOtp, signUpWithOtp, completeSignup, pendingSignup, clearPendingSignup } = useAuth();
+  const { user, loading: authLoading, sendOtp, verifyOtp, signUpWithOtp, completeSignup, pendingSignup, clearPendingSignup } = useAuth();
   const { setLanguage } = useLanguage();
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  
+  // Track if we're in the middle of a successful auth to prevent UI flicker
+  const [isRedirecting, setIsRedirecting] = useState(false);
   
   // Auth flow states
   const [mode, setMode] = useState<'signin' | 'signup'>(
@@ -97,6 +100,10 @@ export const Auth = () => {
     return '/dashboard';
   };
   const redirectUrl = searchParams.get('redirect') || getDefaultRedirect();
+  
+  // Detect magic link token in URL - if present, show loading state while Supabase handles it
+  const hasAuthToken = searchParams.has('token') || searchParams.has('access_token') || 
+                       window.location.hash.includes('access_token');
 
   // Turnstile CAPTCHA state
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -184,11 +191,31 @@ export const Auth = () => {
     };
   }, [mode, authStep]);
 
+  // Redirect when user is authenticated
   useEffect(() => {
-    if (user) {
+    if (user && !isRedirecting) {
+      setIsRedirecting(true);
       navigate(redirectUrl, { replace: true });
     }
-  }, [user, navigate, redirectUrl]);
+  }, [user, navigate, redirectUrl, isRedirecting]);
+  
+  // If auth is loading OR we detect a token in URL, show loading spinner
+  // This prevents the form from flashing before redirect
+  if (authLoading || hasAuthToken || isRedirecting) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-accent/10">
+        <Navbar />
+        <div className="flex items-center justify-center p-4 pt-20 min-h-[60vh]">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">
+              {hasAuthToken ? 'Completing sign in...' : 'Loading...'}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const validateSignupForm = () => {
     try {
@@ -238,7 +265,7 @@ export const Auth = () => {
     
     if (!validateSignInForm()) return;
     
-    setLoading(true);
+    setSubmitting(true);
     
     // Admin with password - use password auth
     if (isAdminEmail && formData.password) {
@@ -247,28 +274,24 @@ export const Auth = () => {
         password: formData.password,
       });
       
-      setLoading(false);
-      
       if (error) {
+        setSubmitting(false);
         toast.error(error.message);
         return;
       }
       
-      // Success - the onAuthStateChange listener will handle state update
-      // Force a small delay to allow the listener to process
+      // Success - prevent form re-render by setting redirect flag immediately
       if (data.session) {
-        // Redirect will happen automatically via useEffect when user state updates
-        // If that doesn't work immediately, manually navigate after a brief delay
-        setTimeout(() => {
-          navigate(redirectUrl, { replace: true });
-        }, 100);
+        setIsRedirecting(true);
+        // Navigate immediately - don't wait for onAuthStateChange
+        navigate(redirectUrl, { replace: true });
       }
       return;
     }
     
     // Default: magic link
     const { error } = await sendOtp(formData.email);
-    setLoading(false);
+    setSubmitting(false);
     
     if (!error) {
       setEmailForMagicLink(formData.email);
@@ -300,7 +323,7 @@ export const Auth = () => {
       return;
     }
 
-    setLoading(true);
+    setSubmitting(true);
     
     const fullName = `${formData.firstName} ${formData.lastName}`.trim();
     const { error } = await signUpWithOtp(
@@ -315,7 +338,7 @@ export const Auth = () => {
       formData.gender as 'male' | 'female'
     );
     
-    setLoading(false);
+    setSubmitting(false);
     
     if (!error) {
       setLanguage(formData.preferredLanguage);
@@ -335,9 +358,9 @@ export const Auth = () => {
 
   // Resend magic link
   const handleResendMagicLink = async () => {
-    setLoading(true);
+    setSubmitting(true);
     const { error } = await sendOtp(emailForMagicLink);
-    setLoading(false);
+    setSubmitting(false);
     
     if (!error) {
       toast.success('A new verification link has been sent to your email');
@@ -377,10 +400,10 @@ export const Auth = () => {
                   Didn't receive the email?{' '}
                   <button 
                     onClick={handleResendMagicLink} 
-                    disabled={loading}
+                    disabled={submitting}
                     className="text-primary hover:underline font-medium"
                   >
-                    {loading ? 'Sending...' : 'Resend'}
+                    {submitting ? 'Sending...' : 'Resend'}
                   </button>
                 </p>
                 <p className="text-xs text-muted-foreground">
@@ -465,8 +488,8 @@ export const Auth = () => {
                   </p>
                 )}
                 
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? (
+                <Button type="submit" className="w-full" disabled={submitting}>
+                  {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : isAdminEmail && formData.password ? (
                     'Sign In with Password'
@@ -802,9 +825,9 @@ export const Auth = () => {
                 <Button 
                   type="submit" 
                   className="w-full bg-foreground text-background hover:bg-foreground/90 font-semibold" 
-                  disabled={loading || !formData.termsAccepted || (isMentorSignup && !formData.mentorPledge) || !turnstileToken}
+                  disabled={submitting || !formData.termsAccepted || (isMentorSignup && !formData.mentorPledge) || !turnstileToken}
                 >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (isMentorSignup ? 'SUBMIT MENTOR APPLICATION' : 'REGISTER')}
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (isMentorSignup ? 'SUBMIT MENTOR APPLICATION' : 'REGISTER')}
                 </Button>
               </form>
             </TabsContent>
