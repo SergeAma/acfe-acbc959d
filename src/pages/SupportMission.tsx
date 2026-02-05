@@ -61,7 +61,7 @@ export const SupportMission = () => {
                       I didn't have a traditional path into tech. No Ivy League degree. No family connections. Just relentless curiosity and people who took a chance on me when they didn't have to.
                     </p>
                     <p className="leading-relaxed mb-5">
-                      <strong className="text-foreground">Those chances changed everything. A mentor who saw potential where others saw gaps.</strong> A hiring manager who valued drive over pedigree. Opportunities that taught me this: <strong className="text-foreground">talent isn't rare—access is.</strong>
+                      <strong className="text-foreground">Those chances changed everything. A mentor who saw potential where others saw gaps.</strong> A hiring manager who valued drive over pedigree. Opportunities that taught me this: <strong className="text-foreground">talent isn't rare, access is.</strong>
                     </p>
                     <p className="leading-relaxed mb-5">
                       That's why A Cloud For Everyone exists.
