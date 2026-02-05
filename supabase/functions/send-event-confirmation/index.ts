@@ -128,6 +128,66 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log("Event confirmation email sent:", emailResponse);
 
+    // Notify admins about new event registration
+    try {
+      const { data: adminRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin');
+
+      if (adminRoles && adminRoles.length > 0) {
+        const adminUserIds = adminRoles.map((r: { user_id: string }) => r.user_id);
+        const { data: adminProfiles } = await supabase
+          .from('profiles')
+          .select('id, email, full_name')
+          .in('id', adminUserIds);
+
+        // Get current registration count
+        const { count: regCount } = await supabase
+          .from('event_registrations')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_id', event_id);
+
+        for (const admin of adminProfiles || []) {
+          const adminHtml = buildCanonicalEmail({
+            headline: 'New Event Registration',
+            body_primary: `<p style="margin: 0 0 16px 0;">Hello ${escapeHtml(admin.full_name?.split(' ')[0]) || 'Admin'},</p>
+              <p style="margin: 0 0 16px 0;">A new user has registered for an upcoming event.</p>
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${EMAIL_DESIGN_TOKENS.BACKGROUND_LIGHT}; border-radius: ${EMAIL_DESIGN_TOKENS.BORDER_RADIUS}; margin: 16px 0;">
+                <tr>
+                  <td style="padding: 16px;">
+                    <p style="margin: 0 0 8px 0;"><strong>Event:</strong> ${escapeHtml(event.title)}</p>
+                    <p style="margin: 0 0 8px 0;"><strong>Date:</strong> ${formattedDate}</p>
+                    <p style="margin: 0 0 8px 0;"><strong>Registrant:</strong> ${escapeHtml(profile.full_name || 'Unknown')}</p>
+                    <p style="margin: 0 0 8px 0;"><strong>Email:</strong> ${escapeHtml(profile.email)}</p>
+                    <p style="margin: 0;"><strong>Total Registrations:</strong> ${regCount || 1}</p>
+                  </td>
+                </tr>
+              </table>`,
+            primary_cta: {
+              label: 'View Event',
+              url: eventUrl
+            },
+            secondary_cta: {
+              label: 'Manage Events',
+              url: 'https://acloudforeveryone.org/admin/events'
+            }
+          });
+
+          await resend.emails.send({
+            from: "ACFE Events <events@acloudforeveryone.org>",
+            to: [admin.email],
+            subject: `New Registration: ${escapeHtml(event.title)}`,
+            html: adminHtml,
+          });
+        }
+        console.log("Admin notifications sent for event registration");
+      }
+    } catch (adminNotifyError) {
+      console.error("Failed to send admin notifications for event registration:", adminNotifyError);
+      // Don't fail the main request if admin notification fails
+    }
+
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
