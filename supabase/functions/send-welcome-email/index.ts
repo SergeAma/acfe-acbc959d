@@ -252,6 +252,48 @@ const handler = async (req: Request): Promise<Response> => {
       sent_at: new Date().toISOString()
     });
 
+    // Notify admins about ALL new signups (not just mentor applications)
+    if (!wants_mentor) {
+      try {
+        const { data: adminRoles } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'admin');
+
+        if (adminRoles && adminRoles.length > 0) {
+          const adminUserIds = adminRoles.map((r: { user_id: string }) => r.user_id);
+          const { data: adminProfiles } = await supabase
+            .from('profiles')
+            .select('id, email, full_name')
+            .in('id', adminUserIds);
+
+          for (const admin of adminProfiles || []) {
+            const adminHtml = buildCanonicalEmail({
+              headline: 'New User Registration',
+              body_primary: `<p style="margin: 0 0 16px 0;">Hello ${escapeHtml(admin.full_name?.split(' ')[0]) || 'Admin'},</p>
+                <p style="margin: 0 0 16px 0;">A new user has registered on the platform.</p>
+                <p style="margin: 0;"><strong>Name:</strong> ${safeFirstName}<br><strong>Email:</strong> ${safeEmail}<br><strong>Role:</strong> ${role}</p>`,
+              primary_cta: {
+                label: 'View Users',
+                url: 'https://acloudforeveryone.org/admin/users'
+              }
+            }, 'en');
+
+            await resend.emails.send({
+              from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
+              to: [admin.email],
+              subject: `New User Registration: ${safeFirstName}`,
+              html: adminHtml,
+            });
+          }
+          console.log("Admin notifications sent for new user signup");
+        }
+      } catch (adminNotifyError) {
+        console.error("Failed to send admin notifications for new signup:", adminNotifyError);
+        // Don't fail the main request if admin notification fails
+      }
+    }
+
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
