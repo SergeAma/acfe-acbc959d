@@ -46,12 +46,12 @@ interface Speaker {
 interface EventMentor {
   id: string;
   mentor_id: string;
-  profile: {
+  profiles: {
     id: string;
     full_name: string;
     bio: string | null;
     avatar_url: string | null;
-  };
+  } | null;
 }
 
 export const EventDetail = () => {
@@ -118,15 +118,19 @@ export const EventDetail = () => {
       setSpeakers(speakerData as Speaker[]);
     }
 
-    // Fetch event mentors
-    const { data: mentorData } = await supabase
+    // Fetch event mentors with profile data
+    const { data: mentorData, error: mentorError } = await supabase
       .from('event_mentors')
-      .select('id, mentor_id, profile:profiles(id, full_name, bio, avatar_url)')
+      .select('id, mentor_id, profiles(id, full_name, bio, avatar_url)')
       .eq('event_id', eventData.id)
       .order('sort_order');
 
+    if (mentorError) {
+      console.error('Error fetching event mentors:', mentorError);
+    }
+
     if (mentorData) {
-      setEventMentors(mentorData as unknown as EventMentor[]);
+      setEventMentors(mentorData as EventMentor[]);
     }
 
     // Fetch registration count
@@ -411,20 +415,20 @@ export const EventDetail = () => {
                               <CardContent className="p-4">
                                 <div className="flex items-start gap-3">
                                   <Avatar className="h-12 w-12 flex-shrink-0">
-                                    {em.profile?.avatar_url ? (
-                                      <AvatarImage src={em.profile.avatar_url} alt={em.profile.full_name} />
+                                    {em.profiles?.avatar_url ? (
+                                      <AvatarImage src={em.profiles.avatar_url} alt={em.profiles.full_name || 'Mentor'} />
                                     ) : null}
                                     <AvatarFallback className="bg-secondary/10 text-secondary">
-                                      {em.profile?.full_name?.split(' ').map(n => n[0]).join('') || '?'}
+                                      {em.profiles?.full_name?.split(' ').map(n => n[0]).join('') || '?'}
                                     </AvatarFallback>
                                   </Avatar>
                                   <div className="min-w-0 flex-1">
                                     <p className="font-medium group-hover:text-secondary transition-colors">
-                                      {em.profile?.full_name || 'ACFE Mentor'}
+                                      {em.profiles?.full_name || 'ACFE Mentor'}
                                     </p>
-                                    {em.profile?.bio && (
+                                    {em.profiles?.bio && (
                                       <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                                        {em.profile.bio}
+                                        {em.profiles.bio}
                                       </p>
                                     )}
                                   </div>
