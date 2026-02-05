@@ -61,13 +61,13 @@ export const SupportMission = () => {
                       I didn't have a traditional path into tech. No Ivy League degree. No family connections. Just relentless curiosity and people who took a chance on me when they didn't have to.
                     </p>
                     <p className="leading-relaxed mb-5">
-                      Those chances changed everything. A mentor who saw potential where others saw gaps. A leader at Amazon who valued drive over pedigree. Opportunities that taught me this: talent isn't rare—access is.
+                      <strong className="text-foreground">Those chances changed everything. A mentor who saw potential where others saw gaps.</strong> A hiring manager who valued drive over pedigree. Opportunities that taught me this: <strong className="text-foreground">talent isn't rare—access is.</strong>
                     </p>
                     <p className="leading-relaxed mb-5">
                       That's why A Cloud For Everyone exists.
                     </p>
                     <p className="leading-relaxed mb-5">
-                      We founded ACFE with a simple but powerful belief: that every young African has the potential to become a change-maker. Our role is to unlock that potential through world-class mentorship, practical skills training, through a supportive community that believes in their dreams.
+                      We founded ACFE with a simple but powerful belief: <strong className="text-foreground">that every young African has the potential to become a change-maker.</strong> Our role is to unlock that potential through world-class mentorship, practical skills training, through a supportive community that believes in their dreams.
                     </p>
                     <p className="leading-relaxed mb-5">
                       Whether you choose to <strong className="text-foreground">volunteer your time as a mentor, contribute financially, or connect us with institutions and sponsors</strong> who share our vision, every act of support creates ripples of impact that extend far beyond what we can measure.
