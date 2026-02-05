@@ -75,6 +75,9 @@ import AdminBroadcasts from "./pages/AdminBroadcasts";
 import AdminMessagesOversight from "./pages/AdminMessagesOversight";
 import { ContributorSubmit } from "./pages/ContributorSubmit";
 import { SupportMission } from "./pages/SupportMission";
+import { AdminEvents } from "./pages/AdminEvents";
+import { Events } from "./pages/Events";
+import { EventDetail } from "./pages/EventDetail";
 
 const queryClient = new QueryClient();
 
@@ -158,6 +161,9 @@ const App = () => (
               <Route path="/admin/mass-mailer" element={<ProtectedRoute requiredRole="admin"><AdminMassMailer /></ProtectedRoute>} />
               <Route path="/admin/broadcasts" element={<ProtectedRoute requiredRole="admin"><AdminBroadcasts /></ProtectedRoute>} />
               <Route path="/admin/messages" element={<ProtectedRoute requiredRole="admin"><AdminMessagesOversight /></ProtectedRoute>} />
+              <Route path="/admin/events" element={<ProtectedRoute requiredRole="admin"><AdminEvents /></ProtectedRoute>} />
+              <Route path="/events" element={<Events />} />
+              <Route path="/events/:slug" element={<EventDetail />} />
               <Route path="/career-centre" element={<CareerCentreLanding />} />
               <Route path="/career-centre/:slug" element={<InstitutionCareerCentre />} />
               <Route path="/moderator/:slug" element={<ProtectedRoute><ModeratorDashboard /></ProtectedRoute>} />
