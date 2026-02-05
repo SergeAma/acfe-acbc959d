@@ -55,13 +55,22 @@ export const SupportMission = () => {
                       Dear Friend,
                     </p>
                     <p className="leading-relaxed mb-5">
-                      Thank you for taking the time to learn more about our mission. Every great journey begins with a single step, and your interest in learning more about us is greatly encouraging.
+                      Thank you for taking the time to learn more about our mission.
                     </p>
                     <p className="leading-relaxed mb-5">
-                      We founded ACFE with a simple but powerful belief: that every young African has the potential to become a changemaker. Our role is to unlock that potential through world-class mentorship, practical skills training, through a supportive community that believes in their dreams.
+                      I didn't have a traditional path into tech. No Ivy League degree. No family connections. Just relentless curiosity and people who took a chance on me when they didn't have to.
                     </p>
                     <p className="leading-relaxed mb-5">
-                      Whether you choose to volunteer <strong className="text-foreground">your time as a mentor, contribute financially, or connect us with institutions and sponsors</strong> who share our vision, every act of support creates ripples of impact that extend far beyond what we can measure.
+                      Those chances changed everything. A mentor who saw potential where others saw gaps. A leader at Amazon who valued drive over pedigree. Opportunities that taught me this: talent isn't rare—access is.
+                    </p>
+                    <p className="leading-relaxed mb-5">
+                      That's why A Cloud For Everyone exists.
+                    </p>
+                    <p className="leading-relaxed mb-5">
+                      We founded ACFE with a simple but powerful belief: that every young African has the potential to become a change-maker. Our role is to unlock that potential through world-class mentorship, practical skills training, through a supportive community that believes in their dreams.
+                    </p>
+                    <p className="leading-relaxed mb-5">
+                      Whether you choose to <strong className="text-foreground">volunteer your time as a mentor, contribute financially, or connect us with institutions and sponsors</strong> who share our vision, every act of support creates ripples of impact that extend far beyond what we can measure.
                     </p>
                     <p className="leading-relaxed mb-6">
                       Together, we are building a generation of innovators, problem-solvers, and leaders who will shape Africa's future. Thank you for considering being part of this journey.
