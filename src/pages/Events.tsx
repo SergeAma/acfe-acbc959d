@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Calendar, MapPin, Video, ArrowRight, Loader2, Sparkles } from 'lucide-react';
 import { format, isPast, isToday } from 'date-fns';
+import { stripHtml } from '@/lib/html-utils';
 
 interface Event {
   id: string;
@@ -121,20 +122,15 @@ export const Events = () => {
 
 const EventCard = ({ event, isPast = false }: { event: Event; isPast?: boolean }) => {
   const eventDate = new Date(event.event_date);
-  
-  // Strip HTML tags for preview text
-  const getPlainText = (html: string | null) => {
-    if (!html) return '';
-    return html.replace(/<[^>]*>/g, '').substring(0, 120);
-  };
+  const plainDescription = stripHtml(event.description).substring(0, 150);
   
   return (
     <Link to={`/events/${event.slug}`}>
       <Card className={`group overflow-hidden hover:shadow-xl transition-all duration-300 ${isPast ? 'hover:opacity-100' : 'hover:-translate-y-1'}`}>
         <CardContent className="p-0">
-          <div className="flex flex-col sm:flex-row">
+          <div className="flex flex-col md:flex-row">
             {/* Thumbnail */}
-            <div className="sm:w-72 flex-shrink-0">
+            <div className="md:w-80 flex-shrink-0">
               <AspectRatio ratio={16/9} className="bg-muted">
                 {event.featured_image_url ? (
                   <img 
@@ -165,9 +161,9 @@ const EventCard = ({ event, isPast = false }: { event: Event; isPast?: boolean }
                 <h3 className="text-lg font-semibold mb-2 group-hover:text-secondary transition-colors line-clamp-2">
                   {event.title}
                 </h3>
-                {event.description && (
+                {plainDescription && (
                   <p className="text-muted-foreground text-sm line-clamp-2 mb-3">
-                    {getPlainText(event.description)}...
+                    {plainDescription}...
                   </p>
                 )}
               </div>

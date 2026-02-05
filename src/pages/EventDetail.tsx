@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { format, isPast } from 'date-fns';
 import { AddToCalendarButton } from '@/components/AddToCalendarButton';
+import { sanitizeHtml } from '@/lib/sanitize-html';
 
 interface Event {
   id: string;
@@ -42,6 +43,17 @@ interface Speaker {
   linkedin_url: string | null;
 }
 
+interface EventMentor {
+  id: string;
+  mentor_id: string;
+  profile: {
+    id: string;
+    full_name: string;
+    bio: string | null;
+    avatar_url: string | null;
+  };
+}
+
 export const EventDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const [searchParams] = useSearchParams();
@@ -51,6 +63,7 @@ export const EventDetail = () => {
   
   const [event, setEvent] = useState<Event | null>(null);
   const [speakers, setSpeakers] = useState<Speaker[]>([]);
+  const [eventMentors, setEventMentors] = useState<EventMentor[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRegistered, setIsRegistered] = useState(false);
   const [registering, setRegistering] = useState(false);
@@ -103,6 +116,17 @@ export const EventDetail = () => {
 
     if (speakerData) {
       setSpeakers(speakerData as Speaker[]);
+    }
+
+    // Fetch event mentors
+    const { data: mentorData } = await supabase
+      .from('event_mentors')
+      .select('id, mentor_id, profile:profiles(id, full_name, bio, avatar_url)')
+      .eq('event_id', eventData.id)
+      .order('sort_order');
+
+    if (mentorData) {
+      setEventMentors(mentorData as unknown as EventMentor[]);
     }
 
     // Fetch registration count
@@ -350,13 +374,72 @@ export const EventDetail = () => {
           </div>
         </section>
 
-        {/* Description */}
-        {event.description && (
+        {/* Description with Mentor Sidebar */}
+        {(event.description || eventMentors.length > 0) && (
           <section className="py-12 border-t">
             <div className="container mx-auto px-4 max-w-5xl">
-              <h2 className="text-2xl font-semibold mb-6">About This Event</h2>
-              <div className="prose prose-lg dark:prose-invert max-w-none">
-                <p className="whitespace-pre-wrap">{event.description}</p>
+              <div className="grid lg:grid-cols-3 gap-8">
+                {/* Main Description */}
+                <div className="lg:col-span-2">
+                  {event.description && (
+                    <>
+                      <h2 className="text-2xl font-semibold mb-6">About This Event</h2>
+                      <div 
+                        className="prose prose-lg dark:prose-invert max-w-none"
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(event.description) }}
+                      />
+                    </>
+                  )}
+                </div>
+
+                {/* Mentor Sidebar */}
+                {eventMentors.length > 0 && (
+                  <div className="lg:col-span-1">
+                    <div className="sticky top-24">
+                      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <GraduationCap className="h-5 w-5 text-secondary" />
+                        Meet Your Mentors
+                      </h3>
+                      <div className="space-y-4">
+                        {eventMentors.map((em) => (
+                          <Link 
+                            key={em.id} 
+                            to={`/mentors/${em.mentor_id}`}
+                            className="block"
+                          >
+                            <Card className="group hover:shadow-lg transition-all hover:-translate-y-0.5">
+                              <CardContent className="p-4">
+                                <div className="flex items-start gap-3">
+                                  <Avatar className="h-12 w-12 flex-shrink-0">
+                                    {em.profile?.avatar_url ? (
+                                      <AvatarImage src={em.profile.avatar_url} alt={em.profile.full_name} />
+                                    ) : null}
+                                    <AvatarFallback className="bg-secondary/10 text-secondary">
+                                      {em.profile?.full_name?.split(' ').map(n => n[0]).join('') || '?'}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="font-medium group-hover:text-secondary transition-colors">
+                                      {em.profile?.full_name || 'ACFE Mentor'}
+                                    </p>
+                                    {em.profile?.bio && (
+                                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                                        {em.profile.bio}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </Link>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-4 text-center">
+                        Click to view full profile
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </section>

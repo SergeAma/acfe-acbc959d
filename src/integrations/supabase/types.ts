@@ -1190,6 +1190,52 @@ export type Database = {
           },
         ]
       }
+      event_mentors: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          mentor_id: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          mentor_id: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          mentor_id?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_mentors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_mentors_mentor_id_fkey"
+            columns: ["mentor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_mentors_mentor_id_fkey"
+            columns: ["mentor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_registrations: {
         Row: {
           confirmation_sent_at: string | null
