@@ -20,6 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -31,7 +32,7 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import { 
   Plus, Calendar, MapPin, Video, Users, Edit2, Trash2, 
-  Loader2, Eye, Copy, ExternalLink, Clock, Mail, Building2, Upload, Link as LinkIcon
+  Loader2, Eye, Copy, ExternalLink, Clock, Mail, Building2, Upload, Link as LinkIcon, GraduationCap
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -72,6 +73,17 @@ interface Sponsor {
   logo_url: string | null;
   website_url: string | null;
   sort_order: number;
+}
+
+interface EventMentor {
+  id: string;
+  mentor_id: string;
+  profile: {
+    id: string;
+    full_name: string;
+    bio: string | null;
+    avatar_url: string | null;
+  };
 }
 
 interface EventFormData {
@@ -150,6 +162,13 @@ export const AdminEvents = () => {
   const [loadingSponsors, setLoadingSponsors] = useState(false);
   const [uploadingSponsorLogo, setUploadingSponsorLogo] = useState(false);
 
+  // Mentors management
+  const [isMentorDialogOpen, setIsMentorDialogOpen] = useState(false);
+  const [eventMentors, setEventMentors] = useState<EventMentor[]>([]);
+  const [availableMentors, setAvailableMentors] = useState<{ id: string; full_name: string; bio: string | null; avatar_url: string | null }[]>([]);
+  const [selectedMentorId, setSelectedMentorId] = useState<string>('');
+  const [loadingMentors, setLoadingMentors] = useState(false);
+
   useEffect(() => {
     if (profile?.role === 'admin') {
       fetchEvents();
@@ -216,6 +235,33 @@ export const AdminEvents = () => {
       setSponsors(data as Sponsor[]);
     }
     setLoadingSponsors(false);
+  };
+
+  const fetchEventMentors = async (eventId: string) => {
+    setLoadingMentors(true);
+    const { data, error } = await supabase
+      .from('event_mentors')
+      .select('id, mentor_id, profile:profiles(id, full_name, bio, avatar_url)')
+      .eq('event_id', eventId)
+      .order('sort_order');
+    
+    if (!error && data) {
+      setEventMentors(data as unknown as EventMentor[]);
+    }
+    setLoadingMentors(false);
+  };
+
+  const fetchAvailableMentors = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, full_name, bio, avatar_url')
+      .eq('role', 'mentor')
+      .eq('account_status', 'active')
+      .order('full_name');
+    
+    if (data) {
+      setAvailableMentors(data);
+    }
   };
 
   const handleOpenCreate = () => {
@@ -477,6 +523,38 @@ export const AdminEvents = () => {
     fetchSponsors(selectedEventId);
   };
 
+  const handleManageMentors = (eventId: string) => {
+    setSelectedEventId(eventId);
+    setSelectedMentorId('');
+    fetchEventMentors(eventId);
+    fetchAvailableMentors();
+    setIsMentorDialogOpen(true);
+  };
+
+  const handleAddMentor = async () => {
+    if (!selectedEventId || !selectedMentorId) return;
+    
+    const { error } = await supabase.from('event_mentors').insert({
+      event_id: selectedEventId,
+      mentor_id: selectedMentorId,
+      sort_order: eventMentors.length,
+    });
+    
+    if (!error) {
+      toast({ title: 'Mentor added!' });
+      setSelectedMentorId('');
+      fetchEventMentors(selectedEventId);
+    } else if (error.code === '23505') {
+      toast({ title: 'Mentor already added', variant: 'destructive' });
+    }
+  };
+
+  const handleRemoveMentor = async (mentorRecordId: string) => {
+    if (!selectedEventId) return;
+    await supabase.from('event_mentors').delete().eq('id', mentorRecordId);
+    fetchEventMentors(selectedEventId);
+  };
+
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -591,6 +669,14 @@ export const AdminEvents = () => {
                       >
                         <Building2 className="h-4 w-4 mr-1" />
                         Sponsors
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleManageMentors(event.id)}
+                      >
+                        <GraduationCap className="h-4 w-4 mr-1" />
+                        Mentors
                       </Button>
                       <Button 
                         variant="outline" 
@@ -1068,6 +1154,83 @@ export const AdminEvents = () => {
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Mentors Management Dialog */}
+        <Dialog open={isMentorDialogOpen} onOpenChange={setIsMentorDialogOpen}>
+          <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Manage Event Mentors</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                Add registered ACFE mentors who will be participating in this event
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-6 py-4">
+              {/* Add Mentor */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm">Add Mentor</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Select value={selectedMentorId} onValueChange={setSelectedMentorId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a mentor..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableMentors
+                        .filter(m => !eventMentors.some(em => em.mentor_id === m.id))
+                        .map((mentor) => (
+                          <SelectItem key={mentor.id} value={mentor.id}>
+                            {mentor.full_name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={handleAddMentor} disabled={!selectedMentorId}>
+                    Add Mentor
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Current Mentors List */}
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm">Event Mentors</h4>
+                {loadingMentors ? (
+                  <div className="text-center py-4"><Loader2 className="h-4 w-4 animate-spin mx-auto" /></div>
+                ) : eventMentors.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4 text-center">No mentors added yet</p>
+                ) : (
+                  eventMentors.map((em) => (
+                    <div key={em.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        {em.profile?.avatar_url ? (
+                          <img src={em.profile.avatar_url} alt={em.profile.full_name} className="h-10 w-10 rounded-full object-cover" />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                            <GraduationCap className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-medium text-sm">{em.profile?.full_name || 'Unknown'}</p>
+                          {em.profile?.bio && (
+                            <p className="text-xs text-muted-foreground line-clamp-1">{em.profile.bio}</p>
+                          )}
+                        </div>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleRemoveMentor(em.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
                     </div>
                   ))
                 )}
