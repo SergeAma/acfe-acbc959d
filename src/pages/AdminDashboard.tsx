@@ -10,7 +10,7 @@ import {
   Loader2, CheckCircle, XCircle, Clock, UserX, UserCheck, 
   Users, GraduationCap, TrendingUp, Mail, Settings, BookOpen,
   Send, Lightbulb, Newspaper, BarChart3, Building2, CreditCard,
-  ArrowRight, ChevronRight, Sparkles, Activity, UserPlus, Heart
+  ArrowRight, ChevronRight, Sparkles, Activity, UserPlus, Heart, Calendar
 } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { SecurityAuditPanel } from '@/components/admin/SecurityAuditPanel';
@@ -62,6 +62,7 @@ const quickActionCategories = [
     items: [
       { label: 'Mentor Dashboard', icon: GraduationCap, path: '/admin/mentor-view' },
       { label: 'Manage Courses', icon: BookOpen, path: '/admin/courses' },
+      { label: 'Event Management', icon: Calendar, path: '/admin/events' },
       { label: 'Idea Submissions', icon: Lightbulb, path: '/admin/ideas' },
       { label: 'News Curation', icon: Newspaper, path: '/admin/news-curation' },
     ]

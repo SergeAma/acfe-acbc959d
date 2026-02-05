@@ -1190,6 +1190,195 @@ export type Database = {
           },
         ]
       }
+      event_registrations: {
+        Row: {
+          confirmation_sent_at: string | null
+          event_id: string
+          id: string
+          registered_at: string
+          reminder_2day_sent_at: string | null
+          reminder_5day_sent_at: string | null
+          reminder_dayof_sent_at: string | null
+          user_id: string
+        }
+        Insert: {
+          confirmation_sent_at?: string | null
+          event_id: string
+          id?: string
+          registered_at?: string
+          reminder_2day_sent_at?: string | null
+          reminder_5day_sent_at?: string | null
+          reminder_dayof_sent_at?: string | null
+          user_id: string
+        }
+        Update: {
+          confirmation_sent_at?: string | null
+          event_id?: string
+          id?: string
+          registered_at?: string
+          reminder_2day_sent_at?: string | null
+          reminder_5day_sent_at?: string | null
+          reminder_dayof_sent_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_registrations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_speakers: {
+        Row: {
+          bio: string | null
+          created_at: string
+          event_id: string
+          id: string
+          linkedin_url: string | null
+          name: string
+          organization: string | null
+          photo_url: string | null
+          sort_order: number
+          title: string | null
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          linkedin_url?: string | null
+          name: string
+          organization?: string | null
+          photo_url?: string | null
+          sort_order?: number
+          title?: string | null
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          linkedin_url?: string | null
+          name?: string
+          organization?: string | null
+          photo_url?: string | null
+          sort_order?: number
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_speakers_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_sponsors: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          logo_url: string | null
+          name: string
+          sort_order: number
+          website_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          sort_order?: number
+          website_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          sort_order?: number
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_sponsors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          event_date: string
+          event_link: string | null
+          event_time: string
+          event_type: Database["public"]["Enums"]["event_type"]
+          featured_image_url: string | null
+          id: string
+          location_address: string | null
+          location_name: string | null
+          send_2day_reminder: boolean | null
+          send_5day_reminder: boolean | null
+          send_dayof_reminder: boolean | null
+          slug: string
+          status: Database["public"]["Enums"]["event_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          event_date: string
+          event_link?: string | null
+          event_time: string
+          event_type?: Database["public"]["Enums"]["event_type"]
+          featured_image_url?: string | null
+          id?: string
+          location_address?: string | null
+          location_name?: string | null
+          send_2day_reminder?: boolean | null
+          send_5day_reminder?: boolean | null
+          send_dayof_reminder?: boolean | null
+          slug: string
+          status?: Database["public"]["Enums"]["event_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          event_date?: string
+          event_link?: string | null
+          event_time?: string
+          event_type?: Database["public"]["Enums"]["event_type"]
+          featured_image_url?: string | null
+          id?: string
+          location_address?: string | null
+          location_name?: string | null
+          send_2day_reminder?: boolean | null
+          send_5day_reminder?: boolean | null
+          send_dayof_reminder?: boolean | null
+          slug?: string
+          status?: Database["public"]["Enums"]["event_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       external_course_prerequisites: {
         Row: {
           course_id: string
@@ -3146,6 +3335,7 @@ export type Database = {
         Args: { _institution_id: string; _user_id: string }
         Returns: boolean
       }
+      generate_event_slug: { Args: { title: string }; Returns: string }
       get_broadcast_recipients: {
         Args: {
           _country?: string
@@ -3318,6 +3508,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "mentor" | "student"
+      event_status: "draft" | "published" | "cancelled" | "completed"
+      event_type: "online" | "in_person"
       user_role: "mentor" | "student"
     }
     CompositeTypes: {
@@ -3447,6 +3639,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "mentor", "student"],
+      event_status: ["draft", "published", "cancelled", "completed"],
+      event_type: ["online", "in_person"],
       user_role: ["mentor", "student"],
     },
   },
