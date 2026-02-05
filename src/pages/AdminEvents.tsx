@@ -31,7 +31,7 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import { 
   Plus, Calendar, MapPin, Video, Users, Edit2, Trash2, 
-  Loader2, Eye, Copy, ExternalLink, Clock, Mail
+  Loader2, Eye, Copy, ExternalLink, Clock, Mail, Building2, Upload, Link as LinkIcon
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -63,6 +63,14 @@ interface Speaker {
   bio: string | null;
   photo_url: string | null;
   linkedin_url: string | null;
+  sort_order: number;
+}
+
+interface Sponsor {
+  id: string;
+  name: string;
+  logo_url: string | null;
+  website_url: string | null;
   sort_order: number;
 }
 
@@ -107,6 +115,12 @@ const emptySpeaker = {
   linkedin_url: '',
 };
 
+const emptySponsor = {
+  name: '',
+  logo_url: '',
+  website_url: '',
+};
+
 export const AdminEvents = () => {
   const { profile, loading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -127,6 +141,14 @@ export const AdminEvents = () => {
   const [editingSpeaker, setEditingSpeaker] = useState<Speaker | null>(null);
   const [loadingSpeakers, setLoadingSpeakers] = useState(false);
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
+  
+  // Sponsors management
+  const [isSponsorDialogOpen, setIsSponsorDialogOpen] = useState(false);
+  const [sponsors, setSponsors] = useState<Sponsor[]>([]);
+  const [sponsorForm, setSponsorForm] = useState(emptySponsor);
+  const [editingSponsor, setEditingSponsor] = useState<Sponsor | null>(null);
+  const [loadingSponsors, setLoadingSponsors] = useState(false);
+  const [uploadingSponsorLogo, setUploadingSponsorLogo] = useState(false);
 
   useEffect(() => {
     if (profile?.role === 'admin') {
@@ -180,6 +202,20 @@ export const AdminEvents = () => {
       setSpeakers(data as Speaker[]);
     }
     setLoadingSpeakers(false);
+  };
+
+  const fetchSponsors = async (eventId: string) => {
+    setLoadingSponsors(true);
+    const { data, error } = await supabase
+      .from('event_sponsors')
+      .select('*')
+      .eq('event_id', eventId)
+      .order('sort_order');
+    
+    if (!error && data) {
+      setSponsors(data as Sponsor[]);
+    }
+    setLoadingSponsors(false);
   };
 
   const handleOpenCreate = () => {
@@ -368,6 +404,79 @@ export const AdminEvents = () => {
     }
   };
 
+  const handleManageSponsors = (eventId: string) => {
+    setSelectedEventId(eventId);
+    setSponsorForm(emptySponsor);
+    setEditingSponsor(null);
+    fetchSponsors(eventId);
+    setIsSponsorDialogOpen(true);
+  };
+
+  const handleSponsorLogoUpload = async (file: File) => {
+    setUploadingSponsorLogo(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `sponsor-${Date.now()}.${fileExt}`;
+      const filePath = `sponsors/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('course-thumbnails')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('course-thumbnails')
+        .getPublicUrl(filePath);
+
+      setSponsorForm({ ...sponsorForm, logo_url: publicUrl });
+      toast({ title: 'Logo uploaded!' });
+    } catch (error: any) {
+      toast({ title: 'Upload failed', description: error.message, variant: 'destructive' });
+    } finally {
+      setUploadingSponsorLogo(false);
+    }
+  };
+
+  const handleSaveSponsor = async () => {
+    if (!selectedEventId || !sponsorForm.name) return;
+    
+    const sponsorData = {
+      event_id: selectedEventId,
+      name: sponsorForm.name,
+      logo_url: sponsorForm.logo_url || null,
+      website_url: sponsorForm.website_url || null,
+      sort_order: sponsors.length,
+    };
+
+    if (editingSponsor) {
+      const { error } = await supabase
+        .from('event_sponsors')
+        .update(sponsorData)
+        .eq('id', editingSponsor.id);
+      
+      if (!error) {
+        toast({ title: 'Sponsor updated!' });
+        setSponsorForm(emptySponsor);
+        setEditingSponsor(null);
+        fetchSponsors(selectedEventId);
+      }
+    } else {
+      const { error } = await supabase.from('event_sponsors').insert(sponsorData);
+      if (!error) {
+        toast({ title: 'Sponsor added!' });
+        setSponsorForm(emptySponsor);
+        fetchSponsors(selectedEventId);
+      }
+    }
+  };
+
+  const handleDeleteSponsor = async (sponsorId: string) => {
+    if (!selectedEventId) return;
+    await supabase.from('event_sponsors').delete().eq('id', sponsorId);
+    fetchSponsors(selectedEventId);
+  };
+
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -474,6 +583,14 @@ export const AdminEvents = () => {
                       >
                         <Users className="h-4 w-4 mr-1" />
                         Speakers
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleManageSponsors(event.id)}
+                      >
+                        <Building2 className="h-4 w-4 mr-1" />
+                        Sponsors
                       </Button>
                       <Button 
                         variant="outline" 
@@ -780,6 +897,173 @@ export const AdminEvents = () => {
                           variant="ghost" 
                           size="sm"
                           onClick={() => handleDeleteSpeaker(speaker.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Sponsors Management Dialog */}
+        <Dialog open={isSponsorDialogOpen} onOpenChange={setIsSponsorDialogOpen}>
+          <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Manage Sponsors</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-6 py-4">
+              {/* Add/Edit Sponsor Form */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm">{editingSponsor ? 'Edit Sponsor' : 'Add Sponsor'}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Input
+                    placeholder="Company Name *"
+                    value={sponsorForm.name}
+                    onChange={(e) => setSponsorForm({ ...sponsorForm, name: e.target.value })}
+                  />
+                  
+                  {/* Logo Upload Section */}
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">Logo</Label>
+                    {sponsorForm.logo_url ? (
+                      <div className="flex items-center gap-4">
+                        <img 
+                          src={sponsorForm.logo_url} 
+                          alt="Sponsor logo" 
+                          className="h-12 w-auto max-w-32 object-contain bg-muted rounded p-1"
+                        />
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSponsorForm({ ...sponsorForm, logo_url: '' })}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <Input
+                            placeholder="Paste logo URL or upload..."
+                            value={sponsorForm.logo_url}
+                            onChange={(e) => setSponsorForm({ ...sponsorForm, logo_url: e.target.value })}
+                            className="pr-20"
+                          />
+                          <label className="absolute right-1 top-1">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleSponsorLogoUpload(file);
+                                e.target.value = '';
+                              }}
+                            />
+                            <Button 
+                              type="button" 
+                              variant="secondary" 
+                              size="sm"
+                              className="h-7 px-2"
+                              disabled={uploadingSponsorLogo}
+                              asChild
+                            >
+                              <span>
+                                {uploadingSponsorLogo ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Upload className="h-3 w-3" />
+                                )}
+                              </span>
+                            </Button>
+                          </label>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <Input
+                    placeholder="Website URL (optional)"
+                    value={sponsorForm.website_url}
+                    onChange={(e) => setSponsorForm({ ...sponsorForm, website_url: e.target.value })}
+                  />
+                  
+                  <div className="flex gap-2">
+                    <Button onClick={handleSaveSponsor} disabled={!sponsorForm.name}>
+                      {editingSponsor ? 'Update' : 'Add'} Sponsor
+                    </Button>
+                    {editingSponsor && (
+                      <Button variant="outline" onClick={() => {
+                        setEditingSponsor(null);
+                        setSponsorForm(emptySponsor);
+                      }}>
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Sponsors List */}
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm">Current Sponsors</h4>
+                {loadingSponsors ? (
+                  <div className="text-center py-4"><Loader2 className="h-4 w-4 animate-spin mx-auto" /></div>
+                ) : sponsors.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4 text-center">No sponsors added yet</p>
+                ) : (
+                  sponsors.map((sponsor) => (
+                    <div key={sponsor.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        {sponsor.logo_url ? (
+                          <img src={sponsor.logo_url} alt={sponsor.name} className="h-10 w-auto max-w-16 object-contain bg-muted rounded p-1" />
+                        ) : (
+                          <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
+                            <Building2 className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-medium text-sm">{sponsor.name}</p>
+                          {sponsor.website_url && (
+                            <a 
+                              href={sponsor.website_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-xs text-muted-foreground hover:underline flex items-center gap-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <LinkIcon className="h-3 w-3" />
+                              Website
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => {
+                            setEditingSponsor(sponsor);
+                            setSponsorForm({
+                              name: sponsor.name,
+                              logo_url: sponsor.logo_url || '',
+                              website_url: sponsor.website_url || '',
+                            });
+                          }}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDeleteSponsor(sponsor.id)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
