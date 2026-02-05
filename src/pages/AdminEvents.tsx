@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { RichTextEditor } from '@/components/RichTextEditor';
+import { ThumbnailDropzone } from '@/components/admin/ThumbnailDropzone';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -124,6 +126,7 @@ export const AdminEvents = () => {
   const [speakerForm, setSpeakerForm] = useState(emptySpeaker);
   const [editingSpeaker, setEditingSpeaker] = useState<Speaker | null>(null);
   const [loadingSpeakers, setLoadingSpeakers] = useState(false);
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
 
   useEffect(() => {
     if (profile?.role === 'admin') {
@@ -339,6 +342,32 @@ export const AdminEvents = () => {
     toast({ title: 'URL copied!' });
   };
 
+  const handleThumbnailUpload = async (file: File) => {
+    setUploadingThumbnail(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `event-${Date.now()}.${fileExt}`;
+      const filePath = `events/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('course-thumbnails')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('course-thumbnails')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, featured_image_url: publicUrl });
+      toast({ title: 'Thumbnail uploaded!' });
+    } catch (error: any) {
+      toast({ title: 'Upload failed', description: error.message, variant: 'destructive' });
+    } finally {
+      setUploadingThumbnail(false);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -489,11 +518,10 @@ export const AdminEvents = () => {
                 
                 <div>
                   <Label>Description</Label>
-                  <Textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  <RichTextEditor
+                    content={formData.description}
+                    onChange={(html) => setFormData({ ...formData, description: html })}
                     placeholder="Join us for an evening of networking..."
-                    rows={4}
                   />
                 </div>
               </div>
@@ -568,11 +596,12 @@ export const AdminEvents = () => {
 
               {/* Featured Image */}
               <div>
-                <Label>Featured Image URL</Label>
-                <Input
-                  value={formData.featured_image_url}
-                  onChange={(e) => setFormData({ ...formData, featured_image_url: e.target.value })}
-                  placeholder="https://..."
+                <Label>Event Thumbnail</Label>
+                <ThumbnailDropzone
+                  currentThumbnail={formData.featured_image_url || null}
+                  onUpload={handleThumbnailUpload}
+                  uploading={uploadingThumbnail}
+                  courseTitle={formData.title}
                 />
               </div>
 
