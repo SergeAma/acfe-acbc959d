@@ -150,45 +150,85 @@ export const Auth = () => {
 
   // Initialize Turnstile when on signup mode and form step
   useEffect(() => {
+    // Clean up when not in signup form mode
     if (mode !== 'signup' || authStep !== 'form') {
       setTurnstileToken(null);
       if (turnstileWidgetId.current && (window as any).turnstile) {
-        (window as any).turnstile.remove(turnstileWidgetId.current);
+        try {
+          (window as any).turnstile.remove(turnstileWidgetId.current);
+        } catch (e) {
+          console.warn('Failed to remove Turnstile widget:', e);
+        }
         turnstileWidgetId.current = null;
       }
       return;
     }
 
     const initTurnstile = () => {
-      if (!turnstileRef.current || !(window as any).turnstile || turnstileWidgetId.current) return;
+      // Double check the ref exists and we haven't already initialized
+      if (!turnstileRef.current) {
+        console.warn('Turnstile ref not available yet');
+        return;
+      }
       
-      turnstileWidgetId.current = (window as any).turnstile.render(turnstileRef.current, {
-        sitekey: TURNSTILE_SITE_KEY,
-        callback: (token: string) => setTurnstileToken(token),
-        'expired-callback': () => setTurnstileToken(null),
-        'error-callback': () => setTurnstileToken(null),
-        theme: 'auto',
-      });
+      if (!(window as any).turnstile) {
+        console.warn('Turnstile script not loaded yet');
+        return;
+      }
+      
+      // Already initialized - skip
+      if (turnstileWidgetId.current) {
+        return;
+      }
+      
+      try {
+        turnstileWidgetId.current = (window as any).turnstile.render(turnstileRef.current, {
+          sitekey: TURNSTILE_SITE_KEY,
+          callback: (token: string) => {
+            console.log('Turnstile token received');
+            setTurnstileToken(token);
+          },
+          'expired-callback': () => {
+            console.log('Turnstile token expired');
+            setTurnstileToken(null);
+          },
+          'error-callback': (error: any) => {
+            console.error('Turnstile error:', error);
+            setTurnstileToken(null);
+          },
+          theme: 'auto',
+        });
+        console.log('Turnstile widget rendered with ID:', turnstileWidgetId.current);
+      } catch (error) {
+        console.error('Failed to render Turnstile widget:', error);
+      }
     };
 
-    // Script is preloaded in index.html - just init when ready
-    if ((window as any).turnstile) {
-      initTurnstile();
-    } else {
-      // Fallback: wait for script to load
-      const checkTurnstile = setInterval(() => {
-        if ((window as any).turnstile) {
-          clearInterval(checkTurnstile);
-          initTurnstile();
-        }
-      }, 50);
-      // Cleanup interval after 5 seconds
-      setTimeout(() => clearInterval(checkTurnstile), 5000);
-    }
+    // Small delay to ensure DOM is ready after tab switch
+    const initTimeout = setTimeout(() => {
+      if ((window as any).turnstile) {
+        initTurnstile();
+      } else {
+        // Fallback: poll for script to load
+        const checkTurnstile = setInterval(() => {
+          if ((window as any).turnstile) {
+            clearInterval(checkTurnstile);
+            initTurnstile();
+          }
+        }, 100);
+        // Cleanup interval after 10 seconds
+        setTimeout(() => clearInterval(checkTurnstile), 10000);
+      }
+    }, 100);
 
     return () => {
+      clearTimeout(initTimeout);
       if (turnstileWidgetId.current && (window as any).turnstile) {
-        (window as any).turnstile.remove(turnstileWidgetId.current);
+        try {
+          (window as any).turnstile.remove(turnstileWidgetId.current);
+        } catch (e) {
+          console.warn('Failed to remove Turnstile widget on cleanup:', e);
+        }
         turnstileWidgetId.current = null;
       }
     };
