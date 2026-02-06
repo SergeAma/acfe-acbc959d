@@ -3,13 +3,9 @@ import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { buildCanonicalEmail, EmailLanguage } from "../_shared/email-template.ts";
 import { escapeHtml } from "../_shared/html-escape.ts";
+import { verifyUser, corsHeaders } from "../_shared/auth.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 interface CertificateEmailRequest {
   student_email: string;
@@ -28,23 +24,11 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("No authorization header");
-    }
+    // Verify user authentication using shared middleware
+    const { user, supabase: userClient } = await verifyUser(req);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      throw new Error("Unauthorized");
-    }
 
     const {
       student_email,
@@ -164,9 +148,14 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in send-certificate-email:", error);
+    
+    // Return 401 for auth errors
+    const status = error.message?.includes('authorization') || 
+                   error.message?.includes('token') ? 401 : 500;
+    
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      { status, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };

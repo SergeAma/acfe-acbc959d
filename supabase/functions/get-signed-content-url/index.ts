@@ -1,11 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { verifyUser, corsHeaders } from "../_shared/auth.ts";
 
 interface RequestBody {
   contentId: string;
@@ -21,30 +16,9 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Get authorization header
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Missing authorization header" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Create client with user's token to verify auth
-    const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    // Get user from token
-    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Invalid authentication" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    // Verify user authentication using shared middleware
+    const { user, supabase: userClient } = await verifyUser(req);
 
     // Parse request body
     const { contentId, urlType }: RequestBody = await req.json();
@@ -124,7 +98,6 @@ serve(async (req) => {
         sourceUrl = content.video_url;
         break;
       case 'audio':
-        // Audio is stored in course-videos bucket, uses audio_url column
         sourceUrl = (content as any).audio_url || null;
         break;
       case 'file':
@@ -154,7 +127,6 @@ serve(async (req) => {
     }
 
     // Extract bucket and file path from the Supabase storage URL
-    // URL format: https://xxx.supabase.co/storage/v1/object/public/bucket-name/path/to/file
     const urlParts = sourceUrl.split('/storage/v1/object/public/');
     if (urlParts.length !== 2) {
       // Try private URL format
@@ -168,7 +140,7 @@ serve(async (req) => {
         // Generate signed URL (valid for 30 minutes)
         const { data: signedData, error: signError } = await supabaseAdmin.storage
           .from(bucket)
-          .createSignedUrl(filePath, 1800); // 30 minutes
+          .createSignedUrl(filePath, 1800);
 
         if (signError || !signedData) {
           console.error("Error creating signed URL:", signError);
@@ -198,7 +170,7 @@ serve(async (req) => {
     // Generate signed URL (valid for 30 minutes)
     const { data: signedData, error: signError } = await supabaseAdmin.storage
       .from(bucket)
-      .createSignedUrl(filePath, 1800); // 30 minutes
+      .createSignedUrl(filePath, 1800);
 
     if (signError || !signedData) {
       console.error("Error creating signed URL:", signError);
@@ -215,9 +187,15 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Error in get-signed-content-url:", error);
+    const message = error instanceof Error ? error.message : "Internal server error";
+    
+    // Return 401 for auth errors
+    const status = message.includes('authorization') || 
+                   message.includes('token') ? 401 : 500;
+    
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: message }),
+      { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

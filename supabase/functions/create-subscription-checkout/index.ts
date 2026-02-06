@@ -1,11 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { verifyUser, corsHeaders } from "../_shared/auth.ts";
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -13,13 +8,12 @@ const logStep = (step: string, details?: any) => {
 };
 
 // ACFE-specific product IDs - isolated from Spectrogram products
-// Price IDs are fetched dynamically from platform_settings to stay in sync with admin changes
 const ACFE_PRODUCTS = {
   membership: {
     productId: "prod_TkCdNAxRmKONyc",
     name: "ACFE Membership",
     settingKey: "subscription_price",
-    defaultPriceId: "price_1So8qzJv3w1nJBLYyJRKAP7P", // Updated to current $20/month price
+    defaultPriceId: "price_1So8qzJv3w1nJBLYyJRKAP7P",
   },
   mentorship_plus: {
     productId: "prod_TkDR4mktfjQo8r",
@@ -41,20 +35,8 @@ serve(async (req) => {
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
     logStep("Stripe key verified");
 
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
-
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
-    logStep("Authorization header found");
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    const user = userData.user;
+    // Verify user authentication using shared middleware
+    const { user, supabase } = await verifyUser(req);
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
@@ -77,7 +59,7 @@ serve(async (req) => {
     const tierConfig = ACFE_PRODUCTS[tier as keyof typeof ACFE_PRODUCTS];
     
     // Fetch the current price ID from platform_settings (synced with Stripe by admin)
-    const { data: settingData } = await supabaseClient
+    const { data: settingData } = await supabase
       .from('platform_settings')
       .select('setting_value')
       .eq('setting_key', tierConfig.settingKey)
@@ -185,7 +167,6 @@ serve(async (req) => {
     };
     
     // If promo code specifies trial_days, use Stripe's native trial period
-    // This ensures "2 days free" means exactly 2 days, not "first month free"
     if (trialDays) {
       subscriptionData.trial_period_days = trialDays;
       logStep("Applying trial period from promo code", { trialDays });
@@ -228,9 +209,14 @@ serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
+    
+    // Return 401 for auth errors
+    const status = errorMessage.includes('authorization') || 
+                   errorMessage.includes('token') ? 401 : 500;
+    
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status,
     });
   }
 });

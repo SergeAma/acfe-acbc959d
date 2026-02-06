@@ -1,11 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { verifyUser, corsHeaders } from "../_shared/auth.ts";
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -20,20 +15,8 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
-
-    // Authenticate user
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
-    
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    const user = userData.user;
+    // Verify user authentication using shared middleware
+    const { user, supabase } = await verifyUser(req);
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
@@ -43,7 +26,7 @@ serve(async (req) => {
     logStep("Request parsed", { mentorId, mentorName, scheduledDate, startTime, endTime, timezone });
 
     // Get the session price from platform settings
-    const { data: settingsData, error: settingsError } = await supabaseClient
+    const { data: settingsData, error: settingsError } = await supabase
       .from('platform_settings')
       .select('setting_value')
       .eq('setting_key', 'mentorship_session_price')
@@ -77,7 +60,7 @@ serve(async (req) => {
     const origin = req.headers.get("origin") || "https://acfe-app.lovable.app";
 
     // Create pending session record
-    const { data: sessionRecord, error: sessionError } = await supabaseClient
+    const { data: sessionRecord, error: sessionError } = await supabase
       .from('mentorship_sessions')
       .insert({
         mentor_id: mentorId,
@@ -109,7 +92,6 @@ serve(async (req) => {
             currency: 'usd',
             product_data: {
               name: `1:1 Session with ${mentorName || 'Mentor'} - ${scheduledDate} at ${startTime}`,
-              // Note: 'description' is NOT a valid parameter for product_data in line_items
             },
             unit_amount: priceCents,
           },
@@ -128,7 +110,7 @@ serve(async (req) => {
     });
 
     // Update session with Stripe checkout session ID
-    await supabaseClient
+    await supabase
       .from('mentorship_sessions')
       .update({ stripe_checkout_session_id: checkoutSession.id })
       .eq('id', sessionRecord.id);
@@ -145,9 +127,14 @@ serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
+    
+    // Return 401 for auth errors
+    const status = errorMessage.includes('authorization') || 
+                   errorMessage.includes('token') ? 401 : 500;
+    
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status,
     });
   }
 });

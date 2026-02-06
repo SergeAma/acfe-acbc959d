@@ -1,11 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { verifyUser, corsHeaders } from "../_shared/auth.ts";
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -17,31 +13,20 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-  );
-
   try {
     logStep("Function started");
+
+    // Verify user authentication using shared middleware
+    const { user, supabase: userClient } = await verifyUser(req);
+    if (!user?.email) throw new Error("User not authenticated or email not available");
+    logStep("User authenticated", { userId: user.id, email: user.email });
 
     const { courseId, promoCode } = await req.json();
     if (!courseId) throw new Error("Course ID is required");
     logStep("Course ID received", { courseId, promoCode: promoCode || "none" });
 
-    // Authenticate user
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
-    
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
-    logStep("User authenticated", { userId: user.id, email: user.email });
-
     // Get course details
-    const { data: course, error: courseError } = await supabaseClient
+    const { data: course, error: courseError } = await userClient
       .from("courses")
       .select("id, title, is_paid, price_cents, mentor_id")
       .eq("id", courseId)
@@ -53,7 +38,7 @@ serve(async (req) => {
     logStep("Course found", { title: course.title, isPaid: course.is_paid, priceCents: course.price_cents });
 
     // Check platform override settings
-    const { data: pricingOverride } = await supabaseClient
+    const { data: pricingOverride } = await userClient
       .from("platform_settings")
       .select("setting_value")
       .eq("setting_key", "pricing_override")
@@ -200,9 +185,14 @@ serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
+    
+    // Return 401 for auth errors
+    const status = errorMessage.includes('authorization') || 
+                   errorMessage.includes('token') ? 401 : 500;
+    
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status,
     });
   }
 });
