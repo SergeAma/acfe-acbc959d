@@ -1,13 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { verifyAdmin, corsHeaders } from "../_shared/auth.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 interface TestEmailRequest {
   to_email: string;
@@ -16,41 +11,6 @@ interface TestEmailRequest {
   test_data?: Record<string, string>;
 }
 
-const verifyAdminRole = async (req: Request): Promise<{ isAdmin: boolean; userId: string | null; error?: string }> => {
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return { isAdmin: false, userId: null, error: 'Missing authorization header' };
-  }
-
-  const token = authHeader.replace('Bearer ', '');
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  
-  // Create service role client (no auth header needed for service role)
-  const adminClient = createClient(supabaseUrl, supabaseServiceKey);
-
-  // Verify the user's JWT token directly
-  const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
-  if (authError || !user) {
-    console.error("Auth error:", authError);
-    return { isAdmin: false, userId: null, error: 'Invalid or expired token' };
-  }
-
-  // Check admin role
-  const { data: roleData, error: roleError } = await adminClient
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', user.id)
-    .eq('role', 'admin')
-    .maybeSingle();
-
-  if (roleError || !roleData) {
-    return { isAdmin: false, userId: user.id, error: 'User is not an admin' };
-  }
-
-  return { isAdmin: true, userId: user.id };
-};
-
 const handler = async (req: Request): Promise<Response> => {
   console.log("Test email function called");
   
@@ -58,20 +18,14 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Verify admin role
-  const { isAdmin, error: authError } = await verifyAdminRole(req);
-  if (!isAdmin) {
-    console.error("Authorization failed:", authError);
-    return new Response(
-      JSON.stringify({ error: authError || 'Unauthorized' }),
-      { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
-  }
-
   try {
+    // Verify admin role using shared middleware
+    const { user, supabase } = await verifyAdmin(req);
+    console.log(`Admin authorized. User ID: ${user.id}`);
+
     const { to_email, subject, html_content, test_data }: TestEmailRequest = await req.json();
 
-    console.log(`Admin authorized. Sending test email to ${to_email}`);
+    console.log(`Sending test email to ${to_email}`);
 
     let personalizedContent = html_content;
     let personalizedSubject = subject;
@@ -110,10 +64,16 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in send-test-email function:", error);
+    
+    // Return 401 for auth errors, 500 for other errors
+    const status = error.message?.includes('authorization') || 
+                   error.message?.includes('token') || 
+                   error.message?.includes('Admin') ? 401 : 500;
+    
     return new Response(
       JSON.stringify({ error: error.message }),
       {
-        status: 500,
+        status,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );

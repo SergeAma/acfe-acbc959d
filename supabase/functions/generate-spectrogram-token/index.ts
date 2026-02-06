@@ -1,11 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import * as jose from "https://deno.land/x/jose@v4.14.4/index.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { verifyUser, corsHeaders } from "../_shared/auth.ts";
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -18,30 +13,14 @@ serve(async (req: Request) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const sharedSecret = Deno.env.get("ACFE_SHARED_SECRET");
 
     if (!sharedSecret) {
       throw new Error("ACFE_SHARED_SECRET not configured");
     }
 
-    // Get user from auth header
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("No authorization header");
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Verify the user's JWT
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError || !user) {
-      throw new Error("Invalid user token");
-    }
-
+    // Verify user authentication using shared middleware
+    const { user, supabase } = await verifyUser(req);
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     // Get request body for certificate details
@@ -134,10 +113,15 @@ serve(async (req: Request) => {
     );
   } catch (error: any) {
     logStep("Error generating token", { error: error.message });
+    
+    // Return 401 for auth errors
+    const status = error.message?.includes('authorization') || 
+                   error.message?.includes('token') ? 401 : 500;
+    
     return new Response(
       JSON.stringify({ error: error.message }),
       {
-        status: 500,
+        status,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );
