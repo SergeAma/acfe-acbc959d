@@ -52,6 +52,7 @@ interface Event {
   send_dayof_reminder: boolean;
   status: 'draft' | 'published' | 'cancelled' | 'completed';
   featured_image_url: string | null;
+  event_image_url: string | null;
   created_at: string;
   registration_count?: number;
 }
@@ -100,6 +101,7 @@ interface EventFormData {
   send_dayof_reminder: boolean;
   status: 'draft' | 'published' | 'cancelled' | 'completed';
   featured_image_url: string;
+  event_image_url: string;
 }
 
 const emptyEvent: EventFormData = {
@@ -116,6 +118,7 @@ const emptyEvent: EventFormData = {
   send_dayof_reminder: true,
   status: 'draft',
   featured_image_url: '',
+  event_image_url: '',
 };
 
 const emptySpeaker = {
@@ -153,6 +156,7 @@ export const AdminEvents = () => {
   const [editingSpeaker, setEditingSpeaker] = useState<Speaker | null>(null);
   const [loadingSpeakers, setLoadingSpeakers] = useState(false);
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
+  const [uploadingEventImage, setUploadingEventImage] = useState(false);
   
   // Sponsors management
   const [isSponsorDialogOpen, setIsSponsorDialogOpen] = useState(false);
@@ -286,6 +290,7 @@ export const AdminEvents = () => {
       send_dayof_reminder: event.send_dayof_reminder,
       status: event.status,
       featured_image_url: event.featured_image_url || '',
+      event_image_url: event.event_image_url || '',
     });
     setIsDialogOpen(true);
   };
@@ -320,6 +325,7 @@ export const AdminEvents = () => {
       send_dayof_reminder: formData.send_dayof_reminder,
       status: formData.status,
       featured_image_url: formData.featured_image_url || null,
+      event_image_url: formData.event_image_url || null,
     };
 
     if (editingEvent) {
@@ -447,6 +453,32 @@ export const AdminEvents = () => {
       toast({ title: 'Upload failed', description: error.message, variant: 'destructive' });
     } finally {
       setUploadingThumbnail(false);
+    }
+  };
+
+  const handleEventImageUpload = async (file: File) => {
+    setUploadingEventImage(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `event-main-${Date.now()}.${fileExt}`;
+      const filePath = `events/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('course-thumbnails')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('course-thumbnails')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, event_image_url: publicUrl });
+      toast({ title: 'Event image uploaded!' });
+    } catch (error: any) {
+      toast({ title: 'Upload failed', description: error.message, variant: 'destructive' });
+    } finally {
+      setUploadingEventImage(false);
     }
   };
 
@@ -797,13 +829,30 @@ export const AdminEvents = () => {
                 </div>
               )}
 
-              {/* Featured Image */}
+              {/* Featured Image (Thumbnail for cards) */}
               <div>
-                <Label>Event Thumbnail</Label>
+                <Label>Event Thumbnail (Card Preview)</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Used in event listings and cards (16:9 aspect ratio recommended)
+                </p>
                 <ThumbnailDropzone
                   currentThumbnail={formData.featured_image_url || null}
                   onUpload={handleThumbnailUpload}
                   uploading={uploadingThumbnail}
+                  courseTitle={formData.title}
+                />
+              </div>
+
+              {/* Event Image (High-res for detail page) */}
+              <div>
+                <Label>Event Hero Image (Detail Page)</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  High-resolution image displayed on the event detail page
+                </p>
+                <ThumbnailDropzone
+                  currentThumbnail={formData.event_image_url || null}
+                  onUpload={handleEventImageUpload}
+                  uploading={uploadingEventImage}
                   courseTitle={formData.title}
                 />
               </div>
