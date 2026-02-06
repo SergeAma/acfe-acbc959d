@@ -4,10 +4,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Video, Loader2, CheckCircle, DollarSign, Calendar, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Video, Loader2, CheckCircle, DollarSign, Calendar, Clock, ChevronLeft, ChevronRight, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSearchParams } from 'react-router-dom';
 import { format, addDays, startOfWeek, isSameDay } from 'date-fns';
+import { useTurnstile } from '@/hooks/useTurnstile';
 
 interface MentorSessionBookingProps {
   mentorId: string;
@@ -45,6 +46,11 @@ export const MentorSessionBooking = ({ mentorId, mentorName, isEmbedded = false 
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<{ start: string; end: string } | null>(null);
+  
+  // CAPTCHA protection - enabled when we have availability and not showing success
+  const { token: captchaToken, containerRef: captchaRef, reset: resetCaptcha } = useTurnstile({ 
+    enabled: availability.length > 0 && !showSuccess 
+  });
 
   useEffect(() => {
     const sessionId = searchParams.get('session_id');
@@ -155,6 +161,11 @@ export const MentorSessionBooking = ({ mentorId, mentorName, isEmbedded = false 
       toast.error('Please select a time slot');
       return;
     }
+    
+    if (!captchaToken) {
+      toast.error('Please complete the security verification');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -181,6 +192,7 @@ export const MentorSessionBooking = ({ mentorId, mentorName, isEmbedded = false 
       }
     } catch (err: any) {
       toast.error(err.message || 'Failed to start checkout');
+      resetCaptcha();
     } finally {
       setLoading(false);
     }
@@ -327,11 +339,24 @@ export const MentorSessionBooking = ({ mentorId, mentorName, isEmbedded = false 
           )}
         </>
       )}
+      
+      {/* CAPTCHA Widget */}
+      {hasAvailability && (
+        <div className="flex flex-col items-center gap-2">
+          <div ref={captchaRef} className="flex justify-center" />
+          {!captchaToken && selectedSlot && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Shield className="h-3 w-3" />
+              Complete verification to book
+            </p>
+          )}
+        </div>
+      )}
 
       <Button 
         onClick={handleBookSession} 
         className="w-full"
-        disabled={loading || priceLoading || !selectedDate || !selectedSlot}
+        disabled={loading || priceLoading || !selectedDate || !selectedSlot || !captchaToken}
       >
         {loading ? (
           <Loader2 className="h-4 w-4 animate-spin mr-2" />
