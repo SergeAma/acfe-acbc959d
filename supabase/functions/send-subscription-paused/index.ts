@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
-import { buildCanonicalEmail, getSubTranslation, EmailLanguage } from "../_shared/email-template.ts";
+import { buildCanonicalEmail, EmailLanguage } from "../_shared/email-template.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -14,6 +14,7 @@ interface PausedEmailRequest {
   name: string;
   language?: EmailLanguage;
   tier_name?: string;
+  user_id?: string;
 }
 
 serve(async (req) => {
@@ -22,11 +23,60 @@ serve(async (req) => {
   }
 
   try {
-    const { email, name, language = 'en', tier_name }: PausedEmailRequest = await req.json();
+    const { email, name, language = 'en', tier_name, user_id }: PausedEmailRequest = await req.json();
     const lang: EmailLanguage = language === 'fr' ? 'fr' : 'en';
 
     console.log("[SEND-SUBSCRIPTION-PAUSED] Sending email to:", email, "tier:", tier_name, "language:", lang);
 
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // ========================================
+    // NEW: Try centralized send-email function first
+    // ========================================
+    try {
+      const emailResponse = await fetch(
+        `${supabaseUrl}/functions/v1/send-email`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            type: 'subscription-paused',
+            to: email,
+            data: {
+              userName: name,
+              tierName: tier_name
+            },
+            userId: user_id,
+            language: lang
+          })
+        }
+      );
+
+      if (emailResponse.ok) {
+        const result = await emailResponse.json();
+        console.log("[SEND-SUBSCRIPTION-PAUSED] Centralized email sent:", result);
+        
+        return new Response(JSON.stringify({ success: true, method: 'centralized' }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      } else {
+        const errorText = await emailResponse.text();
+        console.error("[SEND-SUBSCRIPTION-PAUSED] Centralized email failed:", errorText);
+        // Fall through to direct Resend
+      }
+    } catch (centralizedError) {
+      console.error("[SEND-SUBSCRIPTION-PAUSED] Centralized email error:", centralizedError);
+      // Fall through to direct Resend
+    }
+
+    // ========================================
+    // FALLBACK: Direct Resend send
+    // ========================================
     const displayName = name || (lang === 'fr' ? 'Abonné' : 'Subscriber');
     const greeting = lang === 'fr' ? 'Bonjour' : 'Hi';
     const tierDisplay = tier_name || (lang === 'fr' ? 'Abonnement ACFE' : 'ACFE Subscription');
@@ -87,13 +137,13 @@ serve(async (req) => {
     });
 
     if (error) {
-      console.error("[SEND-SUBSCRIPTION-PAUSED] Error:", error);
+      console.error("[SEND-SUBSCRIPTION-PAUSED] Resend error:", error);
       throw error;
     }
 
-    console.log("[SEND-SUBSCRIPTION-PAUSED] Email sent successfully:", data);
+    console.log("[SEND-SUBSCRIPTION-PAUSED] Email sent successfully (fallback):", data);
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, method: 'fallback' }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

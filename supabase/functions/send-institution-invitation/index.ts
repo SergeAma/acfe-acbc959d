@@ -137,7 +137,6 @@ serve(async (req: Request) => {
 
       // Use recipient's preferred language if they have an account, otherwise use provided language
       const recipientLang: EmailLanguage = existingProfile?.preferred_language === 'fr' ? 'fr' : lang;
-      const recipientT = translations[recipientLang];
 
       if (existing) {
         await supabaseClient
@@ -169,7 +168,51 @@ serve(async (req: Request) => {
       }
 
       const careerCentreUrl = `https://acloudforeveryone.org/career-centre/${institutionSlug}`;
-      
+
+      // ========================================
+      // NEW: Try centralized send-email function first
+      // ========================================
+      try {
+        const emailResponse = await fetch(
+          `${supabaseUrl}/functions/v1/send-email`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              type: 'institution-invitation',
+              to: normalizedEmail,
+              data: {
+                userName: existingProfile ? undefined : undefined, // Will use generic greeting
+                institutionName: institutionName,
+                role: 'student',
+                invitationUrl: careerCentreUrl
+              },
+              userId: existingProfile?.id,
+              language: recipientLang
+            })
+          }
+        );
+
+        if (emailResponse.ok) {
+          const result = await emailResponse.json();
+          console.log(`[SEND-INSTITUTION-INVITATION] Centralized email sent to ${normalizedEmail}:`, result);
+          sentCount++;
+          continue; // Skip fallback
+        } else {
+          const errorText = await emailResponse.text();
+          console.error(`[SEND-INSTITUTION-INVITATION] Centralized email failed for ${normalizedEmail}:`, errorText);
+        }
+      } catch (centralizedError) {
+        console.error(`[SEND-INSTITUTION-INVITATION] Centralized email error for ${normalizedEmail}:`, centralizedError);
+      }
+
+      // ========================================
+      // FALLBACK: Use direct Resend if centralized fails
+      // ========================================
+      const recipientT = translations[recipientLang];
       const htmlContent = buildCanonicalEmail({
         headline: recipientT.headline,
         body_primary: recipientT.intro(institutionName),
@@ -194,10 +237,10 @@ serve(async (req: Request) => {
         if (!emailError) {
           sentCount++;
         } else {
-          console.error(`Failed to send email to ${email}:`, emailError);
+          console.error(`[SEND-INSTITUTION-INVITATION] Failed to send email to ${email}:`, emailError);
         }
       } catch (emailError) {
-        console.error(`Email error for ${email}:`, emailError);
+        console.error(`[SEND-INSTITUTION-INVITATION] Email error for ${email}:`, emailError);
       }
     }
 
@@ -211,7 +254,7 @@ serve(async (req: Request) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: unknown) {
-    console.error("Error in send-institution-invitation:", error);
+    console.error("[SEND-INSTITUTION-INVITATION] Error:", error);
     const message = error instanceof Error ? error.message : "Internal server error";
     return new Response(
       JSON.stringify({ error: message }),
