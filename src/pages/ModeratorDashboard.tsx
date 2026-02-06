@@ -284,22 +284,23 @@ export const ModeratorDashboard = () => {
   // Resend invitation
   const resendInvitationMutation = useMutation({
     mutationFn: async (email: string) => {
-      const { data: session } = await supabase.auth.getSession();
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-institution-invitation`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.session?.access_token}`,
-        },
-        body: JSON.stringify({
-          institutionId: institution!.id,
+      if (!institution) throw new Error('No institution selected');
+      
+      const { data, error } = await supabase.functions.invoke('send-institution-invitation', {
+        body: {
+          institutionId: institution.id,
           emails: [email],
-          institutionName: institution!.name,
-          institutionSlug: institution!.slug,
-        }),
+          institutionName: institution.name,
+          institutionSlug: institution.slug,
+        }
       });
-      if (!response.ok) throw new Error('Failed to resend invitation');
-      return response.json();
+      
+      if (error) {
+        console.error('Function error:', error);
+        throw error;
+      }
+      
+      return data;
     },
     onSuccess: () => toast.success('Invitation resent'),
     onError: () => toast.error('Failed to resend invitation'),
