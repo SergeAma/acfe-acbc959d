@@ -99,7 +99,10 @@ export const Auth = () => {
     if (isMentorSignup) return '/mentor-application-status';
     return '/dashboard';
   };
-  const redirectUrl = searchParams.get('redirect') || getDefaultRedirect();
+  
+  // Preserve the full redirect URL including query parameters
+  const rawRedirect = searchParams.get('redirect');
+  const redirectUrl = rawRedirect ? decodeURIComponent(rawRedirect) : getDefaultRedirect();
   
   // Detect magic link token in URL - if present, show loading state while Supabase handles it
   const hasAuthToken = searchParams.has('token') || searchParams.has('access_token') || 
