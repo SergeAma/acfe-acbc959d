@@ -12,6 +12,7 @@ import { MySubmissions } from '@/components/dashboard/MySubmissions';
 import { SubscriptionStatus } from '@/components/dashboard/SubscriptionStatus';
 import { PendingAssignments } from '@/components/dashboard/PendingAssignments';
 import { StudentVideoResources } from '@/components/dashboard/StudentVideoResources';
+import { UpcomingEventsSection } from '@/components/dashboard/UpcomingEventsSection';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { BookOpen, Library, Award, TrendingUp, UserCheck, Clock, BookOpenCheck, MessageSquare, CreditCard, Building2, ChevronDown } from 'lucide-react';
 import { stripHtml } from '@/lib/html-utils';
@@ -305,6 +306,9 @@ export const StudentDashboard = () => {
 
       {/* Pending Assignments Alert */}
       <PendingAssignments enrollments={enrollments} />
+
+      {/* Upcoming Events - High Visibility */}
+      <UpcomingEventsSection />
 
       {/* PRIMARY: In Progress Courses */}
       {loading ? (
