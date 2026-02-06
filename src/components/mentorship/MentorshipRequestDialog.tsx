@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, UserPlus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { useTurnstile } from '@/hooks/useTurnstile';
 
 interface MentorshipRequestDialogProps {
   mentorId: string;
@@ -27,6 +28,11 @@ export const MentorshipRequestDialog = ({ mentorId, mentorName }: MentorshipRequ
     careerAmbitions: '',
     reasonForMentor: '',
     gender: '' as 'male' | 'female' | ''
+  });
+
+  // CAPTCHA - only enabled when dialog is open
+  const { token: captchaToken, containerRef: captchaRef, reset: resetCaptcha, isReady: captchaReady } = useTurnstile({ 
+    enabled: open 
   });
 
   // Check if user already has a pending/accepted request with this mentor
@@ -56,6 +62,16 @@ export const MentorshipRequestDialog = ({ mentorId, mentorName }: MentorshipRequ
     if (!formData.studentBio || !formData.careerAmbitions || !formData.reasonForMentor || !formData.gender) {
       toast({
         title: 'Please fill in all fields',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Validate CAPTCHA
+    if (!captchaToken) {
+      toast({
+        title: 'Security verification required',
+        description: 'Please complete the CAPTCHA verification',
         variant: 'destructive'
       });
       return;
@@ -106,6 +122,7 @@ export const MentorshipRequestDialog = ({ mentorId, mentorName }: MentorshipRequ
         description: error.message,
         variant: 'destructive'
       });
+      resetCaptcha();
     } finally {
       setLoading(false);
     }
@@ -200,11 +217,14 @@ export const MentorshipRequestDialog = ({ mentorId, mentorName }: MentorshipRequ
             />
           </div>
 
+          {/* CAPTCHA */}
+          <div ref={captchaRef} className="flex justify-center" />
+
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={loading}>
+            <Button onClick={handleSubmit} disabled={loading || !captchaReady || !captchaToken}>
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

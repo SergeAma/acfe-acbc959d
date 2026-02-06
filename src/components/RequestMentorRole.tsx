@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, GraduationCap, ExternalLink } from 'lucide-react';
+import { useTurnstile } from '@/hooks/useTurnstile';
 
 export const RequestMentorRole = () => {
   const { user, profile } = useAuth();
@@ -16,6 +17,12 @@ export const RequestMentorRole = () => {
   const [reason, setReason] = useState('');
   const [hasRequest, setHasRequest] = useState(false);
   const [requestStatus, setRequestStatus] = useState<'pending' | 'approved' | 'rejected' | null>(null);
+
+  // CAPTCHA - only enabled when form is visible (no existing request)
+  const showForm = !hasRequest && profile?.role !== 'mentor' && profile?.role !== 'admin';
+  const { token: captchaToken, containerRef: captchaRef, reset: resetCaptcha, isReady: captchaReady } = useTurnstile({ 
+    enabled: showForm 
+  });
 
   // Check if user already has a request
   useEffect(() => {
@@ -42,6 +49,16 @@ export const RequestMentorRole = () => {
     
     if (!user || !profile) return;
 
+    // Validate CAPTCHA
+    if (!captchaToken) {
+      toast({
+        title: "Security verification required",
+        description: "Please complete the CAPTCHA verification",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     const { data: insertedRequest, error } = await supabase
@@ -60,6 +77,7 @@ export const RequestMentorRole = () => {
         description: error.message,
         variant: "destructive",
       });
+      resetCaptcha();
     } else {
       toast({
         title: "Request submitted!",
@@ -175,7 +193,11 @@ export const RequestMentorRole = () => {
               rows={5}
             />
           </div>
-          <Button type="submit" disabled={loading}>
+          
+          {/* CAPTCHA */}
+          <div ref={captchaRef} className="flex justify-center" />
+          
+          <Button type="submit" disabled={loading || !captchaReady || !captchaToken}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             Submit Request
           </Button>
