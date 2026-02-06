@@ -204,8 +204,9 @@ export const EventDetail = () => {
   };
 
   const handleSignupToAttend = () => {
-    // Redirect to auth with event context
-    navigate(`/auth?redirect=/events/${slug}?registered=true&event=${slug}`);
+    // Redirect to auth with event context - encode the redirect URL to preserve query params
+    const redirectPath = `/events/${slug}?registered=true`;
+    navigate(`/auth?redirect=${encodeURIComponent(redirectPath)}&event=${slug}`);
   };
 
   if (loading) {
