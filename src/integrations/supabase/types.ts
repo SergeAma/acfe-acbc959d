@@ -1368,6 +1368,7 @@ export type Database = {
           created_by: string | null
           description: string | null
           event_date: string
+          event_image_url: string | null
           event_link: string | null
           event_time: string
           event_type: Database["public"]["Enums"]["event_type"]
@@ -1388,6 +1389,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           event_date: string
+          event_image_url?: string | null
           event_link?: string | null
           event_time: string
           event_type?: Database["public"]["Enums"]["event_type"]
@@ -1408,6 +1410,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           event_date?: string
+          event_image_url?: string | null
           event_link?: string | null
           event_time?: string
           event_type?: Database["public"]["Enums"]["event_type"]
