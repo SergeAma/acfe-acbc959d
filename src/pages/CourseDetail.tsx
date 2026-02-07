@@ -48,6 +48,7 @@ export const CourseDetail = () => {
   const [course, setCourse] = useState<Course | null>(null);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const [subscriptionChecked, setSubscriptionChecked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [pricingOverride, setPricingOverride] = useState<PricingOverride | null>(null);
@@ -67,7 +68,10 @@ export const CourseDetail = () => {
   // Check subscription status on mount
   useEffect(() => {
     const checkSubscription = async () => {
-      if (!session?.access_token) return;
+      if (!session?.access_token) {
+        setSubscriptionChecked(true);
+        return;
+      }
       
       try {
         const { data, error } = await supabase.functions.invoke('check-subscription', {
@@ -81,11 +85,16 @@ export const CourseDetail = () => {
         }
       } catch (err) {
         console.error('Failed to check subscription:', err);
+      } finally {
+        setSubscriptionChecked(true);
       }
     };
     
     if (session) {
       checkSubscription();
+    } else {
+      // No session, mark as checked
+      setSubscriptionChecked(true);
     }
   }, [session]);
 
@@ -180,12 +189,14 @@ export const CourseDetail = () => {
       if (error) throw error;
 
       if (data.free) {
-        // Free enrollment completed
+        // Free enrollment completed - navigate directly to learning page
         setIsEnrolled(true);
         toast({
           title: "Success!",
           description: data.message || "You're now enrolled in this course",
         });
+        // Navigate to learning page immediately
+        navigate(`/courses/${id}/learn`);
       } else if (data.requiresSubscription) {
         // User needs to subscribe first - redirect to pricing with promo code
         toast({
@@ -237,7 +248,8 @@ export const CourseDetail = () => {
     };
   };
 
-  if (loading) {
+  // Wait for both course data AND subscription check to complete
+  if (loading || !subscriptionChecked) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />

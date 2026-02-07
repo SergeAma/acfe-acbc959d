@@ -111,7 +111,7 @@ export const UserStatusManager = ({
   return (
     <div className="flex items-center gap-2">
       <Badge variant={getStatusBadgeVariant(currentStatus)}>
-        {currentStatus}
+        {currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1)}
       </Badge>
       
       {showReinstateButton && (

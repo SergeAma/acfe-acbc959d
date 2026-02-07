@@ -308,7 +308,7 @@ export const StudentProfileDialog = ({
             {/* Account Info */}
             <div className="pt-4 border-t space-y-1 text-xs text-muted-foreground">
               <p>Member since {profile.created_at ? format(new Date(profile.created_at), 'MMMM yyyy') : 'Unknown'}</p>
-              <p>Account Status: <span className={profile.account_status === 'active' ? 'text-green-600' : 'text-orange-600'}>{profile.account_status}</span></p>
+              <p>Account Status: <span className={profile.account_status === 'active' ? 'text-green-600' : 'text-orange-600'}>{profile.account_status ? profile.account_status.charAt(0).toUpperCase() + profile.account_status.slice(1) : 'Unknown'}</span></p>
               {profile.preferred_language && <p>Preferred Language: {profile.preferred_language === 'fr' ? 'French' : 'English'}</p>}
               {profile.profile_frame && <p>Profile Frame: {profile.profile_frame}</p>}
             </div>
