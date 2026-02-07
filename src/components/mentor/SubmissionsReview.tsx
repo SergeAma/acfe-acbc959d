@@ -192,11 +192,11 @@ export const SubmissionsReview = () => {
 
     setSubmitting(true);
     try {
-      // Update submission with feedback
+      // Update submission with feedback - use 'revision_requested' to match DB constraint
       const { error } = await supabase
         .from('assignment_submissions')
         .update({
-          status: 'needs_revision',
+          status: 'revision_requested',
           mentor_feedback: feedbackText,
           reviewed_at: new Date().toISOString(),
           reviewed_by: profile?.id,
