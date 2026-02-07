@@ -205,6 +205,23 @@ export const SubmissionsReview = () => {
 
       if (error) throw error;
 
+      // Create in-app notification for student (uses existing notification infrastructure)
+      const courseName = selectedSubmission.assignment?.course?.title || 'your course';
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: selectedSubmission.student_id,
+          message: `Your assignment for "${courseName}" needs revision. Your mentor has provided feedback.`,
+          link: '/dashboard',
+          action_type: 'revise_assignment',
+          action_reference_id: selectedSubmission.id,
+        });
+
+      if (notificationError) {
+        console.error('Failed to create notification:', notificationError);
+        // Continue - notification failure shouldn't block the workflow
+      }
+
       // Send feedback email to student
       await supabase.functions.invoke('send-email', {
         body: {
