@@ -10,6 +10,7 @@ export interface MentorEmailData {
   courseName?: string;
   videoUrl?: string;
   submissionType?: string;
+  feedback?: string;
 }
 
 export type MentorEmailType = 
@@ -18,7 +19,8 @@ export type MentorEmailType =
   | 'mentor-rejected'
   | 'mentor-request-confirmation'
   | 'mentor-assignment-submitted'
-  | 'assignment-submission-confirmation';
+  | 'assignment-submission-confirmation'
+  | 'assignment-feedback';
 
 export function buildMentorEmail(
   type: MentorEmailType,
@@ -170,6 +172,35 @@ export function buildMentorEmail(
           <p>${getText('common.regards', language).replace(/\n/g, '<br>')}</p>
         `,
         ctaText: language === 'en' ? 'View My Courses' : 'Voir mes cours',
+        ctaUrl: 'https://acloudforeveryone.org/dashboard',
+        language
+      });
+      return { subject, html };
+    }
+
+    case 'assignment-feedback': {
+      const subject = language === 'en'
+        ? `Assignment Feedback: ${data.courseName}`
+        : `Commentaires sur le devoir : ${data.courseName}`;
+      
+      const html = buildCanonicalTemplate({
+        greeting: getGreeting(data.studentName || 'Learner', language),
+        bodyContent: `
+          <p>${language === 'en'
+            ? `Your mentor, <strong>${data.mentorName}</strong>, has reviewed your assignment for <strong>${data.courseName}</strong> and provided feedback.`
+            : `Votre mentor, <strong>${data.mentorName}</strong>, a examiné votre devoir pour <strong>${data.courseName}</strong> et a fourni des commentaires.`
+          }</p>
+          <div style="background-color: #fef3c7; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #f59e0b;">
+            <p style="margin: 0 0 8px 0; font-weight: 600; color: #92400e;">${language === 'en' ? 'Feedback:' : 'Commentaires :'}</p>
+            <p style="margin: 0; color: #1F1F1F; white-space: pre-wrap;">${data.feedback}</p>
+          </div>
+          <p>${language === 'en'
+            ? 'Please make the suggested improvements and resubmit your assignment through your course dashboard.'
+            : 'Veuillez apporter les améliorations suggérées et soumettre à nouveau votre devoir via votre tableau de bord de cours.'
+          }</p>
+          <p>${getText('common.regards', language).replace(/\n/g, '<br>')}</p>
+        `,
+        ctaText: language === 'en' ? 'Resubmit Assignment' : 'Soumettre à nouveau',
         ctaUrl: 'https://acloudforeveryone.org/dashboard',
         language
       });

@@ -56,11 +56,14 @@ export type EmailType =
   | 'event-confirmation'
   | 'event-reminder'
   
-  // Mentors
+  // Mentors & Assignments
   | 'mentor-invitation'
   | 'mentor-approved'
   | 'mentor-rejected'
   | 'mentor-request-confirmation'
+  | 'mentor-assignment-submitted'
+  | 'assignment-submission-confirmation'
+  | 'assignment-feedback'
   
   // Newsletter
   | 'newsletter-welcome'
@@ -83,7 +86,7 @@ export type EmailData<T extends EmailType> =
   T extends 'subscription-created' | 'subscription-renewed' | 'subscription-ending' | 'subscription-cancelled' | 'subscription-paused' | 'subscription-resumed' ? SubscriptionEmailData :
   T extends 'institution-invitation' | 'institution-approved' | 'institution-request' ? InstitutionEmailData :
   T extends 'event-confirmation' | 'event-reminder' ? EventEmailData :
-  T extends 'mentor-invitation' | 'mentor-approved' | 'mentor-rejected' | 'mentor-request-confirmation' ? MentorEmailData :
+  T extends 'mentor-invitation' | 'mentor-approved' | 'mentor-rejected' | 'mentor-request-confirmation' | 'mentor-assignment-submitted' | 'assignment-submission-confirmation' | 'assignment-feedback' ? MentorEmailData :
   T extends 'newsletter-welcome' ? NewsletterEmailData :
   T extends 'course-enrolled' | 'course-completed' | 'certificate-issued' ? CourseEmailData :
   T extends 'admin-new-student' ? AdminEmailData :
