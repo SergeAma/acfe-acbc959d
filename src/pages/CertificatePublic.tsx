@@ -87,11 +87,12 @@ export const CertificatePublic = () => {
 
         let studentName = 'Certificate Holder';
         if (data.student_id) {
-          const { data: studentData } = await supabase
-            .rpc('get_public_mentor_profile', { mentor_id: data.student_id });
+          // Use secure RPC function to get certificate holder name
+          const { data: nameData } = await supabase
+            .rpc('get_certificate_holder_name', { p_student_id: data.student_id });
           
-          if (studentData && studentData.length > 0) {
-            studentName = studentData[0].full_name || 'Certificate Holder';
+          if (nameData) {
+            studentName = nameData;
           }
         }
 
