@@ -271,11 +271,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Only fetch profile on SIGNED_IN, not on every token refresh
           if (event === 'SIGNED_IN' && currentSession?.user) {
             // Defer to prevent deadlock
-            setTimeout(() => {
+            setTimeout(async () => {
               if (mounted) {
-                fetchProfile(currentSession.user.id).then(profileData => {
-                  if (mounted && profileData) setProfile(profileData);
-                });
+                const profileData = await fetchProfile(currentSession.user.id);
+                if (mounted && profileData) setProfile(profileData);
+                
+                // Send welcome email for NEW users (first sign-in after email confirmation)
+                // Check if this is from a pending signup (new user registration)
+                const storedSignup = sessionStorage.getItem(PENDING_SIGNUP_KEY);
+                if (storedSignup) {
+                  try {
+                    const signupData = JSON.parse(storedSignup);
+                    // Send welcome email via edge function
+                    await supabase.functions.invoke('send-email', {
+                      body: {
+                        type: 'welcome',
+                        to: currentSession.user.email,
+                        data: {
+                          userName: signupData.fullName || currentSession.user.email,
+                          userEmail: currentSession.user.email
+                        },
+                        userId: currentSession.user.id,
+                        language: signupData.preferredLanguage || 'en'
+                      }
+                    });
+                    
+                    // Also notify admin of new student
+                    await supabase.functions.invoke('send-email', {
+                      body: {
+                        type: 'admin-new-student',
+                        to: 'serge@acloudforeveryone.org',
+                        data: {
+                          studentName: signupData.fullName || currentSession.user.email,
+                          studentEmail: currentSession.user.email,
+                          signupDate: new Date().toISOString().replace('T', ' ').substring(0, 19)
+                        },
+                        language: 'en'
+                      }
+                    });
+                    
+                    console.log('[AUTH] Welcome emails sent successfully');
+                  } catch (emailError) {
+                    // Email failure is non-critical
+                    console.warn('[AUTH] Welcome email failed:', emailError);
+                  }
+                  // Clear pending signup after sending emails
+                  sessionStorage.removeItem(PENDING_SIGNUP_KEY);
+                  setPendingSignup(null);
+                }
               }
             }, 100);
           }
@@ -479,22 +522,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
-        // Send welcome email
-        const firstName = stored.fullName?.split(' ')[0] || 'there';
-        try {
-          await supabase.functions.invoke('send-welcome-email', {
-            body: {
-              email: email,
-              first_name: firstName,
-              role: 'student',
-              wants_mentor: stored.wantsMentor || false,
-              user_id: data.user.id,
-              preferred_language: stored.preferredLanguage || 'en',
-            },
-          });
-        } catch {
-          // Welcome email failure is non-critical
-        }
+        // Note: Welcome emails are now sent via onAuthStateChange SIGNED_IN event
+        // This ensures emails are sent after email confirmation, not profile creation
 
         toast({
           title: "Account created!",
