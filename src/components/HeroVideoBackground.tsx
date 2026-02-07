@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
+// Static intro image shown first, then videos cycle
+const INTRO_IMAGE = '/images/hero-intro-static.jpg';
+const INTRO_DURATION = 5000; // 5 seconds for static image
+
 const heroMedia = [
   { video: '/videos/hero-background.mp4', poster: '/images/hero-poster-main.jpg' },
   { video: '/videos/cape-town.mp4', poster: '/images/hero-poster-capetown.jpg' },
@@ -9,6 +13,7 @@ const heroMedia = [
 ];
 
 export const HeroVideoBackground = () => {
+  const [showIntro, setShowIntro] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const [videosLoaded, setVideosLoaded] = useState<boolean[]>(new Array(heroMedia.length).fill(false));
   const isMobile = useIsMobile();
@@ -45,14 +50,25 @@ export const HeroVideoBackground = () => {
     });
   }, [isInViewport, activeIndex, isMobile]);
 
-  // Interval-based crossfade (works for both mobile posters and desktop videos)
+  // Show intro image for 5 seconds, then start video carousel
   useEffect(() => {
+    const introTimer = setTimeout(() => {
+      setShowIntro(false);
+    }, INTRO_DURATION);
+
+    return () => clearTimeout(introTimer);
+  }, []);
+
+  // Interval-based crossfade (only starts after intro ends)
+  useEffect(() => {
+    if (showIntro) return;
+
     const interval = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % heroMedia.length);
     }, 8000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [showIntro]);
 
   // Handle video load events
   const handleLoadedData = useCallback((index: number) => {
@@ -83,11 +99,19 @@ export const HeroVideoBackground = () => {
         ref={containerRef}
         className="absolute inset-0 w-full h-full overflow-hidden bg-[hsl(30,15%,12%)]"
       >
+        {/* Intro static image */}
+        <div
+          className={`absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000 ${
+            showIntro ? 'opacity-100 z-[2]' : 'opacity-0 z-0'
+          }`}
+          style={{ backgroundImage: `url(${INTRO_IMAGE})` }}
+        />
+        {/* Regular poster carousel */}
         {heroMedia.map((media, index) => (
           <div
             key={media.poster}
             className={`absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000 ${
-              index === activeIndex ? 'opacity-100' : 'opacity-0'
+              !showIntro && index === activeIndex ? 'opacity-100 z-[1]' : 'opacity-0 z-0'
             }`}
             style={{ backgroundImage: `url(${media.poster})` }}
           />
@@ -102,24 +126,32 @@ export const HeroVideoBackground = () => {
       ref={containerRef}
       className="absolute inset-0 w-full h-full overflow-hidden bg-[hsl(30,15%,12%)]"
     >
+      {/* Intro static image - shown first for 5 seconds */}
+      <div
+        className={`absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000 ${
+          showIntro ? 'opacity-100 z-[3]' : 'opacity-0 z-0'
+        }`}
+        style={{ backgroundImage: `url(${INTRO_IMAGE})` }}
+      />
+
       {/* Poster images as immediate background */}
       {heroMedia.map((media, index) => (
         <div
           key={`poster-${media.poster}`}
           className={`absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-500 ${
-            index === activeIndex && !videosLoaded[index] ? 'opacity-100 z-[1]' : 'opacity-0 z-0'
+            !showIntro && index === activeIndex && !videosLoaded[index] ? 'opacity-100 z-[1]' : 'opacity-0 z-0'
           }`}
           style={{ backgroundImage: `url(${media.poster})` }}
         />
       ))}
       
-      {/* Videos with crossfade */}
+      {/* Videos with crossfade - only show after intro ends */}
       {heroMedia.map((media, index) => (
         <video
           key={media.video}
           ref={(el) => { videoRefs.current[index] = el; }}
           className={`hero-video absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out pointer-events-none ${
-            index === activeIndex && videosLoaded[index] ? 'opacity-100 z-[2]' : 'opacity-0 z-[1]'
+            !showIntro && index === activeIndex && videosLoaded[index] ? 'opacity-100 z-[2]' : 'opacity-0 z-[1]'
           }`}
           autoPlay
           muted
