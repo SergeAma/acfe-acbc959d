@@ -24,39 +24,8 @@ export const Landing = () => {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden min-h-screen flex items-end pb-28">
+      <section className="relative w-full aspect-[16/9] md:aspect-[21/9] max-h-[80vh]">
         <HeroVideoBackground />
-        <div className="absolute inset-0 bg-black/50" />
-        
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center px-2">
-            <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] [text-shadow:_0_0_20px_rgba(0,0,0,0.5),_0_0_40px_rgba(0,0,0,0.3)]">
-              {t('hero.title')}
-            </h1>
-            <p className="text-sm sm:text-lg md:text-xl text-white/90 mb-3 sm:mb-4 leading-relaxed drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] [text-shadow:_0_0_15px_rgba(0,0,0,0.4)]">
-              {t('hero.subtitle')}
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
-              {user ? <Link to="/dashboard" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full cta-shiny">
-                    {t('hero.dashboard')}
-                  </Button>
-                </Link> : <>
-                  <Link to="/auth?mode=signup&role=student" className="w-full sm:w-auto">
-                    <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full cta-shiny">
-                      {t('hero.startLearning')}
-                    </Button>
-                  </Link>
-                  <Link to="/auth?mode=signup&role=mentor" className="w-full sm:w-auto">
-                    <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full cta-shiny">
-                      {t('hero.becomeMentor')}
-                    </Button>
-                  </Link>
-                </>}
-            </div>
-          </div>
-        </div>
       </section>
 
       {/* Community CTA Section */}
