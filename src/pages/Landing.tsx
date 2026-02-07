@@ -32,8 +32,11 @@ export const Landing = () => {
       <section className="py-10 sm:py-16 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <p className="text-lg sm:text-xl md:text-2xl opacity-95 mb-6 sm:mb-8 leading-relaxed">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
               The gap is in the lack of industry-relevant mentorship and coaching that prioritises job-readiness over generic courses.
+            </h2>
+            <p className="text-base sm:text-lg opacity-90 mb-6 sm:mb-8">
+              Zero experience required | Any background | Start Anytime
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <Link to="/mentors">
