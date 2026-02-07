@@ -126,7 +126,7 @@ export const MySubscriptions = () => {
       return (
         <Badge variant="destructive" className="flex items-center gap-1">
           <XCircle className="h-3 w-3" />
-          Cancels {new Date(subscription.current_period_end).toLocaleDateString()}
+          Cancels {subscription.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString() : 'soon'}
         </Badge>
       );
     }
@@ -227,7 +227,9 @@ export const MySubscriptions = () => {
                         <Calendar className="h-4 w-4" />
                         <span>
                           {subscription.cancel_at_period_end ? 'Ends' : 'Renews'}: {' '}
-                          {new Date(subscription.current_period_end).toLocaleDateString()}
+                          {subscription.current_period_end 
+                            ? new Date(subscription.current_period_end).toLocaleDateString() 
+                            : 'N/A'}
                         </span>
                       </div>
                     </div>
