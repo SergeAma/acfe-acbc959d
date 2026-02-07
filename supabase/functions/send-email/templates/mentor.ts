@@ -4,20 +4,30 @@ import { getText, getGreeting, type Language } from './_translations.ts';
 export interface MentorEmailData {
   userName?: string;
   invitationUrl?: string;
+  mentorName?: string;
+  studentName?: string;
+  studentEmail?: string;
+  courseName?: string;
+  videoUrl?: string;
+  submissionType?: string;
 }
 
 export type MentorEmailType = 
   | 'mentor-invitation'
   | 'mentor-approved'
   | 'mentor-rejected'
-  | 'mentor-request-confirmation';
+  | 'mentor-request-confirmation'
+  | 'mentor-assignment-submitted'
+  | 'assignment-submission-confirmation';
 
 export function buildMentorEmail(
   type: MentorEmailType,
   data: MentorEmailData,
   language: Language
 ): { subject: string; html: string } {
-  const greeting = data.userName ? getGreeting(data.userName, language) : undefined;
+  const greeting = data.userName || data.mentorName 
+    ? getGreeting(data.userName || data.mentorName || '', language) 
+    : undefined;
 
   switch (type) {
     case 'mentor-invitation': {
@@ -95,6 +105,72 @@ export function buildMentorEmail(
           <p>${getText('mentor.requestConfirmation.body', language)}</p>
           <p>${getText('common.regards', language).replace(/\n/g, '<br>')}</p>
         `,
+        language
+      });
+      return { subject, html };
+    }
+
+    case 'mentor-assignment-submitted': {
+      const subject = language === 'en'
+        ? `New Assignment Submission: ${data.courseName}`
+        : `Nouvelle soumission de devoir : ${data.courseName}`;
+      
+      const html = buildCanonicalTemplate({
+        greeting: getGreeting(data.mentorName || 'Mentor', language),
+        bodyContent: `
+          <p>${language === 'en'
+            ? `<strong>${data.studentName}</strong> has submitted their assignment for <strong>${data.courseName}</strong>.`
+            : `<strong>${data.studentName}</strong> a soumis son devoir pour <strong>${data.courseName}</strong>.`
+          }</p>
+          <div style="background-color: #f4f4f5; padding: 16px; border-radius: 8px; margin: 16px 0;">
+            <p style="margin: 0 0 8px 0;"><strong>${language === 'en' ? 'Student' : 'Étudiant'}:</strong> ${data.studentName}</p>
+            <p style="margin: 0 0 8px 0;"><strong>${language === 'en' ? 'Email' : 'Email'}:</strong> ${data.studentEmail}</p>
+            <p style="margin: 0 0 8px 0;"><strong>${language === 'en' ? 'Submission Type' : 'Type de soumission'}:</strong> ${data.submissionType}</p>
+            <p style="margin: 0;"><strong>${language === 'en' ? 'Video Link' : 'Lien vidéo'}:</strong> <a href="${data.videoUrl}" style="color: #1D4ED8;">${data.videoUrl}</a></p>
+          </div>
+          <p>${language === 'en'
+            ? 'Please review the submission and provide feedback through your mentor dashboard.'
+            : 'Veuillez examiner la soumission et fournir des commentaires via votre tableau de bord mentor.'
+          }</p>
+          <p>${getText('common.regards', language).replace(/\n/g, '<br>')}</p>
+        `,
+        ctaText: language === 'en' ? 'Review Submission' : 'Examiner la soumission',
+        ctaUrl: 'https://acloudforeveryone.org/dashboard',
+        language
+      });
+      return { subject, html };
+    }
+
+    case 'assignment-submission-confirmation': {
+      const subject = language === 'en'
+        ? `Assignment Submitted: ${data.courseName}`
+        : `Devoir soumis : ${data.courseName}`;
+      
+      const html = buildCanonicalTemplate({
+        greeting: getGreeting(data.studentName || 'Learner', language),
+        bodyContent: `
+          <p>${language === 'en'
+            ? `Your assignment for <strong>${data.courseName}</strong> has been successfully submitted!`
+            : `Votre devoir pour <strong>${data.courseName}</strong> a été soumis avec succès !`
+          }</p>
+          <div style="background-color: #f0fdf4; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #22c55e;">
+            <p style="margin: 0; color: #166534;">${language === 'en'
+              ? '✓ Submission received'
+              : '✓ Soumission reçue'
+            }</p>
+          </div>
+          <p>${language === 'en'
+            ? `Your mentor, ${data.mentorName}, will review your submission and provide feedback. You'll receive a notification once it's been reviewed.`
+            : `Votre mentor, ${data.mentorName}, examinera votre soumission et fournira des commentaires. Vous recevrez une notification une fois l'examen terminé.`
+          }</p>
+          <p>${language === 'en'
+            ? 'You can view your submission status anytime from your course dashboard.'
+            : 'Vous pouvez voir le statut de votre soumission à tout moment depuis votre tableau de bord.'
+          }</p>
+          <p>${getText('common.regards', language).replace(/\n/g, '<br>')}</p>
+        `,
+        ctaText: language === 'en' ? 'View My Courses' : 'Voir mes cours',
+        ctaUrl: 'https://acloudforeveryone.org/dashboard',
         language
       });
       return { subject, html };
