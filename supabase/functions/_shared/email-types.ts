@@ -11,6 +11,7 @@ import type { InstitutionEmailData } from '../send-email/templates/institution.t
 import type { EventEmailData } from '../send-email/templates/event.ts';
 import type { MentorEmailData } from '../send-email/templates/mentor.ts';
 import type { NewsletterEmailData } from '../send-email/templates/newsletter.ts';
+import type { AdminEmailData } from '../send-email/templates/admin.ts';
 
 // Re-export for convenience
 export type {
@@ -21,7 +22,8 @@ export type {
   InstitutionEmailData,
   EventEmailData,
   MentorEmailData,
-  NewsletterEmailData
+  NewsletterEmailData,
+  AdminEmailData
 };
 
 /**
@@ -66,7 +68,10 @@ export type EmailType =
   // Courses
   | 'course-enrolled'
   | 'course-completed'
-  | 'certificate-issued';
+  | 'certificate-issued'
+  
+  // Admin notifications
+  | 'admin-new-student';
 
 /**
  * Type-safe email data mapping
@@ -81,6 +86,7 @@ export type EmailData<T extends EmailType> =
   T extends 'mentor-invitation' | 'mentor-approved' | 'mentor-rejected' | 'mentor-request-confirmation' ? MentorEmailData :
   T extends 'newsletter-welcome' ? NewsletterEmailData :
   T extends 'course-enrolled' | 'course-completed' | 'certificate-issued' ? CourseEmailData :
+  T extends 'admin-new-student' ? AdminEmailData :
   never;
 
 /**

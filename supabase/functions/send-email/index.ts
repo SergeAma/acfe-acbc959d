@@ -11,6 +11,7 @@ import { buildInstitutionEmail } from './templates/institution.ts';
 import { buildEventEmail } from './templates/event.ts';
 import { buildMentorEmail } from './templates/mentor.ts';
 import { buildNewsletterWelcomeEmail } from './templates/newsletter.ts';
+import { buildAdminEmail } from './templates/admin.ts';
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY')!);
 
@@ -138,6 +139,14 @@ Deno.serve(async (req) => {
       // Newsletter
       case 'newsletter-welcome': {
         const result = buildNewsletterWelcomeEmail(data, language);
+        subject = result.subject;
+        html = result.html;
+        break;
+      }
+      
+      // Admin notifications
+      case 'admin-new-student': {
+        const result = buildAdminEmail(type, data, language);
         subject = result.subject;
         html = result.html;
         break;
