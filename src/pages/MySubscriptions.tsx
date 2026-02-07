@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
+import { formatSubscriptionStatus } from '@/lib/formatters';
 import { 
   ArrowLeft, 
   CreditCard, 
@@ -141,7 +142,7 @@ export const MySubscriptions = () => {
     return (
       <Badge variant="secondary" className="flex items-center gap-1">
         <AlertCircle className="h-3 w-3" />
-        {subscription.status}
+        {formatSubscriptionStatus(subscription.status)}
       </Badge>
     );
   };

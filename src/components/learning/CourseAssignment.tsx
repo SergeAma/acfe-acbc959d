@@ -9,6 +9,7 @@ import { Briefcase, Youtube, FolderOpen, CheckCircle2, Loader2, ExternalLink } f
 import { createSafeHtml } from '@/lib/sanitize-html';
 import { useToast } from '@/hooks/use-toast';
 import { callEdgeFunction } from '@/lib/api';
+import { formatSubmissionStatus } from '@/lib/formatters';
 
 interface CourseAssignmentProps {
   courseId: string;
@@ -201,7 +202,7 @@ export const CourseAssignment = ({ courseId, enrollmentId, onComplete }: CourseA
                 <p className="font-medium">
                   {isApproved ? '✅ Assignment Approved' :
                    isPending ? '⏳ Pending Review' :
-                   'Submission Status: ' + existingSubmission.status}
+                   formatSubmissionStatus(existingSubmission.status)}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Submitted on {new Date(existingSubmission.submitted_at).toLocaleDateString()}

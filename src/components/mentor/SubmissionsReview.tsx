@@ -518,7 +518,9 @@ export const SubmissionsReview = () => {
                         variant={submission.status === 'approved' ? 'default' : 'outline'}
                         className={submission.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
                       >
-                        {submission.status === 'approved' ? 'Passed' : 'Needs Revision'}
+                        {submission.status === 'approved' ? 'Passed' : 
+                         submission.status === 'revision_requested' ? 'Revision Requested' : 
+                         'Pending Review'}
                       </Badge>
                     </td>
                     <td className="border p-2 text-sm text-muted-foreground">
