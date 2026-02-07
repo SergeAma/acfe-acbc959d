@@ -74,21 +74,24 @@ export const VerifyCertificate = () => {
           }
         }
 
-        // Fetch student name separately using student_id
+        // Fetch student name using the student_id from the certificate
         const { data: certWithStudent } = await supabase
           .from('course_certificates')
           .select('student_id')
           .eq('certificate_number', certificateId.trim())
           .single();
 
-        let studentName = 'Certificate Holder';
+        let studentName = 'Unknown';
         if (certWithStudent?.student_id) {
-          // Use RPC to get public profile data safely
+          // Query the public profiles view directly for the student
           const { data: studentData } = await supabase
-            .rpc('get_public_mentor_profile', { mentor_id: certWithStudent.student_id });
+            .from('profiles_public')
+            .select('full_name')
+            .eq('id', certWithStudent.student_id)
+            .single();
           
-          if (studentData && studentData.length > 0) {
-            studentName = studentData[0].full_name || 'Certificate Holder';
+          if (studentData?.full_name) {
+            studentName = studentData.full_name;
           }
         }
 
