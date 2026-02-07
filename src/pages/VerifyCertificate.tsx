@@ -83,15 +83,12 @@ export const VerifyCertificate = () => {
 
         let studentName = 'Unknown';
         if (certWithStudent?.student_id) {
-          // Query the public profiles view directly for the student
-          const { data: studentData } = await supabase
-            .from('profiles_public')
-            .select('full_name')
-            .eq('id', certWithStudent.student_id)
-            .single();
+          // Use secure RPC function to get certificate holder name
+          const { data: nameData } = await supabase
+            .rpc('get_certificate_holder_name', { p_student_id: certWithStudent.student_id });
           
-          if (studentData?.full_name) {
-            studentName = studentData.full_name;
+          if (nameData) {
+            studentName = nameData;
           }
         }
 

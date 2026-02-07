@@ -3403,6 +3403,10 @@ export type Database = {
           skills: string[]
         }[]
       }
+      get_certificate_holder_name: {
+        Args: { p_student_id: string }
+        Returns: string
+      }
       get_conversation_messages: {
         Args: { _partner_id: string; _user_id: string }
         Returns: {
