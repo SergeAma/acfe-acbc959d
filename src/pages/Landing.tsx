@@ -59,6 +59,32 @@ export const Landing = () => {
         </div>
       </section>
 
+      {/* Community CTA Section */}
+      <section className="py-10 sm:py-16 bg-primary text-primary-foreground">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
+              Join our mentor-led community of 300+ learners and accelerate your career in tech!
+            </h2>
+            <p className="text-base sm:text-lg opacity-90 mb-6 sm:mb-8">
+              Zero experience required | Any background | Start Anytime
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+              <Link to="/auth?mode=signup&role=student">
+                <Button size="lg" variant="secondary" className="w-full sm:w-auto text-base sm:text-lg px-8 sm:px-10 rounded-full font-semibold">
+                  START LEARNING
+                </Button>
+              </Link>
+              <Link to="/auth?mode=signup&role=mentor">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto text-base sm:text-lg px-8 sm:px-10 rounded-full font-semibold border-2 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary">
+                  BECOME A MENTOR
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section className="py-12 sm:py-20 bg-background">
         <div className="container mx-auto px-4">
