@@ -309,7 +309,9 @@ export const SubscriptionStatus = () => {
                       : 'Renews on'}
                 </span>
                 <span className="font-medium">
-                  {new Date(subscription.current_period_end).toLocaleDateString()}
+                  {subscription.current_period_end 
+                    ? new Date(subscription.current_period_end).toLocaleDateString()
+                    : 'N/A'}
                 </span>
               </div>
 
@@ -389,7 +391,7 @@ export const SubscriptionStatus = () => {
             <AlertDialogDescription className="space-y-2">
               <p>
                 Your subscription will remain active until the end of your current billing period on{' '}
-                <strong>{subscriptionToCancel ? new Date(subscriptionToCancel.current_period_end).toLocaleDateString() : ''}</strong>.
+                <strong>{subscriptionToCancel?.current_period_end ? new Date(subscriptionToCancel.current_period_end).toLocaleDateString() : 'your billing date'}</strong>.
               </p>
               <p>
                 After that date, you'll lose access to premium content. You can resubscribe anytime.
