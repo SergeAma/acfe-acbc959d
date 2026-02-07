@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const heroMedia = [
   { video: '/videos/hero-background.mp4', poster: '/images/hero-poster-main.jpg' },
@@ -10,18 +11,10 @@ const heroMedia = [
 export const HeroVideoBackground = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [videosLoaded, setVideosLoaded] = useState<boolean[]>(new Array(heroMedia.length).fill(false));
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile();
   const [isInViewport, setIsInViewport] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
-
-  // Detect mobile devices
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   // Intersection Observer for viewport visibility
   useEffect(() => {
@@ -52,16 +45,14 @@ export const HeroVideoBackground = () => {
     });
   }, [isInViewport, activeIndex, isMobile]);
 
-  // Interval-based crossfade
+  // Interval-based crossfade (works for both mobile posters and desktop videos)
   useEffect(() => {
-    if (isMobile) return;
-
     const interval = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % heroMedia.length);
     }, 8000);
 
     return () => clearInterval(interval);
-  }, [isMobile]);
+  }, []);
 
   // Handle video load events
   const handleLoadedData = useCallback((index: number) => {
