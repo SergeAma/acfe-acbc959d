@@ -8,7 +8,7 @@ const EMAIL_TEST_CASES = [
   { type: 'magic-link', data: { userEmail: ADMIN_EMAIL, magicLink: 'https://acloudforeveryone.org/auth?token=test123' } },
   { type: 'password-reset', data: { userEmail: ADMIN_EMAIL, magicLink: 'https://acloudforeveryone.org/reset?token=test123' } },
   { type: 'email-confirmation', data: { userEmail: ADMIN_EMAIL, magicLink: 'https://acloudforeveryone.org/confirm?token=test123' } },
-  { type: 'payment-confirmation', data: { itemName: 'Cloud Fundamentals Course', amount: 4999, currency: 'usd', receiptUrl: 'https://stripe.com/receipt/test' } },
+  { type: 'payment-confirmation', data: { amount: 5000, currency: 'usd', receiptUrl: 'https://acloudforeveryone.org/receipt/test123', itemName: 'Premium Course Access' } },
   { type: 'subscription-created', data: { userName: 'Test User', planName: 'Monthly Pro', amount: '$19.99/month', nextBillingDate: '2026-03-07' } },
   { type: 'subscription-renewed', data: { userName: 'Test User', planName: 'Monthly Pro', amount: '$19.99/month', nextBillingDate: '2026-03-07' } },
   { type: 'subscription-ending', data: { userName: 'Test User', planName: 'Monthly Pro', endDate: '2026-02-14', renewUrl: 'https://acloudforeveryone.org/pricing' } },
