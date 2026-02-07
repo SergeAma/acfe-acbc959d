@@ -382,6 +382,23 @@ export const translations = {
     }
   },
   
+  admin: {
+    newStudent: {
+      subject: { 
+        en: 'New Student Signup: {{studentName}}', 
+        fr: 'Nouvelle Inscription: {{studentName}}' 
+      },
+      body: { 
+        en: 'A new student has joined ACFE:\n\nName: {{studentName}}\nEmail: {{studentEmail}}\nSigned up: {{signupDate}}', 
+        fr: 'Un nouvel étudiant a rejoint ACFE:\n\nNom: {{studentName}}\nEmail: {{studentEmail}}\nInscription: {{signupDate}}' 
+      },
+      cta: { 
+        en: 'View in Admin Panel', 
+        fr: 'Voir dans Panel Admin' 
+      }
+    }
+  },
+  
   common: {
     regards: { 
       en: 'Best regards,\nThe ACFE Team', 
