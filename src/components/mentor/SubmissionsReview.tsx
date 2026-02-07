@@ -5,9 +5,36 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { MessageSquare, CheckCircle, XCircle, Clock, ExternalLink } from 'lucide-react';
+import { 
+  MessageSquare, CheckCircle, XCircle, Clock, ExternalLink, 
+  Youtube, FolderOpen, Send, RotateCcw
+} from 'lucide-react';
+
+interface AssignmentSubmission {
+  id: string;
+  assignment_id: string;
+  student_id: string;
+  enrollment_id: string;
+  video_url: string | null;
+  status: string;
+  submitted_at: string;
+  reviewed_at: string | null;
+  mentor_feedback: string | null;
+  student: {
+    full_name: string | null;
+    email: string;
+  } | null;
+  assignment: {
+    title: string;
+    course: {
+      id: string;
+      title: string;
+    };
+  } | null;
+}
 
 interface QuizAnswer {
   id: string;
@@ -35,15 +62,20 @@ interface QuizAnswer {
   };
 }
 
-const GOOGLE_FORM_RESPONSES_URL = 'https://docs.google.com/forms/d/1UNC2B8aRJzQX2xOZmeEsGiwmq7o2viwgL-ALx01ZYLs/edit#responses';
-
 export const SubmissionsReview = () => {
   const { profile } = useAuth();
+  const [assignmentSubmissions, setAssignmentSubmissions] = useState<AssignmentSubmission[]>([]);
   const [quizAnswers, setQuizAnswers] = useState<QuizAnswer[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Quiz grading state
   const [selectedQuizAnswer, setSelectedQuizAnswer] = useState<QuizAnswer | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [pointsEarned, setPointsEarned] = useState<number>(0);
+  
+  // Assignment review state
+  const [selectedSubmission, setSelectedSubmission] = useState<AssignmentSubmission | null>(null);
+  const [feedbackText, setFeedbackText] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -54,6 +86,33 @@ export const SubmissionsReview = () => {
     if (!profile?.id) return;
 
     setLoading(true);
+
+    // Fetch assignment submissions for mentor's courses
+    const { data: submissions } = await supabase
+      .from('assignment_submissions')
+      .select(`
+        id,
+        assignment_id,
+        student_id,
+        enrollment_id,
+        video_url,
+        status,
+        submitted_at,
+        reviewed_at,
+        mentor_feedback,
+        student:profiles!assignment_submissions_student_id_fkey(full_name, email),
+        assignment:course_assignments!assignment_submissions_assignment_id_fkey(
+          title,
+          course:courses!course_assignments_course_id_fkey(id, title, mentor_id)
+        )
+      `)
+      .order('submitted_at', { ascending: false });
+
+    // Filter to only mentor's courses
+    const mentorSubmissions = (submissions || []).filter(
+      (sub: any) => sub.assignment?.course?.mentor_id === profile.id
+    );
+    setAssignmentSubmissions(mentorSubmissions as AssignmentSubmission[]);
 
     // Fetch ungraded short-answer quiz responses for mentor's courses
     const { data: answers } = await supabase
@@ -88,6 +147,90 @@ export const SubmissionsReview = () => {
     setLoading(false);
   };
 
+  const handleApproveSubmission = async (submission: AssignmentSubmission) => {
+    setSubmitting(true);
+    try {
+      // Update submission status to approved
+      const { error } = await supabase
+        .from('assignment_submissions')
+        .update({
+          status: 'approved',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: profile?.id,
+        })
+        .eq('id', submission.id);
+
+      if (error) throw error;
+
+      // Trigger certificate generation via edge function
+      const { error: certError } = await supabase.functions.invoke('send-course-completion-notification', {
+        body: {
+          enrollmentId: submission.enrollment_id,
+          courseId: submission.assignment?.course?.id,
+          studentId: submission.student_id,
+        }
+      });
+
+      if (certError) {
+        console.error('Certificate trigger error:', certError);
+      }
+
+      toast.success('Assignment approved! Certificate generation triggered.');
+      fetchSubmissions();
+    } catch (error: any) {
+      toast.error('Failed to approve: ' + error.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleNeedsRevision = async () => {
+    if (!selectedSubmission || !feedbackText.trim()) {
+      toast.error('Please provide feedback for the student');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // Update submission with feedback
+      const { error } = await supabase
+        .from('assignment_submissions')
+        .update({
+          status: 'needs_revision',
+          mentor_feedback: feedbackText,
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: profile?.id,
+        })
+        .eq('id', selectedSubmission.id);
+
+      if (error) throw error;
+
+      // Send feedback email to student
+      await supabase.functions.invoke('send-email', {
+        body: {
+          type: 'assignment-feedback',
+          to: selectedSubmission.student?.email,
+          data: {
+            studentName: selectedSubmission.student?.full_name || 'Learner',
+            courseName: selectedSubmission.assignment?.course?.title,
+            feedback: feedbackText,
+            mentorName: profile?.full_name,
+          },
+          userId: selectedSubmission.student_id,
+        }
+      });
+
+      toast.success('Feedback sent to student');
+      setSelectedSubmission(null);
+      setFeedbackText('');
+      fetchSubmissions();
+    } catch (error: any) {
+      toast.error('Failed to send feedback: ' + error.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleQuizAnswerGrade = async () => {
     if (!selectedQuizAnswer || !profile?.id || isCorrect === null) return;
 
@@ -107,10 +250,7 @@ export const SubmissionsReview = () => {
       toast.error('Failed to grade answer');
     } else {
       toast.success('Answer graded successfully');
-
-      // Check if all answers for this attempt are graded
       await updateAttemptScore(selectedQuizAnswer.attempt_id);
-
       setSelectedQuizAnswer(null);
       setIsCorrect(null);
       setPointsEarned(0);
@@ -121,7 +261,6 @@ export const SubmissionsReview = () => {
   };
 
   const updateAttemptScore = async (attemptId: string) => {
-    // Get all answers for this attempt
     const { data: allAnswers } = await supabase
       .from('quiz_answers')
       .select('is_correct, points_earned, question:quiz_questions!quiz_answers_question_id_fkey(points)')
@@ -129,16 +268,13 @@ export const SubmissionsReview = () => {
 
     if (!allAnswers) return;
 
-    // Check if all are graded
     const allGraded = allAnswers.every((a: any) => a.is_correct !== null);
     if (!allGraded) return;
 
-    // Calculate score
     const totalPoints = allAnswers.reduce((sum: number, a: any) => sum + (a.question?.points || 0), 0);
     const earnedPoints = allAnswers.reduce((sum: number, a: any) => sum + (a.points_earned || 0), 0);
     const scorePercentage = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
 
-    // Get quiz passing percentage
     const { data: attempt } = await supabase
       .from('quiz_attempts')
       .select('quiz:course_quizzes!quiz_attempts_quiz_id_fkey(passing_percentage)')
@@ -148,7 +284,6 @@ export const SubmissionsReview = () => {
     const passingPercentage = attempt?.quiz?.passing_percentage || 70;
     const passed = scorePercentage >= passingPercentage;
 
-    // Update attempt
     await supabase
       .from('quiz_attempts')
       .update({
@@ -159,7 +294,18 @@ export const SubmissionsReview = () => {
       .eq('id', attemptId);
   };
 
+  const getVideoIcon = (url: string | null) => {
+    if (!url) return null;
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      return <Youtube className="h-4 w-4 text-red-500" />;
+    }
+    return <FolderOpen className="h-4 w-4 text-blue-500" />;
+  };
+
+  const pendingAssignments = assignmentSubmissions.filter(s => s.status === 'pending');
+  const reviewedAssignments = assignmentSubmissions.filter(s => s.status !== 'pending');
   const pendingQuizAnswersCount = quizAnswers.length;
+  const totalPending = pendingAssignments.length + pendingQuizAnswersCount;
 
   if (loading) {
     return (
@@ -175,98 +321,293 @@ export const SubmissionsReview = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Student Submissions</h2>
-        {pendingQuizAnswersCount > 0 && (
+        {totalPending > 0 && (
           <Badge variant="secondary" className="text-sm">
-            {pendingQuizAnswersCount} pending review
+            {totalPending} pending review
           </Badge>
         )}
       </div>
 
-      {/* Google Form Responses Link */}
-      <Card className="bg-primary/5 border-primary/20">
-        <CardContent className="py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-sm">Assignment Submissions</p>
-              <p className="text-xs text-muted-foreground">
-                View and manage assignment submissions in Google Forms
-              </p>
-            </div>
-            <a
-              href={GOOGLE_FORM_RESPONSES_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button variant="outline" size="sm" className="gap-2">
-                <ExternalLink className="h-4 w-4" />
-                View Responses
-              </Button>
-            </a>
-          </div>
-        </CardContent>
-      </Card>
-
-      {pendingQuizAnswersCount === 0 ? (
+      {totalPending === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
             <h3 className="text-xl font-semibold mb-2">All caught up!</h3>
-            <p className="text-muted-foreground">No quiz answers need grading right now.</p>
+            <p className="text-muted-foreground">No submissions need review right now.</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            Quiz Answers
-            <Badge variant="destructive" className="h-5 min-w-[20px] flex items-center justify-center">
-              {pendingQuizAnswersCount}
-            </Badge>
+        <>
+          {/* Assignment Submissions Section */}
+          {pendingAssignments.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                Assignment Submissions
+                <Badge variant="destructive" className="h-5 min-w-[20px] flex items-center justify-center">
+                  {pendingAssignments.length}
+                </Badge>
+              </h3>
+              
+              {pendingAssignments.map((submission) => (
+                <Card key={submission.id}>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg">{submission.assignment?.course?.title}</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          {submission.assignment?.title}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        Pending Review
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <p className="font-medium">
+                          {submission.student?.full_name || 'Unknown Student'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {submission.student?.email}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Submitted: {new Date(submission.submitted_at).toLocaleString()}
+                        </p>
+                      </div>
+                      
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        {submission.video_url && (
+                          <a
+                            href={submission.video_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Button variant="outline" size="sm" className="gap-2 w-full sm:w-auto">
+                              {getVideoIcon(submission.video_url)}
+                              <ExternalLink className="h-3 w-3" />
+                              View Submission
+                            </Button>
+                          </a>
+                        )}
+                        <Button 
+                          size="sm" 
+                          className="gap-2 bg-green-600 hover:bg-green-700"
+                          onClick={() => handleApproveSubmission(submission)}
+                          disabled={submitting}
+                        >
+                          <CheckCircle className="h-4 w-4" />
+                          Mark as Passed
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="gap-2"
+                          onClick={() => {
+                            setSelectedSubmission(submission);
+                            setFeedbackText('');
+                          }}
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                          Needs Revision
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {/* Quiz Answers Section */}
+          {quizAnswers.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                Quiz Answers
+                <Badge variant="destructive" className="h-5 min-w-[20px] flex items-center justify-center">
+                  {pendingQuizAnswersCount}
+                </Badge>
+              </h3>
+              
+              {quizAnswers.map((answer) => (
+                <Card key={answer.id}>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg">{answer.question?.quiz?.title}</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          {answer.question?.quiz?.course?.title}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        Needs Grading
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="mb-3 p-3 bg-muted/50 rounded-lg">
+                      <p className="text-sm font-medium mb-1">Question:</p>
+                      <p className="text-sm">{answer.question?.question_text}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm">
+                        <span className="font-medium">
+                          {answer.attempt?.student?.full_name || 'Unknown'}
+                        </span>
+                        <span className="text-muted-foreground ml-2">
+                          ({answer.question?.points} points)
+                        </span>
+                      </div>
+                      <Button
+                        onClick={() => {
+                          setSelectedQuizAnswer(answer);
+                          setPointsEarned(answer.question?.points || 0);
+                        }}
+                      >
+                        Grade Answer
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Reviewed Assignments History */}
+      {reviewedAssignments.length > 0 && (
+        <div className="space-y-4 mt-8">
+          <h3 className="text-lg font-semibold text-muted-foreground">
+            Reviewed Submissions ({reviewedAssignments.length})
           </h3>
-          
-          {quizAnswers.map((answer) => (
-            <Card key={answer.id}>
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-lg">{answer.question?.quiz?.title}</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      {answer.question?.quiz?.course?.title}
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    Needs Grading
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-3 p-3 bg-muted/50 rounded-lg">
-                  <p className="text-sm font-medium mb-1">Question:</p>
-                  <p className="text-sm">{answer.question?.question_text}</p>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="text-sm">
-                    <span className="font-medium">
-                      {answer.attempt?.student?.full_name || 'Unknown'}
-                    </span>
-                    <span className="text-muted-foreground ml-2">
-                      ({answer.question?.points} points)
-                    </span>
-                  </div>
-                  <Button
-                    onClick={() => {
-                      setSelectedQuizAnswer(answer);
-                      setPointsEarned(answer.question?.points || 0);
-                    }}
-                  >
-                    Grade Answer
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead className="bg-muted">
+                <tr>
+                  <th className="border p-2 text-left text-sm">Student</th>
+                  <th className="border p-2 text-left text-sm">Course</th>
+                  <th className="border p-2 text-left text-sm">Submission</th>
+                  <th className="border p-2 text-left text-sm">Status</th>
+                  <th className="border p-2 text-left text-sm">Reviewed</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reviewedAssignments.slice(0, 10).map((submission) => (
+                  <tr key={submission.id} className="hover:bg-muted/50">
+                    <td className="border p-2 text-sm">{submission.student?.full_name || 'Unknown'}</td>
+                    <td className="border p-2 text-sm">{submission.assignment?.course?.title}</td>
+                    <td className="border p-2">
+                      {submission.video_url && (
+                        <a
+                          href={submission.video_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline text-sm flex items-center gap-1"
+                        >
+                          {getVideoIcon(submission.video_url)}
+                          View
+                        </a>
+                      )}
+                    </td>
+                    <td className="border p-2">
+                      <Badge 
+                        variant={submission.status === 'approved' ? 'default' : 'outline'}
+                        className={submission.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
+                      >
+                        {submission.status === 'approved' ? 'Passed' : 'Needs Revision'}
+                      </Badge>
+                    </td>
+                    <td className="border p-2 text-sm text-muted-foreground">
+                      {submission.reviewed_at 
+                        ? new Date(submission.reviewed_at).toLocaleDateString()
+                        : '-'
+                      }
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
+
+      {/* Feedback Dialog for Needs Revision */}
+      <Dialog open={!!selectedSubmission} onOpenChange={() => setSelectedSubmission(null)}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Request Revision</DialogTitle>
+          </DialogHeader>
+
+          {selectedSubmission && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-muted-foreground">Student</Label>
+                <p className="font-medium">
+                  {selectedSubmission.student?.full_name || 'Unknown'}
+                </p>
+              </div>
+
+              <div>
+                <Label className="text-muted-foreground">Course</Label>
+                <p className="font-medium">
+                  {selectedSubmission.assignment?.course?.title}
+                </p>
+              </div>
+
+              {selectedSubmission.video_url && (
+                <div>
+                  <Label className="text-muted-foreground">Submission</Label>
+                  <a
+                    href={selectedSubmission.video_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-primary hover:underline mt-1"
+                  >
+                    {getVideoIcon(selectedSubmission.video_url)}
+                    <ExternalLink className="h-3 w-3" />
+                    View Submission
+                  </a>
+                </div>
+              )}
+
+              <div>
+                <Label htmlFor="feedback" className="text-muted-foreground">
+                  Feedback for Student *
+                </Label>
+                <Textarea
+                  id="feedback"
+                  value={feedbackText}
+                  onChange={(e) => setFeedbackText(e.target.value)}
+                  placeholder="Explain what needs to be improved..."
+                  rows={4}
+                  className="mt-2"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  This feedback will be emailed to the student
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedSubmission(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleNeedsRevision}
+              disabled={submitting || !feedbackText.trim()}
+              className="gap-2"
+            >
+              <Send className="h-4 w-4" />
+              Send Feedback
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Quiz Answer Grading Dialog */}
       <Dialog open={!!selectedQuizAnswer} onOpenChange={() => setSelectedQuizAnswer(null)}>

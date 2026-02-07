@@ -131,7 +131,8 @@ Deno.serve(async (req) => {
       case 'mentor-rejected':
       case 'mentor-request-confirmation':
       case 'mentor-assignment-submitted':
-      case 'assignment-submission-confirmation': {
+      case 'assignment-submission-confirmation':
+      case 'assignment-feedback': {
         const result = buildMentorEmail(type, data, language);
         subject = result.subject;
         html = result.html;
