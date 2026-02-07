@@ -2,11 +2,11 @@ const HERO_IMAGE = '/images/hero-intro-static.jpg';
 
 export const HeroVideoBackground = () => {
   return (
-    <div className="w-full h-full bg-[hsl(30,15%,12%)] flex items-center justify-center">
+    <div className="w-full h-[calc(100vh-4rem)] min-h-[400px] max-h-[800px]">
       <img
         src={HERO_IMAGE}
         alt="African students"
-        className="w-full h-full object-contain"
+        className="w-full h-full object-cover object-top"
       />
     </div>
   );
