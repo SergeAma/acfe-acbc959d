@@ -162,6 +162,41 @@ export const SubmissionsReview = () => {
 
       if (error) throw error;
 
+      // Create in-app notification for student (approval)
+      const courseName = submission.assignment?.course?.title || 'your course';
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: submission.student_id,
+          message: `Congratulations! Your assignment for "${courseName}" has been approved.`,
+          link: '/my-certificates',
+          action_type: 'info',
+          action_reference_id: submission.id,
+        });
+
+      if (notificationError) {
+        console.error('Failed to create notification:', notificationError);
+      }
+
+      // Send approval email to student
+      try {
+        await supabase.functions.invoke('send-email', {
+          body: {
+            type: 'assignment-approved',
+            to: submission.student?.email,
+            data: {
+              studentName: submission.student?.full_name || 'Learner',
+              courseName: submission.assignment?.course?.title,
+              mentorName: profile?.full_name,
+            },
+            userId: submission.student_id,
+          }
+        });
+      } catch (emailError) {
+        console.error('Failed to send approval email:', emailError);
+        // Continue - email failure shouldn't block the workflow
+      }
+
       // Trigger certificate generation via edge function
       const { error: certError } = await supabase.functions.invoke('send-course-completion-notification', {
         body: {

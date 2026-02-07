@@ -20,7 +20,8 @@ export type MentorEmailType =
   | 'mentor-request-confirmation'
   | 'mentor-assignment-submitted'
   | 'assignment-submission-confirmation'
-  | 'assignment-feedback';
+  | 'assignment-feedback'
+  | 'assignment-approved';
 
 export function buildMentorEmail(
   type: MentorEmailType,
@@ -202,6 +203,37 @@ export function buildMentorEmail(
         `,
         ctaText: language === 'en' ? 'Resubmit Assignment' : 'Soumettre à nouveau',
         ctaUrl: 'https://acloudforeveryone.org/dashboard',
+        language
+      });
+      return { subject, html };
+    }
+
+    case 'assignment-approved': {
+      const subject = language === 'en'
+        ? `Congratulations! Assignment Approved: ${data.courseName}`
+        : `Félicitations ! Devoir approuvé : ${data.courseName}`;
+      
+      const html = buildCanonicalTemplate({
+        greeting: getGreeting(data.studentName || 'Learner', language),
+        bodyContent: `
+          <p>${language === 'en'
+            ? `Great news! Your mentor, <strong>${data.mentorName}</strong>, has approved your assignment for <strong>${data.courseName}</strong>.`
+            : `Bonne nouvelle ! Votre mentor, <strong>${data.mentorName}</strong>, a approuvé votre devoir pour <strong>${data.courseName}</strong>.`
+          }</p>
+          <div style="background-color: #f0fdf4; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #22c55e;">
+            <p style="margin: 0; color: #166534; font-weight: 600;">${language === 'en'
+              ? '✓ Assignment Approved!'
+              : '✓ Devoir approuvé !'
+            }</p>
+          </div>
+          <p>${language === 'en'
+            ? 'Your certificate is being generated and will be available in your dashboard shortly. You can download and share it to showcase your achievement.'
+            : 'Votre certificat est en cours de génération et sera bientôt disponible dans votre tableau de bord. Vous pourrez le télécharger et le partager pour mettre en valeur votre réussite.'
+          }</p>
+          <p>${getText('common.regards', language).replace(/\n/g, '<br>')}</p>
+        `,
+        ctaText: language === 'en' ? 'View My Certificates' : 'Voir mes certificats',
+        ctaUrl: 'https://acloudforeveryone.org/my-certificates',
         language
       });
       return { subject, html };
