@@ -24,7 +24,7 @@ export const Landing = () => {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative w-full aspect-[16/9] md:aspect-[21/9] max-h-[80vh]">
+      <section className="relative w-full bg-[hsl(30,15%,12%)]">
         <HeroVideoBackground />
       </section>
 
