@@ -1,4 +1,4 @@
-import { verifyAdmin, corsHeaders } from '../_shared/auth.ts';
+import { verifyServiceRole, corsHeaders } from '../_shared/auth.ts';
 
 const ADMIN_EMAIL = 'serge@acloudforeveryone.org';
 
@@ -8,7 +8,7 @@ const EMAIL_TEST_CASES = [
   { type: 'magic-link', data: { userEmail: ADMIN_EMAIL, magicLink: 'https://acloudforeveryone.org/auth?token=test123' } },
   { type: 'password-reset', data: { userEmail: ADMIN_EMAIL, magicLink: 'https://acloudforeveryone.org/reset?token=test123' } },
   { type: 'email-confirmation', data: { userEmail: ADMIN_EMAIL, magicLink: 'https://acloudforeveryone.org/confirm?token=test123' } },
-  { type: 'payment-confirmation', data: { userName: 'Test User', courseName: 'Cloud Fundamentals', amount: '$49.99', receiptUrl: 'https://stripe.com/receipt/test' } },
+  { type: 'payment-confirmation', data: { itemName: 'Cloud Fundamentals Course', amount: 4999, currency: 'usd', receiptUrl: 'https://stripe.com/receipt/test' } },
   { type: 'subscription-created', data: { userName: 'Test User', planName: 'Monthly Pro', amount: '$19.99/month', nextBillingDate: '2026-03-07' } },
   { type: 'subscription-renewed', data: { userName: 'Test User', planName: 'Monthly Pro', amount: '$19.99/month', nextBillingDate: '2026-03-07' } },
   { type: 'subscription-ending', data: { userName: 'Test User', planName: 'Monthly Pro', endDate: '2026-02-14', renewUrl: 'https://acloudforeveryone.org/pricing' } },
@@ -34,15 +34,22 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify admin access
-    await verifyAdmin(req);
+    // Allow service role key for direct invocation
+    await verifyServiceRole(req);
+    
+    // Parse optional override email
+    let targetEmail = ADMIN_EMAIL;
+    try {
+      const body = await req.json();
+      if (body.adminEmail) targetEmail = body.adminEmail;
+    } catch { /* use default */ }
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
     const results: Array<{ type: string; success: boolean; error?: string }> = [];
     
-    console.log(`[TEST-ALL-EMAILS] Starting to send ${EMAIL_TEST_CASES.length} test emails to ${ADMIN_EMAIL}`);
+    console.log(`[TEST-ALL-EMAILS] Starting to send ${EMAIL_TEST_CASES.length} test emails to ${targetEmail}`);
     
     // Send each email type
     for (const testCase of EMAIL_TEST_CASES) {
@@ -57,7 +64,7 @@ Deno.serve(async (req) => {
           },
           body: JSON.stringify({
             type: testCase.type,
-            to: ADMIN_EMAIL,
+            to: targetEmail,
             data: testCase.data,
             subjectOverride: `[TEST] ${testCase.type.toUpperCase()}`
           })
