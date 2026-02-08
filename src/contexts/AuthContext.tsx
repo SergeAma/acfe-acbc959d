@@ -21,6 +21,7 @@ interface Profile {
   instagram_url: string | null;
   github_url: string | null;
   website_url: string | null;
+  welcome_email_sent_at: string | null;
 }
 
 // Pending signup data stored temporarily until OTP verification
@@ -73,9 +74,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Session storage key for pending signup data
-const PENDING_SIGNUP_KEY = 'acfe_pending_signup';
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -121,21 +119,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isSimulating = isActualAdmin && simulatedRole !== null;
 
-  // Load pending signup from sessionStorage on init
-  useEffect(() => {
-    try {
-      const stored = sessionStorage.getItem(PENDING_SIGNUP_KEY);
-      if (stored) {
-        setPendingSignup(JSON.parse(stored));
-      }
-    } catch {
-      // Ignore parse errors
-    }
-  }, []);
-
   const clearPendingSignup = () => {
     setPendingSignup(null);
-    sessionStorage.removeItem(PENDING_SIGNUP_KEY);
   };
 
   const fetchProfile = async (userId: string, force = false) => {
@@ -277,22 +262,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 if (mounted && profileData) setProfile(profileData);
                 
                 // Send welcome email for NEW users (first sign-in after email confirmation)
-                // Check if this is from a pending signup (new user registration)
-                const storedSignup = sessionStorage.getItem(PENDING_SIGNUP_KEY);
-                if (storedSignup) {
+                // Check URL params for new signup indicator (cross-context safe)
+                const urlParams = new URLSearchParams(window.location.search);
+                const isNewSignup = urlParams.get('new_signup') === 'true';
+                
+                if (isNewSignup && profileData && !profileData.welcome_email_sent_at) {
                   try {
-                    const signupData = JSON.parse(storedSignup);
+                    // Extract signup data from URL params
+                    const fullName = urlParams.get('full_name') || currentSession.user.email;
+                    const preferredLanguage = urlParams.get('preferred_language') || 'en';
+                    
                     // Send welcome email via edge function
                     await supabase.functions.invoke('send-email', {
                       body: {
                         type: 'welcome',
                         to: currentSession.user.email,
                         data: {
-                          userName: signupData.fullName || currentSession.user.email,
+                          userName: fullName,
                           userEmail: currentSession.user.email
                         },
                         userId: currentSession.user.id,
-                        language: signupData.preferredLanguage || 'en'
+                        language: preferredLanguage
                       }
                     });
                     
@@ -302,7 +292,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         type: 'admin-new-student',
                         to: 'serge@acloudforeveryone.org',
                         data: {
-                          studentName: signupData.fullName || currentSession.user.email,
+                          studentName: fullName,
                           studentEmail: currentSession.user.email,
                           signupDate: new Date().toISOString().replace('T', ' ').substring(0, 19)
                         },
@@ -310,14 +300,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                       }
                     });
                     
+                    // Mark welcome email as sent in database (prevents duplicates)
+                    await supabase
+                      .from('profiles')
+                      .update({ welcome_email_sent_at: new Date().toISOString() })
+                      .eq('id', currentSession.user.id);
+                    
                     console.log('[AUTH] Welcome emails sent successfully');
                   } catch (emailError) {
                     // Email failure is non-critical
                     console.warn('[AUTH] Welcome email failed:', emailError);
                   }
-                  // Clear pending signup after sending emails
-                  sessionStorage.removeItem(PENDING_SIGNUP_KEY);
-                  setPendingSignup(null);
+                  
+                  // Clean URL after processing (remove signup params)
+                  window.history.replaceState({}, '', window.location.pathname);
                 }
               }
             }, 100);
@@ -405,7 +401,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error: null };
   };
 
-  // Sign up with OTP - stores data and sends verification code
+  // Sign up with OTP - encodes data in URL and sends verification code
   const signUpWithOtp = async (
     email: string, 
     fullName: string, 
@@ -417,7 +413,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     preferredLanguage: 'en' | 'fr' = 'en', 
     gender?: 'male' | 'female'
   ) => {
-    // Store pending signup data in sessionStorage
+    // Store pending signup data in state (for UI feedback during this session)
     const signupData: PendingSignupData = {
       email,
       fullName,
@@ -430,18 +426,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       gender,
     };
     
-    sessionStorage.setItem(PENDING_SIGNUP_KEY, JSON.stringify(signupData));
     setPendingSignup(signupData);
 
-    // Get redirect URL for magic link
-    const redirectUrl = `${window.location.origin}/auth`;
+    // Encode signup data in URL for cross-context transfer (survives browser/device changes)
+    const signupParams = new URLSearchParams({
+      new_signup: 'true',
+      full_name: fullName,
+      preferred_language: preferredLanguage || 'en',
+    });
+    const redirectUrl = `${window.location.origin}/auth?${signupParams.toString()}`;
     
     // Send magic link to the user's email (this creates the user in Supabase)
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
         shouldCreateUser: true, // Create user on signup flow
-        emailRedirectTo: redirectUrl, // Redirect to auth page after clicking link
+        emailRedirectTo: redirectUrl, // Redirect to auth page with signup params
         data: {
           full_name: fullName,
         },

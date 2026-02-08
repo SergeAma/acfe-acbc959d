@@ -2670,6 +2670,7 @@ export type Database = {
           university: string | null
           updated_at: string | null
           website_url: string | null
+          welcome_email_sent_at: string | null
         }
         Insert: {
           account_status?: string
@@ -2694,6 +2695,7 @@ export type Database = {
           university?: string | null
           updated_at?: string | null
           website_url?: string | null
+          welcome_email_sent_at?: string | null
         }
         Update: {
           account_status?: string
@@ -2718,6 +2720,7 @@ export type Database = {
           university?: string | null
           updated_at?: string | null
           website_url?: string | null
+          welcome_email_sent_at?: string | null
         }
         Relationships: []
       }
