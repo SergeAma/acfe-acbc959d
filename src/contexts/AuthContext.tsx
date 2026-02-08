@@ -261,58 +261,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const profileData = await fetchProfile(currentSession.user.id);
                 if (mounted && profileData) setProfile(profileData);
                 
-                // Send welcome email for NEW users (first sign-in after email confirmation)
-                // Check URL params for new signup indicator (cross-context safe)
+                // Clean URL params if present (legacy cleanup)
                 const urlParams = new URLSearchParams(window.location.search);
-                const isNewSignup = urlParams.get('new_signup') === 'true';
-                
-                if (isNewSignup && profileData && !profileData.welcome_email_sent_at) {
-                  try {
-                    // Extract signup data from URL params
-                    const fullName = urlParams.get('full_name') || currentSession.user.email;
-                    const preferredLanguage = urlParams.get('preferred_language') || 'en';
-                    
-                    // Send welcome email via edge function
-                    await supabase.functions.invoke('send-email', {
-                      body: {
-                        type: 'welcome',
-                        to: currentSession.user.email,
-                        data: {
-                          userName: fullName,
-                          userEmail: currentSession.user.email
-                        },
-                        userId: currentSession.user.id,
-                        language: preferredLanguage
-                      }
-                    });
-                    
-                    // Also notify admin of new student
-                    await supabase.functions.invoke('send-email', {
-                      body: {
-                        type: 'admin-new-student',
-                        to: 'serge@acloudforeveryone.org',
-                        data: {
-                          studentName: fullName,
-                          studentEmail: currentSession.user.email,
-                          signupDate: new Date().toISOString().replace('T', ' ').substring(0, 19)
-                        },
-                        language: 'en'
-                      }
-                    });
-                    
-                    // Mark welcome email as sent in database (prevents duplicates)
-                    await supabase
-                      .from('profiles')
-                      .update({ welcome_email_sent_at: new Date().toISOString() })
-                      .eq('id', currentSession.user.id);
-                    
-                    console.log('[AUTH] Welcome emails sent successfully');
-                  } catch (emailError) {
-                    // Email failure is non-critical
-                    console.warn('[AUTH] Welcome email failed:', emailError);
-                  }
-                  
-                  // Clean URL after processing (remove signup params)
+                if (urlParams.get('new_signup')) {
                   window.history.replaceState({}, '', window.location.pathname);
                 }
               }

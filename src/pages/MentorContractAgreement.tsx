@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useWelcomeEmail } from "@/hooks/useWelcomeEmail";
 import { Navbar } from "@/components/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,9 +17,10 @@ import { FileSignature, Shield, AlertTriangle, CheckCircle2, Loader2, Heart } fr
 
 export default function MentorContractAgreement() {
   const { user, profile, loading: authLoading, refreshProfile } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { sendWelcomeEmail } = useWelcomeEmail();
   
   const [conditions, setConditions] = useState<Record<string, boolean>>({});
   const [signatureName, setSignatureName] = useState("");
@@ -153,6 +155,15 @@ export default function MentorContractAgreement() {
 
       if (error) throw error;
 
+      // Send welcome email after successful contract signing
+      await sendWelcomeEmail({
+        userId: user.id,
+        userEmail: user.email || '',
+        fullName: profile?.full_name || signatureName.trim() || user.email || '',
+        preferredLanguage: language,
+        role: 'mentor'
+      });
+
       await refreshProfile();
 
       toast({
@@ -161,11 +172,12 @@ export default function MentorContractAgreement() {
       });
 
       navigate('/dashboard');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error signing contract:", error);
+      const message = error instanceof Error ? error.message : "Please try again";
       toast({
         title: "Failed to Sign Contract",
-        description: error.message || "Please try again",
+        description: message,
         variant: "destructive",
       });
     } finally {
