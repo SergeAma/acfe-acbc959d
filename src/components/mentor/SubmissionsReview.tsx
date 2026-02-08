@@ -178,20 +178,24 @@ export const SubmissionsReview = () => {
         console.error('Failed to create notification:', notificationError);
       }
 
-      // Send approval email to student
+      // Send approval email to student via service-role wrapper
       try {
-        await supabase.functions.invoke('send-email', {
+        console.log('[SubmissionsReview] Sending assignment-approved email to:', submission.student?.email);
+        const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-assignment-notification', {
           body: {
             type: 'assignment-approved',
-            to: submission.student?.email,
-            data: {
-              studentName: submission.student?.full_name || 'Learner',
-              courseName: submission.assignment?.course?.title,
-              mentorName: profile?.full_name,
-            },
-            userId: submission.student_id,
+            studentEmail: submission.student?.email,
+            studentName: submission.student?.full_name || 'Learner',
+            studentId: submission.student_id,
+            courseName: submission.assignment?.course?.title,
+            mentorName: profile?.full_name,
           }
         });
+        if (emailError) {
+          console.error('Failed to send approval email:', emailError);
+        } else {
+          console.log('[SubmissionsReview] Approval email sent:', emailResult);
+        }
       } catch (emailError) {
         console.error('Failed to send approval email:', emailError);
         // Continue - email failure shouldn't block the workflow
@@ -257,20 +261,24 @@ export const SubmissionsReview = () => {
         // Continue - notification failure shouldn't block the workflow
       }
 
-      // Send feedback email to student
-      await supabase.functions.invoke('send-email', {
+      // Send feedback email to student via service-role wrapper
+      console.log('[SubmissionsReview] Sending assignment-feedback email to:', selectedSubmission.student?.email);
+      const { data: feedbackEmailResult, error: feedbackEmailError } = await supabase.functions.invoke('send-assignment-notification', {
         body: {
           type: 'assignment-feedback',
-          to: selectedSubmission.student?.email,
-          data: {
-            studentName: selectedSubmission.student?.full_name || 'Learner',
-            courseName: selectedSubmission.assignment?.course?.title,
-            feedback: feedbackText,
-            mentorName: profile?.full_name,
-          },
-          userId: selectedSubmission.student_id,
+          studentEmail: selectedSubmission.student?.email,
+          studentName: selectedSubmission.student?.full_name || 'Learner',
+          studentId: selectedSubmission.student_id,
+          courseName: selectedSubmission.assignment?.course?.title,
+          mentorName: profile?.full_name,
+          feedback: feedbackText,
         }
       });
+      if (feedbackEmailError) {
+        console.error('Failed to send feedback email:', feedbackEmailError);
+      } else {
+        console.log('[SubmissionsReview] Feedback email sent:', feedbackEmailResult);
+      }
 
       toast.success('Feedback sent to student');
       setSelectedSubmission(null);

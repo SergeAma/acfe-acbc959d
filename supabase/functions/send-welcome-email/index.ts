@@ -116,7 +116,38 @@ const handler = async (req: Request): Promise<Response> => {
             to: email,
             data: {
               userName: safeFirstName,
-              userEmail: email
+              userEmail: email,
+              heading: lang === 'fr' ? 'Bienvenue' : 'Welcome, there',
+              introText: lang === 'fr' 
+                ? "Merci d'avoir rejoint A Cloud for Everyone. Nous sommes ravis de vous accueillir dans notre communauté d'apprenants qui développent les compétences numériques nécessaires pour réussir dans le monde technologique d'aujourd'hui."
+                : "Thank you for joining A Cloud for Everyone. We're thrilled to have you in our community of learners building the digital skills needed to thrive in today's tech-driven world.",
+              gettingStartedTitle: lang === 'fr' ? 'Pour commencer' : 'Getting started',
+              gettingStartedItems: lang === 'fr' 
+                ? [
+                    'Parcourez nos cours et inscrivez-vous à ceux qui correspondent à vos objectifs',
+                    'Connectez-vous avec des mentors qui peuvent guider votre parcours',
+                    'Complétez votre profil pour aider les mentors à comprendre votre parcours'
+                  ]
+                : [
+                    'Browse our courses and enroll in ones that match your goals',
+                    'Connect with mentors who can guide your learning journey',
+                    'Complete your profile to help mentors understand your background'
+                  ],
+              calloutText: lang === 'fr'
+                ? "Vous avez une idée de startup ? Soumettez-la via notre Incubateur d'Innovateurs pour du mentorat et jusqu'à 1000$ de financement."
+                : 'Have a startup idea? Submit it through our Innovators Incubator for mentorship and up to $1000 in funding.',
+              ctaButtons: [
+                { 
+                  text: lang === 'fr' ? 'Explorer les cours' : 'Explore Courses', 
+                  url: 'https://acloudforeveryone.org/courses' 
+                },
+                { 
+                  text: lang === 'fr' ? 'Soumettre une idée' : 'Submit an Idea', 
+                  url: 'https://acloudforeveryone.org/submit-idea' 
+                }
+              ],
+              closingText: lang === 'fr' ? "Il y a un nuage pour tout le monde." : "There's a cloud for everyone.",
+              signature: lang === 'fr' ? "L'Équipe ACFE" : 'The ACFE Team'
             },
             userId: user_id,
             language: lang
