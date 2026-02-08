@@ -97,8 +97,11 @@ const handler = async (req: Request): Promise<Response> => {
     const safeEmail = escapeHtml(email);
 
     // ========================================
-    // NEW: Call centralized send-email function
+    // Call centralized send-email function with service role key
     // ========================================
+    let emailSent = false;
+    let emailError: string | null = null;
+    
     try {
       const emailResponse = await fetch(
         `${supabaseUrl}/functions/v1/send-email`,
@@ -124,14 +127,24 @@ const handler = async (req: Request): Promise<Response> => {
       if (!emailResponse.ok) {
         const errorText = await emailResponse.text();
         console.error('[SEND-WELCOME-EMAIL] Centralized email failed:', errorText);
-        // Fall back to direct Resend send below
+        emailError = errorText;
       } else {
         const result = await emailResponse.json();
         console.log('[SEND-WELCOME-EMAIL] Centralized email sent:', result);
+        emailSent = true;
       }
     } catch (centralizedError) {
       console.error('[SEND-WELCOME-EMAIL] Centralized email error:', centralizedError);
-      // Continue with fallback below
+      emailError = String(centralizedError);
+    }
+    
+    // CRITICAL: If welcome email failed, return error (don't silently continue)
+    if (!emailSent) {
+      console.error('[SEND-WELCOME-EMAIL] Failed to send welcome email to user');
+      return new Response(
+        JSON.stringify({ error: emailError || 'Failed to send welcome email' }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     // Notify admins about mentor applications
