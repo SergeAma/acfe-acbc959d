@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useWelcomeEmail } from "@/hooks/useWelcomeEmail";
 import { Navbar } from "@/components/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,9 +14,10 @@ import { FileSignature, Loader2, Heart, Users, Shield } from "lucide-react";
 
 export default function LearnerAgreement() {
   const { user, profile, loading: authLoading, refreshProfile } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { sendWelcomeEmail } = useWelcomeEmail();
   
   const [submitting, setSubmitting] = useState(false);
   const [hasAgreement, setHasAgreement] = useState<boolean | null>(null);
@@ -97,6 +99,15 @@ export default function LearnerAgreement() {
 
       if (error) throw error;
 
+      // Send welcome email after successful agreement acceptance
+      await sendWelcomeEmail({
+        userId: user.id,
+        userEmail: user.email || '',
+        fullName: profile?.full_name || user.email || '',
+        preferredLanguage: language,
+        role: 'student'
+      });
+
       await refreshProfile();
 
       toast({
@@ -105,11 +116,12 @@ export default function LearnerAgreement() {
       });
 
       navigate('/dashboard');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error signing agreement:", error);
+      const message = error instanceof Error ? error.message : "Please try again";
       toast({
         title: "Something went wrong",
-        description: error.message || "Please try again",
+        description: message,
         variant: "destructive",
       });
     } finally {
