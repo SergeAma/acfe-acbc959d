@@ -281,7 +281,7 @@ export const MySubscriptions = () => {
                   <div className="text-center">
                     <h4 className="font-medium mb-2">Upgrade or Downgrade Anytime</h4>
                     <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                      Switch between ACFE Membership ($15/month) and Mentorship Plus ($30/month) through the billing portal. 
+                      Switch between ACFE Membership ($20/month) and Mentorship Plus ($45/month) through the billing portal. 
                       Changes take effect at the next billing cycle, and any prorated amounts are calculated automatically.
                     </p>
                   </div>
