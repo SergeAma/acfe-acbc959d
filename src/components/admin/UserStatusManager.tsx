@@ -59,13 +59,44 @@ export const UserStatusManager = ({
         description: error.message,
         variant: 'destructive',
       });
-    } else {
-      toast({
-        title: 'Mentor reinstated',
-        description: `${userName} has been reinstated as a mentor.`,
-      });
-      onUpdate();
+      setReinstating(false);
+      return;
     }
+
+    // Send mentor approval email after successful reinstatement
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email, full_name, preferred_language')
+        .eq('id', userId)
+        .single();
+
+      if (profile?.email) {
+        const { error: emailError } = await supabase.functions.invoke('send-mentor-approval-email', {
+          body: {
+            user_id: userId,
+            email: profile.email,
+            first_name: profile.full_name?.split(' ')[0] || 'Mentor',
+            language: profile.preferred_language || 'en'
+          }
+        });
+
+        if (emailError) {
+          console.error('Failed to send approval email:', emailError);
+          // Don't fail the reinstatement, just log the error
+        } else {
+          console.log('Mentor approval email sent to:', profile.email);
+        }
+      }
+    } catch (emailErr) {
+      console.error('Error sending approval email:', emailErr);
+    }
+
+    toast({
+      title: 'Mentor reinstated',
+      description: `${userName} has been reinstated as a mentor.`,
+    });
+    onUpdate();
     setReinstating(false);
   };
 
