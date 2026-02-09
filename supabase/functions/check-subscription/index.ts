@@ -72,19 +72,19 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
-    // Get all active and paused subscriptions
-    const activeSubscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "active",
-    });
+    // Get all active, trialing, and paused subscriptions
+    const [activeSubscriptions, trialingSubscriptions, pausedSubscriptions] = await Promise.all([
+      stripe.subscriptions.list({ customer: customerId, status: "active" }),
+      stripe.subscriptions.list({ customer: customerId, status: "trialing" }),
+      stripe.subscriptions.list({ customer: customerId, status: "paused" }),
+    ]);
 
-    const pausedSubscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "paused",
-    });
-
-    // Combine active and paused subscriptions
-    const allSubscriptions = [...activeSubscriptions.data, ...pausedSubscriptions.data];
+    // Combine all subscriptions
+    const allSubscriptions = [
+      ...activeSubscriptions.data, 
+      ...trialingSubscriptions.data, 
+      ...pausedSubscriptions.data,
+    ];
 
     // Fetch product details separately for each subscription to avoid expansion limits
     const subscriptionDetails = await Promise.all(
@@ -142,7 +142,7 @@ serve(async (req) => {
     });
 
     return new Response(JSON.stringify({
-      subscribed: validSubscriptions.some(s => s.status === 'active'),
+      subscribed: validSubscriptions.some(s => s.status === 'active' || s.status === 'trialing'),
       subscriptions: validSubscriptions,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
