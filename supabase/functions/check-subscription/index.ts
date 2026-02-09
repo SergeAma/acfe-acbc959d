@@ -105,13 +105,35 @@ serve(async (req) => {
           
           const product = price.product as Stripe.Product;
           
-          // Safely handle period_end
+          // Safely handle period_end - log raw values for debugging
+          logStep("Raw period data", { 
+            subId: sub.id, 
+            current_period_end: sub.current_period_end, 
+            current_period_end_type: typeof sub.current_period_end,
+            trial_end: sub.trial_end,
+            status: sub.status
+          });
+          
           let periodEnd: string | null = null;
-          if (sub.current_period_end && typeof sub.current_period_end === 'number') {
-            periodEnd = new Date(sub.current_period_end * 1000).toISOString();
-          } else if (sub.trial_end && typeof sub.trial_end === 'number') {
-            periodEnd = new Date(sub.trial_end * 1000).toISOString();
+          // Handle current_period_end - could be number or string depending on API version
+          if (sub.current_period_end) {
+            const ts = typeof sub.current_period_end === 'number' 
+              ? sub.current_period_end 
+              : Number(sub.current_period_end);
+            if (!isNaN(ts) && ts > 0) {
+              periodEnd = new Date(ts < 10000000000 ? ts * 1000 : ts).toISOString();
+            }
           }
+          // Fallback to trial_end for trialing subscriptions
+          if (!periodEnd && sub.trial_end) {
+            const ts = typeof sub.trial_end === 'number' 
+              ? sub.trial_end 
+              : Number(sub.trial_end);
+            if (!isNaN(ts) && ts > 0) {
+              periodEnd = new Date(ts < 10000000000 ? ts * 1000 : ts).toISOString();
+            }
+          }
+          logStep("Computed periodEnd", { subId: sub.id, periodEnd });
           
           return {
             id: sub.id,
