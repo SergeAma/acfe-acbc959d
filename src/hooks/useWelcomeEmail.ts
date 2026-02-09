@@ -6,6 +6,7 @@ interface SendWelcomeEmailParams {
   fullName: string;
   preferredLanguage?: string;
   role?: string;
+  wantsMentor?: boolean;
 }
 
 /**
@@ -21,7 +22,8 @@ export function useWelcomeEmail() {
     userEmail,
     fullName,
     preferredLanguage = 'en',
-    role = 'student'
+    role = 'student',
+    wantsMentor = false
   }: SendWelcomeEmailParams): Promise<{ success: boolean; error?: string }> => {
     try {
       console.log('[WelcomeEmail] Starting for user:', userId);
@@ -53,7 +55,7 @@ export function useWelcomeEmail() {
           email: userEmail,
           first_name: fullName || userEmail.split('@')[0],
           role: role === 'mentor' ? 'mentor' : 'student',
-          wants_mentor: false,
+          wants_mentor: wantsMentor,
           user_id: userId,
           preferred_language: preferredLanguage
         }
