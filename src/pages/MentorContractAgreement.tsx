@@ -156,12 +156,14 @@ export default function MentorContractAgreement() {
       if (error) throw error;
 
       // Send welcome email after successful contract signing
+      // wantsMentor: true triggers admin notification with approve/decline CTAs
       await sendWelcomeEmail({
         userId: user.id,
         userEmail: user.email || '',
         fullName: profile?.full_name || signatureName.trim() || user.email || '',
         preferredLanguage: language,
-        role: 'mentor'
+        role: 'mentor',
+        wantsMentor: true
       });
 
       await refreshProfile();

@@ -189,6 +189,8 @@ const handler = async (req: Request): Promise<Response> => {
         .single();
 
       if (mentorRequest) {
+        console.log(`[SEND-WELCOME-EMAIL] Found mentor request ${mentorRequest.id}, sending admin notifications`);
+        
         const { data: adminRoles } = await supabase
           .from('user_roles')
           .select('user_id')
@@ -200,6 +202,8 @@ const handler = async (req: Request): Promise<Response> => {
             .from('profiles')
             .select('id, email, full_name')
             .in('id', adminUserIds);
+
+          console.log(`[SEND-WELCOME-EMAIL] Found ${adminProfiles?.length || 0} admins to notify`);
 
           const sharedSecret = Deno.env.get("ACFE_SHARED_SECRET");
 
@@ -225,17 +229,30 @@ const handler = async (req: Request): Promise<Response> => {
             }, 'en');
 
             try {
-              await resend.emails.send({
+              const adminEmailResult = await resend.emails.send({
                 from: "A Cloud for Everyone <noreply@acloudforeveryone.org>",
                 to: [admin.email],
                 subject: `New Mentor Application: ${safeFirstName}`,
                 html: adminHtml,
               });
+              
+              console.log(`[SEND-WELCOME-EMAIL] Admin notification sent to ${admin.email}:`, adminEmailResult);
+              
+              // Log to email_logs for tracking
+              await supabase.from('email_logs').insert({
+                subject: `New Mentor Application: ${safeFirstName}`,
+                status: 'sent',
+                sent_at: new Date().toISOString()
+              });
             } catch (adminEmailError) {
-              console.error(`Failed to send admin notification to ${admin.email}:`, adminEmailError);
+              console.error(`[SEND-WELCOME-EMAIL] Failed to send admin notification to ${admin.email}:`, adminEmailError);
             }
           }
+        } else {
+          console.log('[SEND-WELCOME-EMAIL] No admins found to notify');
         }
+      } else {
+        console.log('[SEND-WELCOME-EMAIL] No mentor request found for user');
       }
     }
 
