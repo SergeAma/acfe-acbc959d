@@ -105,30 +105,36 @@ serve(async (req) => {
           
           const product = price.product as Stripe.Product;
           
-          // Safely handle period_end - log raw values for debugging
+          // Safely handle period_end - check both subscription-level and item-level
+          // With API version 2025-08-27.basil, current_period_end may be on the item
+          const rawPeriodEnd = sub.current_period_end ?? (item as any).current_period_end;
+          const rawTrialEnd = sub.trial_end;
+          
           logStep("Raw period data", { 
             subId: sub.id, 
-            current_period_end: sub.current_period_end, 
-            current_period_end_type: typeof sub.current_period_end,
-            trial_end: sub.trial_end,
+            sub_current_period_end: sub.current_period_end,
+            item_current_period_end: (item as any).current_period_end,
+            rawPeriodEnd,
+            rawPeriodEnd_type: typeof rawPeriodEnd,
+            trial_end: rawTrialEnd,
             status: sub.status
           });
           
           let periodEnd: string | null = null;
-          // Handle current_period_end - could be number or string depending on API version
-          if (sub.current_period_end) {
-            const ts = typeof sub.current_period_end === 'number' 
-              ? sub.current_period_end 
-              : Number(sub.current_period_end);
+          // Handle current_period_end - could be number or string
+          if (rawPeriodEnd) {
+            const ts = typeof rawPeriodEnd === 'number' 
+              ? rawPeriodEnd 
+              : Number(rawPeriodEnd);
             if (!isNaN(ts) && ts > 0) {
               periodEnd = new Date(ts < 10000000000 ? ts * 1000 : ts).toISOString();
             }
           }
           // Fallback to trial_end for trialing subscriptions
-          if (!periodEnd && sub.trial_end) {
-            const ts = typeof sub.trial_end === 'number' 
-              ? sub.trial_end 
-              : Number(sub.trial_end);
+          if (!periodEnd && rawTrialEnd) {
+            const ts = typeof rawTrialEnd === 'number' 
+              ? rawTrialEnd 
+              : Number(rawTrialEnd);
             if (!isNaN(ts) && ts > 0) {
               periodEnd = new Date(ts < 10000000000 ? ts * 1000 : ts).toISOString();
             }
