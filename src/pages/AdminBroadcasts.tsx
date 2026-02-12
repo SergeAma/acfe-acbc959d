@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/Navbar';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { Label } from '@/components/ui/label';
-import { Loader2, Send, Eye, ArrowLeft, Users, Filter, Radio, History } from 'lucide-react';
+import { Loader2, Send, Eye, ArrowLeft, Users, Filter, Radio, History, Save, Trash2, FileText } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { RichTextEditor } from '@/components/RichTextEditor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,7 +16,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { buildCanonicalEmail, EmailContentSlots } from '../../supabase/functions/_shared/email-template';
 import { COUNTRIES } from '@/data/countries';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
+import { useBroadcastDraft } from '@/hooks/useBroadcastDraft';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 
 interface Recipient {
   id: string;
@@ -37,6 +53,8 @@ interface Broadcast {
   recipient_count: number;
   created_at: string;
 }
+
+const DEFAULT_CONTENT = '<p>Dear {{first_name}},</p><p>Your message here...</p>';
 
 export const AdminBroadcasts = () => {
   const { profile, loading: authLoading } = useAuth();
@@ -60,11 +78,66 @@ export const AdminBroadcasts = () => {
 
   // Email content
   const [subject, setSubject] = useState('');
-  const [content, setContent] = useState('<p>Dear {{first_name}},</p><p>Your message here...</p>');
+  const [content, setContent] = useState(DEFAULT_CONTENT);
 
   // History
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+
+  // Template save dialog
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const [savingTemplate, setSavingTemplate] = useState(false);
+
+  // Draft & templates hook
+  const {
+    lastSaved,
+    saving: savingDraft,
+    loadDraft,
+    clearDraft,
+    startAutoSave,
+    stopAutoSave,
+    templates,
+    loadTemplates,
+    saveTemplate,
+    deleteTemplate,
+  } = useBroadcastDraft(profile?.id);
+
+  // Get current state for auto-save
+  const getCurrentState = useCallback(() => ({
+    subject,
+    content,
+    targetRole,
+    filters: {
+      country: filterCountry,
+      language: filterLanguage,
+      gender: filterGender,
+      skills: filterSkills,
+    },
+  }), [subject, content, targetRole, filterCountry, filterLanguage, filterGender, filterSkills]);
+
+  // Load draft on mount
+  useEffect(() => {
+    if (!profile?.id) return;
+    loadDraft().then(draft => {
+      if (draft) {
+        setSubject(draft.subject);
+        setContent(draft.content);
+        setTargetRole(draft.targetRole);
+        setFilterCountry(draft.filters.country);
+        setFilterLanguage(draft.filters.language);
+        setFilterGender(draft.filters.gender);
+        setFilterSkills(draft.filters.skills);
+      }
+    });
+  }, [profile?.id, loadDraft]);
+
+  // Start auto-save
+  useEffect(() => {
+    if (!profile?.id) return;
+    startAutoSave(getCurrentState);
+    return () => stopAutoSave();
+  }, [profile?.id, startAutoSave, stopAutoSave, getCurrentState]);
 
   // Fetch recipients when filters change
   useEffect(() => {
@@ -136,13 +209,11 @@ export const AdminBroadcasts = () => {
     setSending(true);
 
     try {
-      // Refresh session to ensure valid JWT for RLS policy check
       const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
       if (sessionError || !session) {
         throw new Error("Session expired. Please log in again.");
       }
 
-      // Create broadcast record
       const filters = {
         country: filterCountry || null,
         language: filterLanguage || null,
@@ -165,7 +236,6 @@ export const AdminBroadcasts = () => {
 
       if (broadcastError) throw broadcastError;
 
-      // Insert recipient records
       const recipientRecords = recipients.map(r => ({
         broadcast_id: broadcast.id,
         recipient_id: r.id,
@@ -178,7 +248,6 @@ export const AdminBroadcasts = () => {
 
       if (recipientsError) throw recipientsError;
 
-      // Send emails via edge function
       const slots: EmailContentSlots = {
         headline: subject,
         body_primary: content,
@@ -205,7 +274,6 @@ export const AdminBroadcasts = () => {
         description: `Sent to ${sendResult?.sent || recipients.length} recipients`,
       });
 
-      // Create in-app notifications for all recipients
       const notifications = recipients.map(r => ({
         user_id: r.id,
         message: `📢 ${subject}`,
@@ -215,9 +283,12 @@ export const AdminBroadcasts = () => {
 
       await supabase.from('notifications').insert(notifications);
 
+      // Clear draft after successful send
+      await clearDraft();
+
       // Reset form
       setSubject('');
-      setContent('<p>Dear {{first_name}},</p><p>Your message here...</p>');
+      setContent(DEFAULT_CONTENT);
       fetchBroadcastHistory();
 
     } catch (error: unknown) {
@@ -230,6 +301,32 @@ export const AdminBroadcasts = () => {
     }
 
     setSending(false);
+  };
+
+  const handleLoadTemplate = (template: { subject: string; message_content: string }) => {
+    setSubject(template.subject);
+    setContent(template.message_content);
+    toast({ title: "Template loaded" });
+  };
+
+  const handleSaveTemplate = async () => {
+    if (!templateName.trim()) return;
+    setSavingTemplate(true);
+    const ok = await saveTemplate(templateName.trim(), subject, content);
+    setSavingTemplate(false);
+    if (ok) {
+      toast({ title: "Template saved" });
+      setShowSaveTemplate(false);
+      setTemplateName('');
+      await loadTemplates();
+    } else {
+      toast({ title: "Failed to save", description: "A template with this name may already exist.", variant: "destructive" });
+    }
+  };
+
+  const handleDeleteTemplate = async (id: string) => {
+    const ok = await deleteTemplate(id);
+    if (ok) toast({ title: "Template deleted" });
   };
 
   if (authLoading) {
@@ -369,12 +466,71 @@ export const AdminBroadcasts = () => {
               <div className="lg:col-span-2 space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Compose Broadcast</CardTitle>
-                    <CardDescription>
-                      Available tokens: {`{{first_name}}`}
-                    </CardDescription>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>Compose Broadcast</CardTitle>
+                        <CardDescription>
+                          Available tokens: {`{{first_name}}`}
+                        </CardDescription>
+                      </div>
+                      {/* Draft auto-save indicator */}
+                      <div className="text-xs text-muted-foreground">
+                        {savingDraft ? (
+                          <span className="flex items-center gap-1">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Saving…
+                          </span>
+                        ) : lastSaved ? (
+                          <span>Draft saved {formatDistanceToNow(lastSaved, { addSuffix: true })}</span>
+                        ) : null}
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {/* Load Template dropdown */}
+                    <div className="space-y-2">
+                      <Label>Load Template</Label>
+                      <DropdownMenu onOpenChange={(open) => { if (open) loadTemplates(); }}>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="w-full justify-start gap-2">
+                            <FileText className="h-4 w-4" />
+                            Select a template…
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-72">
+                          {templates.length === 0 ? (
+                            <DropdownMenuItem disabled>No templates saved yet</DropdownMenuItem>
+                          ) : (
+                            templates.map(t => (
+                              <DropdownMenuItem
+                                key={t.id}
+                                className="flex items-center justify-between"
+                                onSelect={(e) => {
+                                  e.preventDefault();
+                                  handleLoadTemplate(t);
+                                }}
+                              >
+                                <span className="truncate mr-2">{t.name}</span>
+                                {t.created_by === profile?.id && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 shrink-0"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteTemplate(t.id);
+                                    }}
+                                  >
+                                    <Trash2 className="h-3 w-3 text-destructive" />
+                                  </Button>
+                                )}
+                              </DropdownMenuItem>
+                            ))
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
                     <div className="space-y-2">
                       <Label>Subject</Label>
                       <Input
@@ -393,10 +549,19 @@ export const AdminBroadcasts = () => {
                       />
                     </div>
 
-                    <div className="flex gap-3 pt-4">
+                    <div className="flex flex-wrap gap-3 pt-4">
                       <Button variant="outline" onClick={generatePreview} className="gap-2">
                         <Eye className="h-4 w-4" />
                         Preview
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowSaveTemplate(true)}
+                        disabled={!subject && content === DEFAULT_CONTENT}
+                        className="gap-2"
+                      >
+                        <Save className="h-4 w-4" />
+                        Save as Template
                       </Button>
                       <Button
                         onClick={handleSend}
@@ -489,6 +654,39 @@ export const AdminBroadcasts = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Save Template Dialog */}
+        <Dialog open={showSaveTemplate} onOpenChange={setShowSaveTemplate}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Save as Template</DialogTitle>
+              <DialogDescription>
+                Save the current subject and content as a reusable template.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label>Template Name</Label>
+              <Input
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value.slice(0, 100))}
+                placeholder="e.g., Monthly Update"
+                maxLength={100}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowSaveTemplate(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveTemplate}
+                disabled={savingTemplate || !templateName.trim()}
+              >
+                {savingTemplate ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Save Template
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

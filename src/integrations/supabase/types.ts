@@ -278,6 +278,48 @@ export type Database = {
         }
         Relationships: []
       }
+      broadcast_drafts: {
+        Row: {
+          admin_id: string
+          filters: Json | null
+          id: string
+          message_content: string | null
+          subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_id: string
+          filters?: Json | null
+          id?: string
+          message_content?: string | null
+          subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_id?: string
+          filters?: Json | null
+          id?: string
+          message_content?: string | null
+          subject?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broadcast_drafts_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broadcast_drafts_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: true
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       broadcast_recipients: {
         Row: {
           broadcast_id: string
@@ -306,6 +348,48 @@ export type Database = {
             columns: ["broadcast_id"]
             isOneToOne: false
             referencedRelation: "admin_broadcasts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      broadcast_templates: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          message_content: string | null
+          name: string
+          subject: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          message_content?: string | null
+          name: string
+          subject?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          message_content?: string | null
+          name?: string
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broadcast_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broadcast_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
             referencedColumns: ["id"]
           },
         ]
