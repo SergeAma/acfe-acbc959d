@@ -591,9 +591,19 @@ export const AdminCourseBuilder = () => {
     if (!courseId) return;
     
     setIsPaid(paid);
+    // When toggling to free, also zero the price locally
+    if (!paid) {
+      setPriceCents(0);
+    }
+    
+    const updates: Record<string, any> = { is_paid: paid };
+    if (!paid) {
+      updates.price_cents = 0;
+    }
+    
     const { error } = await supabase
       .from('courses')
-      .update({ is_paid: paid })
+      .update(updates)
       .eq('id', courseId);
 
     if (error) {
@@ -603,8 +613,9 @@ export const AdminCourseBuilder = () => {
         variant: 'destructive',
       });
       setIsPaid(!paid);
+      if (!paid) setPriceCents(course?.price_cents ?? 1000);
     } else {
-      setCourse(prev => prev ? { ...prev, is_paid: paid } : null);
+      setCourse(prev => prev ? { ...prev, ...updates } : null);
       toast({
         title: 'Success',
         description: paid ? `Course set to $${(priceCents / 100).toFixed(0)}` : 'Course set to free',
