@@ -30,9 +30,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { 
   Plus, Calendar, MapPin, Video, Users, Edit2, Trash2, 
-  Loader2, Eye, Copy, ExternalLink, Clock, Mail, Building2, Upload, Link as LinkIcon, GraduationCap
+  Loader2, Eye, Copy, ExternalLink, Clock, Mail, Building2, Upload, Link as LinkIcon, GraduationCap, ClipboardList, Search
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -172,6 +173,13 @@ export const AdminEvents = () => {
   const [availableMentors, setAvailableMentors] = useState<{ id: string; full_name: string; bio: string | null; avatar_url: string | null }[]>([]);
   const [selectedMentorId, setSelectedMentorId] = useState<string>('');
   const [loadingMentors, setLoadingMentors] = useState(false);
+
+  // RSVPs management
+  const [isRsvpDialogOpen, setIsRsvpDialogOpen] = useState(false);
+  const [rsvpEventTitle, setRsvpEventTitle] = useState('');
+  const [rsvps, setRsvps] = useState<{ id: string; full_name: string | null; email: string | null; avatar_url: string | null; role: string | null; registered_at: string }[]>([]);
+  const [loadingRsvps, setLoadingRsvps] = useState(false);
+  const [rsvpSearch, setRsvpSearch] = useState('');
 
   useEffect(() => {
     if (profile?.role === 'admin') {
@@ -578,6 +586,47 @@ export const AdminEvents = () => {
     setIsMentorDialogOpen(true);
   };
 
+  const handleViewRsvps = async (event: Event) => {
+    setRsvpEventTitle(event.title);
+    setRsvpSearch('');
+    setIsRsvpDialogOpen(true);
+    setLoadingRsvps(true);
+    
+    const { data, error } = await supabase
+      .from('event_registrations')
+      .select('id, registered_at, user_id')
+      .eq('event_id', event.id)
+      .order('registered_at', { ascending: false });
+
+    if (error || !data) {
+      setRsvps([]);
+      setLoadingRsvps(false);
+      return;
+    }
+
+    // Fetch profiles for all registered users
+    const userIds = data.map(r => r.user_id);
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, avatar_url, role')
+      .in('id', userIds);
+
+    const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+    
+    setRsvps(data.map(r => {
+      const p = profileMap.get(r.user_id);
+      return {
+        id: r.id,
+        full_name: p?.full_name || null,
+        email: p?.email || null,
+        avatar_url: p?.avatar_url || null,
+        role: p?.role || null,
+        registered_at: r.registered_at,
+      };
+    }));
+    setLoadingRsvps(false);
+  };
+
   const handleAddMentor = async () => {
     if (!selectedEventId || !selectedMentorId) return;
     
@@ -729,6 +778,14 @@ export const AdminEvents = () => {
                       >
                         <Building2 className="h-4 w-4 mr-1" />
                         Sponsors
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleViewRsvps(event)}
+                      >
+                        <ClipboardList className="h-4 w-4 mr-1" />
+                        RSVPs ({event.registration_count || 0})
                       </Button>
                       <Button 
                         variant="outline" 
@@ -1312,6 +1369,74 @@ export const AdminEvents = () => {
                   ))
                 )}
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* RSVPs Dialog */}
+        <Dialog open={isRsvpDialogOpen} onOpenChange={setIsRsvpDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Event RSVPs</DialogTitle>
+              <DialogDescription>{rsvpEventTitle}</DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground font-medium">
+                  {rsvps.length} Registered Attendee{rsvps.length !== 1 ? 's' : ''}
+                </p>
+                <div className="relative w-64">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name or email..."
+                    value={rsvpSearch}
+                    onChange={(e) => setRsvpSearch(e.target.value)}
+                    className="pl-9 h-9"
+                  />
+                </div>
+              </div>
+
+              {loadingRsvps ? (
+                <div className="text-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                </div>
+              ) : rsvps.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">No registrations yet</p>
+              ) : (
+                <div className="space-y-2">
+                  {rsvps
+                    .filter(r => {
+                      if (!rsvpSearch) return true;
+                      const q = rsvpSearch.toLowerCase();
+                      return (r.full_name?.toLowerCase().includes(q) || r.email?.toLowerCase().includes(q));
+                    })
+                    .map((r) => (
+                      <div key={r.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9">
+                            {r.avatar_url && <AvatarImage src={r.avatar_url} alt={r.full_name || ''} />}
+                            <AvatarFallback className="text-xs">
+                              {r.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '?'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">{r.full_name || 'Unnamed User'}</p>
+                            <p className="text-xs text-muted-foreground truncate">{r.email || '—'}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {r.role || 'student'}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {format(new Date(r.registered_at), 'MMM d, yyyy')}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>
