@@ -198,6 +198,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'courses.liveSession': 'Live Session',
     'courses.registerNow': 'Register Now',
     'courses.registrationDeadline': 'Registration Deadline',
+    'courses.startLearning': 'Start Learning',
+    'courses.reviewCourse': 'Review Course',
 
     // ==================== JOBS ====================
     'jobs.title': 'Job Opportunities',
@@ -1145,6 +1147,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'courses.liveSession': 'Session en Direct',
     'courses.registerNow': "S'inscrire Maintenant",
     'courses.registrationDeadline': "Date Limite d'Inscription",
+    'courses.startLearning': 'Commencer',
+    'courses.reviewCourse': 'Revoir le Cours',
 
     // ==================== JOBS ====================
     'jobs.title': "Opportunités d'Emploi",

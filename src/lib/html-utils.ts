@@ -5,5 +5,19 @@
  */
 export const stripHtml = (html: string | null | undefined): string => {
   if (!html) return '';
-  return html.replace(/<[^>]*>/g, '');
+  // Strip tags then decode common HTML entities
+  const text = html.replace(/<[^>]*>/g, '');
+  const textarea = typeof document !== 'undefined' ? document.createElement('textarea') : null;
+  if (textarea) {
+    textarea.innerHTML = text;
+    return textarea.value;
+  }
+  // Fallback: decode the most common entities manually
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ');
 };

@@ -313,13 +313,13 @@ export const Courses = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 items-stretch">
             {filteredCourses.map((course) => {
               const isSubscribed = subscribedCourseIds.includes(course.id);
               const isCompleted = completedCourseIds.includes(course.id);
               const isEnrolled = enrolledCourseIds.includes(course.id);
               return (
-              <Card key={course.id} className={`hover:shadow-lg transition-shadow relative ${isCompleted ? 'ring-2 ring-emerald-600' : isEnrolled ? 'ring-2 ring-blue-600' : isSubscribed ? 'ring-2 ring-primary' : ''}`}>
+              <Card key={course.id} className={`hover:shadow-lg transition-shadow relative flex flex-col ${isCompleted ? 'ring-2 ring-emerald-600' : isEnrolled ? 'ring-2 ring-blue-600' : isSubscribed ? 'ring-2 ring-primary' : ''}`}>
                 <div className="absolute top-2 right-2 z-10">
                   <CourseBadge
                     isPaid={course.is_paid}
@@ -350,7 +350,7 @@ export const Courses = () => {
                     </span>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-1 flex flex-col">
                   <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
                     {stripHtml(course.description)}
                   </p>
@@ -370,9 +370,11 @@ export const Courses = () => {
                     </Link>
                     <span className="text-muted-foreground">{course.duration_weeks} {t('courses.weeks')}</span>
                   </div>
-                  <Link to={`/courses/${course.id}`}>
-                    <Button className="w-full">{t('courses.viewDetails')}</Button>
-                  </Link>
+                  <div className="mt-auto">
+                    <Link to={`/courses/${course.id}`}>
+                      <Button className="w-full">{t('courses.viewDetails')}</Button>
+                    </Link>
+                  </div>
                 </CardContent>
               </Card>
               );
