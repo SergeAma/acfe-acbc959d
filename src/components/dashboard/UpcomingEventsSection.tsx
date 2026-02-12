@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Video, ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Calendar, MapPin, Video, ArrowRight, Sparkles, CheckCircle2, Users } from 'lucide-react';
 import { format, isPast, isToday, isTomorrow, differenceInDays } from 'date-fns';
 
 interface Event {
@@ -17,6 +17,7 @@ interface Event {
   event_type: 'online' | 'in_person';
   location_name: string | null;
   featured_image_url: string | null;
+  registration_count?: number;
 }
 
 interface EventRegistration {
@@ -42,7 +43,22 @@ export const UpcomingEventsSection = () => {
         .limit(3);
 
       if (eventsData) {
-        setEvents(eventsData as Event[]);
+        // Fetch registration counts
+        const eventIds = eventsData.map(e => e.id);
+        const { data: regData } = await supabase
+          .from('event_registrations')
+          .select('event_id')
+          .in('event_id', eventIds);
+
+        const countMap: Record<string, number> = {};
+        (regData || []).forEach(r => {
+          countMap[r.event_id] = (countMap[r.event_id] || 0) + 1;
+        });
+
+        setEvents(eventsData.map(e => ({
+          ...e,
+          registration_count: countMap[e.id] || 0,
+        })) as Event[]);
       }
 
       // Fetch user's registrations if logged in
@@ -155,6 +171,12 @@ export const UpcomingEventsSection = () => {
                         <><MapPin className="h-3 w-3" /> {event.location_name || 'In Person'}</>
                       )}
                     </span>
+                    {(event.registration_count ?? 0) > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Users className="h-3 w-3" />
+                        {event.registration_count}
+                      </span>
+                    )}
                   </div>
                 </div>
 

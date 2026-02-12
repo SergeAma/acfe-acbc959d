@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { Calendar, MapPin, Video, ArrowRight, Loader2, Sparkles } from 'lucide-react';
+import { Calendar, MapPin, Video, ArrowRight, Loader2, Sparkles, Users } from 'lucide-react';
 import { format, isPast, isToday } from 'date-fns';
 import { stripHtml } from '@/lib/html-utils';
 
@@ -21,6 +21,7 @@ interface Event {
   event_type: 'online' | 'in_person';
   location_name: string | null;
   featured_image_url: string | null;
+  registration_count?: number;
 }
 
 export const Events = () => {
@@ -39,7 +40,22 @@ export const Events = () => {
       .order('event_date', { ascending: true });
 
     if (!error && data) {
-      setEvents(data as Event[]);
+      // Fetch registration counts for all events
+      const eventIds = data.map(e => e.id);
+      const { data: regData } = await supabase
+        .from('event_registrations')
+        .select('event_id')
+        .in('event_id', eventIds);
+
+      const countMap: Record<string, number> = {};
+      (regData || []).forEach(r => {
+        countMap[r.event_id] = (countMap[r.event_id] || 0) + 1;
+      });
+
+      setEvents(data.map(e => ({
+        ...e,
+        registration_count: countMap[e.id] || 0,
+      })) as Event[]);
     }
     setLoading(false);
   };
@@ -181,6 +197,12 @@ const EventCard = ({ event, isPast = false }: { event: Event; isPast?: boolean }
                       <><MapPin className="h-3.5 w-3.5" /> {event.location_name || 'In Person'}</>
                     )}
                   </span>
+                  {(event.registration_count ?? 0) > 0 && (
+                    <span className="flex items-center gap-1">
+                      <Users className="h-3.5 w-3.5" />
+                      {event.registration_count} registered
+                    </span>
+                  )}
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-secondary group-hover:translate-x-1 transition-all" />
               </div>
