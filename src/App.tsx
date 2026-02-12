@@ -12,6 +12,8 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoleSwitcher } from "@/components/admin/AdminRoleSwitcher";
 import { Landing } from "./pages/Landing";
 import { Auth } from "./pages/Auth";
+import { ResetPassword } from "./pages/ResetPassword";
+import { UpdatePassword } from "./pages/UpdatePassword";
 import { Dashboard } from "./pages/Dashboard";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { AdminUsers } from "./pages/AdminUsers";
@@ -118,6 +120,8 @@ const App = () => (
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/auth/reset-password" element={<ResetPassword />} />
+              <Route path="/auth/update-password" element={<UpdatePassword />} />
               <Route path="/connect-acfe" element={<SpectrogramConnect />} />
               <Route path="/spectrogram-connect" element={<SpectrogramConnect />} />
               <Route path="/spectrogram-jobs" element={<SpectrogramJobs />} />

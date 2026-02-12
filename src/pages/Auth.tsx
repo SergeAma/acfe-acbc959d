@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -10,12 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Globe, Mail, ArrowLeft, Lock } from 'lucide-react';
+import { Loader2, Globe, Mail, ArrowLeft, Lock, KeyRound } from 'lucide-react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
+import { PasswordInput } from '@/components/ui/password-input';
 
-// Admin email that has password login option
-const ADMIN_EMAIL = 'sergebushoki@icloud.com';
 import acfeIcon from '@/assets/acfe-icon.png';
 import { Navbar } from '@/components/Navbar';
 import { PhoneInput } from '@/components/ui/phone-input';
@@ -23,13 +22,21 @@ import { AutocompleteInput } from '@/components/ui/autocomplete-input';
 import { UNIVERSITIES } from '@/data/universities';
 import { AFRICAN_CITIES } from '@/data/cities';
 import { toast } from 'sonner';
-// Magic link flow - no OTP input needed
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAACKo5KDG-bJ1_43d';
 
-// Signup form validation schema (no password required)
+// Password validation
+const passwordSchema = z.string()
+  .min(8, 'Password must be at least 8 characters')
+  .regex(/[A-Z]/, 'Must contain at least one uppercase letter')
+  .regex(/[a-z]/, 'Must contain at least one lowercase letter')
+  .regex(/[0-9]/, 'Must contain at least one number');
+
+// Signup form validation schema (now includes password)
 const baseSignupSchema = z.object({
   email: z.string().email('Invalid email address').max(255),
+  password: passwordSchema,
+  confirmPassword: z.string(),
   firstName: z.string().min(2, 'First name must be at least 2 characters').max(100),
   lastName: z.string().min(2, 'Last name must be at least 2 characters').max(100),
   phone: z.string().min(10, 'Phone number must be at least 10 digits').max(20),
@@ -40,9 +47,25 @@ const baseSignupSchema = z.object({
   linkedinUrl: z.string().url('Invalid LinkedIn URL').optional().or(z.literal('')),
   cloudBrands: z.array(z.string()).optional(),
   emailConsent: z.boolean().optional(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 });
 
-const mentorSignupSchema = baseSignupSchema.extend({
+const mentorSignupSchema = z.object({
+  email: z.string().email('Invalid email address').max(255),
+  password: passwordSchema,
+  confirmPassword: z.string(),
+  firstName: z.string().min(2, 'First name must be at least 2 characters').max(100),
+  lastName: z.string().min(2, 'Last name must be at least 2 characters').max(100),
+  phone: z.string().min(10, 'Phone number must be at least 10 digits').max(20),
+  age: z.string().min(1, 'Please select your age'),
+  gender: z.enum(['male', 'female'], { required_error: 'Please select your gender' }),
+  university: z.string().min(2, 'Please enter your university or college').max(200),
+  city: z.string().min(2, 'Please enter your city').max(100),
+  linkedinUrl: z.string().url('Invalid LinkedIn URL').optional().or(z.literal('')),
+  cloudBrands: z.array(z.string()).optional(),
+  emailConsent: z.boolean().optional(),
   mentorBio: z.string()
     .min(100, 'Please provide at least 100 characters describing your experience')
     .max(2000, 'Bio must be less than 2000 characters')
@@ -65,18 +88,21 @@ const mentorSignupSchema = baseSignupSchema.extend({
       return hasRelevantContent;
     }, { message: 'Please include details about your experience, skills, or mentoring goals' }),
   portfolioLinks: z.string().max(1000).optional(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 });
 
-// Sign-in only requires email (password optional for admin)
+// Sign-in schema
 const signInSchema = z.object({
   email: z.string().email('Invalid email address').max(255),
-  password: z.string().optional(),
+  password: z.string().min(1, 'Password is required'),
 });
 
 export const Auth = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user, loading: authLoading, sendOtp, verifyOtp, signUpWithOtp, completeSignup, pendingSignup, clearPendingSignup } = useAuth();
+  const { user, loading: authLoading, sendOtp, signUpWithOtp, pendingSignup, clearPendingSignup } = useAuth();
   const { setLanguage } = useLanguage();
   const [submitting, setSubmitting] = useState(false);
   
@@ -87,24 +113,24 @@ export const Auth = () => {
   const [mode, setMode] = useState<'signin' | 'signup'>(
     searchParams.get('mode') === 'signup' ? 'signup' : 'signin'
   );
-  const [authStep, setAuthStep] = useState<'form' | 'email-sent'>('form');
+  const [authStep, setAuthStep] = useState<'form' | 'email-sent' | 'verify-email'>('form');
   const [emailForMagicLink, setEmailForMagicLink] = useState('');
+  // Magic link fallback for existing users without passwords
+  const [useMagicLink, setUseMagicLink] = useState(false);
   
   // Check if this is a mentor signup path
   const isMentorSignup = searchParams.get('role') === 'mentor';
   
   // Get redirect URL from query params
-  // For mentor signup, redirect to application status page; otherwise dashboard
   const getDefaultRedirect = () => {
     if (isMentorSignup) return '/mentor-application-status';
     return '/dashboard';
   };
   
-  // Preserve the full redirect URL including query parameters
   const rawRedirect = searchParams.get('redirect');
   const redirectUrl = rawRedirect ? decodeURIComponent(rawRedirect) : getDefaultRedirect();
   
-  // Detect magic link token in URL - if present, show loading state while Supabase handles it
+  // Detect magic link token in URL
   const hasAuthToken = searchParams.has('token') || searchParams.has('access_token') || 
                        window.location.hash.includes('access_token');
 
@@ -116,6 +142,7 @@ export const Auth = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirmPassword: '',
     firstName: '',
     lastName: '',
     phone: '',
@@ -133,13 +160,10 @@ export const Auth = () => {
     mentorPledge: false,
     preferredLanguage: 'en' as 'en' | 'fr',
   });
-  
-  // Check if current email is admin (for password option)
-  const isAdminEmail = formData.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Check for pending signup on mount (user might have refreshed while waiting for magic link)
+  // Check for pending signup on mount
   useEffect(() => {
     if (pendingSignup && !user) {
       setEmailForMagicLink(pendingSignup.email);
@@ -150,7 +174,6 @@ export const Auth = () => {
 
   // Initialize Turnstile when on signup mode and form step
   useEffect(() => {
-    // Clean up when not in signup form mode
     if (mode !== 'signup' || authStep !== 'form') {
       setTurnstileToken(null);
       if (turnstileWidgetId.current && (window as any).turnstile) {
@@ -165,58 +188,39 @@ export const Auth = () => {
     }
 
     const initTurnstile = () => {
-      // Double check the ref exists and we haven't already initialized
-      if (!turnstileRef.current) {
-        console.warn('Turnstile ref not available yet');
-        return;
-      }
-      
-      if (!(window as any).turnstile) {
-        console.warn('Turnstile script not loaded yet');
-        return;
-      }
-      
-      // Already initialized - skip
-      if (turnstileWidgetId.current) {
-        return;
-      }
+      if (!turnstileRef.current) return;
+      if (!(window as any).turnstile) return;
+      if (turnstileWidgetId.current) return;
       
       try {
         turnstileWidgetId.current = (window as any).turnstile.render(turnstileRef.current, {
           sitekey: TURNSTILE_SITE_KEY,
           callback: (token: string) => {
-            console.log('Turnstile token received');
             setTurnstileToken(token);
           },
           'expired-callback': () => {
-            console.log('Turnstile token expired');
             setTurnstileToken(null);
           },
-          'error-callback': (error: any) => {
-            console.error('Turnstile error:', error);
+          'error-callback': () => {
             setTurnstileToken(null);
           },
           theme: 'auto',
         });
-        console.log('Turnstile widget rendered with ID:', turnstileWidgetId.current);
       } catch (error) {
         console.error('Failed to render Turnstile widget:', error);
       }
     };
 
-    // Small delay to ensure DOM is ready after tab switch
     const initTimeout = setTimeout(() => {
       if ((window as any).turnstile) {
         initTurnstile();
       } else {
-        // Fallback: poll for script to load
         const checkTurnstile = setInterval(() => {
           if ((window as any).turnstile) {
             clearInterval(checkTurnstile);
             initTurnstile();
           }
         }, 100);
-        // Cleanup interval after 10 seconds
         setTimeout(() => clearInterval(checkTurnstile), 10000);
       }
     }, 100);
@@ -242,8 +246,7 @@ export const Auth = () => {
     }
   }, [user, navigate, redirectUrl, isRedirecting]);
   
-  // If auth is loading OR we detect a token in URL, show loading spinner
-  // This prevents the form from flashing before redirect
+  // Show loading if auth is initializing or we have a token in URL
   if (authLoading || hasAuthToken || isRedirecting) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-accent/10">
@@ -284,8 +287,21 @@ export const Auth = () => {
   };
 
   const validateSignInForm = () => {
+    if (useMagicLink) {
+      // Only validate email for magic link
+      try {
+        z.object({ email: z.string().email('Invalid email address') }).parse({ email: formData.email });
+        setErrors({});
+        return true;
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          setErrors({ email: error.errors[0]?.message || 'Invalid email' });
+        }
+        return false;
+      }
+    }
     try {
-      signInSchema.parse({ email: formData.email });
+      signInSchema.parse({ email: formData.email, password: formData.password });
       setErrors({});
       return true;
     } catch (error) {
@@ -302,7 +318,7 @@ export const Auth = () => {
     }
   };
 
-  // Handle sign-in: send magic link OR use password for admin
+  // Handle sign-in with password (default) or magic link (fallback)
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -310,57 +326,59 @@ export const Auth = () => {
     
     setSubmitting(true);
     
-    // Admin with password - use password auth
-    if (isAdminEmail && formData.password) {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
+    if (useMagicLink) {
+      // Magic link fallback for existing users
+      const { error } = await sendOtp(formData.email);
+      setSubmitting(false);
       
-      if (error) {
-        setSubmitting(false);
-        toast.error(error.message);
-        return;
-      }
-      
-      // Success - prevent form re-render by setting redirect flag immediately
-      if (data.session) {
-        setIsRedirecting(true);
-        // Navigate immediately - don't wait for onAuthStateChange
-        navigate(redirectUrl, { replace: true });
+      if (!error) {
+        setEmailForMagicLink(formData.email);
+        setAuthStep('email-sent');
       }
       return;
     }
     
-    // Default: magic link
-    const { error } = await sendOtp(formData.email);
-    setSubmitting(false);
+    // Default: password login
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: formData.email,
+      password: formData.password,
+    });
     
-    if (!error) {
-      setEmailForMagicLink(formData.email);
-      setAuthStep('email-sent');
+    if (error) {
+      setSubmitting(false);
+      if (error.message.includes('Invalid login credentials')) {
+        toast.error('Invalid email or password. If you previously used magic link, click "Use magic link instead" below.');
+      } else if (error.message.includes('Email not confirmed')) {
+        toast.error('Please verify your email before signing in. Check your inbox for a confirmation link.');
+      } else {
+        toast.error(error.message);
+      }
+      return;
+    }
+    
+    // Success — navigate immediately
+    if (data.session) {
+      setIsRedirecting(true);
+      navigate(redirectUrl, { replace: true });
     }
   };
 
-  // Handle signup form submission: collect data and send magic link
+  // Handle signup with password
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateSignupForm()) return;
     
-    // Check terms acceptance
     if (!formData.termsAccepted) {
       setErrors(prev => ({ ...prev, termsAccepted: 'You must accept the terms of service to continue' }));
       return;
     }
 
-    // Check mentor pledge for mentor signup
     if (isMentorSignup && !formData.mentorPledge) {
       setErrors(prev => ({ ...prev, mentorPledge: 'You must confirm your intent to become a mentor and accept the terms' }));
       return;
     }
 
-    // Check Turnstile CAPTCHA
     if (!turnstileToken) {
       toast.error('Please complete the security verification');
       return;
@@ -369,25 +387,64 @@ export const Auth = () => {
     setSubmitting(true);
     
     const fullName = `${formData.firstName} ${formData.lastName}`.trim();
-    const { error } = await signUpWithOtp(
-      formData.email,
-      fullName,
-      formData.linkedinUrl,
-      isMentorSignup,
-      formData.university,
-      isMentorSignup ? formData.mentorBio : undefined,
-      isMentorSignup ? formData.portfolioLinks : undefined,
-      formData.preferredLanguage,
-      formData.gender as 'male' | 'female'
-    );
+    
+    // Sign up with password
+    const { data, error } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth`,
+        data: {
+          full_name: fullName,
+        },
+      },
+    });
+    
+    if (error) {
+      setSubmitting(false);
+      toast.error(error.message);
+      return;
+    }
+
+    // If user was created, store additional profile data via signUpWithOtp's pending data mechanism
+    // We reuse the pending signup pattern to store profile data that gets applied after email verification
+    if (data.user) {
+      // Update profile with additional fields using service-compatible approach
+      // The handle_new_user trigger already created the profile, now we update with extra fields
+      const updateData: Record<string, string> = {};
+      if (formData.linkedinUrl) updateData.linkedin_url = formData.linkedinUrl;
+      if (formData.university) updateData.university = formData.university;
+      if (formData.gender) updateData.gender = formData.gender;
+      updateData.preferred_language = formData.preferredLanguage || 'en';
+      
+      // If session exists (auto-confirm enabled), update profile directly
+      if (data.session) {
+        await supabase.from('profiles').update(updateData).eq('id', data.user.id);
+        
+        // Handle mentor application
+        if (isMentorSignup) {
+          const reasonParts = [];
+          if (formData.mentorBio) reasonParts.push(`Bio: ${formData.mentorBio}`);
+          if (formData.portfolioLinks) reasonParts.push(`Portfolio/Links: ${formData.portfolioLinks}`);
+          
+          await supabase.from('mentor_role_requests').insert({
+            user_id: data.user.id,
+            reason: reasonParts.length > 0 ? reasonParts.join('\n\n') : 'Applied during registration',
+            status: 'pending'
+          });
+        }
+        
+        setIsRedirecting(true);
+        navigate(redirectUrl, { replace: true });
+      } else {
+        // Email verification required — show verification screen
+        setLanguage(formData.preferredLanguage);
+        setEmailForMagicLink(formData.email);
+        setAuthStep('verify-email');
+      }
+    }
     
     setSubmitting(false);
-    
-    if (!error) {
-      setLanguage(formData.preferredLanguage);
-      setEmailForMagicLink(formData.email);
-      setAuthStep('email-sent');
-    }
   };
 
   // Go back from email sent screen
@@ -410,7 +467,26 @@ export const Auth = () => {
     }
   };
 
-  // Email Sent Screen (Magic Link)
+  // Resend verification email for password signup
+  const handleResendVerification = async () => {
+    setSubmitting(true);
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: emailForMagicLink,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth`,
+      },
+    });
+    setSubmitting(false);
+    
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success('Verification email resent. Check your inbox.');
+    }
+  };
+
+  // Email Sent Screen (Magic Link - for sign-in fallback)
   if (authStep === 'email-sent') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-accent/10">
@@ -431,7 +507,7 @@ export const Auth = () => {
             <CardContent className="space-y-6">
               <div className="text-center p-6 bg-muted/50 rounded-lg border">
                 <p className="text-sm text-muted-foreground">
-                  Click the link in your email to {mode === 'signup' ? 'complete your registration' : 'sign in to your account'}.
+                  Click the link in your email to sign in to your account.
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">
                   The link will expire in 10 minutes.
@@ -466,6 +542,62 @@ export const Auth = () => {
     );
   }
 
+  // Email Verification Screen (for password signup)
+  if (authStep === 'verify-email') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-accent/10">
+        <Navbar />
+        <div className="flex items-center justify-center p-4 pt-20">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <div className="flex justify-center mb-4">
+                <div className="p-3 bg-primary/10 rounded-full">
+                  <Mail className="h-8 w-8 text-primary" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl">Verify your email</CardTitle>
+              <CardDescription>
+                We sent a confirmation link to <strong>{emailForMagicLink}</strong>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="text-center p-6 bg-muted/50 rounded-lg border">
+                <p className="text-sm text-muted-foreground">
+                  Click the link in your email to verify your account and start learning.
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  After verifying, you can sign in with your password.
+                </p>
+              </div>
+              
+              <div className="text-center space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Didn't receive the email?{' '}
+                  <button 
+                    onClick={handleResendVerification} 
+                    disabled={submitting}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    {submitting ? 'Sending...' : 'Resend verification email'}
+                  </button>
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Check your spam folder if you don't see it.
+                </p>
+                <button 
+                  onClick={handleBackFromEmailSent}
+                  className="text-sm text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 mx-auto mt-4"
+                >
+                  <ArrowLeft className="h-3 w-3" /> Back to sign in
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-accent/10">
       <Navbar />
@@ -478,13 +610,13 @@ export const Auth = () => {
           <CardTitle className="text-2xl">Welcome to A Cloud for Everyone</CardTitle>
           <CardDescription>
             {mode === 'signin' 
-              ? 'Sign in to your account with email' 
+              ? 'Sign in to your account' 
               : (isMentorSignup ? 'Apply to become a mentor at ACFE' : 'Create your account to start learning')
             }
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs value={mode} onValueChange={(v) => setMode(v as 'signin' | 'signup')}>
+          <Tabs value={mode} onValueChange={(v) => { setMode(v as 'signin' | 'signup'); setUseMagicLink(false); setErrors({}); }}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -499,47 +631,78 @@ export const Auth = () => {
                     type="email"
                     placeholder="your@email.com"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value, password: '' })}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
                   />
                   {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
                 
-                {/* Password field - only shown for admin email */}
-                {isAdminEmail && (
+                {/* Password field - shown by default, hidden when using magic link */}
+                {!useMagicLink && (
                   <div className="space-y-2">
-                    <Label htmlFor="signin-password" className="flex items-center gap-2">
-                      <Lock className="h-4 w-4" />
-                      Password (Admin)
-                    </Label>
-                    <Input
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="signin-password" className="flex items-center gap-2">
+                        <Lock className="h-4 w-4" />
+                        Password
+                      </Label>
+                      <Link 
+                        to="/auth/reset-password" 
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Forgot password?
+                      </Link>
+                    </div>
+                    <PasswordInput
                       id="signin-password"
-                      type="password"
                       placeholder="Enter your password"
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      required
                     />
-                    <p className="text-xs text-muted-foreground">
-                      You can use password or magic link to sign in.
-                    </p>
+                    {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                   </div>
                 )}
                 
-                {!isAdminEmail && (
+                {useMagicLink && (
                   <p className="text-sm text-muted-foreground">
-                    We'll send a verification link to your email to sign in securely.
+                    We'll send a sign-in link to your email.
                   </p>
                 )}
                 
                 <Button type="submit" className="w-full" disabled={submitting}>
                   {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : isAdminEmail && formData.password ? (
-                    'Sign In with Password'
-                  ) : (
+                  ) : useMagicLink ? (
                     'Send Login Link'
+                  ) : (
+                    'Sign In'
                   )}
                 </Button>
+
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">or</span>
+                  </div>
+                </div>
+
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => { setUseMagicLink(!useMagicLink); setErrors({}); }}
+                >
+                  <KeyRound className="h-4 w-4 mr-2" />
+                  {useMagicLink ? 'Sign in with password' : 'Use magic link instead'}
+                </Button>
+                
+                {!useMagicLink && (
+                  <p className="text-xs text-center text-muted-foreground">
+                    Previously signed up with magic link? Use "magic link" above to log in, then set a password in your profile.
+                  </p>
+                )}
               </form>
             </TabsContent>
 
@@ -583,6 +746,32 @@ export const Auth = () => {
                     required
                   />
                   {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                </div>
+
+                {/* Password fields for signup */}
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">Password</Label>
+                  <PasswordInput
+                    id="signup-password"
+                    placeholder="Create a strong password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    showStrength
+                    required
+                  />
+                  {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-confirm-password">Confirm Password</Label>
+                  <PasswordInput
+                    id="signup-confirm-password"
+                    placeholder="Re-enter your password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    required
+                  />
+                  {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -772,7 +961,7 @@ export const Auth = () => {
                 </div>
                 {errors.termsAccepted && <p className="text-sm text-destructive">{errors.termsAccepted}</p>}
 
-                {/* Mentor-specific fields - only show on mentor signup path */}
+                {/* Mentor-specific fields */}
                 {isMentorSignup && (
                   <>
                     <div className="space-y-2">
