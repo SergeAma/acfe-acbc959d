@@ -239,8 +239,16 @@ export const CourseDetail = () => {
       };
     }
 
-    // All other courses require subscription
-    // Even if is_paid is false, we show subscription required
+    // Free courses (is_paid = false) should show as free
+    if (!course.is_paid) {
+      return {
+        type: 'free',
+        label: 'Free',
+        originalPrice: null
+      };
+    }
+
+    // Paid courses require subscription
     return { 
       type: 'subscription', 
       label: 'Subscription Required', 
@@ -334,6 +342,15 @@ export const CourseDetail = () => {
                     </div>
                   )}
                   
+                  {priceInfo?.type === 'free' && (
+                    <div className="mb-4">
+                      <Badge className="bg-green-600 text-white text-sm">
+                        <Gift className="h-4 w-4 mr-1" />
+                        Free Course
+                      </Badge>
+                    </div>
+                  )}
+                  
                   {priceInfo?.type === 'subscription' && (
                     <div className="mb-4">
                       <div className="flex items-center justify-center gap-2 mb-2">
@@ -409,7 +426,7 @@ export const CourseDetail = () => {
                       {enrolling ? (
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
                       ) : null}
-                      Subscribe to Enroll
+                      {priceInfo?.type === 'free' || priceInfo?.type === 'sponsored' ? 'Enroll for Free' : 'Subscribe to Enroll'}
                     </Button>
                     {priceInfo?.type === 'subscription' && (
                       <p className="text-xs text-center text-muted-foreground">
