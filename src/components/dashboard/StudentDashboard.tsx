@@ -218,7 +218,7 @@ export const StudentDashboard = () => {
     const mentorAvatar = enrollment.course.mentor?.avatar_url;
     
     return (
-      <Card className={`hover:shadow-lg transition-shadow relative ${isSubscribed ? 'ring-2 ring-primary' : ''} ${isCompleted ? 'border-green-200 dark:border-green-800' : ''}`}>
+      <Card className={`hover:shadow-lg transition-shadow relative flex flex-col ${isSubscribed ? 'ring-2 ring-primary' : ''} ${isCompleted ? 'border-green-200 dark:border-green-800' : ''}`}>
         {isSubscribed && (
           <div className="absolute top-2 right-2 z-10">
             <Badge className="bg-primary text-primary-foreground">
@@ -246,7 +246,7 @@ export const StudentDashboard = () => {
             </span>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 flex flex-col">
           {/* Mentor Info */}
           {mentorName && (
             <Link 
@@ -275,11 +275,13 @@ export const StudentDashboard = () => {
               <Progress value={enrollment.progress} className="h-2" />
             </div>
           )}
-          <Link to={`/courses/${enrollment.course.id}/learn`}>
-            <Button className={`w-full ${isCompleted ? 'bg-green-600 hover:bg-green-700' : ''}`} size="sm">
-              {isCompleted ? t('courses.reviewCourse') || 'Review Course' : enrollment.progress > 0 ? t('courses.continue') : t('courses.startLearning') || 'Start Learning'}
-            </Button>
-          </Link>
+          <div className="mt-auto">
+            <Link to={`/courses/${enrollment.course.id}/learn`}>
+              <Button className={`w-full ${isCompleted ? 'bg-green-600 hover:bg-green-700' : ''}`} size="sm">
+                {isCompleted ? t('courses.reviewCourse') : enrollment.progress > 0 ? t('courses.continue') : t('courses.startLearning')}
+              </Button>
+            </Link>
+          </div>
         </CardContent>
       </Card>
     );
@@ -363,7 +365,7 @@ export const StudentDashboard = () => {
               <p className="text-muted-foreground mb-4">{t('studentDashboard.startLearningPrompt')}</p>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {availableCourses.map((course) => (
-                  <Card key={course.id} className="hover:shadow-lg transition-shadow">
+                  <Card key={course.id} className="hover:shadow-lg transition-shadow flex flex-col">
                     {course.thumbnail_url && (
                       <div className="relative h-32 overflow-hidden rounded-t-lg">
                         <img
@@ -384,7 +386,7 @@ export const StudentDashboard = () => {
                         </span>
                       </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="flex-1 flex flex-col">
                       {course.mentor?.full_name && (
                         <Link 
                           to={`/mentors/${course.mentor_id}`}
@@ -403,11 +405,13 @@ export const StudentDashboard = () => {
                       <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                         {stripHtml(course.description)}
                       </p>
-                      <Link to={`/courses/${course.id}`}>
-                        <Button className="w-full" size="sm">
-                          {t('courses.viewDetails')}
-                        </Button>
-                      </Link>
+                      <div className="mt-auto">
+                        <Link to={`/courses/${course.id}`}>
+                          <Button className="w-full" size="sm">
+                            {t('courses.viewDetails')}
+                          </Button>
+                        </Link>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
