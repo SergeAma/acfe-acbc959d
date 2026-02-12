@@ -430,6 +430,21 @@ export const AdminEvents = () => {
     toast({ title: 'URL copied!' });
   };
 
+  const handleTogglePublish = async (eventId: string, publish: boolean) => {
+    const newStatus = publish ? 'published' : 'draft';
+    const { error } = await supabase
+      .from('events')
+      .update({ status: newStatus })
+      .eq('id', eventId);
+
+    if (error) {
+      toast({ title: 'Failed to update status', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: publish ? 'Event is now live' : 'Event taken offline' });
+      fetchEvents();
+    }
+  };
+
   const handleThumbnailUpload = async (file: File) => {
     setUploadingThumbnail(true);
     try {
@@ -672,6 +687,19 @@ export const AdminEvents = () => {
                     </div>
                     
                     <div className="flex items-center gap-2">
+                      {/* Publish/Unpublish toggle - only for draft/published events */}
+                      {(event.status === 'published' || event.status === 'draft') && (
+                        <div className="flex items-center gap-1.5 mr-2">
+                          <Switch
+                            checked={event.status === 'published'}
+                            onCheckedChange={(checked) => handleTogglePublish(event.id, checked)}
+                            aria-label={event.status === 'published' ? 'Take offline' : 'Publish'}
+                          />
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {event.status === 'published' ? 'Live' : 'Offline'}
+                          </span>
+                        </div>
+                      )}
                       <Button 
                         variant="outline" 
                         size="sm"
