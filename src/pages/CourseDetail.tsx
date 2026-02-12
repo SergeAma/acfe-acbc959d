@@ -170,10 +170,10 @@ export const CourseDetail = () => {
       return;
     }
 
-    if (profile.role !== 'student') {
+    if (profile.role !== 'student' && profile.role !== 'mentor') {
       toast({
         title: "Not available",
-        description: "Only students can enroll in courses",
+        description: "Only students and mentors can enroll in courses",
         variant: "destructive",
       });
       return;
@@ -222,11 +222,22 @@ export const CourseDetail = () => {
 
   // Determine display price
   // CRITICAL: All courses require subscription by default unless explicitly overridden
+  const isMentor = profile?.role === 'mentor';
+  
   const getDisplayPrice = () => {
     if (!course) return null;
 
     const isSponsored = pricingOverride?.enabled && pricingOverride?.force_free;
     
+    // Mentors get free access to all courses
+    if (isMentor) {
+      return {
+        type: 'free',
+        label: 'Free — Mentor Access',
+        originalPrice: null
+      };
+    }
+
     // Sponsored courses are shown as free
     if (isSponsored) {
       const price = (course.price_cents || 1500) / 100;
@@ -426,7 +437,7 @@ export const CourseDetail = () => {
                       {enrolling ? (
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
                       ) : null}
-                      {priceInfo?.type === 'free' || priceInfo?.type === 'sponsored' ? 'Enroll for Free' : 'Subscribe to Enroll'}
+                      {priceInfo?.type === 'free' || priceInfo?.type === 'sponsored' ? (isMentor ? 'Enroll — Mentor Access' : 'Enroll for Free') : 'Subscribe to Enroll'}
                     </Button>
                     {priceInfo?.type === 'subscription' && (
                       <p className="text-xs text-center text-muted-foreground">

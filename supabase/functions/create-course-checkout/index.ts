@@ -102,6 +102,19 @@ serve(async (req) => {
       });
     };
 
+    // Check if user is a mentor - mentors get free access to all courses
+    const { data: mentorRole } = await serviceClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "mentor")
+      .maybeSingle();
+
+    if (mentorRole) {
+      logStep("User is a mentor, granting free access");
+      return await enrollFree("Enrolled as a mentor — free access to all courses");
+    }
+
     // Check if user has an active ACFE subscription (Membership or Mentorship Plus)
     // or is a member of an institution/career centre
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
