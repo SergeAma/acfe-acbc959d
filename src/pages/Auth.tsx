@@ -356,11 +356,11 @@ export const Auth = () => {
       return;
     }
     
-    // Success — navigate immediately
+    // Success — auth state listener will update `user`, triggering the redirect useEffect
     if (data.session) {
-      setIsRedirecting(true);
-      navigate(redirectUrl, { replace: true });
+      toast.success('Welcome back!');
     }
+    setSubmitting(false);
   };
 
   // Handle signup with password
