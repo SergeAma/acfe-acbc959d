@@ -321,8 +321,6 @@ export const Auth = () => {
       setSubmitting(false);
       if (error.message.includes('Invalid login credentials')) {
         toast.error('Invalid email or password.');
-      } else if (error.message.includes('Email not confirmed')) {
-        toast.error('Please verify your email before signing in. Check your inbox for a confirmation link.');
       } else {
         toast.error(error.message);
       }
@@ -379,11 +377,8 @@ export const Auth = () => {
     if (error) {
       setSubmitting(false);
       if (error.message.includes('rate limit') || error.status === 429) {
-        // Mark as completed so user can't resubmit
         setSignupCompleted(true);
-        toast.info('Your account was likely created. Please wait a few minutes, then check your inbox for the verification email.');
-        setEmailForVerification(formData.email);
-        setAuthStep('verify-email');
+        toast.error('Too many attempts. Please wait a few minutes and try again.');
       } else if (error.message.includes('already registered') || error.message.includes('already been registered')) {
         toast.error('An account with this email already exists. Please sign in instead.');
       } else {
@@ -408,30 +403,44 @@ export const Auth = () => {
       updateData.preferred_language = formData.preferredLanguage || 'en';
       
       // If session exists (auto-confirm enabled), update profile directly
+      // Update profile
+      await supabase.from('profiles').update(updateData).eq('id', data.user.id);
+      
+      // Handle mentor application
+      if (isMentorSignup) {
+        const reasonParts = [];
+        if (formData.mentorBio) reasonParts.push(`Bio: ${formData.mentorBio}`);
+        if (formData.portfolioLinks) reasonParts.push(`Portfolio/Links: ${formData.portfolioLinks}`);
+        
+        await supabase.from('mentor_role_requests').insert({
+          user_id: data.user.id,
+          reason: reasonParts.length > 0 ? reasonParts.join('\n\n') : 'Applied during registration',
+          status: 'pending'
+        });
+      }
+      
+      setSignupCompleted(true);
+      
+      // If session exists (auto-confirm), redirect immediately
       if (data.session) {
-        await supabase.from('profiles').update(updateData).eq('id', data.user.id);
-        
-        // Handle mentor application
-        if (isMentorSignup) {
-          const reasonParts = [];
-          if (formData.mentorBio) reasonParts.push(`Bio: ${formData.mentorBio}`);
-          if (formData.portfolioLinks) reasonParts.push(`Portfolio/Links: ${formData.portfolioLinks}`);
-          
-          await supabase.from('mentor_role_requests').insert({
-            user_id: data.user.id,
-            reason: reasonParts.length > 0 ? reasonParts.join('\n\n') : 'Applied during registration',
-            status: 'pending'
-          });
-        }
-        
+        toast.success('Account created successfully! Welcome to ACFE.');
         setIsRedirecting(true);
         navigate(redirectUrl, { replace: true });
       } else {
-        // Email verification required — mark signup as completed to prevent resubmission
-        setSignupCompleted(true);
-        setLanguage(formData.preferredLanguage);
-        setEmailForVerification(formData.email);
-        setAuthStep('verify-email');
+        // Fallback: auto-confirm should be on, but if not, sign them in
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+        if (signInError) {
+          toast.error('Account created but auto sign-in failed. Please sign in manually.');
+          setMode('signin');
+          setAuthStep('form');
+        } else {
+          toast.success('Account created successfully! Welcome to ACFE.');
+          setIsRedirecting(true);
+          navigate(redirectUrl, { replace: true });
+        }
       }
     }
     
