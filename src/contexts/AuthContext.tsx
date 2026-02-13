@@ -79,7 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
+  // isInitialized removed — auth listener now uses [] deps to avoid cleanup issues
   const [simulatedRole, setSimulatedRoleState] = useState<SimulatableRole>(null);
   const [pendingSignup, setPendingSignup] = useState<PendingSignupData | null>(null);
   const { toast } = useToast();
@@ -193,56 +193,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Set up auth state listener ONCE — must be in a separate effect with [] deps
+  // so it never gets cleaned up and re-created during the component lifecycle
   useEffect(() => {
-    // Prevent re-initialization
-    if (isInitialized) return;
-    
     let mounted = true;
 
-    const initializeAuth = async () => {
-      try {
-        // Check for existing session first
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          if (mounted) {
-            setLoading(false);
-            setIsInitialized(true);
-          }
-          return;
-        }
-
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-          
-          if (session?.user) {
-            const profileData = await fetchProfile(session.user.id);
-            if (mounted && profileData) setProfile(profileData);
-          }
-          
-          setLoading(false);
-          setIsInitialized(true);
-        }
-      } catch {
-        if (mounted) {
-          setLoading(false);
-          setIsInitialized(true);
-        }
-      }
-    };
-
-    // Set up auth state listener
+    // FIRST: set up the listener so we don't miss any events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         if (!mounted) return;
 
-        // Only handle meaningful auth events
         if (event === 'SIGNED_OUT') {
           setSession(null);
           setUser(null);
           setProfile(null);
-          setSimulatedRoleState(null); // Clear simulation on sign out
+          setSimulatedRoleState(null);
           lastProfileFetchRef.current = null;
           clearPendingSignup();
           setLoading(false);
@@ -253,15 +218,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
           
-          // Only fetch profile on SIGNED_IN, not on every token refresh
           if (event === 'SIGNED_IN' && currentSession?.user) {
-            // Defer to prevent deadlock
             setTimeout(async () => {
               if (mounted) {
                 const profileData = await fetchProfile(currentSession.user.id);
                 if (mounted && profileData) setProfile(profileData);
                 
-                // Clean URL params if present (legacy cleanup)
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams.get('new_signup')) {
                   window.history.replaceState({}, '', window.location.pathname);
@@ -275,13 +237,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    initializeAuth();
+    // THEN: check for existing session
+    supabase.auth.getSession().then(async ({ data: { session }, error: sessionError }) => {
+      if (!mounted) return;
+      
+      if (sessionError) {
+        setLoading(false);
+        return;
+      }
+
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        const profileData = await fetchProfile(session.user.id);
+        if (mounted && profileData) setProfile(profileData);
+      }
+      
+      setLoading(false);
+    });
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [isInitialized]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Send magic link to email (for sign-in of existing users)
   const sendOtp = async (email: string) => {
