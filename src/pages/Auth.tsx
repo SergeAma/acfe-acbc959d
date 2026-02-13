@@ -159,6 +159,8 @@ export const Auth = () => {
     preferredLanguage: 'en' as 'en' | 'fr',
   });
 
+  const [resendCooldown, setResendCooldown] = useState(0);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Initialize Turnstile when on signup mode and form step
@@ -226,6 +228,13 @@ export const Auth = () => {
       }
     };
   }, [mode, authStep]);
+
+  // Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
 
   // Redirect when user is authenticated
   useEffect(() => {
@@ -365,7 +374,13 @@ export const Auth = () => {
     
     if (error) {
       setSubmitting(false);
-      toast.error(error.message);
+      if (error.message.includes('rate limit') || error.status === 429) {
+        toast.error('Your account was created! Please wait a few minutes, then check your inbox for the verification email. If you don\'t see it, try the "Resend" option below.');
+        setEmailForVerification(formData.email);
+        setAuthStep('verify-email');
+      } else {
+        toast.error(error.message);
+      }
       return;
     }
 
@@ -414,8 +429,9 @@ export const Auth = () => {
     setSubmitting(false);
   };
 
-  // Resend verification email for password signup
   const handleResendVerification = async () => {
+    if (resendCooldown > 0) return;
+    
     setSubmitting(true);
     const { error } = await supabase.auth.resend({
       type: 'signup',
@@ -425,9 +441,14 @@ export const Auth = () => {
       },
     });
     setSubmitting(false);
+    setResendCooldown(60); // 60-second cooldown
     
     if (error) {
-      toast.error(error.message);
+      if (error.message.includes('rate limit') || (error as any).status === 429) {
+        toast.info('Please wait a few minutes before requesting another email. Check your spam folder in the meantime.');
+      } else {
+        toast.error(error.message);
+      }
     } else {
       toast.success('Verification email resent. Check your inbox.');
     }
@@ -466,10 +487,10 @@ export const Auth = () => {
                   Didn't receive the email?{' '}
                   <button 
                     onClick={handleResendVerification} 
-                    disabled={submitting}
-                    className="text-primary hover:underline font-medium"
+                    disabled={submitting || resendCooldown > 0}
+                    className="text-primary hover:underline font-medium disabled:opacity-50 disabled:no-underline"
                   >
-                    {submitting ? 'Sending...' : 'Resend verification email'}
+                    {submitting ? 'Sending...' : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend verification email'}
                   </button>
                 </p>
                 <p className="text-xs text-muted-foreground">
