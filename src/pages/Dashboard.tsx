@@ -40,14 +40,10 @@ export const Dashboard = () => {
     return <Navigate to="/mentor-contract" replace />;
   }
 
-  // For students: first check profile completion, then agreement
+  // For students: only hard-redirect for agreement, not profile completion.
+  // Profile completion is handled by OnboardingBanner on the dashboard itself.
   if (dashboardRole === 'student' && !isActualAdmin) {
-    // If profile incomplete, redirect to profile page
-    if (!isProfileComplete) {
-      return <Navigate to="/profile" replace />;
-    }
-    // If profile complete but agreement not signed, redirect to agreement
-    if (hasSignedAgreement === false) {
+    if (isProfileComplete && hasSignedAgreement === false) {
       return <Navigate to="/learner-agreement" replace />;
     }
   }
