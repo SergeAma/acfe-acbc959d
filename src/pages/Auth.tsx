@@ -160,6 +160,7 @@ export const Auth = () => {
   });
 
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [signupCompleted, setSignupCompleted] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -339,6 +340,9 @@ export const Auth = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Prevent duplicate submissions
+    if (submitting || signupCompleted) return;
+    
     if (!validateSignupForm()) return;
     
     if (!formData.termsAccepted) {
@@ -375,9 +379,13 @@ export const Auth = () => {
     if (error) {
       setSubmitting(false);
       if (error.message.includes('rate limit') || error.status === 429) {
-        toast.error('Your account was created! Please wait a few minutes, then check your inbox for the verification email. If you don\'t see it, try the "Resend" option below.');
+        // Mark as completed so user can't resubmit
+        setSignupCompleted(true);
+        toast.info('Your account was likely created. Please wait a few minutes, then check your inbox for the verification email.');
         setEmailForVerification(formData.email);
         setAuthStep('verify-email');
+      } else if (error.message.includes('already registered') || error.message.includes('already been registered')) {
+        toast.error('An account with this email already exists. Please sign in instead.');
       } else {
         toast.error(error.message);
       }
@@ -419,7 +427,8 @@ export const Auth = () => {
         setIsRedirecting(true);
         navigate(redirectUrl, { replace: true });
       } else {
-        // Email verification required — show verification screen
+        // Email verification required — mark signup as completed to prevent resubmission
+        setSignupCompleted(true);
         setLanguage(formData.preferredLanguage);
         setEmailForVerification(formData.email);
         setAuthStep('verify-email');
@@ -933,7 +942,7 @@ export const Auth = () => {
                 <Button 
                   type="submit" 
                   className="w-full bg-foreground text-background hover:bg-foreground/90 font-semibold" 
-                  disabled={submitting || !formData.termsAccepted || (isMentorSignup && !formData.mentorPledge) || !turnstileToken}
+                  disabled={submitting || signupCompleted || !formData.termsAccepted || (isMentorSignup && !formData.mentorPledge) || !turnstileToken}
                 >
                   {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (isMentorSignup ? 'SUBMIT MENTOR APPLICATION' : 'REGISTER')}
                 </Button>
