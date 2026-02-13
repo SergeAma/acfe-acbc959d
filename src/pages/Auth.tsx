@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Globe, Mail, ArrowLeft, Lock, KeyRound } from 'lucide-react';
+import { Loader2, Globe, Mail, ArrowLeft, Lock } from 'lucide-react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { PasswordInput } from '@/components/ui/password-input';
@@ -32,7 +32,7 @@ const passwordSchema = z.string()
   .regex(/[a-z]/, 'Must contain at least one lowercase letter')
   .regex(/[0-9]/, 'Must contain at least one number');
 
-// Signup form validation schema (now includes password)
+// Signup form validation schema
 const baseSignupSchema = z.object({
   email: z.string().email('Invalid email address').max(255),
   password: passwordSchema,
@@ -102,7 +102,7 @@ const signInSchema = z.object({
 export const Auth = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user, loading: authLoading, sendOtp, signUpWithOtp, pendingSignup, clearPendingSignup } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { setLanguage } = useLanguage();
   const [submitting, setSubmitting] = useState(false);
   
@@ -113,10 +113,8 @@ export const Auth = () => {
   const [mode, setMode] = useState<'signin' | 'signup'>(
     searchParams.get('mode') === 'signup' ? 'signup' : 'signin'
   );
-  const [authStep, setAuthStep] = useState<'form' | 'email-sent' | 'verify-email'>('form');
-  const [emailForMagicLink, setEmailForMagicLink] = useState('');
-  // Magic link fallback for existing users without passwords
-  const [useMagicLink, setUseMagicLink] = useState(false);
+  const [authStep, setAuthStep] = useState<'form' | 'verify-email'>('form');
+  const [emailForVerification, setEmailForVerification] = useState('');
   
   // Check if this is a mentor signup path
   const isMentorSignup = searchParams.get('role') === 'mentor';
@@ -130,7 +128,7 @@ export const Auth = () => {
   const rawRedirect = searchParams.get('redirect');
   const redirectUrl = rawRedirect ? decodeURIComponent(rawRedirect) : getDefaultRedirect();
   
-  // Detect magic link token in URL
+  // Detect auth token in URL (from email verification link)
   const hasAuthToken = searchParams.has('token') || searchParams.has('access_token') || 
                        window.location.hash.includes('access_token');
 
@@ -162,15 +160,6 @@ export const Auth = () => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Check for pending signup on mount
-  useEffect(() => {
-    if (pendingSignup && !user) {
-      setEmailForMagicLink(pendingSignup.email);
-      setAuthStep('email-sent');
-      setMode('signup');
-    }
-  }, [pendingSignup, user]);
 
   // Initialize Turnstile when on signup mode and form step
   useEffect(() => {
@@ -287,19 +276,6 @@ export const Auth = () => {
   };
 
   const validateSignInForm = () => {
-    if (useMagicLink) {
-      // Only validate email for magic link
-      try {
-        z.object({ email: z.string().email('Invalid email address') }).parse({ email: formData.email });
-        setErrors({});
-        return true;
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          setErrors({ email: error.errors[0]?.message || 'Invalid email' });
-        }
-        return false;
-      }
-    }
     try {
       signInSchema.parse({ email: formData.email, password: formData.password });
       setErrors({});
@@ -318,7 +294,7 @@ export const Auth = () => {
     }
   };
 
-  // Handle sign-in with password (default) or magic link (fallback)
+  // Handle sign-in with password
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -326,19 +302,6 @@ export const Auth = () => {
     
     setSubmitting(true);
     
-    if (useMagicLink) {
-      // Magic link fallback for existing users
-      const { error } = await sendOtp(formData.email);
-      setSubmitting(false);
-      
-      if (!error) {
-        setEmailForMagicLink(formData.email);
-        setAuthStep('email-sent');
-      }
-      return;
-    }
-    
-    // Default: password login
     const { data, error } = await supabase.auth.signInWithPassword({
       email: formData.email,
       password: formData.password,
@@ -347,7 +310,7 @@ export const Auth = () => {
     if (error) {
       setSubmitting(false);
       if (error.message.includes('Invalid login credentials')) {
-        toast.error('Invalid email or password. If you previously used magic link, click "Use magic link instead" below.');
+        toast.error('Invalid email or password.');
       } else if (error.message.includes('Email not confirmed')) {
         toast.error('Please verify your email before signing in. Check your inbox for a confirmation link.');
       } else {
@@ -406,11 +369,15 @@ export const Auth = () => {
       return;
     }
 
-    // If user was created, store additional profile data via signUpWithOtp's pending data mechanism
-    // We reuse the pending signup pattern to store profile data that gets applied after email verification
+    // Check for duplicate account
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      setSubmitting(false);
+      toast.error('An account with this email already exists. Please sign in instead.');
+      return;
+    }
+
     if (data.user) {
-      // Update profile with additional fields using service-compatible approach
-      // The handle_new_user trigger already created the profile, now we update with extra fields
+      // Update profile with additional fields
       const updateData: Record<string, string> = {};
       if (formData.linkedinUrl) updateData.linkedin_url = formData.linkedinUrl;
       if (formData.university) updateData.university = formData.university;
@@ -439,7 +406,7 @@ export const Auth = () => {
       } else {
         // Email verification required — show verification screen
         setLanguage(formData.preferredLanguage);
-        setEmailForMagicLink(formData.email);
+        setEmailForVerification(formData.email);
         setAuthStep('verify-email');
       }
     }
@@ -447,32 +414,12 @@ export const Auth = () => {
     setSubmitting(false);
   };
 
-  // Go back from email sent screen
-  const handleBackFromEmailSent = () => {
-    setAuthStep('form');
-    setEmailForMagicLink('');
-    if (mode === 'signup') {
-      clearPendingSignup();
-    }
-  };
-
-  // Resend magic link
-  const handleResendMagicLink = async () => {
-    setSubmitting(true);
-    const { error } = await sendOtp(emailForMagicLink);
-    setSubmitting(false);
-    
-    if (!error) {
-      toast.success('A new verification link has been sent to your email');
-    }
-  };
-
   // Resend verification email for password signup
   const handleResendVerification = async () => {
     setSubmitting(true);
     const { error } = await supabase.auth.resend({
       type: 'signup',
-      email: emailForMagicLink,
+      email: emailForVerification,
       options: {
         emailRedirectTo: `${window.location.origin}/auth`,
       },
@@ -485,62 +432,6 @@ export const Auth = () => {
       toast.success('Verification email resent. Check your inbox.');
     }
   };
-
-  // Email Sent Screen (Magic Link - for sign-in fallback)
-  if (authStep === 'email-sent') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-accent/10">
-        <Navbar />
-        <div className="flex items-center justify-center p-4 pt-20">
-          <Card className="w-full max-w-md">
-            <CardHeader className="text-center">
-              <div className="flex justify-center mb-4">
-                <div className="p-3 bg-primary/10 rounded-full">
-                  <Mail className="h-8 w-8 text-primary" />
-                </div>
-              </div>
-              <CardTitle className="text-2xl">Check your email</CardTitle>
-              <CardDescription>
-                We sent a verification link to <strong>{emailForMagicLink}</strong>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="text-center p-6 bg-muted/50 rounded-lg border">
-                <p className="text-sm text-muted-foreground">
-                  Click the link in your email to sign in to your account.
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  The link will expire in 10 minutes.
-                </p>
-              </div>
-              
-              <div className="text-center space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  Didn't receive the email?{' '}
-                  <button 
-                    onClick={handleResendMagicLink} 
-                    disabled={submitting}
-                    className="text-primary hover:underline font-medium"
-                  >
-                    {submitting ? 'Sending...' : 'Resend'}
-                  </button>
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Check your spam folder if you don't see it.
-                </p>
-                <button 
-                  onClick={handleBackFromEmailSent}
-                  className="text-sm text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 mx-auto mt-4"
-                >
-                  <ArrowLeft className="h-3 w-3" /> Use a different email
-                </button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
 
   // Email Verification Screen (for password signup)
   if (authStep === 'verify-email') {
@@ -557,7 +448,7 @@ export const Auth = () => {
               </div>
               <CardTitle className="text-2xl">Verify your email</CardTitle>
               <CardDescription>
-                We sent a confirmation link to <strong>{emailForMagicLink}</strong>
+                We sent a confirmation link to <strong>{emailForVerification}</strong>
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -585,7 +476,7 @@ export const Auth = () => {
                   Check your spam folder if you don't see it.
                 </p>
                 <button 
-                  onClick={handleBackFromEmailSent}
+                  onClick={() => { setAuthStep('form'); setEmailForVerification(''); }}
                   className="text-sm text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 mx-auto mt-4"
                 >
                   <ArrowLeft className="h-3 w-3" /> Back to sign in
@@ -616,7 +507,7 @@ export const Auth = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs value={mode} onValueChange={(v) => { setMode(v as 'signin' | 'signup'); setUseMagicLink(false); setErrors({}); }}>
+          <Tabs value={mode} onValueChange={(v) => { setMode(v as 'signin' | 'signup'); setErrors({}); }}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -637,72 +528,36 @@ export const Auth = () => {
                   {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
                 
-                {/* Password field - shown by default, hidden when using magic link */}
-                {!useMagicLink && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="signin-password" className="flex items-center gap-2">
-                        <Lock className="h-4 w-4" />
-                        Password
-                      </Label>
-                      <Link 
-                        to="/auth/reset-password" 
-                        className="text-xs text-primary hover:underline"
-                      >
-                        Forgot password?
-                      </Link>
-                    </div>
-                    <PasswordInput
-                      id="signin-password"
-                      placeholder="Enter your password"
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      required
-                    />
-                    {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="signin-password" className="flex items-center gap-2">
+                      <Lock className="h-4 w-4" />
+                      Password
+                    </Label>
+                    <Link 
+                      to="/auth/reset-password" 
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Forgot password?
+                    </Link>
                   </div>
-                )}
-                
-                {useMagicLink && (
-                  <p className="text-sm text-muted-foreground">
-                    We'll send a sign-in link to your email.
-                  </p>
-                )}
+                  <PasswordInput
+                    id="signin-password"
+                    placeholder="Enter your password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    required
+                  />
+                  {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                </div>
                 
                 <Button type="submit" className="w-full" disabled={submitting}>
                   {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : useMagicLink ? (
-                    'Send Login Link'
                   ) : (
                     'Sign In'
                   )}
                 </Button>
-
-                <div className="relative my-4">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">or</span>
-                  </div>
-                </div>
-
-                <Button 
-                  type="button"
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => { setUseMagicLink(!useMagicLink); setErrors({}); }}
-                >
-                  <KeyRound className="h-4 w-4 mr-2" />
-                  {useMagicLink ? 'Sign in with password' : 'Use magic link instead'}
-                </Button>
-                
-                {!useMagicLink && (
-                  <p className="text-xs text-center text-muted-foreground">
-                    Previously signed up with magic link? Use "magic link" above to log in, then set a password in your profile.
-                  </p>
-                )}
               </form>
             </TabsContent>
 
